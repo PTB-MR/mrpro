@@ -208,18 +208,24 @@ class SliceProjectionOp(LinearOperator):
         self._range_shape: tuple[int] = (*batch_shapes, 1, max_shape, max_shape)
         self._domain_shape = input_shape.zyx
 
-    def forward(self, x: Tensor) -> tuple[Tensor]:
-        """Transform from a 3D Volume to a 2D Slice.
+    def __call__(self, x: Tensor) -> tuple[Tensor]:
+        """Project a 3D volume to a 2D slice.
 
         Parameters
         ----------
         x
-            3D Volume with shape `(..., z, y, x)`
-            with z, y, x matching the input_shape
+            3D volume
 
         Returns
         -------
-        A 2D slice with shape `(..., 1, max(z, y, x), (max(z, y, x)))`
+            2D slice
+        """
+        return super().__call__(x)
+
+    def forward(self, x: Tensor) -> tuple[Tensor]:
+        """Apply SliceProjectionOp.
+
+        Use `operator.__call__`, i.e. call `operator()` instead.
         """
         match (self.matrix, self.matrix_adjoint):
             # selection based on the optimize_for setting
@@ -240,19 +246,17 @@ class SliceProjectionOp(LinearOperator):
         y = y.reshape(*y.shape[:-4], *x.shape[:-3], *y.shape[-3:])
         return (y,)
 
-    def adjoint(self, x: Tensor) -> tuple[Tensor,]:
-        """Transform from a 2D slice to a 3D Volume.
+    def adjoint(self, y: Tensor) -> tuple[Tensor]:
+        """Apply the adjoint projection to a 2D slice in a 3D volume.
 
         Parameters
         ----------
-        x
-            2D Slice with shape `(..., 1, max(z, y, x), (max(z, y, x)))`
-            with `z, y, x` matching the input_shape
+        y
+            Input tensor
 
         Returns
         -------
-        A 3D Volume with shape `(..., z, y, x)`
-           with` z, y, x` matching the input_shape
+            Projected tensor
         """
         match (self.matrix, self.matrix_adjoint):
             # selection based on the optimize_for setting
@@ -268,7 +272,7 @@ class SliceProjectionOp(LinearOperator):
         # For the (unusual case) of batched volumes, we will apply for each element in series
         n_batchdim = len(self._range_shape) - 3
         # x_domainbatch_range has all volume batch dimensions moved to the front
-        x_domainbatch_range = x.moveaxis(tuple(range(n_batchdim, x.ndim - 3)), tuple(range(x.ndim - 3 - n_batchdim)))
+        x_domainbatch_range = y.moveaxis(tuple(range(n_batchdim, y.ndim - 3)), tuple(range(y.ndim - 3 - n_batchdim)))
         # x_flatdomainbatch_flatrange is 2D with shape
         # (all batch dimensions of the volume flattened, all range dimensions flattened)
         x_domainbatch_flatrange = torch.atleast_2d(x_domainbatch_range.flatten(start_dim=-len(self._range_shape)))
@@ -280,8 +284,8 @@ class SliceProjectionOp(LinearOperator):
                 for x in x_flatdomainbatch_flatrange
             ]
         )
-        y = y_flatdomainbatch.reshape(*x.shape[n_batchdim:-3], *y_flatdomainbatch.shape[1:])
-        return (y,)
+        x = y_flatdomainbatch.reshape(*y.shape[n_batchdim:-3], *y_flatdomainbatch.shape[1:])
+        return (x,)
 
     @staticmethod
     def join_matrices(matrices: Sequence[Tensor]) -> Tensor:
@@ -348,7 +352,7 @@ class SliceProjectionOp(LinearOperator):
             Function that describes the slice profile. See `mrpro.utils.slice_profiles` for examples.
         rotation_center
             Center of rotation, if None the center of the volume is used,
-            i.e. for 4 pixels 0 1 2 3 it is between 1 and 2
+            i.e. for 4 pixels 0 1 2 3 it is between 0 and 1
 
         Returns
         -------

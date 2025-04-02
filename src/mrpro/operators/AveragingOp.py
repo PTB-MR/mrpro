@@ -47,8 +47,27 @@ class AveragingOp(LinearOperator):
         self.idx = idx
         self.dim = dim
 
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply the averaging operator to the input tensor.
+
+        Parameters
+        ----------
+        x
+            Tensor to average.
+
+        Returns
+        -------
+            Averaged tensor.
+            The shape of the output tensor is the same as the input tensor, except for the `dim` dimension,
+            which will have a size equal to the number of groups specified by the first dimension of `idx`.
+        """
+        return super().__call__(x)
+
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Apply the averaging operator to the input tensor."""
+        """Apply AveragingOp.
+
+        Use `operator.__call__`, i.e. call `operator()` instead.
+        """
         if self.domain_size and self.domain_size != x.shape[self.dim]:
             raise ValueError(f'Expected domain size {self.domain_size}, got {x.shape[self.dim]}')
         self._last_domain_size = x.shape[self.dim]
@@ -57,8 +76,19 @@ class AveragingOp(LinearOperator):
         averaged = torch.stack([x[(*placeholder, i)].mean(self.dim) for i in self.idx], self.dim)
         return (averaged,)
 
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Apply the adjoint of the averaging operator to the input tensor."""
+    def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply the adjoint of the averaging operator to the input tensor.
+
+        Paramters
+        ---------
+        y
+            Tensor to applay the adjoint operator to, i.e and tensor in the range of the operator.
+
+        Returns
+        -------
+            Tensor with the same shape as the input tensor, except for the `dim` dimension,
+            which will have a size equal to `domain_size`.
+        """
         if self.domain_size is None:
             if self._last_domain_size is None:
                 raise ValueError('Domain size is not set. Please set it explicitly or run forward first.')
@@ -69,8 +99,8 @@ class AveragingOp(LinearOperator):
             )
             self.domain_size = self._last_domain_size
 
-        adjoint = x.new_zeros(*x.shape[: self.dim], self.domain_size, *x.shape[self.dim + 1 :])
-        placeholder = (slice(None),) * (self.dim % x.ndim)
+        adjoint = y.new_zeros(*y.shape[: self.dim], self.domain_size, *y.shape[self.dim + 1 :])
+        placeholder = (slice(None),) * (self.dim % y.ndim)
         for i, group in enumerate(self.idx):
             if isinstance(group, slice):
                 n = len(range(*group.indices(self.domain_size)))
@@ -80,7 +110,7 @@ class AveragingOp(LinearOperator):
                 n = len(group)
 
             adjoint[(*placeholder, group)] += (
-                x[(*placeholder, i, None)].expand(*x.shape[: self.dim], n, *x.shape[self.dim + 1 :]) / n  # type: ignore[index]
+                y[(*placeholder, i, None)].expand(*y.shape[: self.dim], n, *y.shape[self.dim + 1 :]) / n  # type: ignore[index]
             )
 
         return (adjoint,)

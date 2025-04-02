@@ -111,8 +111,8 @@ def test_linearoperatormatrix_adjoint():
         def forward(self, x):
             return (torch.stack(matrix(*x), 0),)
 
-        def adjoint(self, x):
-            return (torch.stack(matrix.adjoint(*x), 0),)
+        def adjoint(self, y):
+            return (torch.stack(matrix.adjoint(*y), 0),)
 
     dotproduct_adjointness_test(Wrapper(), rng.complex64_tensor((3, 10)), rng.complex64_tensor((5, 3)))
 
@@ -217,8 +217,9 @@ def test_linearoperatormatrix_norm(seed):
         def forward(self, x):
             return (torch.stack(matrix(*x), 0),)
 
-        def adjoint(self, x):
-            return (torch.stack(matrix.adjoint(*x), 0),)
+        def adjoint(self, y):
+            """Apply adjoint of the operator."""
+            return (torch.stack(matrix.adjoint(*y), 0),)
 
     real = Wrapper().operator_norm(vector, dim=None)
 

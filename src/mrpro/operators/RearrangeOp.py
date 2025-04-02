@@ -38,7 +38,7 @@ class RearrangeOp(LinearOperator):
         self._forward_pattern = pattern
         self.additional_info = {} if additional_info is None else additional_info
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor]:
         """Rearrange input.
 
         The rule used to perform the rearranging is set at initialization.
@@ -51,6 +51,13 @@ class RearrangeOp(LinearOperator):
         Returns
         -------
             rearranged tensor
+        """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply RearrangeOp.
+
+        Use `operator.__call__`, i.e. call `operator()` instead.
         """
         y = rearrange(x, self._forward_pattern, **self.additional_info)
         return (y,)
@@ -67,5 +74,5 @@ class RearrangeOp(LinearOperator):
         -------
             rearranged tensor
         """
-        x = rearrange(y, self._adjoint_pattern, **self.additional_info)
-        return (x,)
+        adjoint_result = rearrange(y, self._adjoint_pattern, **self.additional_info)
+        return (adjoint_result,)

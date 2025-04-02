@@ -120,8 +120,8 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
             traj=kdata.traj,
         )
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Forward operator mapping the coil-images to the coil k-space data.
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply Non-uniform FFT to spatial domain data.
 
         Parameters
         ----------
@@ -131,6 +131,13 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
         Returns
         -------
             coil k-space data with shape: `(... coils k2 k1 k0)`
+        """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply FourierOp.
+
+        Use `operator.__call__`, i.e. call `operator()` instead.
         """
         # NUFFT Type 2 followed by FFT
         if self._non_uniform_fast_fourier_op:
@@ -140,12 +147,12 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
             (x,) = self._cart_sampling_op(self._fast_fourier_op(x)[0])
         return (x,)
 
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+    def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint operator mapping the coil k-space data to the coil images.
 
         Parameters
         ----------
-        x
+        y
             coil k-space data with shape: `(... coils k2 k1 k0)`
 
         Returns
@@ -154,11 +161,11 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
         """
         # FFT followed by NUFFT Type 1
         if self._fast_fourier_op and self._cart_sampling_op:
-            (x,) = self._fast_fourier_op.adjoint(self._cart_sampling_op.adjoint(x)[0])
+            (y,) = self._fast_fourier_op.adjoint(self._cart_sampling_op.adjoint(y)[0])
 
         if self._non_uniform_fast_fourier_op:
-            (x,) = self._non_uniform_fast_fourier_op.adjoint(x)
-        return (x,)
+            (y,) = self._non_uniform_fast_fourier_op.adjoint(y)
+        return (y,)
 
     @property
     def gram(self) -> LinearOperator:
@@ -246,15 +253,15 @@ class FourierGramOp(LinearOperator):
             (x,) = self.fast_fourier_gram(x)
         return (x,)
 
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+    def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the adjoint operator to the input tensor.
 
         Parameters
         ----------
-        x
+        y
             input tensor, shape: `(..., coils, k2, k1, k0)`
         """
-        return self.forward(x)
+        return self.forward(y)
 
     @property
     def H(self) -> Self:  # noqa: N802

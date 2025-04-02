@@ -40,34 +40,41 @@ class PCACompressionOp(LinearOperator):
         v = repeat(v, '... comp1 comp2 -> ... joint_dim comp1 comp2', joint_dim=1)
         self._compression_matrix = v[..., :n_components, :].clone()
 
-    def forward(self, data: torch.Tensor) -> tuple[torch.Tensor,]:
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the compression to the data.
 
         Parameters
         ----------
-        data
+        x
             data to be compressed of shape `(*other, joint_dim, compression_dim)`
 
         Returns
         -------
             compressed data of shape `(*other, joint_dim, n_components)`
         """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply PCACompressionOp.
+
+        Use `operator.__call__`, i.e. call `operator()` instead.
+        """
         try:
-            result = (self._compression_matrix @ data.unsqueeze(-1)).squeeze(-1)
+            result = (self._compression_matrix @ x.unsqueeze(-1)).squeeze(-1)
         except RuntimeError as e:
             raise RuntimeError(
                 'Shape mismatch in adjoint Compression: '
                 f'Matrix {tuple(self._compression_matrix.shape)} '
-                f'cannot be multiplied with Data {tuple(data.shape)}.'
+                f'cannot be multiplied with Data {tuple(x.shape)}.'
             ) from e
         return (result,)
 
-    def adjoint(self, data: torch.Tensor) -> tuple[torch.Tensor,]:
+    def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the adjoint compression to the data.
 
         Parameters
         ----------
-        data
+        y
             compressed data of shape `(*other, joint_dim, n_components)`
 
         Returns
@@ -75,11 +82,11 @@ class PCACompressionOp(LinearOperator):
             expanded data of shape `(*other, joint_dim, compression_dim)`
         """
         try:
-            result = (self._compression_matrix.mH @ data.unsqueeze(-1)).squeeze(-1)
+            result = (self._compression_matrix.mH @ y.unsqueeze(-1)).squeeze(-1)
         except RuntimeError as e:
             raise RuntimeError(
                 'Shape mismatch in adjoint Compression: '
                 f'Matrix^H {tuple(self._compression_matrix.mH.shape)} '
-                f'cannot be multiplied with Data {tuple(data.shape)}.'
+                f'cannot be multiplied with Data {tuple(y.shape)}.'
             ) from e
         return (result,)

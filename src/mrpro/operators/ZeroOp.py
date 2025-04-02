@@ -29,7 +29,7 @@ class ZeroOp(LinearOperator):
         self.keep_shape = keep_shape
         super().__init__()
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the operator to the input.
 
         Parameters
@@ -41,24 +41,28 @@ class ZeroOp(LinearOperator):
         -------
         zeros_like(x) or scalar 0
         """
-        if self.keep_shape:
-            return (torch.zeros_like(x),)
-        else:
-            return (torch.tensor(0),)
+        return super().__call__(x)
 
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply the adjoint of the operator to the input.
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply ZeroOp.
 
-        Parameters
-        ----------
-        x
-            Input tensor.
-
-        Returns
-        -------
-        zeros_like(x)
+        Use `operator.__call__`, i.e. call `operator()` instead.
         """
         if self.keep_shape:
             return (torch.zeros_like(x),)
         else:
             return (torch.tensor(0),)
+
+    def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply adjoint of ZeroOp to input tensor.
+
+        Parameters
+        ----------
+        y
+            input tensor
+
+        Returns
+        -------
+            tensor of zeros with the same size as the input tensor
+        """
+        return (torch.zeros_like(y),)

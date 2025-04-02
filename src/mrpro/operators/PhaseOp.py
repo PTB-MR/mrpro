@@ -10,15 +10,8 @@ class PhaseOp(EndomorphOperator):
 
     @endomorph
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
-        """Phase of tensors.
+        """Apply PhaseOp.
 
-        Parameters
-        ----------
-        x
-            input tensors
-
-        Returns
-        -------
-            tensors with phase of input tensors
+        Use `operator.__call__`, i.e. call `operator()` instead.
         """
         return tuple([torch.angle(xi) for xi in x])
