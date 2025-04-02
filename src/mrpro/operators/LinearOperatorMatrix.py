@@ -313,8 +313,8 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
                 torch.stack([_singlenorm(op, iv) for op, iv in zip(row, initial_value, strict=True)])
                 for row in self._operators
             ]
-        ).view(-1, 1)
-        norm = norms.square().sum(-2).sqrt().amax(-1).unsqueeze(-1)
+        )
+        norm = norms.square().sum(0).sqrt().amax(0)
         return norm
 
     def __or__(self, other: LinearOperator | LinearOperatorMatrix) -> Self:
