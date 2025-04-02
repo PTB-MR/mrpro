@@ -118,6 +118,25 @@ def test_callback() -> None:
     assert callback_was_called
 
 
+def test_callback_early_stop() -> None:
+    """Check that when the callback function returns False the optimizer is stopped."""
+    callback_check = 0
+
+    # callback function that returns False to stop the algorithm
+    def callback(solution):
+        nonlocal callback_check
+        callback_check += 1
+        return False
+
+    random_generator = RandomGenerator(seed=0)
+    f = L2NormSquared(target=torch.zeros((1, 10, 10)), divide_by_n=False)
+    g = L1NormViewAsReal(divide_by_n=False)
+    initial_values = (random_generator.complex64_tensor(size=(1, 10, 10)),)
+
+    pgd(f=f, g=g, initial_value=initial_values, max_iterations=100, callback=callback)
+    assert callback_check == 1
+
+
 def test_pgd_behavior_singular_vs_multiple_inputs() -> None:
     """Test if the proximal gradient descent algorithm returns the same solution
     in the case of min_x f(x) + g(x) with x single tensor and when f and g are

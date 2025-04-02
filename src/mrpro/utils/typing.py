@@ -3,16 +3,18 @@
 from collections.abc import Callable
 from typing import TYPE_CHECKING, TypeAlias
 
-from typing_extensions import Any, ParamSpec, Protocol, TypeVar, Unpack, overload
+from typing_extensions import Any, Protocol, TypeVar, runtime_checkable
 
 if TYPE_CHECKING:
+    from dataclasses import Field
+    from os import PathLike
     from types import EllipsisType
-    from typing import TypeAlias
+    from typing import ClassVar, TypeAlias
 
     import torch
     from numpy import ndarray
     from numpy._typing import _NestedSequence as NestedSequence
-    from typing_extensions import SupportsIndex
+    from typing_extensions import ParamSpec, SupportsIndex, Unpack, overload
 
     # This matches the torch.Tensor indexer typehint
     _TorchIndexerTypeInner: TypeAlias = None | bool | int | slice | EllipsisType | torch.Tensor
@@ -206,7 +208,7 @@ if TYPE_CHECKING:
         def __call__(self, /, *args: torch.Tensor, **kwargs) -> tuple[torch.Tensor, ...]: ...
 
         def __call__(self, /, *args: torch.Tensor, **kwargs) -> tuple[torch.Tensor, ...]:
-            """Apply the Operator."""
+            """Apply the Function."""
 
     def endomorph(f: F, /) -> _EndomorphCallable:
         """Decorate a function to make it an endomorph callable.
@@ -215,6 +217,24 @@ if TYPE_CHECKING:
         For >10 inputs, the return type will a tuple with >10 tensors.
         """
         return f
+
+    class ReadSeekable(Protocol):
+        def read(self, size: int | None = -1) -> bytes:
+            """Read up to size bytes. Returns fewer if EOF is reached."""
+            ...
+
+        def seek(self, offset: int, whence: int = 0) -> int:
+            """Change stream position and return the new absolute position."""
+            ...
+
+    FileOrPath: TypeAlias = ReadSeekable | str | PathLike
+
+    @runtime_checkable
+    class DataclassInstance(Protocol):
+        """An instance of a dataclass."""
+
+        __dataclass_fields__: ClassVar[dict[str, Field[Any]]]
+
 
 else:
     TorchIndexerType: TypeAlias = Any
@@ -225,6 +245,12 @@ else:
 
         ...
 
+    @runtime_checkable
+    class DataclassInstance(Protocol):
+        """An instance of a dataclass."""
+
+        __dataclass_fields__: Any
+
     NumpyIndexerType: TypeAlias = Any
     """Numpy indexer type."""
 
@@ -232,5 +258,7 @@ else:
         """Decorate a function to make it an endomorph callable."""
         return f
 
+    FileOrPath: TypeAlias = Any
 
-__all__ = ['NestedSequence', 'NumpyIndexerType', 'TorchIndexerType', 'endomorph']
+
+__all__ = ['DataclassInstance', 'FileOrPath', 'NestedSequence', 'NumpyIndexerType', 'TorchIndexerType', 'endomorph']

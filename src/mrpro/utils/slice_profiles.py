@@ -91,8 +91,11 @@ class SliceSmoothedRectangular(SliceProfileBase):
             Value of the profile / intensity at the given position
         """
         super().__init__()
-        self.fwhm_rect = torch.nn.Buffer(torch.as_tensor(fwhm_rect))
-        self.fwhm_gauss = torch.nn.Buffer(torch.as_tensor(fwhm_gauss))
+        self.fwhm_rect: torch.Tensor
+        self.fwhm_gauss: torch.Tensor
+
+        self.register_buffer('fwhm_rect', torch.as_tensor(fwhm_rect))
+        self.register_buffer('fwhm_gauss', torch.as_tensor(fwhm_gauss))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Evaluate the Gaussian slice profile at a position.

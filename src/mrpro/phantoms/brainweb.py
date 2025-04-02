@@ -35,6 +35,7 @@ VERSION = 1
 CACHE_DIR = platformdirs.user_cache_dir('mrpro')  #  ~/.cache/mrpro on Linux, %AppData%\Local\mrpro on Windows
 K = TypeVar('K')
 TClassNames = Literal['skl', 'gry', 'wht', 'csf', 'mrw', 'dura', 'fat', 'fat2', 'mus', 'm-s', 'ves']  # noqa: typos
+BRAINWEBSHAPE = (362, 434, 362)
 
 
 @dataclass
@@ -297,7 +298,7 @@ def download_brainweb(
                 downloaded_data[c] = future.result()
                 progressbar.update(1)
 
-        values = norm_([unpack(downloaded_data.pop(c), shape=(362, 434, 362), dtype=np.uint16) for c in ALL_CLASSES])
+        values = norm_([unpack(downloaded_data.pop(c), shape=BRAINWEBSHAPE, dtype=np.uint16) for c in ALL_CLASSES])
 
         with h5py.File(outfilename, 'w') as f:
             f.create_dataset(
@@ -465,7 +466,7 @@ class BrainwebVolumes(torch.utils.data.Dataset):
             elif el in classnames:
                 result[el] = data[..., classnames.index(el)] / 255
             elif el == 'mask':
-                mask = data.sum(-1) < 150
+                mask = (data < 20).all(-1)
                 mask = (
                     torch.nn.functional.conv3d(mask[None, None].float(), torch.ones(1, 1, 3, 3, 3), padding=1)[0, 0] < 1
                 )
@@ -626,9 +627,7 @@ class BrainwebSlices(torch.utils.data.Dataset):
         file_id = np.searchsorted(self._ns_slices, index, 'right') - 1
         slice_id = index - self._ns_slices[file_id] + self._skip_slices[0]
 
-        with h5py.File(
-            self._files[file_id],
-        ) as file:
+        with h5py.File(self._files[file_id]) as file:
             where = [slice(self._skip_slices[0], file['classes'].shape[i] - self._skip_slices[1]) for i in range(3)] + [
                 slice(None)
             ]

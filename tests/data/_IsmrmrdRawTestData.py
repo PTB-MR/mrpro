@@ -87,6 +87,7 @@ class IsmrmrdRawTestData:
         self.sampling_order = sampling_order
         self.phantom = phantom
         self.n_separate_calibration_lines = n_separate_calibration_lines
+        self.n_noise_samples = 4
 
         rng = RandomGenerator(0)
 
@@ -153,6 +154,7 @@ class IsmrmrdRawTestData:
         # Acquisition System Information
         sys = ismrmrd.xsd.acquisitionSystemInformationType()
         sys.receiverChannels = self.n_coils
+        sys.systemVendor = 'Siemens'
         header.acquisitionSystemInformation = sys
 
         # Sequence Information
@@ -172,41 +174,41 @@ class IsmrmrdRawTestData:
             encoding.trajectory = ismrmrd.xsd.trajectoryType('other')
 
         # Encoded and recon spaces
-
         encoding_fov = ismrmrd.xsd.fieldOfViewMm()
+        encoding_matrix = ismrmrd.xsd.matrixSizeType()
         if self.trajectory_type == 'radial':
             encoding_fov.y = self.oversampling * matrix_size
             encoding_fov.x = self.oversampling * matrix_size
             encoding_fov.z = 5
-
+            encoding_matrix.x = self.oversampling * matrix_size
+            encoding_matrix.y = self.oversampling * matrix_size
+            encoding_matrix.z = 1
         else:
             encoding_fov.x = self.oversampling * matrix_size
             encoding_fov.y = matrix_size
             encoding_fov.z = 5
+            encoding_matrix.x = self.oversampling * matrix_size
+            encoding_matrix.y = matrix_size
+            encoding_matrix.z = 1
+
+        encoding_space = ismrmrd.xsd.encodingSpaceType()
+        encoding_space.matrixSize = encoding_matrix
+        encoding_space.fieldOfView_mm = encoding_fov
+        encoding.encodedSpace = encoding_space
 
         recon_fov = ismrmrd.xsd.fieldOfViewMm()
         recon_fov.x = matrix_size
         recon_fov.y = matrix_size
         recon_fov.z = 5
 
-        encoding_matrix = ismrmrd.xsd.matrixSizeType()
-        encoding_matrix.x = n_freq_encoding
-        encoding_matrix.y = n_phase_encoding
-        encoding_matrix.z = 1
         recon_matrix = ismrmrd.xsd.matrixSizeType()
         recon_matrix.x = n_x
         recon_matrix.y = n_y
         recon_matrix.z = 1
 
-        encoding_space = ismrmrd.xsd.encodingSpaceType()
-        encoding_space.matrixSize = encoding_matrix
-        encoding_space.fieldOfView_mm = encoding_fov
         recon_space = ismrmrd.xsd.encodingSpaceType()
         recon_space.matrixSize = recon_matrix
         recon_space.fieldOfView_mm = recon_fov
-
-        # Set encoded and recon spaces
-        encoding.encodedSpace = encoding_space
         encoding.reconSpace = recon_space
 
         # Encoding limits
@@ -242,7 +244,7 @@ class IsmrmrdRawTestData:
         scan_counter = 0
 
         # Write out a few noise scans
-        for _ in range(32):
+        for _ in range(self.n_noise_samples):
             noise = self.noise_level * rng.randn_tensor((self.n_coils, n_freq_encoding), dtype=torch.complex64)
             # here's where we would make the noise correlated
             acq.scan_counter = scan_counter
