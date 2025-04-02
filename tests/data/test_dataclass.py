@@ -295,8 +295,8 @@ def check_broadcastable(actual_shape, expected_shape):
 )
 def test_dataclass_getitem(index, expected_shape: tuple[int, ...]) -> None:
     """Test the __getitem__ method of the dataclass."""
-    # The indexing itself is alreadytested in test_indexer.py
-    # Thus, this test only needs to check that the indexing if performed on the attributes.
+    # The indexing itself is already tested in test_indexer.py
+    # Thus, this test only needs to check that the indexing is performed on the attributes.
     indexed = B()[index]
     check_broadcastable(indexed.floattensor.shape, expected_shape)
     check_broadcastable(indexed.child.floattensor.shape, expected_shape)
