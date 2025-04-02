@@ -174,3 +174,67 @@ img_more_manual = mrpro.data.IData.from_tensor_and_kheader(img_tensor_coilcombin
 # If the assert statement did not raise an exception, the results are equal.
 torch.testing.assert_close(img.data, img_manual.data)
 torch.testing.assert_close(img.data, img_more_manual.data, atol=1e-4, rtol=1e-4)
+
+
+# %% [markdown]
+# Faster DCF
+# %%
+from mrpro.data import KTrajectory
+from mrpro.operators import FourierOp
+
+
+def estimate_dcf(trajectory: KTrajectory, fourier_op: FourierOp, max_iter: int = 0) -> torch.Tensor:
+    """Estimate the density compensation factors for a given trajectory.
+
+    Uses the Jackson or Pipe method to estimate the density of an arbitrary set of points.
+    If max_iter is set to 0, the Jackson method is used. Otherwise, the Pipe method is used.
+
+    Parameters
+    ----------
+    trajectory
+        Shap  `(*other, 2 or 3, k2, k1, k0)`
+    fourier_op
+        The Fourier operator
+    max_iter
+        The number of iterations to use for the Pipe method. If set to 0, the Jackson method is used.
+
+    Returns
+    -------
+    density estimate
+
+    References
+    ----------
+      .. [1] Jackson, J.I., Meyer, C.H., Nishimura, D.G. and Macovski, A. (1991),
+        Selection of a convolution function for Fourier inversion using gridding
+        (computerized tomography application). IEEE Transactions on Medical
+        Imaging, 10(3): 473-478. https://doi.org/10.1109/42.97598
+      .. [2] Pipe, J.G. and Menon, P. (1999), Sampling density compensation in
+        MRI: Rationale and an iterative numerical solution. Magn. Reson. Med.,
+        41: 179-186. https://doi.org/10.1002/(SICI)1522-2594(199901)41:1<179::AID-MRM25>3.0.CO;2-V
+    """
+    ones = torch.ones(trajectory.broadcasted_shape, dtype=torch.complex64).unsqueeze(-4)
+    if fourier_op._non_uniform_fast_fourier_op is None:
+        # cartesian
+        return ones
+    op = fourier_op._non_uniform_fast_fourier_op @ fourier_op._non_uniform_fast_fourier_op.H
+    weight = op(ones)[0].reciprocal().nan_to_num()
+    for _ in range(max_iter):
+        weight *= op(weight)[0].reciprocal().nan_to_num()
+    return weight.abs().squeeze(-4)
+
+
+# %%
+fourier_operator = mrpro.operators.FourierOp.from_kdata(kdata)
+dcf_operator2 = mrpro.data.DcfData(estimate_dcf(kdata.traj, fourier_operator)).as_operator()
+adjoint1 = (dcf_operator @ fourier_operator @ csm_operator).H
+adjoint2 = (dcf_operator2 @ fourier_operator @ csm_operator).H
+(img1,) = adjoint1(kdata.data)
+(img2,) = adjoint2(kdata.data)
+
+plt.matshow(img1.abs()[0, 0, 0], cmap='gray')
+plt.title('DCFs from Voronoi')
+plt.colorbar()
+plt.matshow(img2.abs()[0, 0, 0], cmap='gray')
+plt.title('DCFs from estimate_dcf')
+plt.colorbar()
+# %%
