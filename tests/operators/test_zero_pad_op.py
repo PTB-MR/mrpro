@@ -75,3 +75,24 @@ def test_zero_pad_op_forward_mode_autodiff(
 ) -> None:
     """Test forward-mode autodiff of zero padding operator."""
     forward_mode_autodiff_of_linear_operator_test(*create_zero_pad_op_and_domain_range(u_shape, v_shape))
+
+
+@pytest.mark.cuda
+def test_zero_pad_op_cuda() -> None:
+    """Test ZeroPadOp works on CUDA devices."""
+    generator = RandomGenerator(seed=0)
+    original_shape = (101, 201, 50)
+    padded_shape = (13, 221, 64)
+    padding_dim = (-3, -2, -1)
+    x = generator.complex64_tensor(original_shape)
+
+    # Create on CPU, run on CPU
+    zero_padding_op = ZeroPadOp(dim=padding_dim, original_shape=original_shape, padded_shape=padded_shape)
+    (x_padded,) = zero_padding_op(x)
+    assert x_padded.is_cpu
+
+    # Create on CPU, transfer to GPU, run on GPU
+    zero_padding_op = ZeroPadOp(dim=padding_dim, original_shape=original_shape, padded_shape=padded_shape)
+    zero_padding_op.cuda()
+    (x_padded,) = zero_padding_op(x.cuda())
+    assert x_padded.is_cuda

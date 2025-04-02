@@ -207,3 +207,27 @@ def test_wavelet_op_forward_mode_autodiff(
     forward_mode_autodiff_of_linear_operator_test(
         *create_wavelet_op_and_domain_range(img_shape, domain_shape, dim, wavelet_name)
     )
+
+
+@pytest.mark.cuda
+def test_wavelet_op_cuda() -> None:
+    """Test Wavelet operator works on CUDA devices."""
+
+    img_shape = (6, 10, 20, 30)
+    domain_shape = (20, 30, 6)
+    dim = (-2, -1, -4)
+    random_generator = RandomGenerator(seed=0)
+    img_tensor = random_generator.complex64_tensor(size=img_shape)
+
+    # Create on CPU, run on CPU
+    wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim, wavelet_name='db4', level=None)
+    operator = wavelet_op.H @ wavelet_op
+    (coeff,) = operator(img_tensor)
+    assert coeff.is_cpu
+
+    # Transfer to GPU, run on GPU
+    wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim, wavelet_name='db4', level=None)
+    operator = wavelet_op.H @ wavelet_op
+    operator.cuda()
+    (coeff,) = operator(img_tensor.cuda())
+    assert coeff.is_cuda
