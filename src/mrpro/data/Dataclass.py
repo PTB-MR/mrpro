@@ -11,6 +11,7 @@ from typing_extensions import Any, Protocol, Self, TypeVar, dataclass_transform,
 
 from mrpro.utils.indexing import HasIndex, Indexer
 from mrpro.utils.reduce_repeat import reduce_repeat
+from mrpro.utils.summarize import summarize_object
 from mrpro.utils.typing import TorchIndexerType
 
 
@@ -594,17 +595,31 @@ class Dataclass:
 
     def __repr__(self) -> str:
         """Representation method for Dataclass."""
+        header = [type(self).__name__]
+
         try:
-            device = str(self.device)
+            if device := self.device:
+                header.append(f'on device "{device}"')
         except RuntimeError:
-            device = 'mixed'
-        name = type(self).__name__
-        output = f'{name} with (broadcasted) shape {list(self.shape)!s} on device "{device}".\n'
-        output += 'Fields:\n'
+            header.append('on mixed devices')
+
+        try:
+            if shape := self.shape:
+                header.append(f'with (broadcasted) shape {list(shape)!s}')
+        except RuntimeError:
+            header.append('with inconsistent shape')
+
+        output = ' '.join(header) + '.\n'
+        output += '  Fields:\n'
         output += '\n'.join(
-            f'   {field.name} <{type(getattr(self, field.name)).__name__}>' for field in dataclasses.fields(self)
+            f'   {field.name}: {summarize_object(getattr(self, field.name))}' for field in dataclasses.fields(self)
         )
+
         return output
+
+    def __str__(self) -> str:
+        """Return short string representation."""
+        return f'{type(self).__name__}(...)'
 
     # region Indexing
     def __getitem__(self, index: TorchIndexerType | Indexer) -> Self:
