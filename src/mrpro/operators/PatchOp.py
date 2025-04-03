@@ -8,7 +8,7 @@ from mrpro.operators.LinearOperator import LinearOperator
 from mrpro.utils.sliding_window import sliding_window
 
 
-class PatchOp(LinearOperator):
+class PatchOp(LinearOperator, adjoint_as_backward=True):
     """Extract N-dimensional patches using a sliding window view.
 
     The adjoint assembles patches to an image.
