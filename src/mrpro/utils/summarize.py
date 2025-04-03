@@ -35,7 +35,7 @@ def summarize_object(obj: object) -> str:
     return str(obj)
 
 
-def summarize_values(value: torch.Tensor | Sequence[float], summarization_threshold: int = 4) -> str:
+def summarize_values(value: torch.Tensor | Sequence[float], summarization_threshold: int = 6) -> str:
     """Summarize the values of a tensor or sequence to a string.
 
     Returns a string representation of the object and its values.
@@ -55,37 +55,45 @@ def summarize_values(value: torch.Tensor | Sequence[float], summarization_thresh
     if isinstance(value, torch.Tensor):
         if value.shape:
             string.append(f'Tensor{list(value.shape)!s}:')
-        else:
+        elif value.numel():
             string.append('Tensor:')
+        else:
+            return 'Tensor'
+    elif not len(value):
+        return f'{type(value).__name__}'
     else:
         string.append(f'{type(value).__name__}[{len(value)}]:')
     value = torch.as_tensor(value, device='cpu')
     constant = False
-    if value.is_complex():
+    if value.numel() == 0:
+        pass
+    elif value.is_complex():
         # workaround for missing unique of complex values
         unique = torch.view_as_complex(torch.unique(torch.view_as_real(value.ravel()), dim=0))
         if len(unique) == 1:
             string.append(f'constant {unique.item():.3g}')
             constant = True
-        elif value.numel() >= summarization_threshold:
+        elif value.numel() > summarization_threshold:
             magnitude = value.abs()
             string.append(
                 f'|x| ∈ [{magnitude.amin().item():.3g}, {magnitude.amax().item():.3g}], μ={value.mean().item():.3g},'
             )
     else:  # real valued
-        min_value, max_value = value.amin(), value.amax()
+        min_value, max_value = value.min(), value.max()
         if torch.isclose(min_value, max_value):
             if min_value.dtype == torch.bool:
                 string.append(f'constant {min_value.item()}')
             else:
                 string.append(f'constant {min_value.item():.3g}')
             constant = True
-        elif value.numel() >= summarization_threshold:
+        elif value.numel() > summarization_threshold:
             mean = (value + 0.0).mean()  # +0. to force float for dtype.int64
             string.append(f'x ∈ [{min_value.item():.3g}, {max_value.item():.3g}], μ={mean.item():.3g},')
     if not constant:  # no need to add values for constant tensor
         edgeitems = 1 if summarization_threshold < 4 else 2
         with torch._tensor_str.printoptions(threshold=summarization_threshold, edgeitems=edgeitems):
-            values = ''.join(torch._tensor_str._tensor_str(torch.as_tensor(value, device='cpu'), 0).splitlines())
+            values = ''.join(
+                torch._tensor_str._tensor_str(torch.as_tensor(value.ravel(), device='cpu'), 0).splitlines()
+            )
             string.append(values)
     return ' '.join(string)

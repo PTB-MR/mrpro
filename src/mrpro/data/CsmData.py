@@ -6,6 +6,8 @@ import torch
 from typing_extensions import Self
 
 from mrpro.data.IData import IData
+from mrpro.data.KData import KData
+from mrpro.data.KNoise import KNoise
 from mrpro.data.QData import QData
 from mrpro.data.QHeader import QHeader
 from mrpro.data.SpatialDimension import SpatialDimension

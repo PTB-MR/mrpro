@@ -275,14 +275,13 @@ def test_dataclass_repr() -> None:
     )
     actual = repr(data)
     expected = """B on device "cpu" with (broadcasted) shape [10, 20].
-  Fields:
-   child: A(...)
-   module: SharedModule(...)
-   floattensor: Tensor[10, 1]: x ∈ [0, 9], μ=4.5, [[0], [1], ..., [8], [9]]
-   complextensor: Tensor[1, 1]: constant 0+2j
-   inttensor: Tensor[1]: constant -1e+07
-   booltensor: Tensor[1, 1]: constant False
-   doubletensor: Tensor[20]: x ∈ [-1, 1], μ=0, [-1.0000, -0.8947,  ...,  0.8947,  1.0000]"""
+  child: A(...)
+  module: SharedModule(...)
+  floattensor: Tensor[10, 1]: x ∈ [0, 9], μ=4.5, [0, 1,  ..., 8, 9]
+  complextensor: Tensor[1, 1]: constant 0+2j
+  inttensor: Tensor[1]: constant -1e+07
+  booltensor: Tensor[1, 1]: constant False
+  doubletensor: Tensor[20]: x ∈ [-1, 1], μ=0, [-1.0000, -0.8947,  ...,  0.8947,  1.0000]"""
     assert actual == expected
 
 
