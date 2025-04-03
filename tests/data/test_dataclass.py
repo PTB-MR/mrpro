@@ -266,22 +266,22 @@ def test_dataclass_no_new_attributes() -> None:
 
 def test_dataclass_repr() -> None:
     """Test the repr method of the dataclass."""
-    data = B()
+    data = B(floattensor=torch.arange(10)[:, None])
     actual = repr(data)
-    expected = """B with (broadcasted) shape [10, 20] on device "cpu".
-Fields:
-   child <A>
-   module <SharedModule>
-   floattensor <Tensor>
-   complextensor <Tensor>
-   inttensor <Tensor>
-   booltensor <Tensor>
-   doubletensor <Tensor>"""
+    expected = """B on device "cpu" with (broadcasted) shape [10, 20].
+  Fields:
+   child: A(...)
+   module: SharedModule(...)
+   floattensor: Tensor[10, 1]: x∈[0, 9], [[0], [1], ..., [8], [9]]
+   complextensor: Tensor[1, 1]:
+   inttensor: Tensor[10, 20]: constant 1
+   booltensor: Tensor[10, 1]: constant True
+   doubletensor: Tensor[1, 20]: constant 1.0"""
     assert actual == expected
 
 
 def check_broadcastable(actual_shape, expected_shape):
-    """Raise a Runtime Error is actual is not boradcastable to expected."""
+    """Raise a Runtime Error if actual is not boradcastable to expected."""
     torch.empty(actual_shape).broadcast_to(expected_shape)
 
 
@@ -297,8 +297,8 @@ def check_broadcastable(actual_shape, expected_shape):
 )
 def test_dataclass_getitem(index, expected_shape: tuple[int, ...]) -> None:
     """Test the __getitem__ method of the dataclass."""
-    # The indexing itself is alreadytested in test_indexer.py
-    # Thus, this test only needs to check that the indexing if performed on the attributes.
+    # The indexing itself is already tested in test_indexer.py
+    # Thus, this test only needs to check that the indexing is performed on the attributes.
     indexed = B()[index]
     check_broadcastable(indexed.floattensor.shape, expected_shape)
     check_broadcastable(indexed.child.floattensor.shape, expected_shape)
