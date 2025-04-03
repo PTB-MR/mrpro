@@ -1637,7 +1637,7 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         Parameters
         ----------
         tol
-            tolerance to apply to quanternions
+            tolerance to apply to quaternions
         dim
             dimensions to try to reduce to singletons. `None` means all.
         """
