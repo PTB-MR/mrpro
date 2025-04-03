@@ -604,6 +604,7 @@ class Dataclass:
 
     # endregion Properties
 
+    # region Representation
     def __repr__(self) -> str:
         """Representation method for Dataclass."""
         header = [type(self).__name__]
@@ -631,6 +632,8 @@ class Dataclass:
     def __str__(self) -> str:
         """Return short string representation."""
         return f'{type(self).__name__}(...)'
+
+    # endregion Representation
 
     # region Indexing
     def __getitem__(self, index: TorchIndexerType | Indexer) -> Self:

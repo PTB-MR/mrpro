@@ -15,7 +15,7 @@ from mrpro.operators.LinearOperator import LinearOperator
 from mrpro.operators.NonUniformFastFourierOp import NonUniformFastFourierOp
 
 
-class FourierOp(LinearOperator, adjoint_as_backward=True):
+class FourierOp(LinearOperator):
     """Fourier Operator class.
 
     This is the recommended operator for all Fourier transformations.
