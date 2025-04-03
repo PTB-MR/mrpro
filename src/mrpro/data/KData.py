@@ -353,8 +353,8 @@ class KData(
             [
                 super().__repr__().splitlines()[0],
                 f'  data: {summarize_object(self.data)}',
-                f'  traj: {"\n   ".join(repr(self.traj).splitlines())}',
-                f'  header:  {"\n   ".join(repr(self.header).splitlines())}',
+                f'  traj: {r"\n   ".join(repr(self.traj).splitlines())}',
+                f'  header:  {r"\n   ".join(repr(self.header).splitlines())}',
             ]
         )
         return representation
