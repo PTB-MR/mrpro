@@ -28,6 +28,8 @@ from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalcula
 from mrpro.data.traj_calculators.KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
 from mrpro.utils.typing import FileOrPath
 
+from ..utils.summarize import summarize_object
+
 RotationOrTensor = TypeVar('RotationOrTensor', bound=torch.Tensor | Rotation)
 
 KDIM_SORT_LABELS = (
@@ -364,6 +366,18 @@ class KData(Dataclass, CheckDataMixin):
         )
         traj = KTrajectory(kz, ky, kx, self.traj.grid_detection_tolerance, self.traj.repeat_detection_tolerance)
         return type(self)(header=header, data=data, traj=traj)
+
+    def __repr__(self):
+        """Representation method for KData class."""
+        representation = '\n'.join(
+            [
+                super().__repr__().splitlines()[0],
+                f'  data: {summarize_object(self.data)}',
+                f'  traj: {"\n   ".join(repr(self.traj).splitlines())}',
+                f'  header:  {"\n   ".join(repr(self.header).splitlines())}',
+            ]
+        )
+        return representation
 
     def compress_coils(
         self: Self,

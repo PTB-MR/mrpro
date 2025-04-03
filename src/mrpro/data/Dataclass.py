@@ -611,9 +611,10 @@ class Dataclass:
             header.append('with inconsistent shape')
 
         output = ' '.join(header) + '.\n'
-        output += '  Fields:\n'
         output += '\n'.join(
-            f'   {field.name}: {summarize_object(getattr(self, field.name))}' for field in dataclasses.fields(self)
+            f'  {field.name}: {summarize_object(getattr(self, field.name))}'
+            for field in dataclasses.fields(self)
+            if not field.name.startswith('_')
         )
 
         return output
