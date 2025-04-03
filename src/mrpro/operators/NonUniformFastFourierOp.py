@@ -15,7 +15,7 @@ from mrpro.operators.FastFourierOp import FastFourierOp
 from mrpro.operators.LinearOperator import LinearOperator
 
 
-class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
+class NonUniformFastFourierOp(LinearOperator):
     """Non-Uniform Fast Fourier Operator class."""
 
     def __init__(
