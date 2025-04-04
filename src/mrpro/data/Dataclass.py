@@ -18,7 +18,7 @@ from mrpro.utils.typing import TorchIndexerType
 class HasReduceRepeats(Protocol):
     """Objects that have a _reduce_repeats method."""
 
-    def _reduce_repeats_(self, tol: float = 1e-6, dim: Sequence[int] | None = None) -> None: ...
+    def _reduce_repeats_(self, tol: float = 1e-6, dim: Sequence[int] | None = None, recurse: bool = True) -> Self: ...
 
 
 class InconsistentDeviceError(ValueError):
