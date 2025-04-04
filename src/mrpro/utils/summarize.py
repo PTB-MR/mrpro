@@ -1,8 +1,17 @@
 """Summarize the values of a tensor to a string."""
 
 from collections.abc import Sequence
+from typing import Protocol, runtime_checkable
 
 import torch
+
+
+@runtime_checkable
+class HasShortStr(Protocol):
+    """Object implemtining shortstr."""
+
+    def __shortstr__(self) -> str:
+        """Return a short string representation."""
 
 
 def summarize_object(obj: object) -> str:
@@ -14,6 +23,7 @@ def summarize_object(obj: object) -> str:
         The object to summarize.
         This method has special cases:
             For sequences of numeric values and tensors, a summary of shape and value is returned.
+            If __shortstr__ is implemented, it is used.
             For torch.nn.Modules, only the name is used.
             For other objects, obj.__str__() will be used.
 
@@ -30,6 +40,8 @@ def summarize_object(obj: object) -> str:
         except Exception:  # noqa: BLE001
             return str(obj)
         return summarize_values(obj)
+    if isinstance(obj, HasShortStr):
+        return obj.__shortstr__()
     if isinstance(obj, torch.nn.Module):
         return f'{type(obj).__name__}(...)'
     return str(obj)
@@ -54,7 +66,7 @@ def summarize_values(value: torch.Tensor | Sequence[float], summarization_thresh
     string = []
     if isinstance(value, torch.Tensor):
         if value.shape:
-            string.append(f'Tensor{list(value.shape)!s}:')
+            string.append(f'Tensor<{", ".join(map(str, value.shape))}>,')
         elif value.numel():
             string.append('Tensor:')
         else:
@@ -62,7 +74,7 @@ def summarize_values(value: torch.Tensor | Sequence[float], summarization_thresh
     elif not len(value):
         return f'{type(value).__name__}'
     else:
-        string.append(f'{type(value).__name__}[{len(value)}]:')
+        string.append(f'{type(value).__name__}<{len(value)}>,')
     value = torch.as_tensor(value, device='cpu')
     constant = False
     if value.numel() == 0:
