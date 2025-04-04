@@ -1,12 +1,18 @@
 """Base class for all data classes."""
 
 import dataclasses
+import enum
+import importlib
+import inspect
 from collections.abc import Callable, Iterator, Sequence
 from copy import copy as shallowcopy
 from copy import deepcopy
-from typing import ClassVar, TypeAlias, cast
+from pathlib import Path
+from typing import Any, ClassVar, Type, TypeAlias, TypeVar, cast
 
 import einops
+import h5py
+import numpy as np
 import torch
 from typing_extensions import Any, Protocol, Self, TypeVar, dataclass_transform, overload, runtime_checkable
 
@@ -15,6 +21,15 @@ from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.reshape import broadcasted_rearrange
 from mrpro.utils.summarize import summarize_object
 from mrpro.utils.typing import TorchIndexerType
+
+
+_MRP_ATTR_PY_TYPE = '_py_type'
+_MRP_ATTR_PY_MODULE = '_py_module'
+_MRP_ATTR_CLASS_NAME = '_class_name'
+_MRP_ATTR_ENUM_VALUE_TYPE = '_enum_value_type'
+_MRP_VERSION = 1
+
+T = TypeVar('T', bound='H5SerializableDataClass')
 
 
 @runtime_checkable
@@ -659,6 +674,186 @@ class Dataclass:
         return new
 
     # endregion Indexing
+
+    # region mrp file
+    def _save_to_group(self, group: h5py.Group):
+        group.attrs[_MRP_ATTR_PY_MODULE] = self.__class__.__module__
+        group.attrs[_MRP_ATTR_CLASS_NAME] = self.__class__.__name__
+
+        for field in dataclasses.fields(self):
+            value = getattr(self, field.name)
+            field_name = field.name
+
+            if value is None:
+                continue
+
+            elif isinstance(value, Dataclass):
+                subgroup = group.create_group(field_name)
+                subgroup.attrs[_MRP_ATTR_PY_TYPE] = 'dataclass'
+                value._save_to_group(subgroup)
+
+            elif isinstance(value, torch.Tensor):
+                ds = group.create_dataset(field_name, data=value.cpu().numpy())
+                ds.attrs[_MRP_ATTR_PY_TYPE] = 'torch.Tensor'
+
+            elif isinstance(value, (list | tuple)):
+                try:
+                    # Attempt conversion for uniform scalar lists/tuples
+                    np_array = np.array(value)
+                    ds = group.create_dataset(field_name, data=np_array)
+                    ds.attrs[_MRP_ATTR_PY_TYPE] = type(value).__name__
+                except ValueError as e:
+                    raise TypeError(
+                        f"Field '{field_name}': Could not convert list/tuple "
+                        f'to NumPy array. Ensure contents are uniform scalars. '
+                        f'Error: {e}'
+                    ) from e
+
+            elif isinstance(value, enum.Enum):
+                enum_value = value.value
+                ds = group.create_dataset(field_name, data=enum_value)
+                ds.attrs[_MRP_ATTR_PY_TYPE] = 'enum'
+                ds.attrs[_MRP_ATTR_PY_MODULE] = value.__class__.__module__
+                ds.attrs[_MRP_ATTR_CLASS_NAME] = value.__class__.__name__
+                # Store enum value type if not a standard primitive
+                if not isinstance(enum_value, (int, float, str, bytes)):
+                    ds.attrs[_MRP_ATTR_ENUM_VALUE_TYPE] = type(enum_value).__name__
+
+            elif isinstance(value, (str, int, float, bool)):
+                try:
+                    ds = group.create_dataset(field_name, data=value)
+                    ds.attrs[_MRP_ATTR_PY_TYPE] = type(value).__name__
+                except TypeError as e:
+                    raise TypeError(
+                        f"Field '{field_name}': Unsupported scalar type {type(value).__name__}. Error: {e}"
+                    ) from e
+            else:
+                raise TypeError(
+                    f"Field '{field_name}': Unsupported type {type(value).__name__} for HDF5 serialization."
+                )
+
+    def save_as_mrp(self, filepath: str | Path):
+        filepath = Path(filepath)
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+        with h5py.File(filepath, 'w') as f:
+            f.attrs[_MRP_ATTR_PY_MODULE] = self.__class__.__module__
+            f.attrs[_MRP_ATTR_CLASS_NAME] = self.__class__.__name__
+            self._save_to_group(f)
+
+    @classmethod
+    def _load_from_group(cls, group: h5py.Group) -> Any:
+        init_args: dict[str, Any] = {}
+
+        module_name = group.attrs[_MRP_ATTR_PY_MODULE]
+        class_name = group.attrs[_MRP_ATTR_CLASS_NAME]
+        try:
+            module = importlib.import_module(module_name)
+            target_cls = getattr(module, class_name)
+        except (ImportError, AttributeError) as e:
+            raise ImportError(f"Could not import class '{class_name}' from module '{module_name}'. Error: {e}") from e
+
+        if not issubclass(target_cls, H5SerializableDataClass):
+            raise TypeError(f'Loaded class {target_cls} does not inherit from H5SerializableDataClass')
+
+        for field_name, h5_item in group.items():
+            if isinstance(h5_item, h5py.Group):
+                if h5_item.attrs.get(_MRP_ATTR_PY_TYPE) == 'dataclass':
+                    # Recursively load using the base class static method
+                    init_args[field_name] = Dataclass._load_from_group(h5_item)
+                else:
+                    print(f"Warning: Skipping unexpected group '{field_name}' during load.")
+
+            elif isinstance(h5_item, h5py.Dataset):
+                py_type_str = h5_item.attrs.get(_MRP_ATTR_PY_TYPE)
+                if py_type_str is None:
+                    raise ValueError(f"Dataset '{field_name}' missing '{_MRP_ATTR_PY_TYPE}' attribute.")
+
+                # Robust loading for scalar/array data
+                try:
+                    data = h5_item[()]  # Try scalar load
+                except (AttributeError, TypeError, ValueError):
+                    data = h5_item[:]  # Fallback to array load
+
+                # Reconstruct Python object based on stored type string
+                if py_type_str == 'torch.Tensor':
+                    init_args[field_name] = torch.from_numpy(data)
+                elif py_type_str == 'list':
+                    init_args[field_name] = data.tolist()
+                elif py_type_str == 'tuple':
+                    init_args[field_name] = tuple(data.tolist())
+                elif py_type_str == 'enum':
+                    enum_module_name = h5_item.attrs[_MRP_ATTR_PY_MODULE]
+                    enum_class_name = h5_item.attrs[_MRP_ATTR_CLASS_NAME]
+                    try:
+                        enum_module = importlib.import_module(enum_module_name)
+                        enum_cls = getattr(enum_module, enum_class_name)
+                        # Add handling for _MRP_ATTR_ENUM_VALUE_TYPE if needed
+                        init_args[field_name] = enum_cls(data)
+                    except Exception as e:
+                        raise ImportError(
+                            f"Could not load enum '{enum_class_name}' from '{enum_module_name}'. Error: {e}"
+                        ) from e
+                elif py_type_str == 'str':
+                    init_args[field_name] = str(data)  # Ensure Python str
+                elif py_type_str == 'bool':
+                    init_args[field_name] = bool(data)
+                elif py_type_str == 'int':
+                    init_args[field_name] = int(data)
+                elif py_type_str == 'float':
+                    init_args[field_name] = float(data)
+                else:
+                    # Fallback for unknown but loadable types
+                    print(f"Warning: Unknown type '{py_type_str}' for dataset '{field_name}'. Loading raw data.")
+                    init_args[field_name] = data
+
+        # Check for missing fields vs dataclass defaults
+        expected_fields = {f.name for f in dataclasses.fields(target_cls)}
+        present_fields = set(init_args.keys())
+        missing_fields = expected_fields - present_fields
+
+        sig = inspect.signature(target_cls.__init__)
+        for field_name in missing_fields:
+            param = sig.parameters.get(field_name)
+            # Check __init__ signature first
+            if param is None or param.default is inspect.Parameter.empty:
+                # Then check dataclass field definition
+                dc_field = next((f for f in dataclasses.fields(target_cls) if f.name == field_name), None)
+                if dc_field is None or (
+                    dc_field.default is dataclasses.MISSING and dc_field.default_factory is dataclasses.MISSING
+                ):
+                    raise ValueError(
+                        f"Field '{field_name}' missing in HDF5 and has no "
+                        f"default value in class '{target_cls.__name__}'."
+                    )
+            # If a default exists in either place, the constructor handles it
+
+        return target_cls(**init_args)
+
+    @classmethod
+    def from_mrp(cls: Type[T], filepath: str | Path) -> T:
+        filepath = Path(filepath)
+        if not filepath.exists():
+            raise FileNotFoundError(f'HDF5 file not found: {filepath}')
+
+        with h5py.File(filepath, 'r') as f:
+            # Optional: Verify root class matches the loading class
+            root_module = f.attrs.get(_MRP_ATTR_PY_MODULE)
+            root_class = f.attrs.get(_MRP_ATTR_CLASS_NAME)
+            if root_module != cls.__module__ or root_class != cls.__name__:
+                print(
+                    f"Warning: Loading file saved as '{root_class}' from module "
+                    f"'{root_module}' using class '{cls.__name__}' from module "
+                    f"'{cls.__module__}'. Ensure compatibility."
+                )
+
+            # Start recursive loading from the root group
+            instance = cls._load_from_group(f)
+
+            # Final check: Ensure the loaded instance is of the requested type
+            if not isinstance(instance, cls):
+                raise TypeError(f'Loaded object type {type(instance)} is not compatible with requested type {cls}')
+
+            return instance
 
     def rearrange(self, pattern: str, **axes_lengths: int) -> Self:
         """Rearrange the data according to the specified pattern.
