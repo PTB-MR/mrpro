@@ -283,11 +283,15 @@ class KHeader(Dataclass):
 
         # Sequence information
         seq = ismrmrdschema.sequenceParametersType()
-        seq.TR = s_to_ms(self.tr)
-        seq.TE = s_to_ms(self.te)
-        seq.TI = s_to_ms(self.ti)
-        seq.flipAngle_deg = rad_to_deg(self.fa)
-        seq.echo_spacing = s_to_ms(self.echo_spacing)
+        seq.TR = s_to_ms(self.tr).tolist() if isinstance(self.tr, torch.Tensor) else s_to_ms(self.tr)
+        seq.TE = s_to_ms(self.te).tolist() if isinstance(self.te, torch.Tensor) else s_to_ms(self.te)
+        seq.TI = s_to_ms(self.ti).tolist() if isinstance(self.ti, torch.Tensor) else s_to_ms(self.ti)
+        seq.flipAngle_deg = rad_to_deg(self.fa).tolist() if isinstance(self.fa, torch.Tensor) else rad_to_deg(self.fa)
+        seq.echo_spacing = (
+            s_to_ms(self.echo_spacing).tolist()
+            if isinstance(self.echo_spacing, torch.Tensor)
+            else s_to_ms(self.echo_spacing)
+        )
         seq.sequence_type = self.sequence_type
         header.sequenceParameters = seq
 
