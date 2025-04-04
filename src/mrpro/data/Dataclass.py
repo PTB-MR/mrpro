@@ -36,7 +36,7 @@ T = TypeVar('T', bound='H5SerializableDataClass')
 class HasReduceRepeats(Protocol):
     """Objects that have a _reduce_repeats method."""
 
-    def _reduce_repeats_(self, tol: float = 1e-6, dim: Sequence[int] | None = None) -> None: ...
+    def _reduce_repeats_(self, tol: float = 1e-6, dim: Sequence[int] | None = None, recurse: bool = True) -> Self: ...
 
 
 @runtime_checkable
@@ -637,11 +637,12 @@ class Dataclass:
 
     # region Representation
     def __repr__(self) -> str:
-        """Representation method for Dataclass."""
+        """Get string representation of Dataclass."""
         header = [type(self).__name__]
 
         try:
-            if device := self.device:
+            device = self.device
+            if device and device.type != 'cpu':
                 header.append(f'on device "{device}"')
         except RuntimeError:
             header.append('on mixed devices')
@@ -653,17 +654,30 @@ class Dataclass:
             header.append('with inconsistent shape')
 
         output = ' '.join(header) + '.\n'
-        output += '\n'.join(
-            f'  {field.name}: {summarize_object(getattr(self, field.name))}'
-            for field in dataclasses.fields(self)
-            if not field.name.startswith('_')
-        )
 
+        output += '\n'.join(
+            f'  {field.name}: {summarize_object(value)}'
+            for field in dataclasses.fields(self)
+            if not (field.name.startswith('_') or (value := getattr(self, field.name, None)) is None)
+        )
         return output
 
+    # We return the same for __repr__ and __str__.
+    # This break the "_str_ if for users, _repr_ for developers rule" of python.
+    # But it makes interactive work on repl or notebooks easier, as `obj` can be used instead
+    # of `print(obj)`. It would be infeasable for most dataclasses to implement a proper  __repr__
+    # that uniquely describes the data and could be used to recreate the object anyways.
+
     def __str__(self) -> str:
-        """Return short string representation."""
-        return f'{type(self).__name__}(...)'
+        """Return the same as __repr__."""
+        return repr(self)
+
+    def __shortstr__(self) -> str:
+        """Return a short string representation."""
+        output = type(self).__name__
+        if self.shape:
+            output = output + f'<{", ".join(map(str, self.shape))}>'
+        return output
 
     # endregion Representation
 
