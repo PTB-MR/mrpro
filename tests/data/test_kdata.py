@@ -1,9 +1,14 @@
 """Tests for the KData class."""
 
+import re
+from collections.abc import Sequence
+from types import EllipsisType
+from typing import Literal
+
 import pytest
 import torch
 from einops import repeat
-from mrpro.data import KData, KTrajectory, SpatialDimension
+from mrpro.data import KData, KHeader, KTrajectory, SpatialDimension
 from mrpro.data.acq_filters import has_n_coils, is_coil_calibration_acquisition, is_image_acquisition
 from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
@@ -19,14 +24,14 @@ def test_KData_from_file(ismrmrd_cart) -> None:
     assert kdata is not None
 
 
-def test_KData_random_cart_undersampling(ismrmrd_cart_random_us):
+def test_KData_random_cart_undersampling(ismrmrd_cart_random_us) -> None:
     """Read data with different random Cartesian undersampling in multiple
     repetitions."""
     kdata = KData.from_file(ismrmrd_cart_random_us.filename, DummyTrajectory())
     assert kdata is not None
 
 
-def test_KData_random_cart_undersampling_shape(ismrmrd_cart_random_us):
+def test_KData_random_cart_undersampling_shape(ismrmrd_cart_random_us) -> None:
     """Check shape of KData with random Cartesian undersampling."""
     kdata = KData.from_file(ismrmrd_cart_random_us.filename, DummyTrajectory())
     # check if the number of repetitions is correct
@@ -35,7 +40,7 @@ def test_KData_random_cart_undersampling_shape(ismrmrd_cart_random_us):
     assert kdata.data.shape[-2] == ismrmrd_cart_random_us.matrix_size // ismrmrd_cart_random_us.acceleration
 
 
-def test_KData_raise_wrong_trajectory_shape(ismrmrd_cart):
+def test_KData_raise_wrong_trajectory_shape(ismrmrd_cart) -> None:
     """Wrong KTrajectory shape raises exception."""
     rng = RandomGenerator(seed=0)
     trajectory = KTrajectory(*rng.float32_tensor((3, 5, 1, 2, 3, 4)))
@@ -43,14 +48,14 @@ def test_KData_raise_wrong_trajectory_shape(ismrmrd_cart):
         _ = KData.from_file(ismrmrd_cart.filename, trajectory)
 
 
-def test_KData_raise_warning_for_bodycoil(ismrmrd_cart_bodycoil_and_surface_coil):
+def test_KData_raise_warning_for_bodycoil(ismrmrd_cart_bodycoil_and_surface_coil) -> None:
     """Mix of bodycoil and surface coil acquisitions leads to warning."""
     with pytest.raises(UserWarning, match='Acquisitions with different number'):
         _ = KData.from_file(ismrmrd_cart_bodycoil_and_surface_coil.filename, DummyTrajectory())
 
 
 @pytest.mark.filterwarnings('ignore:Acquisitions with different number:UserWarning')
-def test_KData_select_bodycoil_via_filter(ismrmrd_cart_bodycoil_and_surface_coil):
+def test_KData_select_bodycoil_via_filter(ismrmrd_cart_bodycoil_and_surface_coil) -> None:
     """Bodycoil can be selected via a custom acquisition filter."""
     # This is the recommended way of selecting the body coil (i.e. 2 receiver elements)
     kdata = KData.from_file(
@@ -61,7 +66,7 @@ def test_KData_select_bodycoil_via_filter(ismrmrd_cart_bodycoil_and_surface_coil
     assert kdata.data.shape[-4] == 2
 
 
-def test_KData_raise_wrong_coil_number(ismrmrd_cart):
+def test_KData_raise_wrong_coil_number(ismrmrd_cart) -> None:
     """Wrong number of coils leads to empty acquisitions."""
     with pytest.raises(ValueError, match='No acquisitions meeting the given filter criteria were found'):
         _ = KData.from_file(
@@ -71,7 +76,7 @@ def test_KData_raise_wrong_coil_number(ismrmrd_cart):
         )
 
 
-def test_KData_from_file_diff_nky_for_rep(ismrmrd_cart_invalid_reps):
+def test_KData_from_file_diff_nky_for_rep(ismrmrd_cart_invalid_reps) -> None:
     """Multiple repetitions with different number of phase encoding lines."""
     with pytest.warns(UserWarning, match=r'different number'):
         kdata = KData.from_file(ismrmrd_cart_invalid_reps.filename, DummyTrajectory())
@@ -79,7 +84,7 @@ def test_KData_from_file_diff_nky_for_rep(ismrmrd_cart_invalid_reps):
     assert kdata.data.shape[-3] == 1, 'k2 should be 1'
 
 
-def test_KData_calibration_lines(ismrmrd_cart_with_calibration_lines):
+def test_KData_calibration_lines(ismrmrd_cart_with_calibration_lines) -> None:
     """Correct handling of calibration lines."""
     # Exclude calibration lines
     kdata = KData.from_file(ismrmrd_cart_with_calibration_lines.filename, DummyTrajectory())
@@ -97,7 +102,7 @@ def test_KData_calibration_lines(ismrmrd_cart_with_calibration_lines):
     assert kdata.data.shape[-2] == ismrmrd_cart_with_calibration_lines.n_separate_calibration_lines
 
 
-def test_KData_kspace(ismrmrd_cart_high_res):
+def test_KData_kspace(ismrmrd_cart_high_res) -> None:
     """Read in data and verify k-space by comparing reconstructed image."""
     kdata = KData.from_file(ismrmrd_cart_high_res.filename, DummyTrajectory())
     ff_op = FastFourierOp(
@@ -114,14 +119,14 @@ def test_KData_kspace(ismrmrd_cart_high_res):
 
 
 @pytest.mark.parametrize(('field', 'value'), [('lamor_frequency_proton', 42.88 * 1e6), ('tr', [24.3])])
-def test_KData_overwrite_header(ismrmrd_cart, field, value):
+def test_KData_overwrite_header(ismrmrd_cart, field: str, value: float) -> None:
     """Overwrite some parameters in the header."""
     parameter_dict = {field: value}
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory(), header_overwrites=parameter_dict)
     assert getattr(kdata.header, field) == value
 
 
-def test_KData_to_float64tensor(ismrmrd_cart):
+def test_KData_to_float64tensor(ismrmrd_cart) -> None:
     """Change KData dtype to double using other-tensor overload."""
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     kdata_float64 = kdata.to(torch.ones(1, dtype=torch.float64))
@@ -131,7 +136,7 @@ def test_KData_to_float64tensor(ismrmrd_cart):
 
 
 @pytest.mark.cuda
-def test_KData_to_cudatensor(ismrmrd_cart):
+def test_KData_to_cudatensor(ismrmrd_cart) -> None:
     """Move KData to cuda  using other-tensor overload."""
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     kdata_cuda = kdata.to(torch.ones(1, device=torch.device('cuda')))
@@ -140,7 +145,7 @@ def test_KData_to_cudatensor(ismrmrd_cart):
     assert kdata_cuda.data.is_cuda
 
 
-def test_Kdata_to_same_copy(ismrmrd_cart):
+def test_Kdata_to_same_copy(ismrmrd_cart) -> None:
     """Call .to with no change in dtype or device."""
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     kdata2 = kdata.to(copy=True)
@@ -150,7 +155,7 @@ def test_Kdata_to_same_copy(ismrmrd_cart):
     assert kdata2.data.device == kdata.data.device
 
 
-def test_Kdata_to_same_nocopy(ismrmrd_cart):
+def test_Kdata_to_same_nocopy(ismrmrd_cart) -> None:
     """Call .to with no change in dtype or device."""
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     kdata2 = kdata.to(copy=False)
@@ -158,7 +163,7 @@ def test_Kdata_to_same_nocopy(ismrmrd_cart):
     assert kdata.data is kdata2.data
 
 
-def test_KData_to_complex128_data(ismrmrd_cart):
+def test_KData_to_complex128_data(ismrmrd_cart) -> None:
     """Change KData dtype complex128: test data."""
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     kdata_complex128 = kdata.to(dtype=torch.complex128)
@@ -167,7 +172,7 @@ def test_KData_to_complex128_data(ismrmrd_cart):
     torch.testing.assert_close(kdata_complex128.data.to(dtype=torch.complex64), kdata.data)
 
 
-def test_KData_to_complex128_traj(ismrmrd_cart):
+def test_KData_to_complex128_traj(ismrmrd_cart) -> None:
     """Change KData dtype complex128: test trajectory."""
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     kdata_complex128 = kdata.to(dtype=torch.complex128)
@@ -176,7 +181,7 @@ def test_KData_to_complex128_traj(ismrmrd_cart):
     assert kdata_complex128.traj.kz.dtype == torch.float64
 
 
-def test_KData_to_complex128_header(ismrmrd_cart):
+def test_KData_to_complex128_header(ismrmrd_cart) -> None:
     """Change KData dtype complex128: test header"""
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     kdata_complex128 = kdata.to(dtype=torch.complex128)
@@ -185,7 +190,7 @@ def test_KData_to_complex128_header(ismrmrd_cart):
 
 
 @pytest.mark.cuda
-def test_KData_to_cuda(ismrmrd_cart):
+def test_KData_to_cuda(ismrmrd_cart) -> None:
     """Test KData.to to move data to CUDA memory."""
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     cuda_device = f'cuda:{torch.cuda.current_device()}'
@@ -197,7 +202,7 @@ def test_KData_to_cuda(ismrmrd_cart):
 
 
 @pytest.mark.cuda
-def test_KData_cuda(ismrmrd_cart):
+def test_KData_cuda(ismrmrd_cart) -> None:
     """Move KData object to CUDA memory."""
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     kdata_cuda = kdata.cuda()
@@ -213,7 +218,7 @@ def test_KData_cuda(ismrmrd_cart):
 
 
 @pytest.mark.cuda
-def test_KData_cpu(ismrmrd_cart):
+def test_KData_cpu(ismrmrd_cart) -> None:
     """Move KData object to CUDA memory and back to CPU memory."""
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     kdata_cpu = kdata.cuda().cpu()
@@ -226,7 +231,7 @@ def test_KData_cpu(ismrmrd_cart):
     assert kdata_cpu.header.acq_info.device == torch.device('cpu')
 
 
-def test_Kdata_device_cpu(ismrmrd_cart):
+def test_Kdata_device_cpu(ismrmrd_cart) -> None:
     """Default device is CPU."""
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     assert kdata.device == torch.device('cpu')
@@ -235,7 +240,7 @@ def test_Kdata_device_cpu(ismrmrd_cart):
 
 
 @pytest.mark.cuda
-def test_KData_inconsistentdevice(ismrmrd_cart):
+def test_KData_inconsistentdevice(ismrmrd_cart) -> None:
     """Inconsistent device raises exception."""
     kdata_cpu = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     kdata_cuda = kdata_cpu.to(device='cuda')
@@ -246,7 +251,7 @@ def test_KData_inconsistentdevice(ismrmrd_cart):
         _ = kdata_mix.device
 
 
-def test_KData_clone(ismrmrd_cart):
+def test_KData_clone(ismrmrd_cart) -> None:
     """Test .clone method."""
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     kdata2 = kdata.clone()
@@ -265,7 +270,9 @@ def test_KData_clone(ismrmrd_cart):
         (7, 'contrast'),
     ],
 )
-def test_KData_split_k1_into_other(consistently_shaped_kdata, n_other_split: int, other_label: str) -> None:
+def test_KData_split_k1_into_other(
+    consistently_shaped_kdata: KData, n_other_split: int, other_label: Literal['average', 'repetition', 'contrast']
+) -> None:
     """Test splitting of the k1 dimension into other."""
     *n_others, n_coils, n_k2, n_k1, n_k0 = consistently_shaped_kdata.data.shape
     n_other = torch.tensor(n_others).prod().item()
@@ -293,7 +300,10 @@ def test_KData_split_k1_into_other(consistently_shaped_kdata, n_other_split: int
     ],
 )
 def test_KData_select_other_subset(
-    consistently_shaped_kdata, monkeypatch, subset_label: str, subset_idx: torch.Tensor
+    consistently_shaped_kdata: KData,
+    monkeypatch,
+    subset_label: Literal['repetition', 'average', 'phase'],
+    subset_idx: torch.Tensor,
 ) -> None:
     """Test selection of a subset from other dimension."""
     # Create KData
@@ -314,7 +324,7 @@ def test_KData_select_other_subset(
     assert all(torch.unique(getattr(kdata_subset.header.acq_info.idx, subset_label)) == torch.unique(subset_idx))
 
 
-def test_KData_remove_readout_os(monkeypatch, random_kheader) -> None:
+def test_KData_remove_readout_os(monkeypatch, random_kheader: KHeader) -> None:
     # Dimensions
     n_coils = 4
     n_k0 = 240
@@ -362,7 +372,7 @@ def test_KData_remove_readout_os(monkeypatch, random_kheader) -> None:
     assert relative_image_difference(torch.abs(img_recon), img_tensor[:, 0, ...]) <= 0.05
 
 
-def test_KData_compress_coils(ismrmrd_cart_high_res):
+def test_KData_compress_coils(ismrmrd_cart_high_res) -> None:
     """Test coil combination does not alter image content (much)."""
     kdata = KData.from_file(ismrmrd_cart_high_res.filename, DummyTrajectory())
     kdata = kdata.compress_coils(n_compressed_coils=4)
@@ -399,7 +409,9 @@ def test_KData_compress_coils(ismrmrd_cart_high_res):
         'single_compression_for_last_3_and_first_dims',
     ],
 )
-def test_KData_compress_coils_diff_batch_joint_dims(consistently_shaped_kdata, batch_dims, joint_dims):
+def test_KData_compress_coils_diff_batch_joint_dims(
+    consistently_shaped_kdata: KData, batch_dims: Sequence[int], joint_dims: Sequence[int] | EllipsisType
+) -> None:
     """Test that all of these options work and yield the same shape."""
     n_compressed_coils = 2
     orig_kdata_shape = consistently_shaped_kdata.data.shape
@@ -407,13 +419,13 @@ def test_KData_compress_coils_diff_batch_joint_dims(consistently_shaped_kdata, b
     assert kdata.data.shape == (*orig_kdata_shape[:-4], n_compressed_coils, *orig_kdata_shape[-3:])
 
 
-def test_KData_compress_coils_error_both_batch_and_joint(consistently_shaped_kdata):
+def test_KData_compress_coils_error_both_batch_and_joint(consistently_shaped_kdata: KData) -> None:
     """Test if error is raised if both batch_dims and joint_dims is defined."""
     with pytest.raises(ValueError, match='Either batch_dims or joint_dims'):
         consistently_shaped_kdata.compress_coils(n_compressed_coils=3, batch_dims=(0,), joint_dims=(0,))
 
 
-def test_KData_compress_coils_error_coil_dim(consistently_shaped_kdata):
+def test_KData_compress_coils_error_coil_dim(consistently_shaped_kdata: KData) -> None:
     """Test if error is raised if coil_dim is in batch_dims or joint_dims."""
     with pytest.raises(ValueError, match='Coil dimension must not'):
         consistently_shaped_kdata.compress_coils(n_compressed_coils=3, batch_dims=(-4,))
@@ -422,8 +434,43 @@ def test_KData_compress_coils_error_coil_dim(consistently_shaped_kdata):
         consistently_shaped_kdata.compress_coils(n_compressed_coils=3, joint_dims=(-4,))
 
 
-def test_KData_compress_coils_error_n_coils(consistently_shaped_kdata):
+def test_KData_compress_coils_error_n_coils(consistently_shaped_kdata: KData) -> None:
     """Test if error is raised if new coils would be larger than existing coils"""
     existing_coils = consistently_shaped_kdata.data.shape[-4]
     with pytest.raises(ValueError, match='greater'):
         consistently_shaped_kdata.compress_coils(existing_coils + 1)
+
+
+def test_KData_repr(consistently_shaped_kdata: KData) -> None:
+    actual_repr = repr(consistently_shaped_kdata)
+    actual_str = str(consistently_shaped_kdata)
+    assert actual_str == actual_repr
+    assert re.match(
+        r"""KData with \(broadcasted\) shape \[2, 3, 3, 13, 11, 10\]\.
+\s{2}data: Tensor<2, 3, 3, 13, 11, 10>, \|x\| ∈ \[(.*?),\s*(.*?)\]\s*,\s*μ=(.*?),\s*\[(.*?),\s*\.\.\.,\s*(.*?)\]
+\s{2}traj: KTrajectory with \(broadcasted\) shape \[2, 1, 1, 13, 11, 10\]\.
+\s{5}kz: Tensor<2, 1, 1, 13, 1, 1>, x ∈ \[(.*?),\s*(.*?)\]\s*,\s*μ=(.*?),\s*\[(.*?),\s*\.\.\.,\s*(.*?)\]
+\s{5}ky: Tensor<2, 1, 1, 1, 11, 1>, x ∈ \[(.*?),\s*(.*?)\]\s*,\s*μ=(.*?),\s*\[\s*(.*?),\s*\.\.\.,\s*(.*?)\s*\]
+\s{5}kx: Tensor<2, 1, 1, 1, 1, 10>, x ∈ \[(.*?),\s*(.*?)\]\s*,\s*μ=(.*?),\s*\[(.*?),\s*\.\.\.,\s*(.*?)\]
+\s{5}grid_detection_tolerance:\s*(.*?)
+\s{2}header:\s{2}KHeader with \(broadcasted\) shape \[2, 1, 1, 13, 11, 1\]\.
+\s{5}recon_matrix: z=17, y=83, x=47
+\s{5}encoding_matrix: z=73, y=81, x=66
+\s{5}recon_fov: z=(.*?),\s*y=(.*?),\s*x=(.*?)
+\s{5}encoding_fov: z=(.*?),\s*y=(.*?),\s*x=(.*?)
+\s{5}acq_info: AcqInfo<2, 1, 1, 13, 11, 1>
+\s{5}te: list
+\s{5}ti: list
+\s{5}fa: list
+\s{5}tr: list
+\s{5}echo_spacing: list
+\s{5}echo_train_length: 1
+\s{5}sequence_type: unknown
+\s{5}model: unknown
+\s{5}vendor: unknown
+\s{5}protocol_name: unknown
+\s{5}trajectory_type: TrajectoryType\.OTHER
+\s{5}measurement_id: unknown
+\s{5}patient_name: unknown""",
+        actual_repr,
+    )

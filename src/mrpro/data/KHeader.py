@@ -3,6 +3,7 @@
 import dataclasses
 import datetime as dt
 import warnings
+from collections.abc import Mapping
 from dataclasses import field
 from typing import TYPE_CHECKING
 
@@ -114,7 +115,7 @@ class KHeader(Dataclass):
         header: ismrmrdschema.ismrmrdHeader,
         acq_info: AcqInfo,
         defaults: dict | None = None,
-        overwrite: dict | None = None,
+        overwrite: Mapping[str, object] | None = None,
         encoding_number: int = 0,
     ) -> Self:
         """Create an Header from ISMRMRD Data.
