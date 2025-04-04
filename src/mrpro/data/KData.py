@@ -344,16 +344,18 @@ class KData(Dataclass):
             for t in (self.traj.kz, self.traj.ky, self.traj.kx)
         )
         traj = KTrajectory(kz, ky, kx, self.traj.grid_detection_tolerance, self.traj.repeat_detection_tolerance)
-        return type(self)(header=header, data=data, traj=traj)
+        return type(self)(header=header._reduce_repeats_(), data=data, traj=traj._reduce_repeats_())
 
     def __repr__(self):
         """Representation method for KData class."""
+        traj_info = '\n   '.join(repr(self.traj).splitlines())
+        header_info = '\n   '.join(repr(self.header).splitlines())
         representation = '\n'.join(
             [
                 super().__repr__().splitlines()[0],
                 f'  data: {summarize_object(self.data)}',
-                f'  traj: {r"\n   ".join(repr(self.traj).splitlines())}',
-                f'  header:  {r"\n   ".join(repr(self.header).splitlines())}',
+                f'  traj: {traj_info}',
+                f'  header:  {header_info}',
             ]
         )
         return representation
@@ -643,8 +645,8 @@ class KData(Dataclass):
             recurse into dataclass fields. If `False`, for this `~mrpro.data.KData` class, the function will be a no-op.
         """
         if not recurse:
-            # as we skip data,there is nothing to do if we dont recurse
-            return
+            # as we skip data, there is nothing to do if we dont recurse
+            return self
 
         def apply_reduce(data: T) -> T:
             if isinstance(data, torch.Tensor):
