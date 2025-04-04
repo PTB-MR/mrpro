@@ -348,7 +348,7 @@ class KData(
         trajectory_shape = (*self.data[..., 0, None, :, :, :].shape, 3)  # no coils
         trajectory = torch.broadcast_to(trajectory, trajectory_shape)
 
-        # Calculate  the encoding limits as min/max of the acquisition indices
+        # Calculate the encoding limits as min/max of the acquisition indices
         def limits_from_acq_idx(acq_idx_tensor: torch.Tensor) -> Limits:
             return Limits(int(acq_idx_tensor.min().item()), int(acq_idx_tensor.max().item()), 0)
 
@@ -359,7 +359,8 @@ class KData(
             }
         )
 
-        # For the center of k1 and k2 we can only make an educated guess on where the k-space center is
+        # For the k-space center of k1 and k2 we can only make an educated guess on where it is:
+        # k-space point closest to 0
         kspace_center_idx = torch.argmin(trajectory.abs().sum(dim=-1))
         encoding_limits.k1.center = int(
             self.header.acq_info.idx.k1.broadcast_to(trajectory.shape[:-1]).flatten()[kspace_center_idx].item()
@@ -376,7 +377,6 @@ class KData(
         acq = ismrmrd.Acquisition()
         acq.resize(*acq_shape, trajectory_dimensions=3)
 
-        # These parameters are not part of KData/KHeader and need to be set manually
         acq.available_channels = acq_shape[1]
         acq.version = int(version('ismrmrd')[0])
         acq.scan_counter = 0
@@ -392,6 +392,11 @@ class KData(
                     ismrmrd_traj = trajectory[(*other, 0, k2, k1)].numpy()[:, ::-1]  # zyx -> xyz
                     acq.traj[:] = ismrmrd_traj
                     acq.center_sample = np.argmin(np.abs(ismrmrd_traj[:, 0]))
+
+                    # Reversed readouts are indicated by decreasing kx
+                    if np.all(np.diff(ismrmrd_traj[:, 0]) < 0):
+                        acq.flags |= AcqFlags.ACQ_IS_REVERSE.value
+                        acq.center_sample += 1
 
                     # Set the data and append
                     idx = other + (slice(None),) + (k2, k1)  # python 3.10 and mypy #noqa: RUF005

@@ -283,16 +283,11 @@ class KHeader(Dataclass):
 
         # Sequence information
         seq = ismrmrdschema.sequenceParametersType()
-        if self.tr is not None:
-            seq.TR = s_to_ms(self.tr)
-        if self.te is not None:
-            seq.TE = s_to_ms(self.te)
-        if self.ti is not None:
-            seq.TI = s_to_ms(self.ti)
-        if self.fa is not None:
-            seq.flipAngle_deg = rad_to_deg(self.fa)
-        if self.echo_spacing is not None:
-            seq.echo_spacing = s_to_ms(self.echo_spacing)
+        seq.TR = s_to_ms(self.tr)
+        seq.TE = s_to_ms(self.te)
+        seq.TI = s_to_ms(self.ti)
+        seq.flipAngle_deg = rad_to_deg(self.fa)
+        seq.echo_spacing = s_to_ms(self.echo_spacing)
         seq.sequence_type = self.sequence_type
         header.sequenceParameters = seq
 
