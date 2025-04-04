@@ -13,7 +13,8 @@ from mrpro.data.Dataclass import Dataclass
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.reshape import unsqueeze_at, unsqueeze_right
-from mrpro.utils.unit_conversion import mm_to_m
+from mrpro.utils.typing import TorchIndexerType
+from mrpro.utils.unit_conversion import m_to_mm, mm_to_m
 
 _convert_time_stamp_type: TypeAlias = Callable[
     [
@@ -327,3 +328,64 @@ class AcqInfo(Dataclass):
         else:
             additional_values = tuple(tensor_5d(headers[field]) for field in additional_fields)
             return acq_info, additional_values
+
+    def write_to_ismrmrd_acquisition(
+        self, acquisition: ismrmrd.Acquisition, idx: TorchIndexerType
+    ) -> ismrmrd.Acquisition:
+        """Overwrite ISMRMRD acquisition information for single acquisition."""
+        acquisition.idx.kspace_encode_step_1 = self.idx.k1[idx]
+        acquisition.idx.kspace_encode_step_2 = self.idx.k2[idx]
+        acquisition.idx.average = self.idx.average[idx]
+        acquisition.idx.slice = self.idx.slice[idx]
+        acquisition.idx.contrast = self.idx.contrast[idx]
+        acquisition.idx.phase = self.idx.phase[idx]
+        acquisition.idx.repetition = self.idx.repetition[idx]
+        acquisition.idx.set = self.idx.set[idx]
+        acquisition.idx.segment = self.idx.segment[idx]
+        acquisition.idx.user = (
+            self.idx.user0[idx],
+            self.idx.user1[idx],
+            self.idx.user2[idx],
+            self.idx.user3[idx],
+            self.idx.user4[idx],
+            self.idx.user5[idx],
+            self.idx.user6[idx],
+            self.idx.user7[idx],
+        )
+
+        # active_channesl, number_of_samples and trajectory_dimensions are read-only and cannot be set
+        acquisition.patient_table_position = self.patient_table_position[idx].apply(m_to_mm).zyx[::-1]  # zyx -> xyz
+        directions = self.orientation[idx].as_directions()
+        acquisition.slice_dir = directions[0].zyx[::-1]  # zyx -> xyz
+        acquisition.phase_dir = directions[1].zyx[::-1]
+        acquisition.read_dir = directions[2].zyx[::-1]
+        acquisition.position = self.position[idx].apply(m_to_mm).zyx[::-1]
+        acquisition.sample_time_us = self.sample_time_us[idx]
+        acquisition.user_float = (
+            self.user.float0[idx],
+            self.user.float1[idx],
+            self.user.float2[idx],
+            self.user.float3[idx],
+            self.user.float4[idx],
+            self.user.float5[idx],
+            self.user.float6[idx],
+            self.user.float7[idx],
+        )
+        acquisition.user_int = (
+            self.user.int0[idx],
+            self.user.int1[idx],
+            self.user.int2[idx],
+            self.user.int3[idx],
+            self.user.int4[idx],
+            self.user.int5[idx],
+            self.user.int6[idx],
+            self.user.int7[idx],
+        )
+        # Time stamps are saved as Siemens time stamps in units of 2.5ms
+        acquisition.acquisition_time_stamp = int(self.acquisition_time_stamp[idx] / 0.0025)
+        acquisition.physiology_time_stamp = (
+            int(self.physiology_time_stamps.timestamp0[idx] / 0.0025),
+            int(self.physiology_time_stamps.timestamp1[idx] / 0.0025),
+            int(self.physiology_time_stamps.timestamp2[idx] / 0.0025),
+        )
+        return acquisition
