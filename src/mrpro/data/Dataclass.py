@@ -99,14 +99,25 @@ class Dataclass:
     """
 
     __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]]
+    __auto_reduce_repeats: bool
+    __initialized: bool
 
-    def __init_subclass__(cls, no_new_attributes: bool = True, *args, **kwargs) -> None:  # noqa: D417
+    def __init_subclass__(  # noqa: D417
+        cls,
+        no_new_attributes: bool = True,
+        auto_reduce_repeats: bool = True,
+        *args,
+        **kwargs,
+    ) -> None:
         """Create a new dataclass subclass.
 
         Parameters
         ----------
         no_new_attributes
             If `True`, new attributes cannot be added to the class after it is created.
+        auto_reduce_repeats
+            If `True`, try to reduce dimensions only containing repeats to singleton.
+            This will be done after init and post_init.
         """
         dataclasses.dataclass(cls, repr=False)  # type: ignore[call-overload]
         super().__init_subclass__(**kwargs)
@@ -122,6 +133,8 @@ class Dataclass:
 
             cls.__setattr__ = new_setattr  # type: ignore[method-assign, assignment]
 
+        cls.__auto_reduce_repeats = auto_reduce_repeats
+
         if child_post_init and child_post_init is not Dataclass.__post_init__:
 
             def chained_post_init(self: Dataclass, *args, **kwargs) -> None:
@@ -133,9 +146,10 @@ class Dataclass:
     def __post_init__(self) -> None:
         """Can be overridden in subclasses to add custom initialization logic."""
         self.__initialized = True
-        self._reduce_repeats_()
+        if self.__auto_reduce_repeats:
+            self._reduce_repeats_(recurse=False)
 
-    def _reduce_repeats_(self, tol: float = 1e-6, dim: Sequence[int] | None = None) -> None:
+    def _reduce_repeats_(self, tol: float = 1e-6, dim: Sequence[int] | None = None, recurse: bool = True) -> Self:
         """Reduce repeated dimensions in fields to singleton.
 
         Parameters
@@ -144,6 +158,8 @@ class Dataclass:
             tolerance.
         dim
             dimensions to try to reduce to singletons. `None` means all.
+        recurse
+            recurse into dataclass fields.
         """
 
         def apply_reduce(data: T) -> T:
@@ -153,7 +169,7 @@ class Dataclass:
                 data._reduce_repeats_(tol, dim)
             return cast(T, data)
 
-        self.apply_(apply_reduce)
+        return self.apply_(apply_reduce, recurse=recurse)
 
     def items(self) -> Iterator[tuple[str, Any]]:
         """Get an iterator over names and values of fields."""

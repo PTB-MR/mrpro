@@ -17,7 +17,7 @@ from typing_extensions import Self, TypeVar
 from mrpro.data.acq_filters import has_n_coils, is_image_acquisition
 from mrpro.data.AcqInfo import AcqInfo, convert_time_stamp_osi2, convert_time_stamp_siemens
 from mrpro.data.CheckDataMixin import CheckDataMixin, DType, Shape
-from mrpro.data.Dataclass import Dataclass
+from mrpro.data.Dataclass import Dataclass, HasReduceRepeats
 from mrpro.data.EncodingLimits import EncodingLimits
 from mrpro.data.enums import AcqFlags
 from mrpro.data.KHeader import KHeader
@@ -25,6 +25,7 @@ from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.Rotation import Rotation
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 from mrpro.data.traj_calculators.KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
+from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.typing import FileOrPath
 
 from ..utils.summarize import summarize_object
@@ -643,5 +644,36 @@ class KData(Dataclass, CheckDataMixin):
             k1=n_k1_per_split,
         )
         setattr(header.acq_info.idx, other_label, new_idx)
-
+        header._reduce_repeats_()
         return type(self)(header, data, type(self.traj).from_tensor(traj))
+
+    def _reduce_repeats_(self, tol: float = 1e-6, dim: Sequence[int] | None = None, recurse: bool = True) -> Self:
+        """Reduce repeated dimensions in fields to singleton.
+
+        .. warning::
+
+            This function does not reduce the `data` field.
+
+        Parameters
+        ----------
+        tol
+            tolerance.
+        dim
+            dimensions to try to reduce to singletons. `None` means all.
+        recurse
+            recurse into dataclass fields. If `False`, for this `~mrpro.data.KData` class, the function will be a no-op.
+        """
+        if not recurse:
+            # as we skip data,there is nothing to do if we dont recurse
+            return
+
+        def apply_reduce(data: T) -> T:
+            if isinstance(data, torch.Tensor):
+                return cast(T, reduce_repeat(data, tol, dim))
+            if isinstance(data, HasReduceRepeats) and not isinstance(data, Dataclass):
+                data._reduce_repeats_(tol, dim)
+            return cast(T, data)
+
+        self.header.apply_(apply_reduce, recurse=True)
+        self.traj.apply_(apply_reduce, recurse=True)
+        return self
