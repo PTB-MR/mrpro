@@ -1631,7 +1631,7 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         inversion = indexer(self._is_improper)
         return type(self)(quaternions, normalize=False, inversion=inversion)
 
-    def _reduce_repeats_(self, tol: float = 1e-6, dim: Sequence[int] | None = None) -> None:
+    def _reduce_repeats_(self, tol: float = 1e-6, dim: Sequence[int] | None = None) -> Self:
         """Reduce repeated dimensions to singleton.
 
         Parameters
@@ -1649,6 +1649,7 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
             ]
         self._quaternions.data = reduce_repeat(self._quaternions, tol, quaternion_dim)
         self._is_improper.data = reduce_repeat(self._is_improper, tol, dim)
+        return self
 
     @property
     def quaternion_x(self) -> torch.Tensor:
