@@ -3,7 +3,7 @@
 import copy
 import datetime
 import warnings
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from types import EllipsisType
 from typing import Annotated, Literal, cast
 
@@ -84,7 +84,7 @@ class KData(Dataclass, CheckDataMixin):
         cls,
         filename: FileOrPath,
         trajectory: KTrajectoryCalculator | KTrajectory | KTrajectoryIsmrmrd,
-        header_overwrites: dict[str, object] | None = None,
+        header_overwrites: Mapping[str, object] | None = None,
         dataset_idx: int = -1,
         acquisition_filter_criterion: Callable = is_image_acquisition,
     ) -> Self:
