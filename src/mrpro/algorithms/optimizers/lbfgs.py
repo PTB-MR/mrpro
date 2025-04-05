@@ -135,6 +135,8 @@ def lbfgs(
         return residual
 
     try:  # noqa: SIM105
+        # This does NOT only perform a single step, but runs the full optimization.
+        # See https://pytorch.org/docs/stable/generated/torch.optim.LBFGS.html
         optim.step(closure)
     except StopIteration:
         # callback asked us to stop.
