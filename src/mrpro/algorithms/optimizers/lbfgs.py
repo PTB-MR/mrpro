@@ -10,6 +10,13 @@ from mrpro.algorithms.optimizers.OptimizerStatus import OptimizerStatus
 from mrpro.operators.Operator import OperatorType
 
 
+class LBFGSStatus(OptimizerStatus):
+    """Status of the LBFGS algorithm."""
+
+    residual: torch.Tensor
+    """Residual of the current estimate."""
+
+
 def lbfgs(
     f: OperatorType,
     initial_parameters: Sequence[torch.Tensor],
@@ -109,19 +116,29 @@ def lbfgs(
     def closure():
         nonlocal iteration
         optim.zero_grad()
-        (objective,) = f(*parameters)
-        objective.backward()
-        return objective
-
-    iteration = 0
-    # run lbfgs
-    while iteration < max_iterations:
-        optim.step(closure)
-        iteration += 1
+        (residual,) = f(*parameters)
+        residual.backward()
 
         if callback is not None:
-            continue_iterations = callback({'solution': parameters, 'iteration_number': iteration})
-            if continue_iterations is False:
-                break
+            state = optim.state[optim.param_groups[0]['params'][0]]
+            if state['n_iter'] > iteration:
+                # true in a new iteration, false in line search
+                status = LBFGSStatus(
+                    solution=tuple(p.detach() for p in parameters),
+                    residual=residual.detach(),
+                    iteration_number=state['n_iter'],
+                )
+                if callback(status) is False:
+                    raise StopIteration
+                iteration += 1
 
+        return residual
+
+    try:  # noqa: SIM105
+        optim.step(closure)
+    except StopIteration:
+        # callback asked us to stop.
+        ...
+
+    parameters = tuple(p.detach() for p in parameters)
     return parameters
