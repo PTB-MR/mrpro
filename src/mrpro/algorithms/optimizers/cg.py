@@ -9,7 +9,7 @@ from mrpro.operators.LinearOperator import LinearOperator
 
 
 class CGStatus(OptimizerStatus):
-    """Conjugate gradient callback base class."""
+    """Status of the conjugate gradient algorithm."""
 
     residual: torch.Tensor
     """Residual of the current estimate."""
