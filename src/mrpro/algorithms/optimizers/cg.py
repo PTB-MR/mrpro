@@ -9,7 +9,7 @@ from mrpro.operators.LinearOperator import LinearOperator
 
 
 class CGStatus(OptimizerStatus):
-    """Conjugate gradient callback base class."""
+    """Status of the conjugate gradient algorithm."""
 
     residual: torch.Tensor
     """Residual of the current estimate."""
@@ -19,6 +19,7 @@ def cg(
     operator: LinearOperator,
     right_hand_side: torch.Tensor,
     initial_value: torch.Tensor | None = None,
+    *,
     max_iterations: int = 128,
     tolerance: float = 1e-4,
     callback: Callable[[CGStatus], bool | None] | None = None,

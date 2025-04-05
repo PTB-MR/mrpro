@@ -12,8 +12,10 @@ from mrpro.operators.Operator import OperatorType
 def adam(
     f: OperatorType,
     initial_parameters: Sequence[torch.Tensor],
-    n_iterations: int,
+    *,
+    max_iterations: int = 100,
     learning_rate: float = 1e-3,
+    tolerance_change: float = 0,
     betas: tuple[float, float] = (0.9, 0.999),
     eps: float = 1e-8,
     weight_decay: float = 0,
@@ -65,32 +67,34 @@ def adam(
     Parameters
     ----------
     f
-        scalar-valued function to be optimized
+        scalar-valued function to be optimized.
     initial_parameters
-        Sequence (for example list) of parameters to be optimized.
+        sequence (for example list) of parameters to be optimized.
         Note that these parameters will not be changed. Instead, we create a copy and
         leave the initial values untouched.
-    n_iterations
-        number of iterations
+    max_iterations
+        maximum number of iterations.
     learning_rate
-        learning rate
+        learning rate.
+    tolerance_change
+        teriminate if the change of objective function is smaller than this tolerance.
     betas
-        coefficients used for computing running averages of gradient and its square
+        coefficients used for computing running averages of gradient and its square.
     eps
-        term added to the denominator to improve numerical stability
+        term added to the denominator to improve numerical stability.
     weight_decay
-        weight decay (L2 penalty if `decoupled_weight_decay` is `False`)
+        weight decay (L2 penalty if `decoupled_weight_decay` is `False`).
     amsgrad
-        whether to use the AMSGrad variant [REDDI2019]_
+        whether to use the AMSGrad variant [REDDI2019]_.
     decoupled_weight_decay
-        whether to use Adam (default) or AdamW (if set to `True`) [LOS2019]_
+        whether to use Adam (default) or AdamW (if set to `True`) [LOS2019]_.
     callback
         function to be called after each iteration. This can be used to monitor the progress of the algorithm.
         If it returns `False`, the algorithm stops at that iteration.
 
     Returns
     -------
-        list of optimized parameters
+        optimized parameters
     """
     parameters = tuple(p.detach().clone().requires_grad_(True) for p in initial_parameters)
 
@@ -112,13 +116,22 @@ def adam(
 
         return objective
 
-    # run adam
-    for iteration in range(n_iterations):
-        optim.step(closure)
+    old_objective = float('inf')
+
+    for iteration in range(max_iterations):
+        objective = optim.step(closure)
+
+        if tolerance_change > 0:
+            objective_ = objective.item()
+            change = old_objective - objective_
+            if change < tolerance_change:
+                break
+            old_objective = objective_
 
         if callback is not None:
             continue_iterations = callback({'solution': parameters, 'iteration_number': iteration})
             if continue_iterations is False:
                 break
 
+    parameters = tuple(p.detach() for p in parameters)
     return parameters
