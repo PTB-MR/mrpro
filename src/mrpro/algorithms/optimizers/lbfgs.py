@@ -97,7 +97,7 @@ def lbfgs(
 
     Returns
     -------
-        List of optimized parameters.
+        List of optim\ized parameters.
     """
     parameters = tuple(p.detach().clone().requires_grad_(True) for p in initial_parameters)
     optim = LBFGS(
@@ -126,7 +126,7 @@ def lbfgs(
                 status = LBFGSStatus(
                     solution=tuple(p.detach() for p in parameters),
                     residual=residual.detach(),
-                    iteration_number=state['n_iter'],
+                    iteration_number=state['n_iter'],  # status is from previous iteration
                 )
                 if callback(status) is False:
                     raise StopIteration
