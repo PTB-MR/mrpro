@@ -17,7 +17,13 @@ from einops import rearrange, repeat
 from typing_extensions import Self, TypeVar
 
 from mrpro.data.acq_filters import has_n_coils, is_image_acquisition
-from mrpro.data.AcqInfo import AcqInfo, convert_time_stamp_osi2, convert_time_stamp_siemens
+from mrpro.data.AcqInfo import (
+    AcqInfo,
+    convert_time_stamp_from_osi2,
+    convert_time_stamp_from_siemens,
+    convert_time_stamp_to_osi2,
+    convert_time_stamp_to_siemens,
+)
 from mrpro.data.Dataclass import Dataclass
 from mrpro.data.EncodingLimits import EncodingLimits, Limits
 from mrpro.data.enums import AcqFlags
@@ -143,19 +149,19 @@ class KData(
         ):
             match ismrmrd_header.acquisitionSystemInformation.systemVendor.lower():
                 case 'siemens':
-                    convert_time_stamp = convert_time_stamp_siemens  # 2.5ms time steps
+                    convert_time_stamp = convert_time_stamp_from_siemens  # 2.5ms time steps
                 case 'osi2':
-                    convert_time_stamp = convert_time_stamp_osi2  # 1ms time steps
+                    convert_time_stamp = convert_time_stamp_from_osi2  # 1ms time steps
                 case str(vendor):
                     warnings.warn(
                         f'Unknown vendor {vendor}. '
                         'Assuming Siemens time stamp format. If this is wrong, consider opening an Issue.',
                         stacklevel=1,
                     )
-                    convert_time_stamp = convert_time_stamp_siemens  # 2.5ms time steps
+                    convert_time_stamp = convert_time_stamp_from_siemens  # 2.5ms time steps
         else:
             warnings.warn('No vendor information found. Assuming Siemens time stamp format.', stacklevel=1)
-            convert_time_stamp = convert_time_stamp_siemens
+            convert_time_stamp = convert_time_stamp_from_siemens
 
         acq_info, (k0_center, n_k0_tensor, discard_pre, discard_post) = AcqInfo.from_ismrmrd_acquisitions(
             acquisitions,
@@ -372,6 +378,12 @@ class KData(
 
         dataset.write_xml_header(header.toXML('utf-8'))
 
+        # Vendors use different units for time stamps
+        if self.header.vendor.lower() == 'osi2':
+            convert_time_stamp = convert_time_stamp_to_osi2  # 1ms time steps
+        else:
+            convert_time_stamp = convert_time_stamp_to_siemens  # 2.5ms time steps
+
         # Go through data and save acquisitions
         acq_shape = [self.data.shape[-1], self.data.shape[-4]]
         acq = ismrmrd.Acquisition()
@@ -384,18 +396,15 @@ class KData(
         for other in np.ndindex(self.data.shape[:-4]):
             for k2 in range(self.data.shape[-3]):
                 for k1 in range(self.data.shape[-2]):
-                    acq.clear_all_flags()
-
-                    self.header.acq_info.write_to_ismrmrd_acquisition(acq, (*other, 0, k2, k1, 0))
+                    self.header.acq_info.write_to_ismrmrd_acquisition(acq, (*other, 0, k2, k1, 0), convert_time_stamp)
 
                     # Rearrange, switch from zyx to xyz and set trajectory
                     ismrmrd_traj = trajectory[(*other, 0, k2, k1)].numpy()[:, ::-1]  # zyx -> xyz
                     acq.traj[:] = ismrmrd_traj
                     acq.center_sample = np.argmin(np.abs(ismrmrd_traj[:, 0]))
 
-                    # Reversed readouts are indicated by decreasing kx
-                    if np.all(np.diff(ismrmrd_traj[:, 0]) < 0):
-                        acq.flags |= AcqFlags.ACQ_IS_REVERSE.value
+                    # Reversed readouts means that the k-space is traversed from positive to negative
+                    if acq.flags & AcqFlags.ACQ_IS_REVERSE.value:
                         acq.center_sample += 1
 
                     # Set the data and append
