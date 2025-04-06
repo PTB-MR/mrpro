@@ -390,7 +390,7 @@ class KData(
         acq.resize(*acq_shape, trajectory_dimensions=3)
 
         acq.available_channels = acq_shape[1]
-        acq.version = int(version('ismrmrd')[0])
+        acq.version = int(version('ismrmrd').split('.')[0])
         acq.scan_counter = 0
 
         for other in np.ndindex(self.data.shape[:-4]):
