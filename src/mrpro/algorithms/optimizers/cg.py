@@ -73,8 +73,9 @@ def cg(
 ) -> tuple[torch.Tensor, ...] | tuple[torch.Tensor]:
     r"""(Preconditioned) Conjugate Gradient for solving :math:`Hx=b`.
 
-    This algorithm solves systems of the form :math:`H x = b`, where :math:`H` is a self-adjoint positive semidefinite
-    linear operator and :math:`b` is the right-hand side.
+     This algorithm solves systems of the form :math:`H x = b`, where :math:`H` is a self-adjoint linear operator
+    and :math:`b` is the right-hand side. The method can solve a batch of :math:`N` systems jointly, thereby taking
+    :math:`H` as a block-diagonal with blocks :math:`H_i` and :math:`b = [b_1, ..., b_N] ^T`.
 
      The method performs the following steps:
 
@@ -98,13 +99,16 @@ def cg(
     If `preconditioner_inverse` is provided, it solves :math:`M^{-1}Hx = M^{-1}b`
     implicitly, where `preconditioner_inverse(r)` computes :math:`M^{-1}r`.
 
+    If `preconditioner_inverse` is provided, it solves :math:`M^{-1}Hx = M^{-1}b`
+    implicitly, where `preconditioner_inverse(r)` computes :math:`M^{-1}r`.
+
     See [Hestenes1952]_, [Nocedal2006]_, and [WikipediaCG]_ for more information.
 
 
     Parameters
     ----------
     operator
-        Self-adjoint operator :math:`H`
+        Self-adjoint operator :math:`H`.
     right_hand_side
         Right-hand-side :math:`b`.
     initial_value
@@ -182,5 +186,11 @@ def cg(
             )
             if continue_iterations is False:
                 break
-
+    if (
+        isinstance(operator, LinearOperator)
+        and isinstance(right_hand_side, torch.Tensor)
+        and (initial_value is None or isinstance(initial_value, torch.Tensor))
+    ):
+        # For backward compatibility if called with a single tensor and operator.
+        return solution[0]
     return solution
