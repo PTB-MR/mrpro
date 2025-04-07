@@ -30,12 +30,13 @@ def normalize_index(ndim: int, index: int) -> int:
         raise IndexError(f'Invalid index {index} for {ndim} data dimensions')
 
 
-def zero_pad_or_crop(
+def pad_or_crop(
     data: torch.Tensor,
     new_shape: Sequence[int] | torch.Size,
     dim: None | Sequence[int] = None,
+    value: float = 0.0,
 ) -> torch.Tensor:
-    """Change shape of data by center cropping or symmetric zero-padding.
+    """Change shape of data by center cropping or symmetric padding.
 
     Parameters
     ----------
@@ -46,6 +47,8 @@ def zero_pad_or_crop(
     dim
         dimensions the `new_shape` corresponds to.
         `None` (default) is interpreted as last ``len(new_shape)`` dimensions.
+    value
+        value to use for padding. Default is 0.
 
     Returns
     -------
@@ -75,5 +78,5 @@ def zero_pad_or_crop(
 
     if any(npad):
         # F.pad expects paddings in reversed order
-        data = F.pad(data, npad[::-1])
+        data = F.pad(data, npad[::-1], value=value)
     return data
