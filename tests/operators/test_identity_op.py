@@ -81,13 +81,15 @@ def test_identity_op_cuda() -> None:
 
     # Create on CPU, run on CPU
     identity_op = IdentityOp()
-    (y,) = identity_op(tensor)
+    operator = identity_op.H @ identity_op
+    (y,) = operator(tensor)
     assert y.is_cpu
 
     # Transfer to GPU, run on GPU
     identity_op = IdentityOp()
-    identity_op.cuda()
-    (y,) = identity_op(tensor.cuda())
+    operator = identity_op.H @ identity_op
+    operator.cuda()
+    (y,) = operator(tensor.cuda())
     assert y.is_cuda
 
 

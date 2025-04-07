@@ -101,22 +101,26 @@ def test_einsum_op_cuda() -> None:
 
     # Create on CPU, transfer to GPU, run on GPU
     einsum_op = EinsumOp(tensor, rule)
-    einsum_op.cuda()
-    (output_tensor,) = einsum_op(input_tensor.cuda())
+    operator = einsum_op.H @ einsum_op
+    operator.cuda()
+    (output_tensor,) = operator(input_tensor.cuda())
     assert output_tensor.is_cuda
 
     # Create on CPU, run on CPU
     einsum_op = EinsumOp(tensor, rule)
-    (output_tensor,) = einsum_op(input_tensor)
+    operator = einsum_op.H @ einsum_op
+    (output_tensor,) = operator(input_tensor)
     assert output_tensor.is_cpu
 
     # Create on GPU, run on GPU
     einsum_op = EinsumOp(tensor.cuda(), rule)
-    (output_tensor,) = einsum_op(input_tensor.cuda())
+    operator = einsum_op.H @ einsum_op
+    (output_tensor,) = operator(input_tensor.cuda())
     assert output_tensor.is_cuda
 
     # Create on GPU, transfer to CPU, run on CPU
     einsum_op = EinsumOp(tensor.cuda(), rule)
-    einsum_op.cpu()
-    (output_tensor,) = einsum_op(input_tensor)
+    operator = einsum_op.H @ einsum_op
+    operator.cpu()
+    (output_tensor,) = operator(input_tensor)
     assert output_tensor.is_cpu

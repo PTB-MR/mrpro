@@ -93,11 +93,13 @@ def test_finite_difference_op_cuda() -> None:
 
     # Create on CPU, run on CPU
     finite_difference_op = FiniteDifferenceOp(dim, mode='central', pad_mode='circular')
-    (finite_difference_output,) = finite_difference_op(u)
+    operator = finite_difference_op.H @ finite_difference_op
+    (finite_difference_output,) = operator(u)
     assert finite_difference_output.is_cpu
 
     # Transfer to GPU, run on GPU
     finite_difference_op = FiniteDifferenceOp(dim, mode='central', pad_mode='circular')
-    finite_difference_op.cuda()
-    (finite_difference_output,) = finite_difference_op(u.cuda())
+    operator = finite_difference_op.H @ finite_difference_op
+    operator.cuda()
+    (finite_difference_output,) = operator(u.cuda())
     assert finite_difference_output.is_cuda

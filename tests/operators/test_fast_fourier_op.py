@@ -160,22 +160,26 @@ def test_fast_fourier_op_cuda() -> None:
 
     # Create on CPU, transfer to GPU, run on GPU
     ff_op = FastFourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, dim=(-2, -3))
-    ff_op.cuda()
-    (y,) = ff_op(x.cuda())
+    operator = ff_op.H @ ff_op
+    operator.cuda()
+    (y,) = operator(x.cuda())
     assert y.is_cuda
 
     # Create on CPU, run on CPU
     ff_op = FastFourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, dim=(-2, -3))
-    (y,) = ff_op(x)
+    operator = ff_op.H @ ff_op
+    (y,) = operator(x)
     assert y.is_cpu
 
     # Create on GPU, run on GPU
     ff_op = FastFourierOp(recon_matrix=recon_matrix.cuda(), encoding_matrix=encoding_matrix.cuda(), dim=(-2, -3))
-    (y,) = ff_op(x.cuda())
+    operator = ff_op.H @ ff_op
+    (y,) = operator(x.cuda())
     assert y.is_cuda
 
     # Create on GPU, transfer to CPU, run on CPU
     ff_op = FastFourierOp(recon_matrix=recon_matrix.cuda(), encoding_matrix=encoding_matrix.cuda(), dim=(-2, -3))
-    ff_op.cpu()
-    (y,) = ff_op(x)
+    operator = ff_op.H @ ff_op
+    operator.cpu()
+    (y,) = operator(x)
     assert y.is_cpu

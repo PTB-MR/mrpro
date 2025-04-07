@@ -84,11 +84,13 @@ def test_rearrange_op_cuda() -> None:
 
     # Create on CPU, run on CPU
     rearrange_op = RearrangeOp(rule, additional_info)
-    (result,) = rearrange_op(u)
+    operator = rearrange_op.H @ rearrange_op
+    (result,) = operator(u)
     assert result.is_cpu
 
     # Create on CPU, transfer to GPU, run on GPU
     rearrange_op = RearrangeOp(rule, additional_info)
-    rearrange_op.cuda()
-    (result,) = rearrange_op(u.cuda())
+    operator = rearrange_op.H @ rearrange_op
+    operator.cuda()
+    (result,) = operator(u.cuda())
     assert result.is_cuda
