@@ -177,3 +177,26 @@ def test_constraints_operator_cuda() -> None:
     constraints_op.cuda()
     (cx,) = constraints_op(x.cuda())
     assert cx.is_cuda
+
+
+@pytest.mark.cuda
+def test_constraints_operator_inverse_cuda() -> None:
+    """Test inverse of constraints operator works on CUDA devices."""
+
+    # Generate inputs
+    bounds = ((-5.0, 5.0),)
+    random_generator = RandomGenerator(seed=0)
+    x = random_generator.float32_tensor(size=(36,), low=-100, high=100)
+
+    # Create on CPU, run on CPU
+    constraints_op = ConstraintsOp(bounds)
+    (cx,) = constraints_op(x)
+    (xx,) = constraints_op.inverse(cx)
+    assert xx.is_cpu
+
+    # Create on CPU, transfer to GPU, run on GPU
+    constraints_op = ConstraintsOp(bounds)
+    constraints_op.cuda()
+    (cx,) = constraints_op(x.cuda())
+    (xx,) = constraints_op.inverse(cx)
+    assert xx.is_cuda
