@@ -4,7 +4,6 @@ import torch
 from mrpro.operators.functionals.SSIM import SSIM
 
 from tests import RandomGenerator
-import pytest
 
 
 def test_ssim() -> None:
