@@ -5,14 +5,17 @@ echo "Requesting registration URL at '${registration_url}'"
 payload=$(curl -sX POST -H "Authorization: token ${GITHUB_PERSONAL_TOKEN}" ${registration_url})
 export RUNNER_TOKEN=$(echo $payload | jq .token --raw-output)
 
+# if the 1st argument for the script is given: run in ephemeral mode (one runner takes one job)
+# constructing the unique name for the runner (see .github/slurm_dispatcher.py)
 ./config.sh \
-    --name $(hostname) \
+    --name $(hostname)-${1:-default} \
     --token ${RUNNER_TOKEN} \
     --labels my-runner \
     --url https://github.com/${GITHUB_OWNER} \
     --work "/work" \
     --unattended \
-    --replace
+    --replace \
+    ${1:+--ephemeral}
 
 remove() {
     ./config.sh remove --unattended --token "${RUNNER_TOKEN}"

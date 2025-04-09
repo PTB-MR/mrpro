@@ -1,0 +1,11 @@
+extend = "../../pyproject.toml"
+
+lint.extend-select = ["PT"] # flake8-pytest-style
+
+lint.extend-ignore = [
+    "ANN201", # missing type annotation
+    "D100", # missing docstring in public module
+    "D101", # missing docstring in public class
+    "D103", # missing docstring in public method
+    "RUF006", # store a reference to the return value of `asyncio.create_task`
+]

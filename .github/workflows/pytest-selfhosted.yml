@@ -17,12 +17,17 @@
 #
 # Run with singularity:
 # You can convert the existing docker container to the singularity container via:
-# singularity build --sandbox runner-folder/ docker://ghcr.io/ptb-mr/mrpro_runner:latest
+# singularity build --fix-perms mrpro-runner.sif docker://ghcr.io/ptb-mr/mrpro_runner:latest
 # Hint: use SINGULARITY_CACHE=... environmental variable for cache
-# The container would require write access to the files in it. Therefore, the --sandbox flag is mandatory.
 #
 # When build is ready you can launch this singularity container via:
-# NVIDIA_VISIBLE_DEVICES=<GPU_ID> singularity run --nv --nvccli --env-file runner.env --pwd /actions-runner --writable runner-folder/
+# NVIDIA_VISIBLE_DEVICES=<GPU_ID> singularity run --nv --env-file runner.env --pwd /actions-runner --writable-tmpfs --contain mrpro-runner.sif
+#
+# If you want to run the singularity container in ephemeral mode (one runner - one job) you need to specify a unique id for each runner
+# as an extra argument to the singularity command:
+# NVIDIA_VISIBLE_DEVICES=<GPU_ID> singularity exec --nv --env-file runner.env --pwd /actions-runner --writable-tmpfs --contain mrpro-runner.sif /actions-runner/entrypoint.sh 123456
+#
+# Use the ./github/slurm_dispatcher.py to dispatch each job to the isolated singularity container
 name: PyTest-selfhosted
 
 on:
