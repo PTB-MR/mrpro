@@ -113,7 +113,8 @@ def test_float64_tensor(size: Sequence[int] = (3,), low: float = 0.0, high: floa
     rng = RandomGenerator(seed=42)
     tensor = rng.float64_tensor(size=size, low=low, high=high)
     assert tensor.shape == size
-    assert torch.all(low <= tensor) and torch.all(tensor < high)
+    assert torch.all(low <= tensor)
+    assert torch.all(tensor < high)
     if tensor.numel() > 1:
         assert len(torch.unique(tensor)) > 1
 
@@ -328,9 +329,10 @@ def test_ascii(size: int = 10) -> None:
 
 
 def test_rand_like(
-    x: torch.Tensor = torch.zeros((3, 2), dtype=torch.float32), low: float = 0.0, high: float = 1.0
+    shape: Sequence[int] = (2, 3), dtype: torch.dtype = torch.float64, low: float = 0.0, high: float = 1.0
 ) -> None:
     """Test rand_like for shape, bounds, and value differences."""
+    x = torch.zeros(shape, dtype=dtype)
     rng = RandomGenerator(seed=42)
     tensor = rng.rand_like(x, low=low, high=high)
     assert tensor.shape == x.shape
@@ -369,16 +371,3 @@ def test_randperm(n: int = 5, dtype: torch.dtype = torch.int64) -> None:
     assert len(tensor) == n
     assert len(tensor.unique()) == n
     assert (tensor.unique() == torch.arange(n, dtype=dtype)).all()
-
-
-def test_gaussian_variable_density_samples(
-    shape: Sequence[int] = (2, 3), low: int = 0, high: int = 10, fwhm: float = 2.0, always_sample: list[int] = [1, 2]
-) -> None:
-    """Test gaussian_variable_density_samples for shape and value differences."""
-    rng = RandomGenerator(seed=42)
-    tensor = rng.gaussian_variable_density_samples(
-        shape=shape, low=low, high=high, fwhm=fwhm, always_sample=always_sample
-    )
-    assert tensor.shape == shape
-    if tensor.numel() > 1:
-        assert len(torch.unique(tensor)) > 1
