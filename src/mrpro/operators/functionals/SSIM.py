@@ -37,6 +37,8 @@ def ssim3d(
         Constant for SSIM computation. Commonly 0.03.
     window_size
         Size of the rectangular sliding window.
+        If any of the last 3 dimensions of the target is of size 1, the window size in this dimension will
+        also be set to 1.
     data_range
         Value range if the data. If `None`, peak-to-peak of the target will be used.
     reduction
@@ -54,23 +56,25 @@ def ssim3d(
         target, x, mask = cast(
             tuple[torch.Tensor, torch.Tensor, torch.Tensor], torch.broadcast_tensors(target, x, mask)
         )
-        target = target * mask
-        x = x * mask
         mask = sliding_window(mask, window_shape=window_size, dim=(-3, -2, -1)).movedim((0, 1, 2), (-6, -5, -4))
         mask = mask.all(dim=(-3, -2, -1))
+        if mask.numel() == 0:
+            raise ValueError('Mask does not cover any pixels')
+
     else:
         target, x = cast(tuple[torch.Tensor, torch.Tensor], torch.broadcast_tensors(target, x))
 
+    window = tuple(window_size if s > 1 else 1 for s in target.shape[-3:])  # To support 1D and 2D uses
+    target_window = sliding_window(target, window_shape=window, dim=(-3, -2, -1)).movedim((0, 1, 2), (-6, -5, -4))
+
+    if data_range is None and mask is not None:
+        data_range_ = target_window[mask].amax() - target_window[mask].amin()
     if data_range is None:
-        data_range_ = torch.amax(target, dim=(-3, -2, -1), keepdim=True) - torch.amin(
-            target, dim=(-3, -2, -1), keepdim=True
-        )
-        data_range_ = data_range_.clamp_min(1e-6)
+        data_range_ = target_window.amax() - target_window.amin()
     else:
         data_range_ = data_range
 
-    target_window = sliding_window(target, window_shape=window_size, dim=(-3, -2, -1)).movedim((0, 1, 2), (-6, -5, -4))
-    x_window = sliding_window(x, window_shape=window_size, dim=(-3, -2, -1)).movedim((0, 1, 2), (-6, -5, -4))
+    x_window = sliding_window(x, window_shape=window, dim=(-3, -2, -1)).movedim((0, 1, 2), (-6, -5, -4))
 
     mean_t = target_window.mean(dim=(-3, -2, -1))
     mean_x = x_window.mean(dim=(-3, -2, -1))
@@ -116,7 +120,7 @@ class SSIM(Functional):
         k1: float = 0.01,
         k2: float = 0.03,
     ) -> None:
-        """Initialize SSIM.
+        """Initialize Volume SSIM.
 
         The Structural Similarity Index Measure [SSIM]_ is used to measure the similarity between two images.
         It considers luminance, contrast and structure differences between the images.
@@ -124,6 +128,9 @@ class SSIM(Functional):
 
         Calculates the SSIM using a rectangular sliding window. If a mask is provided, only the windows
         that are fully inside the mask are considered.
+
+        The SSIM is calculed for a volume, i.e, 3D patches of the last 3 dimensions of the input are considered.
+        To apply it to purely 2D data, add a singleton dimensions.
 
         References
         ----------
@@ -144,6 +151,7 @@ class SSIM(Functional):
             Value range if the data. If None, the peak-to-peak of the target will be used.
         window_size
             Size of the windows used in SSIM. Usually 7 or 11.
+            Will be cropped to
         k1
             Constant. Usually 0.01
         k2
