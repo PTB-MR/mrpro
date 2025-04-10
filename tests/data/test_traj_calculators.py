@@ -195,3 +195,19 @@ def test_KTrajectoryPulseq(pulseq_example_rad_seq) -> None:
 
     torch.testing.assert_close(trajectory.kx.to(torch.float32), kx_test.to(torch.float32), atol=1e-2, rtol=1e-3)
     torch.testing.assert_close(trajectory.ky.to(torch.float32), ky_test.to(torch.float32), atol=1e-2, rtol=1e-3)
+
+
+def test_KTrajectoryCartesian_random() -> None:
+    """Test the generation of a 2D gaussian variable density pattern"""
+    traj = KTrajectoryCartesian.gaussian_variable_density(128, acceleration=4, n_other=(2, 3))
+
+    assert traj.kx.shape == (1, 1, 1, 1, 1, 128)
+    assert traj.ky.shape == (2, 3, 1, 1, 32, 1)
+
+    lines1 = traj.ky[0, 0].unique()
+    lines2 = traj.ky[0, 1].unique()
+    assert not torch.allclose(lines1, lines2)
+
+    assert len(lines1) == 32
+    for center_idx in range(-5, 5):
+        assert center_idx in lines1
