@@ -6,7 +6,7 @@ from math import ceil, floor
 import torch
 
 
-def check_bounds(low: float | int | torch.Tensor, high: float | int | torch.Tensor, dtype: torch.dtype | None):
+def check_bounds(low: float | int | torch.Tensor, high: float | int | torch.Tensor, dtype: torch.dtype | None) -> None:
     """Clip the bounds to a range matching the dtype.
 
     Parameters
@@ -793,7 +793,7 @@ class RandomGenerator:
         """
         return torch.randn(size=size, generator=self.generator, dtype=dtype)
 
-    def randperm(self, n, *, dtype: torch.dtype = torch.int64) -> torch.Tensor:
+    def randperm(self, n: int, *, dtype: torch.dtype = torch.int64) -> torch.Tensor:
         """Generate a random permutation of integers from 0 to n - 1.
 
         Parameters
