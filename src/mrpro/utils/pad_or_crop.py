@@ -41,18 +41,18 @@ def pad_or_crop(
     Parameters
     ----------
     data
-        data
+        Data to pad or crop.
     new_shape
-        desired shape of data
+        Desired shape of data.
     dim
-        dimensions the `new_shape` corresponds to.
-        `None` (default) is interpreted as last ``len(new_shape)`` dimensions.
+        Dimensions the `new_shape` corresponds to.
+        `None` is interpreted as last ``len(new_shape)`` dimensions.
     value
-        value to use for padding. Default is 0.
+        value to use for padding.
 
     Returns
     -------
-        data zero padded or cropped to shape
+        Data zero padded or cropped to shape.
     """
     if len(new_shape) > data.ndim:
         raise ValueError('length of new shape should not exceed dimensions of data')
