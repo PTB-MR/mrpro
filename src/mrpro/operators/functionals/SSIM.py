@@ -105,7 +105,7 @@ def ssim3d(
 
 
 class SSIM(Functional):
-    """SSIM functional."""
+    """(masked) SSIM functional."""
 
     def __init__(
         self,
@@ -117,6 +117,21 @@ class SSIM(Functional):
         k2: float = 0.03,
     ) -> None:
         """Initialize SSIM.
+
+        The Structural Similarity Index Measure [SSIM]_ is used to measure the similarity between two images.
+        It considers luminance, contrast and structure differences between the images.
+        SSIM values range from -1 to 1, where 1 indicates perfect structural similarity.
+
+        Calculates the SSIM using a rectangular sliding window. If a mask is provided, only the windows
+        that are fully inside the mask are considered.
+
+        References
+        ----------
+        .. [SSIM] Wang, Z., Bovik, A. C., Sheikh, H. R., & Simoncelli, E. P. (2004).
+               Image quality assessment: from error visibility to structural similarity.
+               IEEE TMI, 13(4), 600-612. https://doi.org/10.1109/TIP.2003.819861
+
+
 
         Parameters
         ----------
