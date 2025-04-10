@@ -1,3 +1,5 @@
+"""Structural Similarity Index (SSIM) functional."""
+
 from typing import cast
 
 import torch
@@ -114,7 +116,7 @@ class SSIM(Functional):
         k1: float = 0.01,
         k2: float = 0.03,
     ) -> None:
-        """Intialize SSIM.
+        """Initialize SSIM.
 
         Parameters
         ----------
