@@ -323,7 +323,9 @@ def gram_nufft_kernel(
     # we do two adjoint nuffts per dimensions, saving a lot of memory.
     adjnufft = torch.vmap(partial(finufft_type1, modeord=0, isign=1, output_shape=recon_shape))
 
-    kernel = torch.zeros(*weight.shape[:2], *[r * 2 for r in recon_shape], dtype=weight.dtype.to_complex())
+    kernel = torch.zeros(
+        *weight.shape[:2], *[r * 2 for r in recon_shape], dtype=weight.dtype.to_complex(), device=weight.device
+    )
     shifts = (torch.tensor(recon_shape) / 2).unsqueeze(-1).to(trajectory)
     for flips in list(product([1, -1], repeat=rank)):
         flipped_trajectory = trajectory * torch.tensor(flips).to(trajectory).unsqueeze(-1)
@@ -334,7 +336,9 @@ def gram_nufft_kernel(
                 slices.append(slice(0, kernel_part.size(dim)))
             else:  # second half in the dimension
                 slices.append(slice(kernel_part.size(dim) + 1, None))
-                kernel_part = kernel_part.index_select(dim, torch.arange(kernel_part.size(dim) - 1, 0, -1))  # flip
+                kernel_part = kernel_part.index_select(
+                    dim, torch.arange(kernel_part.size(dim) - 1, 0, -1, device=kernel.device)
+                )  # flip
 
         kernel[[..., *slices]] = kernel_part
 
