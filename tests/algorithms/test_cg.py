@@ -6,8 +6,8 @@ import torch
 from mrpro.algorithms.optimizers import cg
 from mrpro.algorithms.optimizers.cg import CGStatus
 from mrpro.operators import EinsumOp
+from mrpro.utils import RandomGenerator
 from scipy.sparse.linalg import cg as cg_scp
-from tests import RandomGenerator
 
 
 @pytest.fixture(
@@ -22,7 +22,7 @@ from tests import RandomGenerator
 def system(request):
     """Generate data for creating a system Hx=b with linear and self-adjoint
     H."""
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
 
     # get parameters for the test
     batchsize, vectorsize, complex_valued = request.param
@@ -33,9 +33,9 @@ def system(request):
     vector_shape: tuple[int, int] = (batchsize, vectorsize)
 
     if complex_valued:
-        matrix = random_generator.complex64_tensor(size=matrix_shape, high=1.0)
+        matrix = rng.complex64_tensor(size=matrix_shape, high=1.0)
     else:
-        matrix = random_generator.float32_tensor(size=matrix_shape, low=-1.0, high=1.0)
+        matrix = rng.float32_tensor(size=matrix_shape, low=-1.0, high=1.0)
 
     # make sure H is self-adjoint
     self_adjoint_matrix = matrix.mH @ matrix
@@ -45,9 +45,9 @@ def system(request):
 
     # create ground-truth data and right-hand side of the system
     if complex_valued:
-        vector = random_generator.complex64_tensor(size=vector_shape, high=1.0)
+        vector = rng.complex64_tensor(size=vector_shape, high=1.0)
     else:
-        vector = random_generator.float32_tensor(size=vector_shape, low=-1.0, high=1.0)
+        vector = rng.float32_tensor(size=vector_shape, low=-1.0, high=1.0)
 
     (right_hand_side,) = operator(vector)
 

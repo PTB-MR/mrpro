@@ -4,8 +4,9 @@ import pytest
 import torch
 from mrpro.operators import EinsumOp, LinearOperator, MagnitudeOp
 from mrpro.operators.LinearOperatorMatrix import LinearOperatorMatrix
+from mrpro.utils import RandomGenerator
 
-from tests import RandomGenerator, dotproduct_adjointness_test
+from tests import dotproduct_adjointness_test
 
 
 def random_linearop(size, rng):
