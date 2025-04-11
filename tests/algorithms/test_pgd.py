@@ -7,7 +7,7 @@ from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators import FastFourierOp, LinearOperatorMatrix, ProximableFunctionalSeparableSum, WaveletOp
 from mrpro.operators.functionals import L1NormViewAsReal, L2NormSquared
 from mrpro.phantoms import EllipsePhantom
-from tests import RandomGenerator
+from mrpro.utils import RandomGenerator
 
 
 @pytest.mark.parametrize(('stepsize', 'backtrack_factor'), [(1.0, 1.0), (1e5, 0.8)])
@@ -17,9 +17,9 @@ def test_pgd_solution_fourier_l1(stepsize: float, backtrack_factor: float) -> No
     problem has a closed-form solution given by soft-thresholding. Test
     if the expected solution and the one obtained by the pgd are close."""
 
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
     image_shape = (6, 32, 32)
-    image = random_generator.complex64_tensor(size=image_shape)
+    image = rng.complex64_tensor(size=image_shape)
     dim = (-3, -2, -1)
 
     fourier_op = FastFourierOp(dim=dim)
@@ -58,9 +58,9 @@ def test_pgd_solution_fourier_wavelet(stepsize: float, backtrack_factor: float) 
     Because both F and W are invertible and preserve the norm, the problem has a closed-form solution
     obtainable by soft-thresholding.
     """
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
     image_shape = (6, 32, 32)
-    image = random_generator.complex64_tensor(size=image_shape)
+    image = rng.complex64_tensor(size=image_shape)
     dim = (-3, -2, -1)
 
     fourier_op = FastFourierOp(dim=dim)
@@ -102,10 +102,10 @@ def test_pgd_solution_fourier_wavelet(stepsize: float, backtrack_factor: float) 
 
 def test_callback() -> None:
     """Check that the callback function is called."""
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
     f = L2NormSquared(target=torch.zeros((1, 10, 10)), divide_by_n=False)
     g = L1NormViewAsReal(divide_by_n=False)
-    initial_values = (random_generator.complex64_tensor(size=(1, 10, 10)),)
+    initial_values = (rng.complex64_tensor(size=(1, 10, 10)),)
 
     callback_was_called = False
 
@@ -128,10 +128,10 @@ def test_callback_early_stop() -> None:
         callback_check += 1
         return False
 
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
     f = L2NormSquared(target=torch.zeros((1, 10, 10)), divide_by_n=False)
     g = L1NormViewAsReal(divide_by_n=False)
-    initial_values = (random_generator.complex64_tensor(size=(1, 10, 10)),)
+    initial_values = (rng.complex64_tensor(size=(1, 10, 10)),)
 
     pgd(f=f, g=g, initial_value=initial_values, max_iterations=100, callback=callback)
     assert callback_check == 1
@@ -178,9 +178,9 @@ def test_pgd_behavior_different_updates_t() -> None:
     """Test if the proximal gradient descent algorithm returns the same solution
     for the two different updates of t."""
 
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
     image_shape = (6, 32, 32)
-    image = random_generator.complex64_tensor(size=image_shape)
+    image = rng.complex64_tensor(size=image_shape)
     dim = (-3, -2, -1)
     fourier_op = FastFourierOp(dim=dim)
     (kspace,) = fourier_op(image)

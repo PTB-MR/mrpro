@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 import torch
 from mrpro.utils import (
+    RandomGenerator,
     broadcast_right,
     broadcasted_rearrange,
     ravel_multi_index,
@@ -16,8 +17,6 @@ from mrpro.utils import (
     unsqueeze_tensors_left,
     unsqueeze_tensors_right,
 )
-
-from tests import RandomGenerator
 
 
 def test_broadcast_right():

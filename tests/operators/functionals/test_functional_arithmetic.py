@@ -4,8 +4,8 @@ import pytest
 import torch
 from mrpro.operators import ElementaryFunctional, ElementaryProximableFunctional, ProximableFunctional
 from mrpro.operators.Functional import ScaledFunctional, ScaledProximableFunctional
+from mrpro.utils import RandomGenerator
 
-from tests import RandomGenerator
 from tests.operators.functionals.conftest import (
     FUNCTIONALS,
     PROXIMABLE_FUNCTIONALS,
