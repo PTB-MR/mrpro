@@ -19,12 +19,11 @@ def check_bounds(low: float | int | torch.Tensor, high: float | int | torch.Tens
         Data type, used to find allowed range.
     """
     info: torch.finfo | torch.iinfo
-    if dtype.is_floating_point:
-        info = torch.finfo(dtype)
-        minval, maxval = info.min, info.max
-
-    elif dtype is None:
+    if dtype is None:
         info = torch.finfo()
+        minval, maxval = info.min, info.max
+    elif dtype.is_floating_point:
+        info = torch.finfo(dtype)
         minval, maxval = info.min, info.max
     else:
         info = torch.iinfo(dtype)
@@ -34,7 +33,6 @@ def check_bounds(low: float | int | torch.Tensor, high: float | int | torch.Tens
             maxval = info.max  # https://github.com/pytorch/pytorch/issues/81446
         else:
             maxval = info.max + 1
-
     if low > high:
         raise ValueError('low should be lower than high')
     if low < minval or high > maxval:
