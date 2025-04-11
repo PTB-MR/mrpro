@@ -5,9 +5,10 @@ from typing import cast
 import pytest
 import torch
 from mrpro.operators import LinearOperator, Operator
+from mrpro.utils import RandomGenerator
 from typing_extensions import Any, assert_type
 
-from tests import RandomGenerator, dotproduct_adjointness_test
+from tests import dotproduct_adjointness_test
 
 
 class DummyOperator(Operator[torch.Tensor, tuple[torch.Tensor,]]):
