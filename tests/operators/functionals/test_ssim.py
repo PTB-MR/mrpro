@@ -2,8 +2,7 @@
 
 import torch
 from mrpro.operators.functionals.SSIM import SSIM
-
-from tests import RandomGenerator
+from mrpro.utils import RandomGenerator
 
 
 def test_ssim() -> None:
