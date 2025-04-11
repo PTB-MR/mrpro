@@ -307,7 +307,7 @@ def test_dataclass_getitem(index, expected_shape: tuple[int, ...]) -> None:
     check_broadcastable(indexed.shape, expected_shape)
 
 
-def test_dataclass_reducerepeat() -> None:
+def test_dataclass_reduce_repeat() -> None:
     """Test reduction of repeated dimensions."""
 
     class Container(Dataclass):
