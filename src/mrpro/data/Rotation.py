@@ -59,6 +59,7 @@ from typing_extensions import Self, Unpack, overload
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils import reduce_repeat
 from mrpro.utils.indexing import Indexer
+from mrpro.utils.reshape import broadcasted_rearrange
 from mrpro.utils.typing import NestedSequence, TorchIndexerType
 from mrpro.utils.vmf import sample_vmf
 
@@ -1650,6 +1651,18 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         self._quaternions.data = reduce_repeat(self._quaternions, tol, quaternion_dim)
         self._is_improper.data = reduce_repeat(self._is_improper, tol, dim)
         return self
+
+    def _broadcasted_rearrange(
+        self, pattern: str, broadcasted_shape: Sequence[int], reduce_views: bool = True, **axes_lengths: int
+    ) -> Self:
+        quaternions = [
+            broadcasted_rearrange(q, pattern, broadcasted_shape, reduce_views=reduce_views, **axes_lengths)
+            for q in self._quaternions.unbind(-1)
+        ]
+        inversion = broadcasted_rearrange(
+            self._is_improper, pattern, broadcasted_shape=broadcasted_shape, reduce_views=reduce_views, **axes_lengths
+        )
+        return type(self)(torch.stack(quaternions, -1), False, False, inversion)
 
     @property
     def quaternion_x(self) -> torch.Tensor:

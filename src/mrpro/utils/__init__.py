@@ -12,6 +12,7 @@ from mrpro.utils.split_idx import split_idx
 from mrpro.utils.sliding_window import sliding_window
 from mrpro.utils.reshape import broadcast_right, unsqueeze_left, unsqueeze_right, reduce_view, reshape_broadcasted, ravel_multi_index, unsqueeze_tensors_left, unsqueeze_tensors_right, unsqueeze_at, unsqueeze_tensors_at
 from mrpro.utils.summarize import summarize_object, summarize_values
+from mrpro.utils.reshape import broadcast_right, unsqueeze_left, unsqueeze_right, reduce_view, reshape_broadcasted, ravel_multi_index, unsqueeze_tensors_left, unsqueeze_tensors_right, unsqueeze_at, unsqueeze_tensors_at, broadcasted_rearrange
 from mrpro.utils.TensorAttributeMixin import TensorAttributeMixin
 from mrpro.utils.RandomGenerator import RandomGenerator
 
