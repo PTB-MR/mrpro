@@ -3,9 +3,8 @@
 import pytest
 import torch
 from mrpro.data import SpatialDimension
+from mrpro.utils import RandomGenerator
 from typing_extensions import Any, assert_type
-
-from tests import RandomGenerator
 
 
 def test_spatial_dimension_from_xyz_int() -> None:

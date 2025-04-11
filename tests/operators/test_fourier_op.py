@@ -8,10 +8,10 @@ from mrpro.data import KData, KTrajectory, SpatialDimension
 from mrpro.data.enums import TrajType
 from mrpro.data.traj_calculators import KTrajectoryCartesian
 from mrpro.operators import FourierOp
+from mrpro.utils import RandomGenerator
 from typing_extensions import Unpack
 
 from tests import (
-    RandomGenerator,
     dotproduct_adjointness_test,
     forward_mode_autodiff_of_linear_operator_test,
     gradient_of_linear_operator_test,
@@ -31,8 +31,8 @@ def create_data(
     type_kz: str,
 ) -> tuple[torch.Tensor, KTrajectory]:
     """Create k-space trajectory and random image."""
-    random_generator = RandomGenerator(seed=0)
-    img = random_generator.complex64_tensor(size=img_shape)
+    rng = RandomGenerator(seed=0)
+    img = rng.complex64_tensor(size=img_shape)
     trajectory = create_traj(nkx, nky, nkz, type_kx, type_ky, type_kz)
     return img, trajectory
 
@@ -60,9 +60,9 @@ def create_fourier_op_and_range_domain(
     )
     fourier_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
 
-    random_generator = RandomGenerator(seed=0)
-    u = random_generator.complex64_tensor(size=img_shape)
-    v = random_generator.complex64_tensor(size=k_shape)
+    rng = RandomGenerator(seed=0)
+    u = rng.complex64_tensor(size=img_shape)
+    v = rng.complex64_tensor(size=k_shape)
     return fourier_op, u, v
 
 

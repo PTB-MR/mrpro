@@ -46,9 +46,8 @@ import pytest
 import torch
 from mrpro.data import Rotation, SpatialDimension
 from mrpro.data.Rotation import AXIS_ORDER
+from mrpro.utils import RandomGenerator
 from scipy.stats import special_ortho_group
-
-from tests import RandomGenerator
 
 
 def _norm(x):
