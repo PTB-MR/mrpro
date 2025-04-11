@@ -5,9 +5,8 @@ from dataclasses import field
 import pytest
 import torch
 from mrpro.data import Dataclass, Rotation, SpatialDimension
+from mrpro.utils import RandomGenerator
 from typing_extensions import Any
-
-from tests import RandomGenerator
 
 
 class SharedModule(torch.nn.Module):

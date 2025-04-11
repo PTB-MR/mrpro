@@ -5,7 +5,7 @@ import torch
 from mrpro.algorithms.optimizers import pdhg
 from mrpro.operators import FastFourierOp, IdentityOp, LinearOperatorMatrix, ProximableFunctionalSeparableSum, WaveletOp
 from mrpro.operators.functionals import L1Norm, L1NormViewAsReal, L2NormSquared, ZeroFunctional
-from tests import RandomGenerator
+from mrpro.utils import RandomGenerator
 
 
 def test_l2_l1_identification1() -> None:
@@ -17,10 +17,10 @@ def test_l2_l1_identification1() -> None:
         g(x) = lambda * ||x||_1
         K = Id
     """
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
 
     data_shape = (32, 32)
-    data = random_generator.float32_tensor(size=data_shape)
+    data = rng.float32_tensor(size=data_shape)
 
     regularization_parameter = 0.1
 
@@ -31,7 +31,7 @@ def test_l2_l1_identification1() -> None:
     g = l1
     operator = None  # corresponds to IdentityOp()
 
-    initial_values = (random_generator.float32_tensor(size=data_shape),)
+    initial_values = (rng.float32_tensor(size=data_shape),)
     expected = torch.nn.functional.softshrink(data, regularization_parameter)
 
     max_iterations = 64
@@ -48,10 +48,10 @@ def test_l2_l1_identification2() -> None:
         g(x) = 0 for all x,
         K = [Id, Id]^T
     """
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
 
     data_shape = (32, 64, 64)
-    data = random_generator.float32_tensor(size=data_shape)
+    data = rng.float32_tensor(size=data_shape)
 
     regularization_parameter = 0.5
 
@@ -62,7 +62,7 @@ def test_l2_l1_identification2() -> None:
     g = None  # corresponds to ZeroFunctional()
     operator = LinearOperatorMatrix(((IdentityOp(),), (IdentityOp(),)))
 
-    initial_values = (random_generator.float32_tensor(size=data_shape),)
+    initial_values = (rng.float32_tensor(size=data_shape),)
 
     # solution given by soft thresholding
     expected = torch.nn.functional.softshrink(data, regularization_parameter)
@@ -77,10 +77,10 @@ def test_fourier_l2_l1_() -> None:
     where F is the full FFT and y is sampled on a Cartesian grid. Thus, again, the
     problem has a closed-form solution given by soft-thresholding.
     """
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
 
     image_shape = (32, 48, 48)
-    image = random_generator.complex64_tensor(size=image_shape)
+    image = rng.complex64_tensor(size=image_shape)
 
     fourier_op = FastFourierOp(dim=(-3, -2, -1))
 
@@ -95,7 +95,7 @@ def test_fourier_l2_l1_() -> None:
     g = ZeroFunctional()
     operator = LinearOperatorMatrix(((fourier_op,), (IdentityOp(),)))
 
-    initial_values = (random_generator.complex64_tensor(size=image_shape),)
+    initial_values = (rng.complex64_tensor(size=image_shape),)
 
     # solution given by soft thresholding
     expected = torch.view_as_complex(
@@ -113,10 +113,10 @@ def test_fourier_l2_wavelet_l1_() -> None:
     Because both F and W are invertible and preserve the norm, the problem has a closed-form solution
     obtainable by soft-thresholding.
     """
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
 
     image_shape = (6, 32, 32)
-    image = random_generator.complex64_tensor(size=image_shape)
+    image = rng.complex64_tensor(size=image_shape)
 
     dim = (-3, -2, -1)
     fourier_op = FastFourierOp(dim=dim)
@@ -133,7 +133,7 @@ def test_fourier_l2_wavelet_l1_() -> None:
     g = ZeroFunctional()
     operator = LinearOperatorMatrix(((fourier_op,), (wavelet_op,)))
 
-    initial_values = (random_generator.complex64_tensor(size=image_shape),)
+    initial_values = (rng.complex64_tensor(size=image_shape),)
 
     # solution given by soft thresholding
     expected = wavelet_op.H(
@@ -151,7 +151,7 @@ def test_fourier_l2_wavelet_l1_() -> None:
 
 def test_f_and_g_None() -> None:
     """Check that the initial guess is returned as solution when f and g are None."""
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
 
     data_shape = (2, 8, 8)
 
@@ -159,7 +159,7 @@ def test_f_and_g_None() -> None:
     g = None
     operator = None
 
-    initial_values = (random_generator.complex64_tensor(size=data_shape),)
+    initial_values = (rng.complex64_tensor(size=data_shape),)
 
     with pytest.warns(UserWarning, match='constant'):
         (pdhg_solution,) = pdhg(f=f, g=g, operator=operator, initial_values=initial_values, max_iterations=1)
@@ -168,11 +168,11 @@ def test_f_and_g_None() -> None:
 
 def test_callback() -> None:
     """Check that the callback function is called."""
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
     f = ZeroFunctional()
     g = None
     operator = None
-    initial_values = (random_generator.complex64_tensor(size=(8,)),)
+    initial_values = (rng.complex64_tensor(size=(8,)),)
 
     callback_was_called = False
 
@@ -195,11 +195,11 @@ def test_callback_early_stop() -> None:
         callback_check += 1
         return False
 
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
     f = ZeroFunctional()
     g = None
     operator = None
-    initial_values = (random_generator.complex64_tensor(size=(8,)),)
+    initial_values = (rng.complex64_tensor(size=(8,)),)
 
     pdhg(f=f, g=g, operator=operator, initial_values=initial_values, max_iterations=100, callback=callback)
     assert callback_check == 1
@@ -218,10 +218,10 @@ def test_stepsizes() -> None:
         K = Id
 
     """
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
 
     data_shape = (4, 8, 8)
-    data = random_generator.float32_tensor(size=data_shape)
+    data = rng.float32_tensor(size=data_shape)
 
     regularization_parameter = 0.5
 
@@ -233,7 +233,7 @@ def test_stepsizes() -> None:
     operator = LinearOperatorMatrix(((IdentityOp(),), (IdentityOp(),)))
 
     # compute the operator norm of the linear operator
-    initial_values = (random_generator.float32_tensor(size=data_shape),)
+    initial_values = (rng.float32_tensor(size=data_shape),)
     operator_norm = operator.operator_norm(*initial_values, max_iterations=64)
 
     expected = torch.nn.functional.softshrink(data, regularization_parameter)
@@ -278,9 +278,9 @@ def test_stepsizes() -> None:
 
 def test_value_errors() -> None:
     """Check that value-errors are caught."""
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
 
-    initial_values = (random_generator.complex64_tensor(size=(8,)),)
+    initial_values = (rng.complex64_tensor(size=(8,)),)
 
     with pytest.raises(ValueError, match='same'):
         # len(f) and len(g) are not equal
@@ -317,10 +317,10 @@ def test_pdhg_stopping_after_one_iteration() -> None:
     """Test if pdhg stops after one iteration if the ground-truth is the initial
     guess and the tolerance is high enough."""
 
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
 
     data_shape = (1, 2, 3)
-    data = random_generator.float32_tensor(size=data_shape)
+    data = rng.float32_tensor(size=data_shape)
 
     regularization_parameter = 2.0
 
