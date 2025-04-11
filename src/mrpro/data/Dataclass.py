@@ -6,11 +6,13 @@ from copy import copy as shallowcopy
 from copy import deepcopy
 from typing import ClassVar, TypeAlias, cast
 
+import einops
 import torch
 from typing_extensions import Any, Protocol, Self, TypeVar, dataclass_transform, overload, runtime_checkable
 
 from mrpro.utils.indexing import HasIndex, Indexer
 from mrpro.utils.reduce_repeat import reduce_repeat
+from mrpro.utils.reshape import broadcasted_rearrange
 from mrpro.utils.summarize import summarize_object
 from mrpro.utils.typing import TorchIndexerType
 
@@ -20,6 +22,15 @@ class HasReduceRepeats(Protocol):
     """Objects that have a _reduce_repeats method."""
 
     def _reduce_repeats_(self, tol: float = 1e-6, dim: Sequence[int] | None = None, recurse: bool = True) -> Self: ...
+
+
+@runtime_checkable
+class HasBroadcastedRearrange(Protocol):
+    """Objects that have a _broadcasted_rearrange method."""
+
+    def _broadcasted_rearrange(
+        self, pattern: str, broadcasted_shape: Sequence[int], reduce_views: bool = True, **axes_lengths
+    ) -> Self: ...
 
 
 class InconsistentDeviceError(ValueError):
@@ -678,3 +689,60 @@ class Dataclass:
         return new
 
     # endregion Indexing
+
+    def rearrange(self, pattern: str, **axes_lengths: int) -> Self:
+        """Rearrange the data according to the specified pattern.
+
+        Similar to einops.rearrange, allowing flexible rearrangement of data dimensions.
+
+        Examples
+        --------
+        >>> # Split the phase encode lines into 8 cardiac phases
+        >>> data.rearrange('batch coils k2 (phase k1) k0 -> batch phase coils k0 k1 k2', phase=8)
+        >>> # Split the k-space samples into 64 k1 and 64 k2 lines
+        >>> data.rearrange('... 1 1 (k2 k1 k0) -> ... k2 k1 k0', k2=64, k1=64, k0=128)
+
+        Parameters
+        ----------
+        pattern
+            String describing the rearrangement pattern. See `einops.rearrange` and the examples above for more details.
+        **axes_lengths : dict
+            Optional dictionary mapping axis names to their lengths.
+            Used when pattern contains unknown dimensions.
+
+        Returns
+        -------
+        Self
+            The rearranged data with the same type as the input.
+
+        """
+        memo: dict = {}
+        shape = self.shape
+
+        def apply_rearrange(data: T) -> T:
+            def rearrange_tensor(data: torch.Tensor) -> torch.Tensor:
+                return broadcasted_rearrange(data, pattern, shape, reduce_views=True, **axes_lengths)
+
+            if isinstance(data, torch.Tensor):
+                return cast(T, rearrange_tensor(data))
+            if isinstance(data, HasBroadcastedRearrange):
+                return cast(T, data._broadcasted_rearrange(pattern, shape, reduce_views=True, **axes_lengths))
+            elif isinstance(data, Dataclass):
+                return cast(T, shallowcopy(data).apply_(apply_rearrange, memo=memo, recurse=False))
+            else:
+                return data
+
+        new = shallowcopy(self)
+        return new.apply_(apply_rearrange, memo=memo, recurse=False)
+
+
+class FakeDataclassBackend(einops._backends.AbstractBackend):
+    """Einops backend for Dataclass: Will only raise an error if used."""
+
+    framework_name = 'mrpro'
+
+    def is_appropriate_type(self, x) -> bool:  # noqa: ANN001
+        """Check if the object is a Dataclass."""
+        if isinstance(x, Dataclass):
+            raise NotImplementedError('To use einops with Dataclass, please use the rearrange method of the Dataclass.')
+        return False
