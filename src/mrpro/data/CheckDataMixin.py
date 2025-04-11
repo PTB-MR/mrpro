@@ -421,6 +421,15 @@ class DType(Annotation):
                 f'this object has dtype {obj.dtype}, not any of {self.allowed_dtypes} as expected by the type hint'
             )
 
+    def __repr__(self) -> str:
+        """Get a string representation of the annotation."""
+        representation = f'DType({self.allowed_dtypes})'
+        return representation
+
+    def __str__(self) -> str:
+        """Get the annotation as string."""
+        return '|'.join(str(dtype) for dtype in self.allowed_dtypes)
+
 
 @dataclass(slots=True, init=False, frozen=True)
 class Shape(Annotation):
@@ -471,6 +480,10 @@ class Shape(Annotation):
         """Get a string representation of the annotation."""
         representation = f'Shape(specification={self.shape_specification})'
         return representation
+
+    def __str__(self) -> str:
+        """Get the annotation as string."""
+        return self.shape_specification
 
     def check(self, obj: object, /, *, memo: ShapeMemo | None = None, strict: bool = False) -> None | ShapeMemo:
         """Raise a ShapeError if the object does not have the expected shape.
@@ -550,16 +563,16 @@ class CheckDataMixin(DataclassInstance):
     See :class:`Annotation` for more details.
     """
 
-    @property
-    def shape(self) -> tuple[int, ...]:
-        """Shape of the dataclass."""
-        shapes = []
-        for elem in fields(self):
-            value = getattr(self, elem.name)
-            if isinstance(value, HasShape):
-                shapes.append(value.shape)
-        shape = torch.broadcast_shapes(*shapes)
-        return shape
+    # @property
+    # def shape(self) -> tuple[int, ...]:
+    #     """Shape of the dataclass."""
+    #     shapes = []
+    #     for elem in fields(self):
+    #         value = getattr(self, elem.name)
+    #         if isinstance(value, HasShape):
+    #             shapes.append(value.shape)
+    #     shape = torch.broadcast_shapes(*shapes)
+    #     return shape
 
     @property
     def dtype(self) -> torch.dtype:
