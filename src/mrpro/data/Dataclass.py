@@ -735,6 +735,14 @@ class Dataclass:
         new = shallowcopy(self)
         return new.apply_(apply_rearrange, memo=memo, recurse=False)
 
+    def split(self, dim: int, size: int = 1, step: int = 1):
+        shape = self.shape
+        slices = [slice(start, start + size) for start in range(0, shape[dim], step)]
+        result = [self[slice] for slice in slices]
+        return result
+
+    def sliding_window(self, dim, size, stride, dilation): ...
+
 
 class FakeDataclassBackend(einops._backends.AbstractBackend):
     """Einops backend for Dataclass: Will only raise an error if used."""
