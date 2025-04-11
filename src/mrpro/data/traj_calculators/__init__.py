@@ -14,5 +14,5 @@ __all__ = [
     "KTrajectoryPulseq",
     "KTrajectoryRadial2D",
     "KTrajectoryRpe",
-    "KTrajectorySunflowerGoldenRpe"
+    "KTrajectorySunflowerGoldenRpe",
 ]
