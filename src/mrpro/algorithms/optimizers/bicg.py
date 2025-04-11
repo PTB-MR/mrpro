@@ -1,4 +1,4 @@
-"""Stabalized Bi-Conjugate Gradient method for non-symmetric linear systems."""
+"""Stabilized Bi-Conjugate Gradient method for non-symmetric linear systems."""
 
 from collections.abc import Callable, Sequence
 from typing import TypedDict
