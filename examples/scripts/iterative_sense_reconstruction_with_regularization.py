@@ -196,7 +196,7 @@ operator = (
 # the residual is small enough.
 
 # %%
-img_manual = mrpro.algorithms.optimizers.cg(
+(img_manual,) = mrpro.algorithms.optimizers.cg(
     operator, right_hand_side, initial_value=right_hand_side, max_iterations=8, tolerance=0.0
 )
 
