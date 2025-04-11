@@ -137,45 +137,45 @@ def cg(
     if any(s.shape != r.shape for s, r in zip(solution, right_hand_side_, strict=True)):
         raise ValueError('Shape mismatch in initial_value and right_hand_side')
 
-    r = tuple(rhs - op_sol for rhs, op_sol in zip(right_hand_side_, operator(*solution), strict=True))
+    residual = tuple(rhs - op_sol for rhs, op_sol in zip(right_hand_side_, operator(*solution), strict=True))
 
     if preconditioner_inverse is not None:
-        p = preconditioner_inverse(*r)
+        conjugate = preconditioner_inverse(*residual)
     else:
-        p = r
+        conjugate = residual
 
     # dummy value. new value will be set in loop before first usage
-    rho_prev: torch.Tensor | None = None
+    direction_dot_residual_prev: torch.Tensor | None = None
 
     for iteration in range(max_iterations):
-        residual_dot_residual = vdot(r, r).real
+        residual_dot_residual = vdot(residual, residual).real
 
         if residual_dot_residual < tolerance**2:  # are we done?
             break
 
         if preconditioner_inverse is not None:
-            z = preconditioner_inverse(*r)
-            rho_cur = vdot(r, z).real
+            direction = preconditioner_inverse(*residual)
+            direction_dot_residual = vdot(residual, direction).real
         else:
-            rho_cur = residual_dot_residual
-            z = r
+            direction = residual
+            direction_dot_residual = residual_dot_residual
 
-        if rho_prev is not None:  # not first iteration
-            beta = rho_cur / rho_prev
-            p = tuple(res + beta * con for res, con in zip(z, p, strict=True))
-        q = operator(*p)
-        alpha = rho_cur / vdot(p, q).real
-        solution = tuple(sol + alpha * con for sol, con in zip(solution, p, strict=True))
-        r = tuple(res - alpha * op_con for res, op_con in zip(r, q, strict=True))
-        rho_prev = rho_cur
+        if direction_dot_residual_prev is not None:  # not first iteration
+            beta = direction_dot_residual / direction_dot_residual_prev
+            conjugate = tuple(res + beta * con for res, con in zip(direction, conjugate, strict=True))
+        operator_conjugate = operator(*conjugate)
+        alpha = direction_dot_residual / vdot(conjugate, operator_conjugate).real
+        solution = tuple(sol + alpha * con for sol, con in zip(solution, conjugate, strict=True))
+        residual = tuple(res - alpha * op_con for res, op_con in zip(residual, operator_conjugate, strict=True))
+        direction_dot_residual_prev = direction_dot_residual
 
         if callback is not None:
             continue_iterations = callback(
                 {
                     'solution': solution,
                     'iteration_number': iteration,
-                    'residual': r,
-                    'preconditioned_residual': z,
+                    'residual': residual,
+                    'preconditioned_residual': direction,
                 }
             )
             if continue_iterations is False:
