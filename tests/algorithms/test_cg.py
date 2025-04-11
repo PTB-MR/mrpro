@@ -1,6 +1,5 @@
 """Tests for the conjugate gradient method."""
 
-import numpy as np
 import pytest
 import scipy.linalg
 import scipy.sparse
