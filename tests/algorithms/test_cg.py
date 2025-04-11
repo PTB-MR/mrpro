@@ -60,7 +60,7 @@ def system(request):
 )
 def matrixsystem(
     request,
-) -> tuple[LinearOperatorMatrix, tuple[torch.Tensor, ...], tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]]:
+) -> tuple[LinearOperatorMatrix, tuple[torch.Tensor, ...], tuple[torch.Tensor, ...], tuple[torch.Tensor, ...] | None]:
     """system Hx=b with linear and self-adjoint H as LinearOperatorMatrix."""
     rng = RandomGenerator(seed=456)
     batchsize, vectorsize, complex_valued_system, separate_initial_value = request.param
@@ -80,7 +80,7 @@ def matrixsystem(
     operator_matrix = LinearOperatorMatrix.from_diagonal(*operators)
     right_hand_side = operator_matrix(*vectors)
     if separate_initial_value:
-        initial_value = [rng.rand_like(vector) for vector in vectors]
+        initial_value = tuple(rng.rand_like(vector) for vector in vectors)
     else:
         initial_value = None
     return (operator_matrix, right_hand_side, tuple(vectors), initial_value)
