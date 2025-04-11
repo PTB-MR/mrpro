@@ -1,19 +1,19 @@
 """Tests for the conjugate gradient method."""
 
 import pytest
-import scipy
+import scipy.linalg
+import scipy.sparse
 import torch
 from mrpro.algorithms.optimizers import cg
 from mrpro.algorithms.optimizers.cg import CGStatus
 from mrpro.operators import EinsumOp, LinearOperatorMatrix
 from mrpro.utils import RandomGenerator
-from scipy.sparse.linalg import cg as cg_scp
 
 
 @pytest.fixture(
     params=[  # (batch-size, vector-size, complex-valued system, separate initial_value)
-        (1, 32, False, False),
-        (4, 32, True, True),
+        ((), 32, False, False),
+        ((4,), 32, True, True),
     ],
     ids=[
         'real_single_noinit',
@@ -22,14 +22,14 @@ from scipy.sparse.linalg import cg as cg_scp
 )
 def system(request):
     """Generate system Hx=b with linear and self-adjoint H."""
-    rng = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=123)
     batchsize, vectorsize, complex_valued, separate_initial_value = request.param
-    matrix_shape: tuple[int, int, int] = (batchsize, vectorsize, vectorsize)
-    vector_shape: tuple[int, int] = (batchsize, vectorsize)
+    matrix_shape: tuple[int, int, int] = (*batchsize, vectorsize, vectorsize)
+    vector_shape: tuple[int, int] = (*batchsize, vectorsize)
     if complex_valued:
         matrix = rng.complex64_tensor(size=matrix_shape, high=1.0)
     else:
-        matrix = rng.float32_tensor(size=matrix_shape, low=-1.0, high=1.0)
+        matrix = rng.float64_tensor(size=matrix_shape, low=-1.0, high=1.0)
 
     # make sure H is self-adjoint
     self_adjoint_matrix = matrix.mH @ matrix
@@ -41,7 +41,7 @@ def system(request):
     if complex_valued:
         vector = rng.complex64_tensor(size=vector_shape, high=1.0)
     else:
-        vector = rng.float32_tensor(size=vector_shape, low=-1.0, high=1.0)
+        vector = rng.float64_tensor(size=vector_shape, low=-1.0, high=1.0)
 
     (right_hand_side,) = operator(vector)
     if separate_initial_value:
@@ -53,14 +53,16 @@ def system(request):
 
 @pytest.fixture(
     params=[  # (batch-size, vector-size, complex-valued system, separate initial_value)
-        (2, 16, (False, True, False), True),
-        (3, 16, (False,), False),
+        (2, 10, (False, True, False), True),
+        (3, 10, (False,), False),
     ],
     ids=['3x3-operator-matrix', '1x1-operator-matrix'],
 )
-def matrixsystem(request):
+def matrixsystem(
+    request,
+) -> tuple[LinearOperatorMatrix, tuple[torch.Tensor, ...], tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]]:
     """system Hx=b with linear and self-adjoint H as LinearOperatorMatrix."""
-    rng = RandomGenerator(seed=1)
+    rng = RandomGenerator(seed=456)
     batchsize, vectorsize, complex_valued_system, separate_initial_value = request.param
     matrix_shape: tuple[int, int, int] = (batchsize, vectorsize, vectorsize)
     vector_shape: tuple[int, int] = (batchsize, vectorsize)
@@ -87,7 +89,7 @@ def matrixsystem(request):
 def test_cg_solution(system) -> None:
     """Test if CG delivers accurate solution."""
     operator, right_hand_side, solution, initial_value = system
-    cg_solution = cg(operator, right_hand_side, initial_value=initial_value, max_iterations=256)
+    (cg_solution,) = cg(operator, right_hand_side, initial_value=initial_value, max_iterations=256)
     torch.testing.assert_close(cg_solution, solution, rtol=5e-3, atol=5e-3)
 
 
@@ -115,37 +117,50 @@ def test_cg_stopping_after_one_iteration(system) -> None:
         pytest.fail('CG did not exit before performing any iterations')
 
     # the test should fail if we reach the callback
-    xcg_one_iteration = cg(
+    (cg_solution,) = cg(
         operator, right_hand_side, initial_value=solution, max_iterations=10, tolerance=1e-4, callback=callback
     )
-    assert (xcg_one_iteration == solution).all()
+    assert (cg_solution == solution).all()
 
 
 @pytest.mark.parametrize('max_iterations', [1, 2, 3, 5])
-def test_compare_cg_to_scipy(system, max_iterations: int) -> None:
+@pytest.mark.parametrize('use_preconditioner', [True, False], ids=['with preconditioner', 'without preconditioner'])
+def test_compare_cg_to_scipy(system, max_iterations: int, use_preconditioner: bool) -> None:
     """Test if our implementation is close to the one of scipy."""
-    operator, right_hand_side, _, initial_value = system
+    operator, right_hand_side, solution, initial_value = system
 
-    # if batchsize>1, construct H = diag(H1,...,H_batchsize)
-    # and b=[b1,...,b_batchsize]^T, otherwise just take the matrix
-    matrix_np = scipy.linalg.block_diag(*operator.matrix.numpy())
+    if operator.matrix.ndim == 2:
+        operator_sp = operator.matrix.numpy()
+    else:
+        operator_sp = scipy.linalg.block_diag(*operator.matrix.numpy())
+    if use_preconditioner:
+        ilu = scipy.sparse.linalg.spilu(scipy.sparse.csc_matrix(operator_sp), drop_tol=0.05)
+        preconditioner_sp = scipy.sparse.linalg.LinearOperator(operator_sp.shape, lambda x: ilu.solve(x))
+        preconditioner = lambda x: (torch.as_tensor(ilu.solve(x.flatten().numpy())).reshape(x.shape),)  #  # noqa: E731
+    else:
+        preconditioner_sp = preconditioner = None
 
-    (xcg_scipy, _) = cg_scp(
-        matrix_np,
+    (scipy_solution, _) = scipy.sparse.linalg.cg(
+        operator_sp,
         right_hand_side.flatten().numpy(),
         x0=initial_value.flatten().numpy() if initial_value is not None else right_hand_side.flatten().numpy(),
         maxiter=max_iterations,
         atol=0,
+        M=preconditioner_sp,
     )
-    cg_solution_scipy = xcg_scipy.reshape(right_hand_side.shape)
-    cg_solution_mrpro = cg(
+    cg_solution_scipy = scipy_solution.reshape(right_hand_side.shape)
+    (cg_solution,) = cg(
         operator,
         right_hand_side,
         initial_value=initial_value,
         max_iterations=max_iterations,
         tolerance=0,
+        preconditioner_inverse=preconditioner,
     )
-    torch.testing.assert_close(cg_solution_mrpro, torch.tensor(cg_solution_scipy), atol=3e-5, rtol=1e-5)
+
+    tol = 1e-6 if cg_solution.dtype.to_real() == torch.float64 else 5e-3
+
+    torch.testing.assert_close(cg_solution, torch.tensor(cg_solution_scipy), atol=tol, rtol=tol)
 
 
 def test_invalid_shapes(system) -> None:
@@ -195,7 +210,7 @@ def test_cg_autograd(system) -> None:
     operator, right_hand_side, _, initial_value = system
     right_hand_side.requires_grad_(True)
     with torch.autograd.detect_anomaly():
-        result = cg(operator, right_hand_side, initial_value=initial_value, tolerance=0, max_iterations=5)
+        (result,) = cg(operator, right_hand_side, initial_value=initial_value, tolerance=0, max_iterations=5)
         result.abs().sum().backward()
     assert right_hand_side.grad is not None
 
@@ -208,6 +223,6 @@ def test_cg_cuda(matrixsystem) -> None:
     operator = operator.to('cuda')
     initial_value = tuple(x.to('cuda') for x in initial_value) if initial_value is not None else None
     solution = tuple(x.to('cuda') for x in solution)
-    result = cg(operator, right_hand_side, initial_value=initial_value, tolerance=1e-6, max_iterations=1000)
+    (result,) = cg(operator, right_hand_side, initial_value=initial_value, tolerance=1e-6, max_iterations=1000)
     assert all(x.is_cuda for x in result)
     torch.testing.assert_close(result, solution, rtol=5e-3, atol=5e-3)
