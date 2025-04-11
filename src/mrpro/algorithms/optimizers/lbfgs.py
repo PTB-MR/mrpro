@@ -97,7 +97,7 @@ def lbfgs(
 
     Returns
     -------
-        List of optim\ized parameters.
+        List of optimized parameters.
     """
     parameters = tuple(p.detach().clone().requires_grad_(True) for p in initial_parameters)
     optim = LBFGS(
