@@ -3,14 +3,11 @@
 from collections.abc import Callable, Sequence
 
 import torch
-from typing_extensions import TypeVarTuple, Unpack, overload
+from typing_extensions import Unpack, overload
 
 from mrpro.algorithms.optimizers.OptimizerStatus import OptimizerStatus
-from ...operators.IdentityOp import IdentityOp
 from mrpro.operators.LinearOperator import LinearOperator
 from mrpro.operators.LinearOperatorMatrix import LinearOperatorMatrix
-
-Tuple = TypeVarTuple('Tuple')
 
 
 def vdot(a: Sequence[torch.Tensor], b: Sequence[torch.Tensor]) -> torch.Tensor:
@@ -30,17 +27,17 @@ class CGStatus(OptimizerStatus):
     """Preconditioned residual of the current estimate."""
 
 
-TensorTuple = TypeVarTuple('TensorTuple')
-OperatorMatrixLikeCallable = Callable[[Unpack[TensorTuple]], tuple[Unpack[TensorTuple]]]
-OperatorLikeCallable = Callable[[torch.Tensor],tuple[torch.Tensor]]
+OperatorMatrixLikeCallable = Callable[[Unpack[tuple[torch.Tensor, ...]]], tuple[torch.Tensor, ...]]
+OperatorLikeCallable = Callable[[torch.Tensor], tuple[torch.Tensor]]
+
 
 @overload
 def cg(
-    operator: OperatorLikeCallable
-    right_hand_side: tuple[torch.Tensor],
+    operator: OperatorLikeCallable,
+    right_hand_side: tuple[torch.Tensor] | torch.Tensor,
     *,
-    initial_value: tuple[torch.Tensor] | None = None,
-    preconditioner_inverse: OperatorLikeCallable| None = None,
+    initial_value: tuple[torch.Tensor] | torch.Tensor | None = None,
+    preconditioner_inverse: OperatorLikeCallable | None = None,
     max_iterations: int = 128,
     tolerance: float = 1e-4,
     callback: Callable[[CGStatus], bool | None] | None = None,
@@ -49,36 +46,56 @@ def cg(
 
 @overload
 def cg(
-    operator: Callable[[Unpack[tuple[torch.Tensor, ...]]], tuple[torch.Tensor, ...]],
-    right_hand_side: tuple[Unpack[TensorTuple]]|Sequence[torch.Tensor],
+    operator: OperatorMatrixLikeCallable,
+    right_hand_side: Sequence[torch.Tensor],
     *,
-    initial_value: tuple[Unpack[TensorTuple]]|Sequence[torch.Tensor]|None=None,
-    preconditioner_inverse: OperatorLikeCallable|None = None,
+    initial_value: Sequence[torch.Tensor] | None = None,
+    preconditioner_inverse: OperatorMatrixLikeCallable | None = None,
     max_iterations: int = 128,
     tolerance: float = 1e-4,
     callback: Callable[[CGStatus], bool | None] | None = None,
-) -> tuple[Unpack[TensorTuple]]: ...
+) -> tuple[torch.Tensor, ...]: ...
 
 
 def cg(
-    operator: LinearOperator
-    | LinearOperatorMatrix
-    | OperatorMatrixLikeCallable|OperatorLikeCallable,
-    right_hand_side:Sequence[torch.Tensor],
+    operator: LinearOperator | LinearOperatorMatrix | OperatorMatrixLikeCallable | OperatorLikeCallable,
+    right_hand_side: Sequence[torch.Tensor] | torch.Tensor,
     *,
-    initial_value: Sequence[torch.Tensor] | None = None,
+    initial_value: Sequence[torch.Tensor] | torch.Tensor | None = None,
     preconditioner_inverse: LinearOperator
     | LinearOperatorMatrix
-    | OperatorMatrixLikeCallable|OperatorLikeCallable|None = None,
+    | OperatorMatrixLikeCallable
+    | OperatorLikeCallable
+    | None = None,
     max_iterations: int = 128,
     tolerance: float = 1e-4,
     callback: Callable[[CGStatus], bool | None] | None = None,
-) -> tuple[torch.Tensor, ...]:
+) -> tuple[torch.Tensor, ...] | tuple[torch.Tensor]:
     r"""(Preconditioned) Conjugate Gradient for solving :math:`Hx=b`.
 
-    Solves systems where :math:`H` is self-adjoint (and ideally positive definite).
+     This algorithm solves systems of the form :math:`H x = b`, where :math:`H` is a self-adjoint linear operator
+    and :math:`b` is the right-hand side. The method can solve a batch of :math:`N` systems jointly, thereby taking
+    :math:`H` as a block-diagonal with blocks :math:`H_i` and :math:`b = [b_1, ..., b_N] ^T`.
+
+     The method performs the following steps:
+
+     1. Initialize the residual :math:`r_0 = b - Hx_0` (with :math:`x_0` as the initial guess).
+     2. Set the search direction :math:`p_0 = r_0`.
+     3. For each iteration :math:`k = 0, 1, 2, ...`:
+
+        - Compute :math:`\alpha_k = \frac{r_k^T r_k}{p_k^T H p_k}`.
+        - Update the solution: :math:`x_{k+1} = x_k + \alpha_k p_k`.
+        - Compute the new residual: :math:`r_{k+1} = r_k - \alpha_k H p_k`.
+        - Update the search direction: :math:`\beta_k = \frac{r_{k+1}^T r_{k+1}}{r_k^T r_k}`,
+            then :math:`p_{k+1} = r_{k+1} + \beta_k p_k`.
+
+    This implementation assumes that :math:`H` is self-adjoint and does not verify this condition.
+
     If `preconditioner_inverse` is provided, it solves :math:`M^{-1}Hx = M^{-1}b`
     implicitly, where `preconditioner_inverse(r)` computes :math:`M^{-1}r`.
+
+    See [Hestenes1952]_, [Nocedal2006]_, and [WikipediaCG]_ for more information.
+
 
     Parameters
     ----------
@@ -108,59 +125,57 @@ def cg(
     .. [Nocedal2006] Nocedal, J. (2006). *Numerical Optimization* (2nd ed.). Springer.
     .. [WikipediaCG] Wikipedia: Conjugate Gradient https://en.wikipedia.org/wiki/Conjugate_gradient
     """
-
+    right_hand_side_ = (right_hand_side,) if isinstance(right_hand_side, torch.Tensor) else tuple(right_hand_side)
     if initial_value is None:
-        solution= right_hand_side
-    elif len(initial_value) != len(right_hand_side):
-            raise ValueError('Length mismatch in initial_value and right_hand_side')
-    elif any(i.shape != r.shape for i, r in zip(initial_value, right_hand_side, strict=True)):
-            raise ValueError('Shape mismatch in initial_value and right_hand_side')
+        solution = right_hand_side_
+    elif isinstance(initial_value, torch.Tensor):
+        solution = (initial_value,)
+    elif len(initial_value) != len(right_hand_side_):
+        raise ValueError('Length mismatch in initial_value and right_hand_side')
     else:
-        solution = initial_value
+        solution = tuple(initial_value)
+    if any(s.shape != r.shape for s, r in zip(solution, right_hand_side_, strict=True)):
+        raise ValueError('Shape mismatch in initial_value and right_hand_side')
 
-    residual = tuple(rhs - op_sol for rhs, op_sol in zip(right_hand_side, operator(*solution), strict=True))
+    r = tuple(rhs - op_sol for rhs, op_sol in zip(right_hand_side_, operator(*solution), strict=True))
 
     if preconditioner_inverse is not None:
-        conjugate_vector = preconditioner_inverse(residual)
+        p = preconditioner_inverse(*r)
     else:
-        conjugate_vector = residual
-
-
+        p = r
 
     # dummy value. new value will be set in loop before first usage
-    residual_norm_squared_previous: torch.Tensor | None = None
+    rho_prev: torch.Tensor | None = None
 
     for iteration in range(max_iterations):
-        residual_norm_squared = vdot(residual, residual).real
+        residual_dot_residual = vdot(r, r).real
 
-        if residual_norm_squared < tolerance**2:
+        if residual_dot_residual < tolerance**2:  # are we done?
             break
 
         if preconditioner_inverse is not None:
-            preconditioned_residual = preconditioner_inverse(residual)
-            preconditioned_dot_residual = vdot(residual, preconditioned_residual).real
+            z = preconditioner_inverse(*r)
+            rho_cur = vdot(r, z).real
         else:
-            preconditioned_dot_residual = residual_norm_squared
-            preconditioned_residual = residual
+            rho_cur = residual_dot_residual
+            z = r
 
-
-        if residual_norm_squared_previous is not None:  # not first iteration
-            beta = residual_norm_squared / preconditioned_dot_residual
-            conjugate_vector = tuple(r + beta * c for r, c in zip(preconditioned_residual, conjugate_vector, strict=True))
-
-        operator_conjugate_vector = operator(*conjugate_vector)
-        alpha = preconditioned_dot_residual / vdot(conjugate_vector, operator_conjugate_vector).real
-        solution = tuple(s + alpha * c for s, c in zip(solution, conjugate_vector, strict=True))
-        residual = tuple(r - alpha * op_c for r, op_c in zip(residual, operator_conjugate_vector, strict=True))
-        residual_norm_squared_previous = residual_norm_squared
+        if rho_prev is not None:  # not first iteration
+            beta = rho_cur / rho_prev
+            p = tuple(res + beta * con for res, con in zip(z, p, strict=True))
+        q = operator(*p)
+        alpha = rho_cur / vdot(p, q).real
+        solution = tuple(sol + alpha * con for sol, con in zip(solution, p, strict=True))
+        r = tuple(res - alpha * op_con for res, op_con in zip(r, q, strict=True))
+        rho_prev = rho_cur
 
         if callback is not None:
             continue_iterations = callback(
                 {
                     'solution': solution,
                     'iteration_number': iteration,
-                    'residual': residual,
-                    'preconditioned_residual': preconditioned_residual
+                    'residual': r,
+                    'preconditioned_residual': z,
                 }
             )
             if continue_iterations is False:
