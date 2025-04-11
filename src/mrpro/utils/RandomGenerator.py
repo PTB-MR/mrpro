@@ -473,7 +473,7 @@ class RandomGenerator:
         """
         return int(self.int64_tensor((1,), low, high).item())
 
-    def uint64(self, low: int = 0, high: int = 1 << 64) -> int:
+    def uint64(self, low: int = 0, high: int = 1 << 64 - 1) -> int:
         """Generate a uint64 scalar with uniform distribution in [low, high).
 
         Parameters
