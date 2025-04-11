@@ -10,61 +10,61 @@ import torch
 from ismrmrd import xsd
 from mrpro.data import AcqIdx, AcqInfo, KData, KHeader, KTrajectory, SpatialDimension
 from mrpro.data.enums import AcqFlags
+from mrpro.utils import RandomGenerator
 from mrpro.utils.reshape import unsqueeze_tensors_left
 from xsdata.models.datatype import XmlDate, XmlTime
 
-from tests import RandomGenerator
 from tests.data import IsmrmrdRawTestData
 from tests.phantoms import EllipsePhantomTestData
 
 
-def generate_random_encodingcounter_properties(generator: RandomGenerator) -> dict[str, Any]:
+def generate_random_encodingcounter_properties(rng: RandomGenerator) -> dict[str, Any]:
     return {
-        'kspace_encode_step_1': generator.uint16(),
-        'kspace_encode_step_2': generator.uint16(),
-        'average': generator.uint16(),
-        'slice': generator.uint16(),
-        'contrast': generator.uint16(),
-        'phase': generator.uint16(),
-        'repetition': generator.uint16(),
-        'set': generator.uint16(),
-        'segment': generator.uint16(),
-        'user': generator.uint16_tuple(8),
+        'kspace_encode_step_1': rng.uint16(),
+        'kspace_encode_step_2': rng.uint16(),
+        'average': rng.uint16(),
+        'slice': rng.uint16(),
+        'contrast': rng.uint16(),
+        'phase': rng.uint16(),
+        'repetition': rng.uint16(),
+        'set': rng.uint16(),
+        'segment': rng.uint16(),
+        'user': rng.uint16_tuple(8),
     }
 
 
-def generate_random_acquisition_properties(generator: RandomGenerator) -> dict[str, Any]:
-    idx_properties = generate_random_encodingcounter_properties(generator)
+def generate_random_acquisition_properties(rng: RandomGenerator) -> dict[str, Any]:
+    idx_properties = generate_random_encodingcounter_properties(rng)
     return {
-        'flags': generator.uint64(high=2**38 - 1),
-        'measurement_uid': generator.uint32(),
-        'scan_counter': generator.uint32(),
-        'acquisition_time_stamp': generator.uint32(),
-        'physiology_time_stamp': generator.uint32_tuple(3),
-        'available_channels': generator.uint16(),
-        'channel_mask': generator.uint32_tuple(16),
-        'discard_pre': generator.uint16(),
-        'discard_post': generator.uint16(),
-        'center_sample': generator.uint16(),
-        'encoding_space_ref': generator.uint16(),
-        'sample_time_us': generator.float32(),
-        'position': generator.float32_tuple(3),
+        'flags': rng.uint64(high=2**38 - 1),
+        'measurement_uid': rng.uint32(),
+        'scan_counter': rng.uint32(),
+        'acquisition_time_stamp': rng.uint32(),
+        'physiology_time_stamp': rng.uint32_tuple(3),
+        'available_channels': rng.uint16(),
+        'channel_mask': rng.uint32_tuple(16),
+        'discard_pre': rng.uint16(),
+        'discard_post': rng.uint16(),
+        'center_sample': rng.uint16(),
+        'encoding_space_ref': rng.uint16(),
+        'sample_time_us': rng.float32(),
+        'position': rng.float32_tuple(3),
         'read_dir': (1, 0, 0),  # read, phase and slice have to form rotation
         'phase_dir': (0, 1, 0),
         'slice_dir': (0, 0, 1),
-        'patient_table_position': generator.float32_tuple(3),
+        'patient_table_position': rng.float32_tuple(3),
         'idx': ismrmrd.EncodingCounters(**idx_properties),
-        'user_int': generator.uint32_tuple(8),
-        'user_float': generator.float32_tuple(8),
+        'user_int': rng.uint32_tuple(8),
+        'user_float': rng.float32_tuple(8),
     }
 
 
-def generate_random_trajectory(generator: RandomGenerator, shape=(256, 2)) -> torch.Tensor:
-    return generator.float32_tensor(shape)
+def generate_random_trajectory(rng: RandomGenerator, shape=(256, 2)) -> torch.Tensor:
+    return rng.float32_tensor(shape)
 
 
-def generate_random_data(generator: RandomGenerator, shape=(32, 256)) -> torch.Tensor:
-    return generator.complex64_tensor(shape)
+def generate_random_data(rng: RandomGenerator, shape=(32, 256)) -> torch.Tensor:
+    return rng.complex64_tensor(shape)
 
 
 @pytest.fixture(scope='session')
@@ -86,10 +86,10 @@ def random_acquisition(request):
         request.param['n_coils'],
         request.param['n_samples'],
     )
-    generator = RandomGenerator(seed)
-    kdata = generate_random_data(generator, (n_coils, n_samples))
-    trajectory = generate_random_trajectory(generator, (n_samples, 2))
-    header = generate_random_acquisition_properties(generator)
+    rng = RandomGenerator(seed)
+    kdata = generate_random_data(rng, (n_coils, n_samples))
+    trajectory = generate_random_trajectory(rng, (n_samples, 2))
+    header = generate_random_acquisition_properties(rng)
     header['flags'] &= ~AcqFlags.ACQ_IS_NOISE_MEASUREMENT.value
     return ismrmrd.Acquisition.from_array(kdata.numpy(), trajectory.numpy(), **header)
 
@@ -101,10 +101,10 @@ def random_noise_acquisition(request):
         request.param['n_coils'],
         request.param['n_samples'],
     )
-    generator = RandomGenerator(seed)
-    kdata = generate_random_data(generator, (n_coils, n_samples))
-    trajectory = generate_random_trajectory(generator, (n_samples, 2))
-    header = generate_random_acquisition_properties(generator)
+    rng = RandomGenerator(seed)
+    kdata = generate_random_data(rng, (n_coils, n_samples))
+    trajectory = generate_random_trajectory(rng, (n_samples, 2))
+    header = generate_random_acquisition_properties(rng)
     header['flags'] |= AcqFlags.ACQ_IS_NOISE_MEASUREMENT.value
     return ismrmrd.Acquisition.from_array(kdata.numpy(), trajectory.numpy(), **header)
 
@@ -115,20 +115,20 @@ def random_full_ismrmrd_header(request) -> xsd.ismrmrdschema.ismrmrdHeader:
     KHeader.from_ismrmrd_header() are set."""
 
     seed = request.param['seed']
-    generator = RandomGenerator(seed)
+    rng = RandomGenerator(seed)
     encoding = xsd.encodingType(
         trajectory=xsd.trajectoryType('other'),
         encodedSpace=xsd.encodingSpaceType(
-            matrixSize=xsd.matrixSizeType(x=generator.int16(), y=generator.uint8(), z=generator.uint8()),
-            fieldOfView_mm=xsd.fieldOfViewMm(x=generator.uint8(), y=generator.uint8(), z=generator.uint8()),
+            matrixSize=xsd.matrixSizeType(x=rng.int16(), y=rng.uint8(), z=rng.uint8()),
+            fieldOfView_mm=xsd.fieldOfViewMm(x=rng.uint8(), y=rng.uint8(), z=rng.uint8()),
         ),
         reconSpace=xsd.encodingSpaceType(
-            matrixSize=xsd.matrixSizeType(x=generator.uint8(), y=generator.uint8(), z=generator.uint8()),
-            fieldOfView_mm=xsd.fieldOfViewMm(x=generator.uint8(), y=generator.uint8(), z=generator.uint8()),
+            matrixSize=xsd.matrixSizeType(x=rng.uint8(), y=rng.uint8(), z=rng.uint8()),
+            fieldOfView_mm=xsd.fieldOfViewMm(x=rng.uint8(), y=rng.uint8(), z=rng.uint8()),
         ),
-        echoTrainLength=generator.uint8(),
+        echoTrainLength=rng.uint8(),
         parallelImaging=xsd.parallelImagingType(
-            accelerationFactor=xsd.accelerationFactorType(generator.uint8(), generator.uint8()),
+            accelerationFactor=xsd.accelerationFactorType(rng.uint8(), rng.uint8()),
             calibrationMode=xsd.calibrationModeType('other'),
         ),
         encodingLimits=xsd.encodingLimitsType(
@@ -137,33 +137,33 @@ def random_full_ismrmrd_header(request) -> xsd.ismrmrdschema.ismrmrdHeader:
         ),
     )
     measurement_information = xsd.measurementInformationType(
-        measurementID=generator.ascii(10),
-        seriesDate=XmlDate(generator.uint16(1970, 2030), generator.uint8(1, 12), generator.uint8(0, 30)),
-        seriesTime=XmlTime(generator.uint8(0, 23), generator.uint8(0, 59), generator.uint8(0, 59)),
-        sequenceName=generator.ascii(10),
+        measurementID=rng.ascii(10),
+        seriesDate=XmlDate(rng.uint16(1970, 2030), rng.uint8(1, 12), rng.uint8(0, 30)),
+        seriesTime=XmlTime(rng.uint8(0, 23), rng.uint8(0, 59), rng.uint8(0, 59)),
+        sequenceName=rng.ascii(10),
     )
 
     acquisition_system_information = xsd.acquisitionSystemInformationType(
-        systemFieldStrength_T=generator.float32(0, 12),
-        systemVendor=generator.ascii(10),
-        systemModel=generator.ascii(10),
-        receiverChannels=generator.uint16(1, 32),
+        systemFieldStrength_T=rng.float32(0, 12),
+        systemVendor=rng.ascii(10),
+        systemModel=rng.ascii(10),
+        receiverChannels=rng.uint16(1, 32),
     )
 
     sequence_parameters = xsd.sequenceParametersType(
-        TR=[generator.float32()],
-        TE=[generator.float32()],
-        flipAngle_deg=[generator.float32(low=10, high=90)],
-        echo_spacing=[generator.float32()],
-        sequence_type=generator.ascii(10),
+        TR=[rng.float32()],
+        TE=[rng.float32()],
+        flipAngle_deg=[rng.float32(low=10, high=90)],
+        echo_spacing=[rng.float32()],
+        sequence_type=rng.ascii(10),
     )
 
     # TODO: add everything that to the header
     return xsd.ismrmrdschema.ismrmrdHeader(
         encoding=[encoding],
         sequenceParameters=sequence_parameters,
-        version=generator.int16(),
-        experimentalConditions=xsd.experimentalConditionsType(H1resonanceFrequency_Hz=generator.int32()),
+        version=rng.int16(),
+        experimentalConditions=xsd.experimentalConditionsType(H1resonanceFrequency_Hz=rng.int32()),
         measurementInformation=measurement_information,
         acquisitionSystemInformation=acquisition_system_information,
     )
@@ -185,8 +185,8 @@ def random_ismrmrd_file(random_acquisition, random_noise_acquisition, full_heade
 def random_kheader(request, random_full_ismrmrd_header, random_acq_info) -> KHeader:
     """Random (not necessarily valid) KHeader."""
     seed = request.param['seed']
-    generator = RandomGenerator(seed)
-    trajectory = generate_random_trajectory(generator)
+    rng = RandomGenerator(seed)
+    trajectory = generate_random_trajectory(rng)
     kheader = KHeader.from_ismrmrd(
         random_full_ismrmrd_header,
         acq_info=random_acq_info,
@@ -226,11 +226,11 @@ def create_traj(
     type_kz: str,
 ) -> KTrajectory:
     """Create trajectory with random entries."""
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
     k_list = []
     for spacing, nk in zip([type_kz, type_ky, type_kx], [nkz, nky, nkx], strict=True):
         if spacing == 'non-uniform':
-            k = random_generator.float32_tensor(size=nk, low=-1, high=1) * max(nk)
+            k = rng.float32_tensor(size=nk, low=-1, high=1) * max(nk)
         elif spacing == 'uniform':
             k = create_uniform_traj(nk)
         elif spacing == 'zero':

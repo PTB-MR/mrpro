@@ -4,8 +4,7 @@ import pytest
 import torch
 from einops import repeat
 from mrpro.data import DcfData, KTrajectory
-
-from tests import RandomGenerator
+from mrpro.utils import RandomGenerator
 
 
 def example_traj_rpe(n_ka: int, n_kr: int, n_k0: int, broadcast: bool = True):

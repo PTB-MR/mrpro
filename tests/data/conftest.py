@@ -6,9 +6,8 @@ import pytest
 import torch
 from ismrmrd import xsd
 from mrpro.data import Rotation, SpatialDimension
-from mrpro.utils import unsqueeze_left
+from mrpro.utils import RandomGenerator, unsqueeze_left
 
-from tests import RandomGenerator
 from tests.data import DicomTestImage, IsmrmrdRawTestData
 
 
@@ -19,7 +18,7 @@ def cartesian_grid(request) -> Callable[[int, int, int, float], tuple[torch.Tens
     Generates a 3D cartesian grid with optional jitter.
     Shape of the returned tensors is `(1, 1, n_k2, n_k1, n_k0)`.
     """
-    generator = RandomGenerator(request.param['seed'])
+    rng = RandomGenerator(request.param['seed'])
 
     def generate(n_k2: int, n_k1: int, n_k0: int, jitter: float) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         k0_range = torch.arange(n_k0)
@@ -27,9 +26,9 @@ def cartesian_grid(request) -> Callable[[int, int, int, float], tuple[torch.Tens
         k2_range = torch.arange(n_k2)
         ky, kz, kx = torch.meshgrid(k1_range, k2_range, k0_range, indexing='xy')
         if jitter > 0:
-            kx = kx + generator.float32_tensor((n_k2, n_k1, n_k0), high=jitter)
-            ky = ky + generator.float32_tensor((n_k2, n_k1, n_k0), high=jitter)
-            kz = kz + generator.float32_tensor((n_k2, n_k1, n_k0), high=jitter)
+            kx = kx + rng.float32_tensor((n_k2, n_k1, n_k0), high=jitter)
+            ky = ky + rng.float32_tensor((n_k2, n_k1, n_k0), high=jitter)
+            kz = kz + rng.float32_tensor((n_k2, n_k1, n_k0), high=jitter)
         kz, ky, kx = (unsqueeze_left(x, 2) for x in (kz, ky, kx))
         return kz, ky, kx
 
@@ -42,20 +41,20 @@ def random_mandatory_ismrmrd_header(request) -> xsd.ismrmrdschema.ismrmrdHeader:
     KHeader.from_ismrmrd_header() are set."""
 
     seed = request.param['seed']
-    generator = RandomGenerator(seed)
+    rng = RandomGenerator(seed)
     encoding = xsd.encodingType(
         trajectory=xsd.trajectoryType('other'),
         encodedSpace=xsd.encodingSpaceType(
-            matrixSize=xsd.matrixSizeType(x=generator.int16(), y=generator.uint8(), z=generator.uint8()),
-            fieldOfView_mm=xsd.fieldOfViewMm(x=generator.uint8(), y=generator.uint8(), z=generator.uint8()),
+            matrixSize=xsd.matrixSizeType(x=rng.int16(), y=rng.uint8(), z=rng.uint8()),
+            fieldOfView_mm=xsd.fieldOfViewMm(x=rng.uint8(), y=rng.uint8(), z=rng.uint8()),
         ),
         reconSpace=xsd.encodingSpaceType(
-            matrixSize=xsd.matrixSizeType(x=generator.uint8(), y=generator.uint8(), z=generator.uint8()),
-            fieldOfView_mm=xsd.fieldOfViewMm(x=generator.uint8(), y=generator.uint8(), z=generator.uint8()),
+            matrixSize=xsd.matrixSizeType(x=rng.uint8(), y=rng.uint8(), z=rng.uint8()),
+            fieldOfView_mm=xsd.fieldOfViewMm(x=rng.uint8(), y=rng.uint8(), z=rng.uint8()),
         ),
         encodingLimits=xsd.encodingLimitsType(),
     )
-    experimental_conditions = xsd.experimentalConditionsType(H1resonanceFrequency_Hz=generator.int32())
+    experimental_conditions = xsd.experimentalConditionsType(H1resonanceFrequency_Hz=rng.int32())
     return xsd.ismrmrdschema.ismrmrdHeader(encoding=[encoding], experimentalConditions=experimental_conditions)
 
 
@@ -69,8 +68,8 @@ def random_test_data(request):
         request.param['n_y'],
         request.param['n_x'],
     )
-    generator = RandomGenerator(seed)
-    test_data = generator.complex64_tensor((n_other, n_coils, n_z, n_y, n_x))
+    rng = RandomGenerator(seed)
+    test_data = rng.complex64_tensor((n_other, n_coils, n_z, n_y, n_x))
     return test_data
 
 
