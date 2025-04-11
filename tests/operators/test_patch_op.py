@@ -5,8 +5,9 @@ from collections.abc import Sequence
 import pytest
 import torch
 from mrpro.operators.PatchOp import PatchOp
+from mrpro.utils import RandomGenerator
 
-from tests import RandomGenerator, autodiff_test, dotproduct_adjointness_test
+from tests import autodiff_test, dotproduct_adjointness_test
 
 TESTCASES = pytest.mark.parametrize(
     ('input_shape', 'arguments', 'output_shape'),
