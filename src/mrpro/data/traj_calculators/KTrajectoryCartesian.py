@@ -109,8 +109,11 @@ class KTrajectoryCartesian(KTrajectoryCalculator):
         else:
             n_k1, n_k0 = encoding_matrix.y, encoding_matrix.x
 
-        rng = RandomGenerator(seed)
         n_keep = min(int(n_k1 / acceleration), n_k1)
+        if n_center > n_keep:
+            raise ValueError(f'Number of center lines ({n_center}) exceeds number of lines to keep ({n_keep}).')
+
+        rng = RandomGenerator(seed)
         k1_center = n_k1 // 2
         center_start = k1_center - n_center // 2
         center_end = center_start + n_center
