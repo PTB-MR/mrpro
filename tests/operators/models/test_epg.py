@@ -2,7 +2,16 @@
 
 import pytest
 import torch
-from mrpro.operators.models.EPG import DelayBlock, EPGSequence, FispBlock, InversionBlock, Parameters, T2PrepBlock
+from mrpro.operators.models.EPG import (
+    DelayBlock,
+    EPGSequence,
+    FispBlock,
+    InversionBlock,
+    Parameters,
+    T1RhoPrepBlock,
+    T2PrepBlock,
+    TseBlock,
+)
 from mrpro.operators.SignalModel import SignalModel
 from mrpro.utils import RandomGenerator
 from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
@@ -144,6 +153,65 @@ def test_EpgFisp_t2_preparation() -> None:
         sequence.append(FispBlock(flip_angles=torch.pi / 2, rf_phases=torch.pi / 2, tr=0.007, te=1e-6))
         sequence.append(DelayBlock(delay_time=40))
     parameters = Parameters(m0, t1, t2)
+    _, signals = sequence(parameters)
+    epg_signal = torch.stack(list(signals), dim=0)
+
+    torch.testing.assert_close(epg_signal, analytical_signal, rtol=1e-3, atol=1e-3)
+
+
+def test_epg_tse_mono_exponential_decay():
+    """Echo trains should follow monoexpontial model for long TR."""
+    t1 = torch.as_tensor([0.1, 0.2, 0.3, 0.4, 0.5, 1.0, 2.0, 4.00])
+    t2 = torch.as_tensor([0.02, 0.08, 0.16, 0.32, 0.02, 0.08, 0.16, 0.32])
+    m0 = torch.ones_like(t1, dtype=torch.complex64)
+
+    n_echoes = 10
+    te = 0.02
+
+    # analytical signal
+    # cumsum because te is the time between refocusing pulses and for the mono-exponential model we start counting
+    # from the 90° excitation pulse
+    analytical_signal = m0 * torch.exp(-(torch.cumsum(torch.tensor([te] * n_echoes), dim=0)[:, None] / t2))
+
+    # Two TSE trains with long TR in between to ensure full T1 relaxation
+    flip_angles = torch.tensor([torch.pi] * n_echoes)
+    rf_phases = 0.0
+    sequence = EPGSequence()
+    sequence.append(TseBlock(refocusing_flip_angles=flip_angles, refocusing_rf_phases=rf_phases, te=te))
+    sequence.append(DelayBlock(delay_time=40.0))
+    sequence.append(TseBlock(refocusing_flip_angles=flip_angles, refocusing_rf_phases=rf_phases, te=te))
+    parameters = Parameters(m0, t1, t2)
+    _, signals = sequence(parameters)
+    epg_signal = torch.stack(list(signals), dim=0)
+
+    # first TSE train
+    torch.testing.assert_close(epg_signal[:n_echoes], analytical_signal, rtol=1e-3, atol=1e-3)
+    # second TSE train
+    torch.testing.assert_close(epg_signal[n_echoes:], analytical_signal, rtol=1e-3, atol=1e-3)
+
+
+def test_epg_se_t1_rho_preparation() -> None:
+    """EPG simulation of single-line T1-rho-prep sequence.
+
+    Obtaining a single point with different spin-lock durations follows a mono-exponential model.
+    """
+    t1 = torch.as_tensor([0.1, 0.2, 0.3, 0.4, 0.5, 1.0, 2.0, 4.00])
+    t2 = torch.as_tensor([0.02, 0.08, 0.16, 0.32, 0.02, 0.08, 0.16, 0.32])
+    m0 = torch.ones_like(t1, dtype=torch.complex64)
+    t1_rho = torch.as_tensor([0.03, 0.03, 0.09, 0.09, 0.13, 0.13, 0.24, 0.24])
+
+    spin_lock_durations = [0, 0.02, 0.04, 0.08, 0.2, 0.4]
+
+    # analytical signal
+    analytical_signal = m0 * torch.exp(-(torch.as_tensor(spin_lock_durations)[:, None] / t1_rho))
+
+    # single readout per T2-prep block with 90° pulse and very short echo time to avoid T2 effects during acquisition
+    sequence = EPGSequence()
+    for sld in spin_lock_durations:
+        sequence.append(T1RhoPrepBlock(spin_lock_duration=sld))
+        sequence.append(TseBlock(refocusing_flip_angles=torch.pi, refocusing_rf_phases=0.0, te=1e-6))
+        sequence.append(DelayBlock(delay_time=40))
+    parameters = Parameters(m0, t1, t2, None, t1_rho)
     _, signals = sequence(parameters)
     epg_signal = torch.stack(list(signals), dim=0)
 
