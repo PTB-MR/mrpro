@@ -404,7 +404,7 @@ class SpatialDimension(Dataclass, Generic[T_co]):
             try:
                 torch.broadcast_tensors(self.z, self.y, self.x)
             except RuntimeError:
-                raise ValueError('The shapes of the tensors do not match') from None
+                raise ValueError('The shapes of the tensors are not broadcastable') from None
 
     @property
     def shape(self) -> torch.Size:

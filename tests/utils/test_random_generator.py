@@ -48,49 +48,49 @@ def test_int8(low: int = -128, high: int = 127) -> None:
     assert low <= value < high
 
 
-def test_int16(low: int = -1 << 15, high: int = 1 << 15 - 1) -> None:
+def test_int16(low: int = -1 << 15, high: int = 1 << 15) -> None:
     """Test int16 method for bounds."""
     rng = RandomGenerator(seed=42)
     value: int = rng.int16(low=low, high=high)
     assert low <= value < high
 
 
-def test_int32(low: int = -1 << 31, high: int = 1 << 31 - 1) -> None:
+def test_int32(low: int = -1 << 31, high: int = 1 << 31) -> None:
     """Test int32 method for bounds."""
     rng = RandomGenerator(seed=42)
     value: int = rng.int32(low=low, high=high)
     assert low <= value < high
 
 
-def test_int64(low: int = -1 << 63, high: int = 1 << 63 - 1) -> None:
+def test_int64(low: int = -1 << 63, high: int = (1 << 63) - 1) -> None:
     """Test int64 method for bounds."""
     rng = RandomGenerator(seed=42)
     value: int = rng.int64(low=low, high=high)
     assert low <= value < high
 
 
-def test_uint8(low: int = 0, high: int = 1 << 8 - 1) -> None:
+def test_uint8(low: int = 0, high: int = 1 << 8) -> None:
     """Test uint8 method for bounds."""
     rng = RandomGenerator(seed=42)
     value: int = rng.uint8(low=low, high=high)
     assert low <= value < high
 
 
-def test_uint16(low: int = 0, high: int = 1 << 16 - 1) -> None:
+def test_uint16(low: int = 0, high: int = 1 << 16) -> None:
     """Test uint16 method for bounds."""
     rng = RandomGenerator(seed=42)
     value: int = rng.uint16(low=low, high=high)
     assert low <= value < high
 
 
-def test_uint32(low: int = 0, high: int = 1 << 32 - 1) -> None:
+def test_uint32(low: int = 0, high: int = 1 << 32) -> None:
     """Test uint32 method for bounds."""
     rng = RandomGenerator(seed=42)
     value: int = rng.uint32(low=low, high=high)
     assert low <= value < high
 
 
-def test_uint64(low: int = 0, high: int = 1 << 64 - 1) -> None:
+def test_uint64(low: int = 0, high: int = (1 << 64) - 1) -> None:
     """Test uint64 method for bounds."""
     rng = RandomGenerator(seed=42)
     value: int = rng.uint64(low=low, high=high)
@@ -143,59 +143,68 @@ def test_complex128_tensor(size: Sequence[int] = (1, 2, 3), low: float = 0.0, hi
         assert len(torch.unique(tensor.imag)) > 1
 
 
-def test_int8_tensor(size: Sequence[int] = (4,), low: int = -128, high: int = 127) -> None:
+def test_int8_tensor(size: Sequence[int] = (4,), low: int = -128, high: int = 128) -> None:
     """Test int8_tensor for shape, bounds, and value differences."""
     rng = RandomGenerator(seed=42)
     tensor = rng.int8_tensor(size=size, low=low, high=high)
     assert tensor.shape == size
     assert torch.all(low <= tensor)
-    assert torch.all(tensor < high)
+    assert torch.all(tensor <= high - 1)
     if tensor.numel() > 1:
         assert len(torch.unique(tensor)) > 1
 
 
-def test_int16_tensor(size: Sequence[int] = (4,), low: int = -1 << 15, high: int = 1 << 15 - 1) -> None:
+def test_int16_tensor(size: Sequence[int] = (4,), low: int = -1 << 15, high: int = 1 << 15) -> None:
     """Test int16_tensor for shape, bounds, and value differences."""
     rng = RandomGenerator(seed=42)
     tensor = rng.int16_tensor(size=size, low=low, high=high)
     assert tensor.shape == size
     assert torch.all(low <= tensor)
-    assert torch.all(tensor < high)
+    assert torch.all(tensor <= high - 1)
     if tensor.numel() > 1:
         assert len(torch.unique(tensor)) > 1
 
 
-def test_int32_tensor(size: Sequence[int] = (4,), low: int = -1 << 31, high: int = 1 << 31 - 1) -> None:
+def test_int32_tensor(size: Sequence[int] = (4,), low: int = -1 << 31, high: int = 1 << 31) -> None:
     """Test int32_tensor for shape, bounds, and value differences."""
     rng = RandomGenerator(seed=42)
     tensor = rng.int32_tensor(size=size, low=low, high=high)
     assert tensor.shape == size
     assert torch.all(low <= tensor)
-    assert torch.all(tensor < high)
+    assert torch.all(tensor <= high - 1)
     if tensor.numel() > 1:
         assert len(torch.unique(tensor)) > 1
 
 
-def test_int64_tensor(size: Sequence[int] = (4,), low: int = -1 << 63, high: int = 1 << 63 - 1) -> None:
+def test_int64_tensor(size: Sequence[int] = (4,), low: int = -1 << 63, high: int = (1 << 63) - 1) -> None:
     """Test int64_tensor for shape, bounds, and value differences."""
     rng = RandomGenerator(seed=42)
     tensor = rng.int64_tensor(size=size, low=low, high=high)
     assert tensor.shape == size
     assert torch.all(low <= tensor)
-    assert torch.all(tensor < high)
+    assert torch.all(tensor <= high - 1)
     if tensor.numel() > 1:
         assert len(torch.unique(tensor)) > 1
 
 
-def test_uint8_tensor(size: Sequence[int] = (4,), low: int = 0, high: int = 255) -> None:
+def test_uint8_tensor(size: Sequence[int] = (4,), low: int = 0, high: int = 256) -> None:
     """Test uint8_tensor for shape, bounds, and value differences."""
     rng = RandomGenerator(seed=42)
     tensor = rng.uint8_tensor(size=size, low=low, high=high)
     assert tensor.shape == size
     assert torch.all(low <= tensor)
-    assert torch.all(tensor < high)
+    assert torch.all(tensor <= high - 1)
     if tensor.numel() > 1:
         assert len(torch.unique(tensor)) > 1
+
+
+def test_bool_tensor(size: Sequence[int] = (16,)) -> None:
+    """Test bool_tensor for shape and value differences."""
+    rng = RandomGenerator(seed=42)
+    tensor = rng.bool_tensor(size=size)
+    assert tensor.shape == size
+    assert tensor.any()
+    assert not tensor.all()
 
 
 def test_float32_tuple(size: int = 5, low: float = 0.0, high: float = 1.0) -> None:
@@ -250,7 +259,7 @@ def test_uint8_tuple(size: int = 5, low: int = 0, high: int = 255) -> None:
         assert len(set(tuple_values)) > 1
 
 
-def test_uint16_tuple(size: int = 5, low: int = 0, high: int = 1 << 16 - 1) -> None:
+def test_uint16_tuple(size: int = 5, low: int = 0, high: int = 1 << 16) -> None:
     """Test uint16_tuple for length, bounds, and value differences."""
     rng = RandomGenerator(seed=42)
     tuple_values = rng.uint16_tuple(size=size, low=low, high=high)
@@ -260,7 +269,7 @@ def test_uint16_tuple(size: int = 5, low: int = 0, high: int = 1 << 16 - 1) -> N
         assert len(set(tuple_values)) > 1
 
 
-def test_uint32_tuple(size: int = 5, low: int = 0, high: int = 1 << 32 - 1) -> None:
+def test_uint32_tuple(size: int = 5, low: int = 0, high: int = 1 << 32) -> None:
     """Test uint32_tuple for length, bounds, and value differences."""
     rng = RandomGenerator(seed=42)
     tuple_values = rng.uint32_tuple(size=size, low=low, high=high)
@@ -270,7 +279,7 @@ def test_uint32_tuple(size: int = 5, low: int = 0, high: int = 1 << 32 - 1) -> N
         assert len(set(tuple_values)) > 1
 
 
-def test_uint64_tuple(size: int = 5, low: int = 0, high: int = 1 << 64 - 1) -> None:
+def test_uint64_tuple(size: int = 5, low: int = 0, high: int = (1 << 64) - 1) -> None:
     """Test uint64_tuple for length, bounds, and value differences."""
     rng = RandomGenerator(seed=42)
     tuple_values = rng.uint64_tuple(size=size, low=low, high=high)
@@ -280,37 +289,37 @@ def test_uint64_tuple(size: int = 5, low: int = 0, high: int = 1 << 64 - 1) -> N
         assert len(set(tuple_values)) > 1
 
 
-def test_int8_tuple(size: int = 5, low: int = -128, high: int = 127) -> None:
+def test_int8_tuple(size: int = 5, low: int = -128, high: int = 128) -> None:
     """Test int8_tuple for length, bounds, and value differences."""
     rng = RandomGenerator(seed=42)
     tuple_values = rng.int8_tuple(size=size, low=low, high=high)
     assert len(tuple_values) == size
-    assert all(low <= x < high for x in tuple_values)
+    assert all(low <= x <= high - 1 for x in tuple_values)
     if size > 1:
         assert len(set(tuple_values)) > 1
 
 
-def test_int16_tuple(size: int = 5, low: int = -1 << 15, high: int = 1 << 15 - 1) -> None:
+def test_int16_tuple(size: int = 5, low: int = -1 << 15, high: int = 1 << 15) -> None:
     """Test int16_tuple for length, bounds, and value differences."""
     rng = RandomGenerator(seed=42)
     tuple_values = rng.int16_tuple(size=size, low=low, high=high)
     assert len(tuple_values) == size
-    assert all(low <= x < high for x in tuple_values)
+    assert all(low <= x <= high - 1 for x in tuple_values)
     if size > 1:
         assert len(set(tuple_values)) > 1
 
 
-def test_int32_tuple(size: int = 5, low: int = -1 << 31, high: int = 1 << 31 - 1) -> None:
+def test_int32_tuple(size: int = 5, low: int = -1 << 31, high: int = 1 << 31) -> None:
     """Test int32_tuple for length, bounds, and value differences."""
     rng = RandomGenerator(seed=42)
     tuple_values = rng.int32_tuple(size=size, low=low, high=high)
     assert len(tuple_values) == size
-    assert all(low <= x < high for x in tuple_values)
+    assert all(low <= x <= high - 1 for x in tuple_values)
     if size > 1:
         assert len(set(tuple_values)) > 1
 
 
-def test_int64_tuple(size: int = 5, low: int = -1 << 63, high: int = 1 << 63 - 1) -> None:
+def test_int64_tuple(size: int = 5, low: int = -1 << 63, high: int = (1 << 63) - 1) -> None:
     """Test int64_tuple for length, bounds, and value differences."""
     rng = RandomGenerator(seed=42)
     tuple_values = rng.int64_tuple(size=size, low=low, high=high)
