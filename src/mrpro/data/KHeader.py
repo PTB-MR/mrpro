@@ -49,9 +49,6 @@ class KHeader(Dataclass):
     acq_info: AcqInfo = field(default_factory=AcqInfo)
     """Information of the acquisitions (i.e. readout lines)."""
 
-    trajectory: KTrajectoryCalculator | None = None
-    """Function to calculate the k-space trajectory."""
-
     lamor_frequency_proton: float | None = None
     """Lamor frequency of hydrogen nuclei [Hz]."""
 
