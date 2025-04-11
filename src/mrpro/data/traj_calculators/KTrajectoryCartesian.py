@@ -85,14 +85,14 @@ class KTrajectoryCartesian(KTrajectoryCalculator):
             Full-width at half-maximum of the Gaussian relative to encoding_matrix.y.
             Larger values approach uniform sampling. Set to infinity for uniform sampling.
         n_other
-            Batch size(s)
+            Batch size(s). The trajectory is different for each batch sample.
         seed
             Random seed for reproducibility.
 
 
         Returns
         -------
-            1D tensor of sorted selected k-space indices.
+            Cartesian trajectory.
 
         Raises
         ------
