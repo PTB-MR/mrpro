@@ -5,7 +5,7 @@ from collections.abc import Sequence
 import torch
 
 from mrpro.operators.LinearOperator import LinearOperator
-from mrpro.utils import zero_pad_or_crop
+from mrpro.utils import pad_or_crop
 
 
 class ZeroPadOp(LinearOperator):
@@ -46,7 +46,7 @@ class ZeroPadOp(LinearOperator):
         -------
             data with shape padded_shape
         """
-        return (zero_pad_or_crop(x, self.padded_shape, self.dim),)
+        return (pad_or_crop(x, self.padded_shape, self.dim),)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Crop or pad data.
@@ -60,4 +60,4 @@ class ZeroPadOp(LinearOperator):
         -------
             data with shape orig_shape
         """
-        return (zero_pad_or_crop(x, self.original_shape, self.dim),)
+        return (pad_or_crop(x, self.original_shape, self.dim),)
