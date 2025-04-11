@@ -1,9 +1,8 @@
 """Tests for padding and cropping of data tensors."""
 
 import torch
-from mrpro.utils.pad_or_crop import pad_or_crop
-
 from mrpro.utils import RandomGenerator
+from mrpro.utils.pad_or_crop import pad_or_crop
 
 
 def test_pad_or_crop_content():
