@@ -3,8 +3,9 @@
 import pytest
 import torch
 from mrpro.operators import ConstraintsOp
+from mrpro.utils import RandomGenerator
 
-from tests import RandomGenerator, autodiff_test
+from tests import autodiff_test
 
 
 @pytest.mark.parametrize('beta', [1, 0.5, 2])
@@ -18,11 +19,11 @@ from tests import RandomGenerator, autodiff_test
     ],
 )
 def test_constraints_operator_bounds(bounds, beta):
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
 
     # random tensor with arbitrary values
     # (make sure to hit bounds by scaling it with a "large" number)
-    x = random_generator.float32_tensor(size=(36,), low=-100.0, high=100.0)
+    x = rng.float32_tensor(size=(36,), low=-100.0, high=100.0)
 
     # define constraints operator using the bounds
     constraints_op = ConstraintsOp(bounds, beta_sigmoid=beta, beta_softplus=beta)
@@ -55,10 +56,10 @@ def test_constraints_operator_bounds(bounds, beta):
 def test_constraints_operator_inverse(bounds, beta):
     """Tests if operator inverse inverser the operator."""
 
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
 
     # random tensor with arbitrary values
-    x = random_generator.float32_tensor(size=(36,))
+    x = rng.float32_tensor(size=(36,))
 
     # define constraints operator using the bounds
     constraints_op = ConstraintsOp(bounds, beta_sigmoid=beta, beta_softplus=beta)
@@ -85,10 +86,10 @@ def test_constraints_operator_inverse(bounds, beta):
 def test_constraints_operator_no_nans(bounds, beta):
     """Tests if the operator always returns valid values, never nans."""
 
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
 
     # random tensor with arbitrary values
-    x = random_generator.float32_tensor(size=(36,), low=-100, high=100)
+    x = rng.float32_tensor(size=(36,), low=-100, high=100)
 
     # define constraints operator using the bounds
     constraints_op = ConstraintsOp(bounds, beta_sigmoid=beta, beta_softplus=beta)
@@ -110,12 +111,12 @@ def test_constraints_operator_no_nans(bounds, beta):
     ],
 )
 def test_constraints_operator_multiple_inputs(bounds):
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
 
     # random tensors with arbitrary values
-    x1 = random_generator.float32_tensor(size=(36, 72), low=-1, high=1)
-    x2 = random_generator.float32_tensor(size=(36, 72), low=-1, high=1)
-    x3 = random_generator.float32_tensor(size=(36, 72), low=-1, high=1)
+    x1 = rng.float32_tensor(size=(36, 72), low=-1, high=1)
+    x2 = rng.float32_tensor(size=(36, 72), low=-1, high=1)
+    x3 = rng.float32_tensor(size=(36, 72), low=-1, high=1)
 
     # define constraints operator using the bounds
     constraints_op = ConstraintsOp(bounds)
@@ -149,10 +150,10 @@ def test_constraints_operator_illegal_bounds(bounds):
 def test_autodiff_constraints_operator():
     """Test autodiff works for constraints operator."""
     # random tensors with arbitrary values
-    random_generator = RandomGenerator(seed=0)
-    x1 = random_generator.float32_tensor(size=(36, 72), low=-1, high=1)
-    x2 = random_generator.float32_tensor(size=(36, 72), low=-1, high=1)
-    x3 = random_generator.float32_tensor(size=(36, 72), low=-1, high=1)
+    rng = RandomGenerator(seed=0)
+    x1 = rng.float32_tensor(size=(36, 72), low=-1, high=1)
+    x2 = rng.float32_tensor(size=(36, 72), low=-1, high=1)
+    x3 = rng.float32_tensor(size=(36, 72), low=-1, high=1)
 
     constraints_op = ConstraintsOp(bounds=((None, None), (1.0, None), (None, 1.0)))
     autodiff_test(constraints_op, x1, x2, x3)
