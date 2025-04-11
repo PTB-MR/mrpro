@@ -102,7 +102,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         super().__init_subclass__(**kwargs)
 
     @abstractmethod
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+    def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint of the operator."""
         ...
 
@@ -387,10 +387,10 @@ class LinearOperatorComposition(LinearOperator):
         """Linear operator composition."""
         return self._operator1(*self._operator2(x))
 
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+    def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint of the linear operator composition."""
         # (AB)^H = B^H A^H
-        return self._operator2.adjoint(*self._operator1.adjoint(x))
+        return self._operator2.adjoint(*self._operator1.adjoint(y))
 
     @property
     def gram(self) -> LinearOperator:
@@ -419,10 +419,10 @@ class LinearOperatorSum(LinearOperator):
         """Linear operator addition."""
         return (functools.reduce(operator.add, (op(x)[0] for op in self._operators)),)
 
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+    def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint of the linear operator addition."""
         # (A+B)^H = A^H + B^H
-        return (functools.reduce(operator.add, (op.adjoint(x)[0] for op in self._operators)),)
+        return (functools.reduce(operator.add, (op.adjoint(y)[0] for op in self._operators)),)
 
 
 class LinearOperatorElementwiseProductRight(LinearOperator):
@@ -442,10 +442,10 @@ class LinearOperatorElementwiseProductRight(LinearOperator):
         (out,) = self._operator(x)
         return (out * self._scalar,)
 
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+    def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint Operator elementwise multiplication with a tensor/scalar."""
         conj = self._scalar.conj() if isinstance(self._scalar, torch.Tensor) else self._scalar.conjugate()
-        return self._operator.adjoint(x * conj)
+        return self._operator.adjoint(y * conj)
 
     @property
     def gram(self) -> LinearOperator:
@@ -476,10 +476,10 @@ class LinearOperatorElementwiseProductLeft(LinearOperator):
         """Linear operator elementwise left multiplication."""
         return self._operator(x * self._scalar)
 
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+    def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint linear operator elementwise multiplication with a tensor/scalar."""
         conj = self._scalar.conj() if isinstance(self._scalar, torch.Tensor) else self._scalar.conjugate()
-        return (self._operator.adjoint(x)[0] * conj,)
+        return (self._operator.adjoint(y)[0] * conj,)
 
     @property
     def gram(self) -> LinearOperator:
@@ -500,9 +500,9 @@ class AdjointLinearOperator(LinearOperator):
         """Apply the adjoint of the original LinearOperator."""
         return self._operator.adjoint(x)
 
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+    def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the adjoint of the adjoint, i.e. the original LinearOperator."""
-        return self._operator.forward(x)
+        return self._operator.forward(y)
 
     @property
     def H(self) -> LinearOperator:  # noqa: N802

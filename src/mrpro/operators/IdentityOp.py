@@ -15,7 +15,7 @@ class IdentityOp(LinearOperator):
         """Initialize Identity Operator."""
         super().__init__()
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor]:
         """Identity of input.
 
         Parameters
@@ -27,18 +27,25 @@ class IdentityOp(LinearOperator):
         -------
             the input tensor
         """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply IdentityOp.
+
+        Use `operator.__call__`, i.e. call `operator()` instead.
+        """
         return (x,)
 
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Adjoint Identity.
+    def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply adjoint of IdentityOp to the input tensor.
 
         Parameters
         ----------
-        x
+        y
             input tensor
 
         Returns
         -------
-            the input tensor
+            output tensor, identical to input tensor
         """
-        return (x,)
+        return (y,)

@@ -62,7 +62,7 @@ class FiniteDifferenceOp(LinearOperator):
         self.pad_mode: Literal['constant', 'circular'] = 'constant' if pad_mode == 'zeros' else pad_mode
         self.kernel = self.finite_difference_kernel(mode)
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Forward of finite differences.
 
         Parameters
@@ -73,6 +73,13 @@ class FiniteDifferenceOp(LinearOperator):
         Returns
         -------
             Finite differences of x along dim stacked along first dimension
+        """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply FiniteDifferenceOp.
+
+        Use `operator.__call__`, i.e. call `operator()` instead.
         """
         return (
             torch.stack(
@@ -108,13 +115,13 @@ class FiniteDifferenceOp(LinearOperator):
                 torch.stack(
                     [
                         filter_separable(
-                            yi,
+                            xi,
                             (torch.flip(self.kernel, dims=(-1,)),),
                             dim=(dim,),
                             pad_mode=self.pad_mode,
                             pad_value=0.0,
                         )
-                        for dim, yi in zip(self.dim, y, strict=False)
+                        for dim, xi in zip(self.dim, y, strict=False)
                     ]
                 ),
                 dim=0,

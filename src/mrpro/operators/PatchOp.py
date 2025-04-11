@@ -61,7 +61,7 @@ class PatchOp(LinearOperator):
         self.dilation = check(dilation, 'dilation')
         self.domain_size = check(domain_size, 'domain_size') if domain_size is not None else None
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Extract patches.
 
         Parameters
@@ -73,6 +73,13 @@ class PatchOp(LinearOperator):
         -------
             Tensor with shape
             `(n_patches,... patch_size_1, ... patch_size_2, ...)`
+        """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply PatchOp.
+
+        Use `operator.__call__`, i.e. call `operator()` instead.
         """
         domain_size = tuple(x.shape[dim] for dim in self.dim)
         if self.domain_size is None:
@@ -93,13 +100,13 @@ class PatchOp(LinearOperator):
 
     def adjoint(
         self,
-        patches: torch.Tensor,
+        x: torch.Tensor,
     ) -> tuple[torch.Tensor,]:
         """Perform the adjoint operation, i.e. assemble the patches.
 
         Parameters
         ----------
-        patches
+        x
             Patches to assemble. Shape `(n_patches,... patch_size_1, ... patch_size_2, ...)`
 
         Returns
@@ -111,11 +118,11 @@ class PatchOp(LinearOperator):
         if self.domain_size is None:
             raise ValueError('Domain size is not set. Please call forward first or set it at initialization.')
 
-        output_shape_ = list(patches.shape[1:])
+        output_shape_ = list(x.shape[1:])
         for dim, size in zip(self.dim, self.domain_size, strict=True):
             output_shape_[dim] = size
         output_shape = torch.Size(output_shape_)
-        indices = torch.arange(output_shape.numel(), device=patches.device).reshape(output_shape_)
+        indices = torch.arange(output_shape.numel(), device=x.device).reshape(output_shape_)
         windowed_indices = sliding_window(
             x=indices,
             window_shape=self.patch_size,
@@ -123,13 +130,13 @@ class PatchOp(LinearOperator):
             stride=self.stride,
             dilation=self.dilation,
         ).flatten(start_dim=0, end_dim=len(self.dim) - 1)
-        if windowed_indices.shape[0] != patches.shape[0]:
+        if windowed_indices.shape[0] != x.shape[0]:
             raise ValueError(
-                f'Number of patches {patches.shape[0]} does not match the number of '
+                f'Number of patches {x.shape[0]} does not match the number of '
                 f'expected patches {windowed_indices.shape[0]}'
             )
 
-        assembled = patches.new_zeros(output_shape.numel())
-        assembled.scatter_add_(dim=0, index=windowed_indices.flatten(), src=patches.flatten())
+        assembled = x.new_zeros(output_shape.numel())
+        assembled.scatter_add_(dim=0, index=windowed_indices.flatten(), src=x.flatten())
         assembled = assembled.reshape(output_shape)
         return (assembled,)

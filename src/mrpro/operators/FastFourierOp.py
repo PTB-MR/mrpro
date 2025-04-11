@@ -112,7 +112,7 @@ class FastFourierOp(LinearOperator):
                 f'{encoding_matrix=} and {recon_matrix=}'
             )
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """FFT from image space to k-space.
 
         Parameters
@@ -124,6 +124,13 @@ class FastFourierOp(LinearOperator):
         -------
             FFT of `x`
         """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply FastFourierOp.
+
+        Use `operator.__call__`, i.e. call `operator()` instead.
+        """
         y = torch.fft.fftshift(
             torch.fft.fftn(torch.fft.ifftshift(*self._pad_op(x), dim=self._dim), dim=self._dim, norm='ortho'),
             dim=self._dim,
@@ -131,16 +138,16 @@ class FastFourierOp(LinearOperator):
         return (y,)
 
     def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
-        """IFFT from k-space to image space.
+        """Adjoint Fast Fourier Transformation to spatial domain.
 
         Parameters
         ----------
         y
-            k-space data on Cartesian grid
+            k-space data
 
         Returns
         -------
-            IFFT of `y`
+            image data
         """
         # FFT
         return self._pad_op.adjoint(

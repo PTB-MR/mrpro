@@ -85,7 +85,7 @@ class ConstraintsOp(EndomorphOperator):
         return x + torch.log(-torch.expm1(-beta * x)) / beta
 
     @endomorph
-    def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+    def __call__(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Transform tensors to chosen range.
 
         Parameters
@@ -96,6 +96,14 @@ class ConstraintsOp(EndomorphOperator):
         Returns
         -------
             tensors transformed to the range defined by the chosen bounds
+        """
+        return super().__call__(*x)
+
+    @endomorph
+    def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        """Apply ConstraintsOp.
+
+        Use `operator.__call__`, i.e. call `operator()` instead.
         """
         x_constrained = []
         for item, lb, ub in zip(x, self.lower_bounds, self.upper_bounds, strict=False):
