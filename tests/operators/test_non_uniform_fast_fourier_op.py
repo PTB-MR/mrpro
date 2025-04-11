@@ -6,16 +6,16 @@ from mrpro.data import KData, KTrajectory
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 from mrpro.operators import FastFourierOp, NonUniformFastFourierOp
+from mrpro.utils import RandomGenerator
 
-from tests import RandomGenerator
 from tests.conftest import COMMON_MR_TRAJECTORIES, create_traj
 from tests.helper import dotproduct_adjointness_test, relative_image_difference
 
 
 def create_data(img_shape, nkx, nky, nkz, type_kx, type_ky, type_kz) -> tuple[torch.Tensor, KTrajectory]:
     """Create k-space trajectory and random image."""
-    random_generator = RandomGenerator(seed=0)
-    img = random_generator.complex64_tensor(size=img_shape)
+    rng = RandomGenerator(seed=0)
+    img = rng.complex64_tensor(size=img_shape)
     trajectory = create_traj(nkx, nky, nkz, type_kx, type_ky, type_kz)
     return img, trajectory
 
@@ -45,9 +45,9 @@ def test_non_uniform_fast_fourier_op_fwd_adj_property(
     )
 
     # test adjoint property; i.e. <Fu,v> == <u, F^Hv> for all u,v
-    random_generator = RandomGenerator(seed=0)
-    u = random_generator.complex64_tensor(size=img_shape)
-    v = random_generator.complex64_tensor(size=k_shape)
+    rng = RandomGenerator(seed=0)
+    u = rng.complex64_tensor(size=img_shape)
+    v = rng.complex64_tensor(size=k_shape)
     dotproduct_adjointness_test(nufft_op, u, v)
 
 
@@ -119,8 +119,8 @@ def test_non_uniform_fast_fourier_op_empty_dims() -> None:
     traj = create_traj(nkx=nk, nky=nk, nkz=nk, type_kx='non-uniform', type_ky='non-uniform', type_kz='non-uniform')
     nufft_op = NonUniformFastFourierOp(direction=(), recon_matrix=(), encoding_matrix=(), traj=traj)
 
-    random_generator = RandomGenerator(seed=0)
-    u = random_generator.complex64_tensor(size=[2, 3, 4, 5])
+    rng = RandomGenerator(seed=0)
+    u = rng.complex64_tensor(size=[2, 3, 4, 5])
     torch.testing.assert_close(u, nufft_op(u)[0])
 
 

@@ -5,8 +5,9 @@ from collections.abc import Sequence
 import pytest
 import torch
 from mrpro.operators.models import WASABI
+from mrpro.utils import RandomGenerator
 from mrpro.utils.reshape import unsqueeze_right
-from tests import RandomGenerator, autodiff_test
+from tests import autodiff_test
 from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
 
 

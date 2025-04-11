@@ -7,9 +7,9 @@ import pytest
 import torch
 from einops import repeat
 from mrpro.operators import FiniteDifferenceOp
+from mrpro.utils import RandomGenerator
 
 from tests import (
-    RandomGenerator,
     dotproduct_adjointness_test,
     forward_mode_autodiff_of_linear_operator_test,
     gradient_of_linear_operator_test,
@@ -20,14 +20,14 @@ def create_finite_difference_op_and_range_domain(
     dim: Sequence[int], mode: Literal['central', 'forward', 'backward'], pad_mode: Literal['zeros', 'circular']
 ) -> tuple[FiniteDifferenceOp, torch.Tensor, torch.Tensor]:
     """Create a finite difference operator and an element from domain and range."""
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
     img_shape = (5, 6, 4, 10, 20, 16)
 
     # Generate finite difference operator
     finite_difference_op = FiniteDifferenceOp(dim, mode, pad_mode)
 
-    u = random_generator.complex64_tensor(size=img_shape)
-    v = random_generator.complex64_tensor(size=(len(dim), *img_shape))
+    u = rng.complex64_tensor(size=img_shape)
+    v = rng.complex64_tensor(size=(len(dim), *img_shape))
     return finite_difference_op, u, v
 
 

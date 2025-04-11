@@ -7,8 +7,7 @@ import pytest
 import torch
 from mrpro.operators import functionals
 from mrpro.operators.Functional import ElementaryFunctional, ElementaryProximableFunctional
-
-from tests import RandomGenerator
+from mrpro.utils import RandomGenerator
 
 
 @dataclass

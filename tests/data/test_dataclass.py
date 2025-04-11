@@ -5,9 +5,8 @@ from dataclasses import field
 import pytest
 import torch
 from mrpro.data import Dataclass, Rotation, SpatialDimension
+from mrpro.utils import RandomGenerator
 from typing_extensions import Any
-
-from tests import RandomGenerator
 
 
 class SharedModule(torch.nn.Module):
@@ -312,7 +311,7 @@ def test_dataclass_getitem(index, expected_shape: tuple[int, ...]) -> None:
     check_broadcastable(indexed.shape, expected_shape)
 
 
-def test_dataclass_reducerepeat() -> None:
+def test_dataclass_reduce_repeat() -> None:
     """Test reduction of repeated dimensions."""
 
     class Container(Dataclass):
