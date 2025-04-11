@@ -129,8 +129,8 @@ class SSIM(Functional):
         Calculates the SSIM using a rectangular sliding window. If a mask is provided, only the windows
         that are fully inside the mask are considered.
 
-        The SSIM is calculed for a volume, i.e, 3D patches of the last 3 dimensions of the input are considered.
-        To apply it to purely 2D data, add a singleton dimensions.
+        The SSIM is calculated for a volume, i.e, 3D patches of the last three dimensions of the input are used.
+        To apply it to purely 2D data, add a singleton dimension.
 
         References
         ----------
