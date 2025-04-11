@@ -3,7 +3,7 @@
 import torch
 from mrpro.utils.pad_or_crop import pad_or_crop
 
-from tests import RandomGenerator
+from mrpro.utils import RandomGenerator
 
 
 def test_pad_or_crop_content():
