@@ -1,5 +1,6 @@
 """Tests for the conjugate gradient method."""
 
+import numpy as np
 import pytest
 import scipy.linalg
 import scipy.sparse
@@ -135,7 +136,9 @@ def test_compare_cg_to_scipy(system, max_iterations: int, use_preconditioner: bo
         operator_sp = scipy.linalg.block_diag(*operator.matrix.numpy())
     if use_preconditioner:
         ilu = scipy.sparse.linalg.spilu(scipy.sparse.csc_matrix(operator_sp), drop_tol=0.05)
-        preconditioner_sp = scipy.sparse.linalg.LinearOperator(operator_sp.shape, lambda x: ilu.solve(x))
+        preconditioner_sp = scipy.sparse.linalg.LinearOperator(
+            operator_sp.shape, lambda x: ilu.solve(x), dtype=operator_sp.dtype
+        )
         preconditioner = lambda x: (torch.as_tensor(ilu.solve(x.flatten().numpy())).reshape(x.shape),)  #  # noqa: E731
     else:
         preconditioner_sp = preconditioner = None
