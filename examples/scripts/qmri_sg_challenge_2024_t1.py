@@ -154,12 +154,12 @@ if torch.cuda.is_available():
     t1_start = t1_start.cuda()
 
 # Hyperparameters for optimizer
-n_iterations = 2000
+max_iterations = 2000
 learning_rate = 1e-1
 
 # Run optimization
 result = mrpro.algorithms.optimizers.adam(
-    functional, [m0_start, t1_start], n_iterations=n_iterations, learning_rate=learning_rate
+    functional, [m0_start, t1_start], max_iterations=max_iterations, learning_rate=learning_rate
 )
 m0, t1 = (p.detach().cpu() for p in result)
 model.cpu()
