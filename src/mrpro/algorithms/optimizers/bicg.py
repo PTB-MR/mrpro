@@ -1,6 +1,7 @@
 """Stabilized Bi-Conjugate Gradient method for non-symmetric linear systems."""
 
 from collections.abc import Callable, Sequence
+from warnings import warn
 
 import torch
 from typing_extensions import TypedDict, Unpack
@@ -102,6 +103,8 @@ def bicg(
     .. [WikipediaBiCGSTAB] Wikipedia: Bi-conjugate gradient stabilized method https://en.wikipedia.org/wiki/Bi-conjugate_gradient_stabilized_method
     """
     right_hand_side_ = tuple(right_hand_side)
+    if tolerance < torch.finfo(right_hand_side[0].dtype).eps:
+        warn(f'Tolerance is very small ({tolerance}), this can cause nan values.', stacklevel=2)
     if not right_hand_side_:
         raise ValueError('right_hand_side cannot be empty')
 
