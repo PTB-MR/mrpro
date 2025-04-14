@@ -125,7 +125,7 @@ def bicg(
     search_direction = residual
 
     for iteration in range(max_iterations):
-        if vdot(residual, residual, force_real).real < tolerance**2:
+        if vdot(residual, residual, force_real).real < max(1e-12, tolerance**2):
             break
 
         arbitrary_dot_residual = vdot(arbitrary, residual, force_real)
