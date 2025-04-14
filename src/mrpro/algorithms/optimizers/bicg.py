@@ -1,33 +1,37 @@
 """Stabilized Bi-Conjugate Gradient method for non-symmetric linear systems."""
 
 from collections.abc import Callable, Sequence
-from typing import TypedDict
+from typing import TypedDict, Unpack
 
 import torch
 
+from mrpro.operators import MultiIdentityOp
 from mrpro.operators.LinearOperator import LinearOperator
 from mrpro.operators.LinearOperatorMatrix import LinearOperatorMatrix
 
 
-def vdot(a: Sequence[torch.Tensor], b: Sequence[torch.Tensor]) -> torch.Tensor:
+def vdot(a: Sequence[torch.Tensor], b: Sequence[torch.Tensor], force_real: bool = False) -> torch.Tensor:
     """Vector dot product."""
+    if force_real:
+        a = tuple(torch.view_as_real(a_i) if a_i.is_complex() else a_i for a_i in a)
+        b = tuple(torch.view_as_real(b_i) if b_i.is_complex() else b_i for b_i in b)
     return sum(
         (torch.vdot(a_i.flatten(), b_i.flatten()) for a_i, b_i in zip(a, b, strict=True)), start=torch.tensor(0.0)
     )
 
 
-OperatorMatrixLikeCallable = Callable[[Sequence[torch.Tensor]], tuple[torch.Tensor, ...]]
+OperatorMatrixLikeCallable = Callable[[Unpack[tuple[torch.Tensor, ...]]], tuple[torch.Tensor, ...]]
 
 
-class BiCGSTABStatus(TypedDict):
-    """BiCGSTAB callback status."""
+class BiCGStatus(TypedDict):
+    """BiCG callback status."""
 
     solution: tuple[torch.Tensor, ...]
     iteration_number: int
     residual: tuple[torch.Tensor, ...]
 
 
-def bicgstab(
+def bicg(
     operator: LinearOperator | LinearOperatorMatrix | OperatorMatrixLikeCallable,
     right_hand_side: Sequence[torch.Tensor],
     *,
@@ -35,7 +39,7 @@ def bicgstab(
     preconditioner_inverse: LinearOperator | LinearOperatorMatrix | OperatorMatrixLikeCallable | None = None,
     max_iterations: int = 128,
     tolerance: float = 1e-6,
-    callback: Callable[[BiCGSTABStatus], bool | None] | None = None,
+    callback: Callable[[BiCGStatus], bool | None] | None = None,
 ) -> tuple[torch.Tensor, ...]:
     r"""(Preconditioned) Bi-Conjugate Gradient Stabilized method for :math:`Hx=b`.
 
@@ -95,7 +99,7 @@ def bicgstab(
     References
     ----------
     .. [VanDerVorst1992] Van der Vorst, H. A. (1992). Bi-CGSTAB: A Fast and Smoothly Converging Variant of Bi-CG for the
-       Solution of Nonsymmetric Linear Systems. SIAM Journal on Scientific and Statistical Computing, 13(2), 631–644.
+       Solution of Nonsymmetric Linear Systems. SIAM Journal on Scientific and Statistical Computing, 13(2), 631-644.
     .. [WikipediaBiCGSTAB] Wikipedia: Bi-conjugate gradient stabilized method https://en.wikipedia.org/wiki/Bi-conjugate_gradient_stabilized_method
     """
     right_hand_side_ = tuple(right_hand_side)
@@ -110,40 +114,45 @@ def bicgstab(
             raise ValueError('Length mismatch in initial_value and right_hand_side')
         if any(s.shape != r.shape for s, r in zip(solution, right_hand_side_, strict=True)):
             raise ValueError('Shape mismatch in initial_value and right_hand_side')
-
+    if any(r.is_complex() for r in right_hand_side_) and not all(r.is_complex() for r in right_hand_side_):
+        force_real = True
+    else:
+        force_real = False
     residual = tuple(r - op_sol for r, op_sol in zip(right_hand_side_, operator(*solution), strict=True))
-    shadow = residual
+    arbitrary = tuple(r for r in residual)
 
-    preconditioner = preconditioner_inverse if preconditioner_inverse is not None else lambda *x: x
-    alpha = omega = previous_product = None
+    preconditioner = preconditioner_inverse if preconditioner_inverse is not None else MultiIdentityOp()
+    alpha = omega = previous_product = operator_search = None
     search_direction = residual
 
     for iteration in range(max_iterations):
-        if vdot(residual, residual).real < tolerance**2:
+        if vdot(residual, residual, force_real).real < tolerance**2:
             break
 
-        shadow_dot_residual = vdot(shadow, residual)
-        if previous_product is not None and alpha is not None and omega is not None:  # not first iteration
-            beta = (shadow_dot_residual / previous_product) * (alpha / omega)
+        arbitrary_dot_residual = vdot(arbitrary, residual, force_real)
+        if (
+            previous_product is not None and alpha is not None and omega is not None and operator_search is not None
+        ):  # not first iteration
+            beta = (arbitrary_dot_residual / previous_product) * (alpha / omega)
             search_direction = tuple(
                 r + beta * (p - omega * v) for r, p, v in zip(residual, search_direction, operator_search, strict=True)
             )
         preconditioned_search = preconditioner(*search_direction)
         operator_search = operator(*preconditioned_search)
-        alpha = shadow_dot_residual / vdot(shadow, operator_search)
+        alpha = arbitrary_dot_residual / vdot(arbitrary, operator_search, force_real)
 
-        intermediate = tuple(r - alpha * v for r, v in zip(residual, operator_search, strict=True))
-        preconditioned_interim = preconditioner(*intermediate)
+        interim = tuple(r - alpha * v for r, v in zip(residual, operator_search, strict=True))
+        preconditioned_interim = preconditioner(*interim)
         operator_interim = operator(*preconditioned_interim)
-        omega = vdot(operator_interim, intermediate) / vdot(operator_interim, operator_interim).real
+        omega = vdot(operator_interim, interim, force_real) / vdot(operator_interim, operator_interim, force_real).real
 
         solution = tuple(
             x + alpha * p + omega * s
             for x, p, s in zip(solution, preconditioned_search, preconditioned_interim, strict=True)
         )
 
-        residual = tuple(i - omega * t for i, t in zip(intermediate, operator_interim, strict=True))
-        previous_product = shadow_dot_residual
+        residual = tuple(i - omega * t for i, t in zip(interim, operator_interim, strict=True))
+        previous_product = arbitrary_dot_residual
 
         if callback is not None:
             continue_iterations = callback({'solution': solution, 'iteration_number': iteration, 'residual': residual})
