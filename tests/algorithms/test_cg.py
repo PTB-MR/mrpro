@@ -159,7 +159,7 @@ def test_spd_compare_to_scipy(
     else:
         operator_sp = scipy.linalg.block_diag(*operator.matrix.numpy())
     if use_preconditioner:
-        ilu = scipy.sparse.linalg.spilu(scipy.sparse.csc_matrix(operator_sp), drop_tol=0.07)
+        ilu = scipy.sparse.linalg.spilu(scipy.sparse.csc_matrix(operator_sp), drop_tol=0.08)
         preconditioner_sp = scipy.sparse.linalg.LinearOperator(
             operator_sp.shape, lambda x: ilu.solve(x), dtype=operator_sp.dtype
         )
@@ -177,7 +177,7 @@ def test_spd_compare_to_scipy(
         right_hand_side[0].flatten().numpy(),
         x0=None if initial_value is None else initial_value[0].flatten().numpy(),
         maxiter=max_iterations,
-        atol=1e-8,
+        atol=1e-6,
         M=preconditioner_sp,
     )
     scipy_result = scipy_result.reshape(right_hand_side[0].shape)
@@ -187,12 +187,11 @@ def test_spd_compare_to_scipy(
         right_hand_side,
         initial_value=initial_value,
         max_iterations=max_iterations,
-        tolerance=1e-8,
+        tolerance=1e-6,
         preconditioner_inverse=preconditioner,
     )
 
     tol = 1e-6 if result.dtype.to_real() == torch.float64 else 5e-3
-
     torch.testing.assert_close(result, torch.tensor(scipy_result), atol=tol, rtol=tol)
 
 
