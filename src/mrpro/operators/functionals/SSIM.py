@@ -43,7 +43,7 @@ def ssim3d(
         Value range if the data. If `None`, peak-to-peak of the target will be used.
     reduction
         If True, return the mean SSIM over all pixels. If False, return the SSIM map.
-        The map will be of shape `(... z-window_size, y-window_size, x-window_size)`
+        The map will be of shape `(... z - window_size,  y - window_size, x - window_size)`
 
     Returns
     -------
