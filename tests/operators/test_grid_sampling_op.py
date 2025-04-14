@@ -190,16 +190,13 @@ def test_grid_sampling_op_errormsg_gridshape_3d():
             grid_z=torch.ones(1, 2, 1, 1),
             grid_y=torch.ones(1, 1, 1, 1),
             grid_x=torch.ones(1, 1, 1, 1),
-            input_shape=SpatialDimension(1, 1, 1),
         )
 
 
 def test_grid_sampling_op_errormsg_gridshape_2d():
     """Test if error message on mismatch of grid shape is raised."""
     with pytest.raises(ValueError, match='should have the same shape'):
-        _ = GridSamplingOp(
-            grid_z=None, grid_y=torch.ones(1, 3, 1), grid_x=torch.ones(1, 1, 1), input_shape=SpatialDimension(1, 1, 1)
-        )
+        _ = GridSamplingOp(grid_z=None, grid_y=torch.ones(1, 3, 1), grid_x=torch.ones(1, 1, 1))
 
 
 def test_grid_sampling_op_errormsg_gridndims_3d():
@@ -209,16 +206,13 @@ def test_grid_sampling_op_errormsg_gridndims_3d():
             grid_z=torch.ones(1, 1, 1),
             grid_y=torch.ones(1, 1, 1),
             grid_x=torch.ones(1, 1, 1),
-            input_shape=SpatialDimension(1, 1, 1),
         )
 
 
 def test_grid_sampling_op_errormsg_gridndims_2d():
     """Test if error message on missing batch dim is raised."""
     with pytest.raises(ValueError, match='batch y x'):
-        _ = GridSamplingOp(
-            grid_z=None, grid_y=torch.ones(1, 1), grid_x=torch.ones(1, 1), input_shape=SpatialDimension(1, 1, 1)
-        )
+        _ = GridSamplingOp(grid_z=None, grid_y=torch.ones(1, 1), grid_x=torch.ones(1, 1))
 
 
 def test_grid_sampling_op_errormsg_cubic3d():
@@ -352,10 +346,55 @@ def test_grid_sampling_op_orientation(dim, grid_sample_dim):
     grid[grid > 1] = 1
     grid[grid < -1] = -1
     operator = GridSamplingOp(
-        grid_z=grid[..., 2],
-        grid_y=grid[..., 1],
-        grid_x=grid[..., 0],
-        input_shape=SpatialDimension(20, 30, 40),
+        grid_z=grid[..., 2], grid_y=grid[..., 1], grid_x=grid[..., 0], interpolation_mode='nearest'
+    )
+
+    torch.testing.assert_close(phantom_shifted, operator(phantom)[0])
+
+
+def test_grid_sampling_op_from_displacement_3d():
+    """Test transformation created from displacement."""
+    phantom = torch.zeros(3, 4, 20, 30, 40)
+    phantom[..., 6:10, 10:20, 10:30] = 1
+
+    # shift phantom along dim
+    shift = (2, 3, 4)
+    phantom_shifted = torch.roll(phantom, shifts=shift, dims=(-3, -2, -1))
+
+    # Create displacement with border to avoid shifts outside of the image
+    displacement = torch.zeros(3, 20, 30, 40, 3)
+    displacement[:, 5:-5, 5:-5, 5:-5, 0] = -shift[0]
+    displacement[:, 5:-5, 5:-5, 5:-5, 1] = -shift[1]
+    displacement[:, 5:-5, 5:-5, 5:-5, 2] = -shift[2]
+
+    operator = GridSamplingOp.from_displacement(
+        displacement_z=displacement[..., 0],
+        displacement_y=displacement[..., 1],
+        displacement_x=displacement[..., 2],
+        interpolation_mode='nearest',
+    )
+
+    torch.testing.assert_close(phantom_shifted, operator(phantom)[0])
+
+
+def test_grid_sampling_op_from_displacement_2d():
+    """Test transformation created from displacement."""
+    phantom = torch.zeros(3, 4, 20, 30, 40)
+    phantom[..., 6:10, 10:20, 10:30] = 1
+
+    # shift phantom along dim
+    shift = (3, 4)
+    phantom_shifted = torch.roll(phantom, shifts=shift, dims=(-2, -1))
+
+    # Create displacement with border to avoid shifts outside of the image
+    displacement = torch.zeros(3, 30, 40, 2)
+    displacement[:, 5:-5, 5:-5, 0] = -shift[0]
+    displacement[:, 5:-5, 5:-5, 1] = -shift[1]
+
+    operator = GridSamplingOp.from_displacement(
+        displacement_z=None,
+        displacement_y=displacement[..., 0],
+        displacement_x=displacement[..., 1],
         interpolation_mode='nearest',
     )
 
