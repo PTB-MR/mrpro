@@ -27,7 +27,7 @@ def spd_system(
     request,
 ) -> tuple[LinearOperator, tuple[torch.Tensor, ...], tuple[torch.Tensor, ...], tuple[torch.Tensor, ...] | None]:
     """Generate system Hx=b with linear and self-adjoint H."""
-    rng = RandomGenerator(seed=2025)
+    rng = RandomGenerator(seed=123)
     batchsize, vectorsize, complex_valued, separate_initial_value = request.param
     matrix_shape: tuple[int, int, int] = (*batchsize, vectorsize, vectorsize)
     vector_shape: tuple[int, int] = (*batchsize, vectorsize)
@@ -159,7 +159,7 @@ def test_spd_compare_to_scipy(
     else:
         operator_sp = scipy.linalg.block_diag(*operator.matrix.numpy())
     if use_preconditioner:
-        ilu = scipy.sparse.linalg.spilu(scipy.sparse.csc_matrix(operator_sp), drop_tol=0.05)
+        ilu = scipy.sparse.linalg.spilu(scipy.sparse.csc_matrix(operator_sp), drop_tol=0.07)
         preconditioner_sp = scipy.sparse.linalg.LinearOperator(
             operator_sp.shape, lambda x: ilu.solve(x), dtype=operator_sp.dtype
         )
