@@ -145,7 +145,7 @@ def test_compare_cg_to_scipy(system, max_iterations: int, use_preconditioner: bo
     (scipy_solution, _) = scipy.sparse.linalg.cg(
         operator_sp,
         right_hand_side.flatten().numpy(),
-        x0=initial_value.flatten().numpy() if initial_value is not None else right_hand_side.flatten().numpy(),
+        x0=None if initial_value is None else initial_value.flatten().numpy(),
         maxiter=max_iterations,
         atol=0,
         M=preconditioner_sp,
