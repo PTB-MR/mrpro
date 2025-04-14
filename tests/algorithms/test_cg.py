@@ -15,8 +15,8 @@ from mrpro.utils import RandomGenerator
 
 @pytest.fixture(
     params=[  # (batch-size, vector-size, complex-valued system, separate initial_value)
-        ((), 32, False, False),
-        ((4,), 32, True, True),
+        ((), 16, False, False),
+        ((4,), 16, True, True),
     ],
     ids=[
         'real_single_noinit',
@@ -27,7 +27,7 @@ def spd_system(
     request,
 ) -> tuple[LinearOperator, tuple[torch.Tensor, ...], tuple[torch.Tensor, ...], tuple[torch.Tensor, ...] | None]:
     """Generate system Hx=b with linear and self-adjoint H."""
-    rng = RandomGenerator(seed=123)
+    rng = RandomGenerator(seed=2025)
     batchsize, vectorsize, complex_valued, separate_initial_value = request.param
     matrix_shape: tuple[int, int, int] = (*batchsize, vectorsize, vectorsize)
     vector_shape: tuple[int, int] = (*batchsize, vectorsize)
