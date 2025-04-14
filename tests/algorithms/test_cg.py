@@ -177,7 +177,7 @@ def test_spd_compare_to_scipy(
         right_hand_side[0].flatten().numpy(),
         x0=None if initial_value is None else initial_value[0].flatten().numpy(),
         maxiter=max_iterations,
-        atol=0,
+        atol=1e-8,
         M=preconditioner_sp,
     )
     scipy_result = scipy_result.reshape(right_hand_side[0].shape)
@@ -187,7 +187,7 @@ def test_spd_compare_to_scipy(
         right_hand_side,
         initial_value=initial_value,
         max_iterations=max_iterations,
-        tolerance=0,
+        tolerance=1e-8,
         preconditioner_inverse=preconditioner,
     )
 
