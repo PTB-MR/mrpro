@@ -258,7 +258,7 @@ def test_autograd(
     operator, right_hand_side, _, initial_value = spd_system
     right_hand_side[0].requires_grad_(True)
     with torch.autograd.detect_anomaly():
-        (result,) = algorithm(operator, right_hand_side, initial_value=initial_value, tolerance=0, max_iterations=5)
+        (result,) = algorithm(operator, right_hand_side, initial_value=initial_value, max_iterations=5)
         result.abs().sum().backward()
     assert right_hand_side[0].grad is not None
 
