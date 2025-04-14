@@ -4,13 +4,13 @@ from typing import cast
 
 import torch
 
-from mrpro.operators.Functional import Functional
+from mrpro.operators.Functional import ElementaryFunctional
 from mrpro.utils.sliding_window import sliding_window
 
 
 def ssim3d(
     target: torch.Tensor,
-    x: torch.Tensor,
+    prediction: torch.Tensor,
     *,
     mask: torch.Tensor | None = None,
     k1: float = 0.01,
@@ -24,13 +24,14 @@ def ssim3d(
     Parameters
     ----------
     target
-        Ground truth tensor, shape `(... z, y, x)`
-    x
-        Predicted tensor, same shape as gt
+        Ground truth tensor, shape `(... z, y, x)` or broadcastable with prediction.
+    prediction
+        Predicted tensor, same shape as target
     mask
         Mask tensor, same shape as target.
         Only windows that are fully inside the mask are considered.
         If None, all elements are considered.
+        If float, windows will be weighted by the average value of the mask in the window.
     k1
         Constant for SSIM computation. Commonly 0.01.
     k2
@@ -40,7 +41,7 @@ def ssim3d(
         If any of the last 3 dimensions of the target is of size 1, the window size in this dimension will
         also be set to 1.
     data_range
-        Value range if the data. If `None`, peak-to-peak of the target will be used.
+        Value range if the data. If `None`, max-to-min of the target will be used.
     reduction
         If True, return the mean SSIM over all pixels. If False, return the SSIM map.
         The map will be of shape `(... z - window_size,  y - window_size, x - window_size)`
@@ -53,68 +54,73 @@ def ssim3d(
         raise ValueError('Input must be at least 3D (z, y, x)')
 
     if mask is not None:
-        target, x, mask = cast(
-            tuple[torch.Tensor, torch.Tensor, torch.Tensor], torch.broadcast_tensors(target, x, mask)
+        if (mask < 0).any():
+            raise ValueError('Mask contains negative values')
+        target, prediction, mask = cast(
+            tuple[torch.Tensor, torch.Tensor, torch.Tensor], torch.broadcast_tensors(target, prediction, mask)
         )
         mask = sliding_window(mask, window_shape=window_size, dim=(-3, -2, -1)).movedim((0, 1, 2), (-6, -5, -4))
-        mask = mask.all(dim=(-3, -2, -1))
-        if mask.numel() == 0:
+        bool_mask = mask.all(dim=(-3, -2, -1))
+        if bool_mask.numel() == 0:
             raise ValueError('Mask does not cover any pixels')
+        mask = mask[bool_mask]
+        mask = mask / mask.sum()
 
     else:
-        target, x = cast(tuple[torch.Tensor, torch.Tensor], torch.broadcast_tensors(target, x))
+        bool_mask = None
+        target, prediction = cast(tuple[torch.Tensor, torch.Tensor], torch.broadcast_tensors(target, prediction))
 
     window = tuple(window_size if s > 1 else 1 for s in target.shape[-3:])  # To support 1D and 2D uses
     target_window = sliding_window(target, window_shape=window, dim=(-3, -2, -1)).movedim((0, 1, 2), (-6, -5, -4))
 
-    if data_range is None and mask is not None:
-        data_range_ = target_window[mask].amax() - target_window[mask].amin()
+    if data_range is None and bool_mask is not None:
+        data_range_ = target_window[bool_mask].amax() - target_window[bool_mask].amin()
     if data_range is None:
         data_range_ = target_window.amax() - target_window.amin()
     else:
         data_range_ = data_range
 
-    x_window = sliding_window(x, window_shape=window, dim=(-3, -2, -1)).movedim((0, 1, 2), (-6, -5, -4))
+    x_window = sliding_window(prediction, window_shape=window, dim=(-3, -2, -1)).movedim((0, 1, 2), (-6, -5, -4))
 
-    mean_t = target_window.mean(dim=(-3, -2, -1))
-    mean_x = x_window.mean(dim=(-3, -2, -1))
+    mean_tgt = target_window.mean(dim=(-3, -2, -1))
+    mean_img = x_window.mean(dim=(-3, -2, -1))
 
-    mean_tt = (target_window**2).mean(dim=(-3, -2, -1))
-    mean_xx = (x_window**2).mean(dim=(-3, -2, -1))
-    mean_tx = (target_window * x_window).mean(dim=(-3, -2, -1))
+    mean_tgt_tgt = (target_window**2).mean(dim=(-3, -2, -1))
+    mean_img_img = (x_window**2).mean(dim=(-3, -2, -1))
+    mean_tgt_img = (target_window * x_window).mean(dim=(-3, -2, -1))
 
     n = x_window.shape[-3:].numel()
     cov_norm = n / (n - 1)
-    cov_t = cov_norm * (mean_tt - mean_t * mean_t)
-    cov_x = cov_norm * (mean_xx - mean_x * mean_x)
-    cov_tx = cov_norm * (mean_tx - mean_t * mean_x)
+    cov_tgt = cov_norm * (mean_tgt_tgt - mean_tgt * mean_tgt)
+    cov_img = cov_norm * (mean_img_img - mean_img * mean_img)
+    cov_tgt_img = cov_norm * (mean_tgt_img - mean_tgt * mean_img)
 
     c1 = (k1 * data_range_) ** 2
     c2 = (k2 * data_range_) ** 2
-    a1 = 2 * mean_t * mean_x + c1
-    a2 = 2 * cov_tx + c2
-    b1 = mean_t**2 + mean_x**2 + c1
-    b2 = cov_t + cov_x + c2
+    a1 = 2 * mean_tgt * mean_img + c1
+    a2 = 2 * cov_tgt_img + c2
+    b1 = mean_tgt**2 + mean_img**2 + c1
+    b2 = cov_tgt + cov_img + c2
 
     ssim_map = (a1 * a2) / (b1 * b2)
 
-    if reduction and mask is not None:
-        return ssim_map[mask].mean()
-    elif reduction and mask is None:
+    if reduction and bool_mask is not None and mask is not None:
+        return (ssim_map[bool_mask] * mask).sum()
+    elif reduction and bool_mask is None:
         return ssim_map.mean()
-    elif not reduction and mask is not None:
-        return torch.where(mask, ssim_map, ssim_map[mask].mean())
+    elif not reduction and bool_mask is not None:
+        return torch.where(bool_mask, ssim_map, ssim_map[bool_mask].mean())
     else:  # reduction and mask is None
         return ssim_map
 
 
-class SSIM(Functional):
+class SSIM(ElementaryFunctional):
     """(masked) SSIM functional."""
 
     def __init__(
         self,
         target: torch.Tensor,
-        mask: torch.Tensor | None = None,
+        weight: torch.Tensor | None = None,
         data_range: torch.Tensor | None = None,
         window_size: int = 7,
         k1: float = 0.01,
@@ -144,9 +150,11 @@ class SSIM(Functional):
         ----------
         target
             Target volume. At least 3d.
-        mask
-            Boolean mask. Only windows with all values `True` will be considered.
+        weight
+            Either a boolean mask. Only windows with all values `True` will be considered.
             `None` means all windows are used.
+            Or a weight tensor of the same shape as the target. Each window will be weighted by
+            the average value of the weight in the window.
         data_range
             Value range if the data. If None, the max-to-min of the target will be used.
         window_size
@@ -157,23 +165,22 @@ class SSIM(Functional):
         k2
             Constant. Usually 0.03
         """
-        super().__init__()
-        self.target = target
-        self.mask = mask
+        weight_ = 1 if weight is None else weight
+        super().__init__(target, weight_)
         self.k1 = k1
         self.k2 = k2
         self.window_size = window_size
         self.data_range = data_range
-        if mask is not None and mask.dtype != torch.bool:
-            raise ValueError('Mask should be a boolean tensor')
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
         """Calculate SSIM of an input."""
+        if x.is_complex():
+            return ((self.forward(x.real)[0] + self.forward(x.imag)[0]) / 2,)
         return (
             ssim3d(
                 self.target,
                 x,
-                mask=self.mask,
+                mask=self.weight,
                 k1=self.k1,
                 k2=self.k2,
                 window_size=self.window_size,
