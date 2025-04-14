@@ -1,0 +1,21 @@
+ARG BASE_IMAGE=ubuntu:22.04
+FROM ${BASE_IMAGE} AS base
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+ARG PYTHON="python3.10"
+
+# install python
+COPY docker/install_system.sh .
+RUN bash install_system.sh && rm install_system.sh
+
+# install mrpro dependencies
+# forces rebuild if either the version or the pyproject.toml changes
+COPY docker/minimal-requirements.txt ./
+RUN python -m pip install --no-cache-dir -r minimal-requirements.txt && rm -rf /root/.cache
+
+COPY . /mrpro/
+RUN python -m pip install "/mrpro[tests]" --no-cache-dir
+
+# set user
+USER runner
