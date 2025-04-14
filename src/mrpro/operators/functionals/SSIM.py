@@ -148,7 +148,7 @@ class SSIM(Functional):
             Boolean mask. Only windows with all values `True` will be considered.
             `None` means all windows are used.
         data_range
-            Value range if the data. If None, the peak-to-peak of the target will be used.
+            Value range if the data. If None, the max-to-min of the target will be used.
         window_size
             Size of the windows used in SSIM. Usually 7 or 11.
             Will be cropped to
