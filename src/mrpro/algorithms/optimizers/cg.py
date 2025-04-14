@@ -104,7 +104,7 @@ def cg(
     right_hand_side
         Right-hand-side :math:`b`.
     initial_value
-        Initial guess :math:`x_0`.
+        Initial guess :math:`x_0`. If `None`, the initial guess is set to the zero vector.
     preconditioner_inverse
         Preconditioner :math:`M^{-1}`. If None, no preconditioning is applied.
     max_iterations
@@ -126,18 +126,16 @@ def cg(
     .. [WikipediaCG] Wikipedia: Conjugate Gradient https://en.wikipedia.org/wiki/Conjugate_gradient
     """
     right_hand_side_ = (right_hand_side,) if isinstance(right_hand_side, torch.Tensor) else tuple(right_hand_side)
-    if initial_value is None:
-        solution = right_hand_side_
-    elif isinstance(initial_value, torch.Tensor):
-        solution = (initial_value,)
-    elif len(initial_value) != len(right_hand_side_):
-        raise ValueError('Length mismatch in initial_value and right_hand_side')
-    else:
-        solution = tuple(initial_value)
-    if any(s.shape != r.shape for s, r in zip(solution, right_hand_side_, strict=True)):
-        raise ValueError('Shape mismatch in initial_value and right_hand_side')
-
-    residual = tuple(rhs - op_sol for rhs, op_sol in zip(right_hand_side_, operator(*solution), strict=True))
+    if initial_value is None:  # start with zero initial value
+        solution = tuple(torch.zeros_like(r) for r in right_hand_side_)
+        residual = right_hand_side_
+    else:  # start with provided initial value
+        solution = (initial_value,) if isinstance(initial_value, torch.Tensor) else tuple(initial_value)
+        if len(solution) != len(right_hand_side_):
+            raise ValueError('Length mismatch in initial_value and right_hand_side')
+        if any(s.shape != r.shape for s, r in zip(solution, right_hand_side_, strict=True)):
+            raise ValueError('Shape mismatch in initial_value and right_hand_side')
+        residual = tuple(rhs - op_sol for rhs, op_sol in zip(right_hand_side_, operator(*solution), strict=True))
 
     if preconditioner_inverse is not None:
         conjugate = preconditioner_inverse(*residual)
@@ -145,7 +143,7 @@ def cg(
         conjugate = residual
 
     # dummy value. new value will be set in loop before first usage
-    direction_dot_residual_prev: torch.Tensor | None = None
+    direction_dot_residual_old: torch.Tensor | None = None
 
     for iteration in range(max_iterations):
         residual_dot_residual = vdot(residual, residual).real
@@ -160,14 +158,14 @@ def cg(
             direction = residual
             direction_dot_residual = residual_dot_residual
 
-        if direction_dot_residual_prev is not None:  # not first iteration
-            beta = direction_dot_residual / direction_dot_residual_prev
-            conjugate = tuple(res + beta * con for res, con in zip(direction, conjugate, strict=True))
+        if direction_dot_residual_old is not None:  # not first iteration
+            beta = direction_dot_residual / direction_dot_residual_old
+            conjugate = tuple(d + beta * con for d, con in zip(direction, conjugate, strict=True))
         operator_conjugate = operator(*conjugate)
         alpha = direction_dot_residual / vdot(conjugate, operator_conjugate).real
         solution = tuple(sol + alpha * con for sol, con in zip(solution, conjugate, strict=True))
         residual = tuple(res - alpha * op_con for res, op_con in zip(residual, operator_conjugate, strict=True))
-        direction_dot_residual_prev = direction_dot_residual
+        direction_dot_residual_old = direction_dot_residual
 
         if callback is not None:
             continue_iterations = callback(
