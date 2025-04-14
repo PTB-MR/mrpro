@@ -18,7 +18,7 @@ def vdot(a: Sequence[torch.Tensor], b: Sequence[torch.Tensor]) -> torch.Tensor:
 
 
 class CGStatus(OptimizerStatus):
-    """Conjugate gradient callback base class."""
+    """Status of the conjugate gradient algorithm."""
 
     residual: tuple[torch.Tensor, ...]
     """Residual of the current estimate."""
