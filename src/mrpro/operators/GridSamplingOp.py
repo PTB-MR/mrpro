@@ -179,7 +179,9 @@ class GridSamplingOp(LinearOperator):
 
     def __init__(
         self,
-        grid: torch.Tensor,
+        grid_z: torch.Tensor | None,
+        grid_y: torch.Tensor,
+        grid_x: torch.Tensor,
         input_shape: SpatialDimension,
         interpolation_mode: Literal['bilinear', 'nearest', 'bicubic'] = 'bilinear',
         padding_mode: Literal['zeros', 'border', 'reflection'] = 'zeros',
@@ -189,12 +191,18 @@ class GridSamplingOp(LinearOperator):
 
         Parameters
         ----------
-        grid
-            sampling grid. Shape `*batchdim, z,y,x,3` / `*batchdim, y,x,2`.
+        grid_z
+            Z-component of sampling grid. Shape `*batchdim, z,y,x`. Values should be in ``[-1, 1.]``. Use `None` for a
+            2D interpolation along `y` and `x`.
+        grid_y
+            Y-component of sampling grid. Shape `*batchdim, z,y,x` or `*batchdim, y,x` if `grid_z` is `None`.
+            Values should be in ``[-1, 1.]``.
+        grid_x
+            X-component of sampling grid. Shape `*batchdim, z,y,x` or `*batchdim, y,x` if `grid_z` is `None`.
             Values should be in ``[-1, 1.]``.
         input_shape
             Used in the adjoint. The z, y, x shape of the domain of the operator.
-            If grid has 2 as the last dimension, only y and x will be used.
+            If `grid_z` is `None`, only y and x will be used.
         interpolation_mode
             mode used for interpolation. bilinear is trilinear in 3D, bicubic is only supported in 2D.
         padding_mode
@@ -205,23 +213,25 @@ class GridSamplingOp(LinearOperator):
         """
         super().__init__()
 
-        match grid.shape[-1]:
-            case 2:  # 2D
-                if grid.ndim < 4:
-                    raise ValueError(
-                        'For a 2D gridding (determined by last dimension of grid), grid should have at least'
-                        f' 4 dimensions: batch y x 2. Got shape {grid.shape}.'
-                    )
-            case 3:  # 3D
-                if grid.ndim < 5:
-                    raise ValueError(
-                        'For a 3D gridding (determined by last dimension of grid), grid should have at least'
-                        f' 5 dimensions: batch z y x 3. Got shape {grid.shape}.'
-                    )
-                if interpolation_mode == 'bicubic':
-                    raise NotImplementedError('Bicubic only implemented for 2D')
-            case _:
-                raise ValueError('Grid should have 2 or 3 as last dimension for 2D or 3D sampling')
+        if grid_y.shape != grid_x.shape:
+            raise ValueError('Grid y,x should have the same shape.')
+        if grid_z is not None:
+            if grid_z.shape != grid_y.shape:
+                raise ValueError('Grid z,y,x should have the same shape.')
+            if grid_x.ndim < 4:
+                raise ValueError(
+                    f'For a 3D gridding, grid should have at least 4 dimensions: batch z y x. Got shape {grid_x.shape}.'
+                )
+            if interpolation_mode == 'bicubic':
+                raise NotImplementedError('Bicubic only implemented for 2D')
+            grid = torch.stack((grid_x, grid_y, grid_z), dim=-1)  # pytorch expects grid components x,y,z for 3D
+        else:
+            if grid_x.ndim < 3:
+                raise ValueError(
+                    f'For a 2D gridding, grid should have at least 3 dimensions: batch y x. Got shape {grid_x.shape}.'
+                )
+            grid = torch.stack((grid_x, grid_y), dim=-1)  # pytorch expects grid components x,y for 2D
+
         if not grid.is_floating_point():
             raise ValueError(f'Grid should be a real floating dtype, got {grid.dtype}')
         if grid.max() > 1.0 or grid.min() < -1.0:
