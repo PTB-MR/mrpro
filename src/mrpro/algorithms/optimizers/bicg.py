@@ -1,9 +1,9 @@
 """Stabilized Bi-Conjugate Gradient method for non-symmetric linear systems."""
 
 from collections.abc import Callable, Sequence
-from typing import TypedDict, Unpack
 
 import torch
+from typing_extensions import TypedDict, Unpack
 
 from mrpro.operators import MultiIdentityOp
 from mrpro.operators.LinearOperator import LinearOperator
@@ -53,21 +53,20 @@ def bicg(
        Set shadow residual :math:`\hat{r}_0 = r_0`.
     2. Initialize :math:`\rho_0 = \alpha = \omega = 1`, :math:`p_0 = v_0 = 0`.
     3. For iteration :math:`k = 0, 1, 2, ...`:
-        - Compute inner product: :math:`\rho_k = \hat{r}_0^H r_{k-1}`.
-        - Compute step direction modifier: :math:`\beta_{k-1} = (\rho_k / \rho_{k-1}) (\alpha_{k-1} / \omega_{k-1})`.
-        - Update search direction: :math:`p_k = r_{k-1} + \beta_{k-1} (p_{k-1} - \omega_{k-1} v_{k-1})`.
-        - Apply preconditioner: :math:`y_k = M^{-1} p_k`.
-        - Compute operator applied to search direction: :math:`v_k = H y_k`.
-        - Compute step size :math:`\alpha_k = \rho_k / (\hat{r}_0^H v_k)`.
-        - Compute intermediate residual: :math:`s_k = r_{k-1} - \alpha_k v_k`.
-        - Check convergence: If :math:`\|s_k\|_2` is small, update :math:`x_k = x_{k-1} + \alpha_k y_k` and stop.
-        - Apply preconditioner to intermediate residual: :math:`z_k = M^{-1} s_k`.
-        - Compute operator applied to preconditioned intermediate residual: :math:`t_k = H z_k`.
-        - Compute stabilization factor: :math:`\omega_k = (t_k^H s_k) / (t_k^H t_k)`.
-        - Update solution: :math:`x_k = x_{k-1} + \alpha_k y_k + \omega_k z_k`.
-        - Update residual: :math:`r_k = s_k - \omega_k t_k`.
-        - Check convergence: If :math:`\|r_k\|_2` is small, stop.
-        - Update :math:`\rho_{k-1} = \rho_k` for the next iteration.
+        1. Compute inner product: :math:`\rho_k = \hat{r}_0^H r_{k-1}`.
+        2. Compute step direction modifier: :math:`\beta_{k-1} = (\rho_k / \rho_{k-1}) (\alpha_{k-1} / \omega_{k-1})`.
+        3. Update search direction: :math:`p_k = r_{k-1} + \beta_{k-1} (p_{k-1} - \omega_{k-1} v_{k-1})`.
+        4. Apply preconditioner: :math:`y_k = M^{-1} p_k`.
+        5. Compute operator applied to search direction: :math:`v_k = H y_k`.
+        6. Compute step size :math:`\alpha_k = \rho_k / (\hat{r}_0^H v_k)`.
+        7. Compute intermediate residual: :math:`s_k = r_{k-1} - \alpha_k v_k`.
+        8. Check convergence: If :math:`\|s_k\|_2` is small, update :math:`x_k = x_{k-1} + \alpha_k y_k` and stop.
+        9. Apply preconditioner to intermediate residual: :math:`z_k = M^{-1} s_k`.
+        10. Compute operator applied to preconditioned intermediate residual: :math:`t_k = H z_k`.
+        11. Compute stabilization factor: :math:`\omega_k = (t_k^H s_k) / (t_k^H t_k)`.
+        12. Update solution: :math:`x_k = x_{k-1} + \alpha_k y_k + \omega_k z_k`.
+        13. Update residual: :math:`r_k = s_k - \omega_k t_k`.
+        14. Update :math:`\rho_{k-1} = \rho_k` for the next iteration.
 
     If `preconditioner_inverse` is provided, it solves :math:`M^{-1}Hx = M^{-1}b`
     implicitly, where `preconditioner_inverse(r)` computes :math:`M^{-1}r`.
