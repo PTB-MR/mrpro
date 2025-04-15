@@ -17,11 +17,11 @@ from pathlib import Path
 
 import zenodo_get
 
-dataset = '14173489'
+dataset = '15223816'
 
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
-zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
+zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder, '-g', '*.mrd'])  # r: retries
 
 # %% [markdown]
 # We have three different scans obtained from the same object with the same FOV and resolution, saved as ISMRMRD
@@ -371,7 +371,7 @@ show_images(
 # %% [markdown]
 # ```{note}
 # There are already some other filter criteria available, see `mrpro.data.acq_filters`. You can also implement your own
-# function returning whether to include an acquisition
+# function returning whether to include an acquisition.
 # ```
 
 # %% [markdown]
@@ -403,3 +403,20 @@ show_images(idat_us_sense.rss().squeeze(), titles=['Iterative SENSE'])
 # This looks better! More information about the iterative SENSE reconstruction and its implementation in MRpro
 # can be found in the examples <project:iterative_sense_reconstruction_radial2D.ipynb> and
 # <project:iterative_sense_reconstruction_with_regularization.ipynb>.
+# ```{note}
+# In this example we used an "integrated" calibration scan, which means that the data used for calibration are acquired
+# with the same parameters (e.g. FOV and resolution) as the image data. There is also the option to use separately
+# acquired calibration lines. Most of the time they are acquired with a different resolution and hence have a different
+# k-space range than the image data. To utilize them, the encoding limits have to be adapted manually.
+# ```
+
+
+# %% [markdown]
+# We can also compare our reconstruction to the reconstruction done on the scanner.
+
+# %%
+# Download dicom image
+zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder, '-g', '*.dcm'])  # r: retries
+
+idat_dcm = mrpro.data.IData.from_dicom_files(data_folder / 'cart_t1_msense_integrated.dcm')
+show_images(idat_us_sense.rss().squeeze(), idat_dcm.rss().squeeze(), titles=['MRpro', 'Scanner'])
