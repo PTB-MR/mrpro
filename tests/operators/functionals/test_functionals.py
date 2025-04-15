@@ -5,9 +5,9 @@ import pytest
 import torch
 from mrpro.operators.Functional import ElementaryFunctional, ElementaryProximableFunctional
 from mrpro.operators.functionals import MSE, L1Norm, L1NormViewAsReal, L2NormSquared, ZeroFunctional
+from mrpro.utils import RandomGenerator
 from typing_extensions import TypedDict
 
-from tests import RandomGenerator
 from tests.operators.functionals.conftest import (
     FUNCTIONALS,
     PROXIMABLE_FUNCTIONALS,

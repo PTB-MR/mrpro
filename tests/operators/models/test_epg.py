@@ -4,7 +4,7 @@ import pytest
 import torch
 from mrpro.operators.models.EPG import DelayBlock, EPGSequence, FispBlock, InversionBlock, Parameters, T2PrepBlock
 from mrpro.operators.SignalModel import SignalModel
-from tests import RandomGenerator
+from mrpro.utils import RandomGenerator
 from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
 
 
