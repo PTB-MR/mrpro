@@ -1,9 +1,9 @@
 # %% [markdown]
 # # Iterative SENSE reconstruction of 2D golden angle radial data
-# Here we use an iterative reconstruction method reconstruct images from ISMRMRD 2D radial data.
+# Here we use an iterative reconstruction method to reconstruct images from ISMRMRD 2D radial data.
 
 # %% [markdown]
-# We use the `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction` class to reconstruct images by solving
+# We use the `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction` class to solve
 # the following reconstruction problem:
 #
 # Let's assume we have obtained the k-space data $y$ from an image $x$ with an acquisition model (Fourier transforms,
@@ -13,16 +13,22 @@
 #
 # where $n$ describes complex Gaussian noise. The image $x$ can be obtained by minimizing the functional $F$
 #
-# $ F(x) = ||W^{\frac{1}{2}}(Ax - y)||_2^2 $
+# $ F(x) = ||(Ax - y)||_2^2 $
 #
-# where $W^\frac{1}{2}$ is the square root of the density compensation function (which corresponds to a diagonal
-# operator) used to weight the loss.
 #
 # Setting the derivative of the functional $F$ to zero and rearranging yields
 #
-# $ A^H W A x = A^H W y$
+# $ A^H A x = A^H y$
 #
 # which is a linear system $Hx = b$ that needs to be solved for $x$. This is done using the conjugate gradient method.
+#
+# ```{note}
+# In Pruessmann, K.P., et al. MRM 2001 (https://doi.org/10.1002/mrm.1241) the k-space density is used to reweight the
+# loss to achieve faster convergence. This increases reconstruction error, see Ong F., Uecker M., Lustig M. TMI 2020
+# (https://doi.org/10.1109/TMI.2019.2954121). We follow a recommendation by Fessler and Noll
+# (https://ece-classes.usc.edu/ee591/library/Fessler-Iterative%20Reconstruction.pdf) and use the DCF to obtain a good
+# starting point.
+# ```
 
 # %% [markdown]
 # ## Using `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction`
@@ -77,11 +83,12 @@ img_direct = direct_reconstruction(kdata)
 # from ``direct_reconstruction``. We use *early stopping* after 4 iterations by setting `n_iterations`.
 #
 # ```{note}
-# When settings up the reconstruction can also just provide the `~mrpro.data.KData` and let
+# When setting up the reconstruction can also provide the `~mrpro.data.KData` and let
 #  `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction` figure
 # out the Fourier operator, estimate the coil sensitivity maps, and choose a density weighting.\
 # We can also provide `~mrpro.data.KData` and some information, such as the sensitivity maps.
-# In that case, the reconstruction will fill in the missing information based on the `~mrpro.data.KData` object.
+# In that case, the reconstruction will automatically determine the missing information based
+# on the `~mrpro.data.KData` object.
 # ```
 
 # %%
@@ -105,21 +112,8 @@ img = iterative_sense_reconstruction(kdata)
 # We now peek behind the scenes to see how the iterative SENSE reconstruction is implemented. We perform all steps
 # `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction` does when initialized with only an `~mrpro.data.KData`
 # object, i.e., we need to set up a Fourier operator, estimate coil sensitivity maps, and the density weighting.
-# without reusing any thing from ``direct_reconstruction```.
+# without reusing anything from ``direct_reconstruction```.
 
-# %% [markdown]
-# ### Set up density compensation operator $W$
-# We create a density compensation operator $W$ for weighting the loss. We use
-# Voronoi tessellation of the trajectory to calculate the `~mrpro.data.DcfData`.
-#
-# ```{note}
-# Using a weighted loss in iterative SENSE is not necessary, and there has been some discussion about
-# the benefits and drawbacks. Currently, the iterative SENSE reconstruction in mrpro uses a weighted loss.
-# This might chang in the future.
-# ```
-
-# %%
-dcf_operator = mrpro.data.DcfData.from_traj_voronoi(kdata.traj).as_operator()
 
 # %% [markdown]
 # ### Set up the acquisition model $A$
@@ -135,9 +129,11 @@ fourier_operator = mrpro.operators.FourierOp(
 
 # %% [markdown]
 # To estimate the coil sensitivity maps, we first calculate the coil-wise images from the k-space data and then
-# estimate the coil sensitivity maps using the Walsh method:
+# estimate the coil sensitivity maps using the Walsh method.
+# We use the Voronoi tessellation to calculate the density compensation.
 
 # %%
+dcf_operator = mrpro.data.DcfData.from_traj_voronoi(kdata.traj).as_operator()
 img_coilwise = mrpro.data.IData.from_tensor_and_kheader(*fourier_operator.H(*dcf_operator(kdata.data)), kdata.header)
 csm_data = mrpro.data.CsmData.from_idata_walsh(img_coilwise)
 csm_operator = csm_data.as_operator()
@@ -151,18 +147,35 @@ acquisition_operator = fourier_operator @ csm_operator
 
 # %% [markdown]
 # ### Calculate the right-hand-side of the linear system
-# Next, we need to calculate $b = A^H W y$.
+# Next, we need to calculate $b = A^H y$.
 
 # %%
-(right_hand_side,) = (acquisition_operator.H @ dcf_operator)(kdata.data)
+(right_hand_side,) = acquisition_operator.H(kdata.data)
 
 # %% [markdown]
 # ### Set-up the linear self-adjoint operator $H$
-# We setup $H = A^H W A$, using the ``dcf_operator`` and ``acquisition_operator``.
+# We setup $H = A^H A$ using the `~mrpro.operators.LinearOperator.gram` property.
 
 # %%
-operator = acquisition_operator.H @ dcf_operator @ acquisition_operator
+operator = acquisition_operator.gram
 
+# %% tags=["hide-cell"]
+import torch
+
+
+def vdot(u: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
+    """Dot product of two batched 3d tensors."""
+    return torch.linalg.vecdot(u.flatten(start_dim=-3), v.flatten(start_dim=-3))
+
+
+# %% [markdown]
+# ### Choose initial value
+# We choose the initial value for the iterative reconstruction based on the density compensated adjoint reconstruction:
+# $u = A^H W y$. To account for normalization differences, we scale $u$ by $\frac{u^H u}{u^H A^H W A u}$.
+# %%
+(u,) = (acquisition_operator.H @ dcf_operator)(kdata.data)
+scale = vdot(u, u) / vdot(u, *(acquisition_operator.H @ dcf_operator @ acquisition_operator)(u))
+initial_value = u * scale
 # %% [markdown]
 # ### Run conjugate gradient
 # Finally, we solve the linear system $Hx = b$ using the conjugate gradient method.
@@ -171,7 +184,7 @@ operator = acquisition_operator.H @ dcf_operator @ acquisition_operator
 
 # %%
 img_manual = mrpro.algorithms.optimizers.cg(
-    operator, right_hand_side, initial_value=right_hand_side, max_iterations=4, tolerance=0.0
+    operator, right_hand_side, initial_value=initial_value, max_iterations=4, tolerance=0.0
 )
 
 # %% [markdown]
@@ -182,7 +195,6 @@ img_manual = mrpro.algorithms.optimizers.cg(
 
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show plotting details"}
 import matplotlib.pyplot as plt
-import torch
 
 
 def show_images(*images: torch.Tensor, titles: list[str] | None = None) -> None:
@@ -207,11 +219,11 @@ show_images(
 
 # %% [markdown]
 # ### Check for equal results
-#  Finally, we check if two images are really identical.
+# Finally, we check if two images are really identical.
 
 # %%
-# If the assert statement did not raise an exception, the results are equal.
-assert torch.allclose(img.data, img_manual)
+# If the assert statement does not raise an exception, the results are equal.
+torch.testing.assert_close(img.data, img_manual)
 
 # %% [markdown]
 # ## Next steps
@@ -219,3 +231,5 @@ assert torch.allclose(img.data, img_manual)
 # try it out.\
 # If you want to see how to include a regularization term in the optimization problem,
 # see the example in <project:iterative_sense_reconstruction_with_regularization.ipynb>.
+
+# %%

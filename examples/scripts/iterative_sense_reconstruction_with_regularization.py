@@ -26,33 +26,35 @@ zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 #
 # $ y = Ax + n $
 #
-# where $n$ describes complex Gaussian noise. The image $x$ can be obtained by minimizing the functionl $F$
+# where $n$ describes complex Gaussian noise. The image $x$ can be obtained by minimizing the functional $F$
 #
-# $ F(x) = ||W^{\frac{1}{2}}(Ax - y)||_2^2 $
-#
-# where $W^\frac{1}{2}$ is the square root of the density compensation function (which corresponds to a diagonal
-# operator). Because this is an ill-posed problem, we can add a regularization term to stabilize the problem and obtain
-# a solution with certain properties:
-#
-# $ F(x) = ||W^{\frac{1}{2}}(Ax - y)||_2^2 + l||Bx - x_{reg}||_2^2$
+# $ F(x) = ||Ax - y||_2^2 + l||Bx - x_{reg}||_2^2$
 #
 # where $l$ is the strength of the regularization, $B$ is a linear operator and $x_{reg}$ is a regularization image.
 # With this functional $F$ we obtain a solution which is close to $x_{reg}$ and to the acquired data $y$.
 #
-# Setting the derivative of the functional $F$ to zero and rearranging yields
+# Setting the derivative (see https://www.matrixcalculus.org) of the functional $F$ to zero and rearranging yields
 #
-# $ (A^H W A + l B) x = A^H W y + l x_{reg}$
+# $ (A^H A + l B) x = A^H y + l x_{reg}$
 #
 # which is a linear system $Hx = b$ that needs to be solved for $x$.
 #
 # One important question of course is, what to use for $x_{reg}$. For dynamic images (e.g. cine MRI) low-resolution
-# dynamic images or high-quality static images have been proposed. In recent years, also the output of neural-networks
-# has been used as an image regulariser.
+# dynamic images or high-quality static images have been proposed. In recent years, the output of neural networks
+# has also been used as an image regularizer.
 #
 # In this example we are going to use a high-quality image to regularize the reconstruction of an undersampled image.
-# Both images are obtained from the same data acquisition (one using all the acquired data ($x_{reg}$) and one using
-# only parts of it ($x$)). This of course is an unrealistic case but it will allow us to study the effect of the
-# regularization.
+# Both images are obtained from the same data acquisition - one using all the acquired data ($x_{reg}$),
+# and one using only parts of it ($x$). This of course is an unrealistic case but it will allow us to demonstrate
+# the effect of the regularization.
+#
+# ```{note}
+# In Pruessmann, K.P., et al. MRM 2001 (https://doi.org/10.1002/mrm.1241) the k-space density is used to reweight the
+# loss to achieve faster convergence. This increases reconstruction error, see Ong F., Uecker M., Lustig M. TMI 2020
+# (https://doi.org/10.1109/TMI.2019.2954121). We follow a recommendation by Fessler and Noll
+# (https://ece-classes.usc.edu/ee591/library/Fessler-Iterative%20Reconstruction.pdf) and use the DCF to obtain a good
+# starting point.
+# ```
 
 # %% [markdown]
 # ### Reading of both fully sampled and undersampled data
@@ -75,7 +77,7 @@ kdata_undersampled = mrpro.data.KData.from_file(
 )
 
 # %% [markdown]
-# ##### Image $x_{reg}$ from fully sampled data
+# ##### Obtain Image $x_{reg}$ from fully sampled data
 # We first reconstruct the fully sampled image to use it as a regularization image.
 # In a real-world scenario, we would not have this image and would have to use a low-resolution image as a prior, or use
 # a neural network to estimate the regularization image.
@@ -97,7 +99,7 @@ img_iterative_sense = iterative_sense_reconstruction(kdata_fullysampled)
 # %% [markdown]
 # ##### Image $x$ from undersampled data
 # We now reconstruct the undersampled image using the fully sampled image first without regularization,
-# and with with an regularization image.
+# and with a regularization image.
 
 # %%
 # Unregularized iterative SENSE reconstruction of the undersampled data
@@ -107,7 +109,7 @@ iterative_sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSER
 img_us_iterative_sense = iterative_sense_reconstruction(kdata_undersampled)
 
 # %%
-# Regularized iterativ SENSE reconstruction of the undersampled data
+# Regularized iterative SENSE reconstruction of the undersampled data
 
 regularized_iterative_sense_reconstruction = mrpro.algorithms.reconstruction.RegularizedIterativeSENSEReconstruction(
     kdata_undersampled,
@@ -189,13 +191,14 @@ operator = acquisition_operator.gram + mrpro.operators.IdentityOp() * regulariza
 # %% [markdown]
 # ##### Run conjugate gradient
 # We solve the linear system $Hx = b$ using the conjugate gradient method.
-# Here, we use a fixed number of 20 iterations. Instead, we could also use a tolerance to stop the iterations when
-# the residual is small enough.
+# Here we use a density compensated adjoint reconstruction to obtain a good starting point,
+# $x_0 = A^H W y$ with $W$ being the density compensation operator.
+# We use a tolerance of $1e-7$ for the residual as a stopping criterion.
 
 # %%
-img_manual = mrpro.algorithms.optimizers.cg(
-    operator, right_hand_side, initial_value=right_hand_side, max_iterations=20, tolerance=0.0
-)
+dcf_operator = mrpro.data.DcfData.from_traj_voronoi(kdata_undersampled.traj).as_operator()
+(initial_value,) = (acquisition_operator.H @ dcf_operator)(kdata_undersampled.data)
+img_manual = mrpro.algorithms.optimizers.cg(operator, right_hand_side, initial_value=initial_value, tolerance=1e-7)
 
 # %% [markdown]
 # #####  Display the reconstructed image
@@ -210,7 +213,7 @@ show_images(
 )
 
 # %% [markdown]
-# We can also check if the results are equal by comparing the actual image data.
+# We can verify the results by comparing the actual image data.
 # If the assert statement does not raise an exception, the results are equal.
 
 # %%
@@ -222,6 +225,6 @@ torch.testing.assert_close(img_us_regularized_iterative_sense.data, img_manual)
 # We are cheating here because we used the fully sampled image as a regularization. In real world applications
 # we would not have that. One option is to apply a low-pass filter to the undersampled k-space data to try to reduce the
 # streaking artifacts and use that as a regularization image. Try that and see if you can also improve the image quality
-# compared to the unregularised images.
+# compared to the unregularized images.
 
 # %%

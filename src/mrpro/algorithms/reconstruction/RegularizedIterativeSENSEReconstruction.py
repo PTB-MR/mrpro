@@ -21,20 +21,20 @@ from mrpro.operators.LinearOperator import LinearOperator
 class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
     r"""Regularized iterative SENSE reconstruction.
 
-    This algorithm solves the problem :math:`\min_{x} \frac{1}{2}||W^\frac{1}{2} (Ax - y)||_2^2 +
-    \frac{1}{2}\lambda||Bx - x_0||_2^2`
+    This algorithm solves the problem :math:`\min_{x} \frac{1}{2}||(Ax - y)||_2^2 +
+    \frac{1}{2}\lambda||Bx - x_{reg}||_2^2`
     by using a conjugate gradient algorithm to solve
-    :math:`H x = b` with :math:`H = A^H W A + \lambda B^H B` and :math:`b = A^H W y + \lambda B^H x_0` where :math:`A`
+    :math:`H x = b` with :math:`H = A^H A + \lambda B^H B` and :math:`b = A^H y + \lambda B^H x_{reg}` where :math:`A`
     is the acquisition model (coil sensitivity maps, Fourier operator, k-space sampling), :math:`y` is the acquired
-    k-space data, :math:`W` describes the density compensation, :math:`\lambda` is the strength of the regularization
-    and :math:`x_0` is the regularization image (i.e. the prior). :math:`B` is a linear operator applied to :math:`x`.
+    k-space data, :math:`\lambda` is the strength of the regularization, and :math:`x_{reg}` is the regularization image
+    (i.e. a prior). :math:`B` is a linear operator applied to :math:`x`.
     """
 
     n_iterations: int
     """Number of CG iterations."""
 
     regularization_data: torch.Tensor
-    """Regularization data (i.e. prior) :math:`x_0`."""
+    """Regularization data (i.e. prior) :math:`x_{reg}`."""
 
     regularization_weight: torch.Tensor
     r"""Strength of the regularization :math:`\lambda`."""
