@@ -3,7 +3,7 @@
 import itertools
 import warnings
 from collections.abc import Callable, Sequence
-from typing import Literal, TypeAlias
+from typing import Literal, TypeAlias, cast
 
 import einops
 import numpy as np
@@ -115,6 +115,11 @@ class SliceProjectionOp(LinearOperator):
         Different settings for different volume batches are NOT supported, consider creating multiple
         operators if required.
 
+        .. note::
+            All parameters must be on cpu when creating the operator. Preparation of the operator on
+            the GPU would be slower than transferring the parameters to the CPU, creation, then transferring
+            the operator back to the GPU.
+
 
         Parameters
         ----------
@@ -144,6 +149,8 @@ class SliceProjectionOp(LinearOperator):
 
         if slice_rotation is None:
             slice_rotation = Rotation.identity()
+        elif slice_rotation.device.type != 'cpu':
+            raise ValueError('slice_rotation must be on cpu')
 
         max_shape = max(input_shape.z, input_shape.y, input_shape.x)
 
@@ -167,7 +174,9 @@ class SliceProjectionOp(LinearOperator):
                 ' i.e. the profile should be greater then 1e-6 in (-0.5,0.5)'
             )
 
-        slice_shift_tensor: torch.Tensor = torch.atleast_1d(torch.as_tensor(slice_shift))
+        slice_shift_tensor = cast(torch.Tensor, torch.atleast_1d(torch.as_tensor(slice_shift)))
+        if slice_shift_tensor.device.type != 'cpu':
+            raise ValueError('slice_shift must be on cpu')
         batch_shapes = torch.broadcast_shapes(slice_rotation.shape, slice_shift_tensor.shape, slice_profile_array.shape)
         assert isinstance(batch_shapes, torch.Size)  # noqa: S101 # mypy
         rotation_quats = torch.broadcast_to(slice_rotation.as_quat(), (*batch_shapes, 4)).reshape(-1, 4)
