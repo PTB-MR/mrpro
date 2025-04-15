@@ -252,7 +252,6 @@ class GridSamplingOp(LinearOperator):
         displacement_x: torch.Tensor,
         interpolation_mode: Literal['bilinear', 'nearest', 'bicubic'] = 'bilinear',
         padding_mode: Literal['zeros', 'border', 'reflection'] = 'zeros',
-        align_corners: bool = False,
     ) -> Self:
         """Create a GridSamplingOp from a displacement.
 
@@ -271,51 +270,46 @@ class GridSamplingOp(LinearOperator):
             mode used for interpolation. bilinear is trilinear in 3D, bicubic is only supported in 2D.
         padding_mode
             how the input of the forward is padded.
-        align_corners
-            if True, the corner pixels of the input and output tensors are aligned,
-            and thus preserve the values at those pixels
-
         """
-        if displacement_y.shape != displacement_x.shape:
-            raise ValueError('Displacement y,x should have the same shape.')
-        if displacement_z is not None:
-            if displacement_z.shape != displacement_y.shape:
-                raise ValueError('Displacement z,y,x should have the same shape.')
-            if displacement_x.ndim < 4:
+        if displacement_z is not None:  # 3D
+            if displacement_x.ndim < 4 or displacement_y.ndim < 4 or displacement_z.ndim < 4:
                 raise ValueError(
                     'For a 3D displacement, displacement should have at least 4 dimensions: batch z y x. ',
                     f'Got shape {displacement_x.shape}.',
                 )
-
-            unity_matrix = torch.cat((torch.eye(3), torch.zeros(3, 1)), dim=1).unsqueeze(0)
-            grid = torch.nn.functional.affine_grid(
-                unity_matrix, [1, 1, *displacement_z.shape[-3:]], align_corners=align_corners
+            try:
+                *_, n_z, n_y, n_x = torch.broadcast_shapes(
+                    displacement_z.shape, displacement_y.shape, displacement_x.shape
+                )
+            except RuntimeError:
+                raise ValueError(
+                    'Displacement dimensions are not broadcastable. '
+                    f'Got shapes {displacement_z.shape}, {displacement_y.shape}, {displacement_x.shape}.'
+                ) from None
+            grid_z, grid_y, grid_x = torch.meshgrid(
+                torch.linspace(-1, 1, n_z), torch.linspace(-1, 1, n_y), torch.linspace(-1, 1, n_x), indexing='ij'
             )
-            grid = grid + torch.stack(
-                (
-                    displacement_x / displacement_x.shape[-1] * 2,
-                    displacement_y / displacement_x.shape[-2] * 2,
-                    displacement_z / displacement_x.shape[-3] * 2,
-                ),
-                dim=-1,
-            )
-
-            return cls(grid[..., 2], grid[..., 1], grid[..., 0], None, interpolation_mode, padding_mode, align_corners)
-        else:
-            if displacement_x.ndim < 3:
+            grid_z = grid_z + displacement_z * 2 / (n_z - 1)
+            grid_y = grid_y + displacement_y * 2 / (n_y - 1)
+            grid_x = grid_x + displacement_x * 2 / (n_x - 1)
+        else:  # 2D
+            if displacement_x.ndim < 3 or displacement_y.ndim < 3:
                 raise ValueError(
                     'For a 2D displacement, displacement should have at least 3 dimensions: batch y x. ',
-                    f'Got shape {displacement_x.shape}.',
+                    f'Got shape {displacement_x.shape} and {displacement_y.shape}.',
                 )
-            unity_matrix = torch.cat((torch.eye(2), torch.zeros(2, 1)), dim=1).unsqueeze(0)
-            grid = torch.nn.functional.affine_grid(
-                unity_matrix, [1, 1, *displacement_x.shape[-2:]], align_corners=align_corners
-            )
-            grid = grid + torch.stack(
-                (displacement_x / displacement_x.shape[-1] * 2, displacement_y / displacement_x.shape[-2] * 2), dim=-1
-            )
-
-            return cls(None, grid[..., 1], grid[..., 0], None, interpolation_mode, padding_mode, align_corners)
+            try:
+                *_, n_y, n_x = torch.broadcast_shapes(displacement_y.shape, displacement_x.shape)
+            except RuntimeError:
+                raise ValueError(
+                    'Displacement dimensions are not broadcastable. '
+                    f'Got shapes {displacement_y.shape}, {displacement_x.shape}.'
+                ) from None
+            grid_y, grid_x = torch.meshgrid(torch.linspace(-1, 1, n_y), torch.linspace(-1, 1, n_x), indexing='ij')
+            grid_y = grid_y + displacement_y * 2 / (n_y - 1)
+            grid_x = grid_x + displacement_x * 2 / (n_x - 1)
+            grid_z = None
+        return cls(grid_z, grid_y, grid_x, None, interpolation_mode, padding_mode, align_corners=True)
 
     def __reshape_wrapper(
         self, x: torch.Tensor, inner: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
