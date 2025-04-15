@@ -13,8 +13,8 @@ class JobState(StrEnum):
 
 
 GITHUB_OWNER = os.environ.get('GITHUB_OWNER')
-GITHUB_REPO = os.environ.get('GITHUB_REPO')
-GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
+GITHUB_REPOSITORY = os.environ.get('GITHUB_REPOSITORY')
+GITHUB_PERSONAL_TOKEN = os.environ.get('GITHUB_PERSONAL_TOKEN')
 # this workflow_id corresponds to the self-hosted pytest workflow
 WORKFLOW_ID = '132920098'
 SLURM_SUBMIT_COMMAND = [
@@ -59,25 +59,30 @@ async def dispatch_run(run_id: int):
     )
     scheduled_runs[run_id]['pid'] = process.pid
     scheduled_runs[run_id]['state'] = JobState.DISPATCHED
-    logger.info(f'Dispatched run_id: {run_id}, pid: {process.pid}')
+    logger.info(f'[run_id={run_id}]: dispatched, pid: {process.pid}')
+    stdout, stderr = await process.communicate()
+    if stdout:
+        logger.info(f'[run_id={run_id}]: stdout: {stdout.decode().strip()}')
+    if stderr:
+        logger.info(f'[run_id={run_id}]: stderr: {stderr.decode().strip()}')
     await process.wait()
     scheduled_runs[run_id]['state'] = JobState.FINISHED
-    logger.info(f'Runner finished for run_id: {run_id}, pid: {process.pid}')
-    logger.debug(f'Wait for {GITHUB_API_DELAY} till job is fetched as complete')
+    logger.info(f'[run_id={run_id}]: finished, pid: {process.pid}')
+    logger.debug(f'[run_id={run_id}]: wait {GITHUB_API_DELAY}s')
     await asyncio.sleep(GITHUB_API_DELAY)
     scheduled_runs.pop(run_id)
 
 
-if None in (GITHUB_OWNER, GITHUB_REPO, GITHUB_TOKEN):
+if None in (GITHUB_OWNER, GITHUB_REPOSITORY, GITHUB_PERSONAL_TOKEN):
     raise ValueError('Specify the environment variables')
 
 api_headers = {
-    'Authorization': 'Bearer ' + GITHUB_TOKEN,
+    'Authorization': 'Bearer ' + GITHUB_PERSONAL_TOKEN,
     'Accept': 'application/vnd.github+json',
     'X-GitHub-Api-Version': '2022-11-28',
 }
 
-query = f'https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}/actions/workflows/{WORKFLOW_ID}/runs'
+query = f'https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPOSITORY}/actions/workflows/{WORKFLOW_ID}/runs'
 params = {'status': 'queued'}
 
 scheduled_runs = {}
@@ -97,11 +102,11 @@ async def main():
                     run_details = scheduled_runs.get(run_id)
                     if run_details is None:
                         scheduled_runs[run_id] = {'pid': None, 'state': JobState.REGISTERED}
-                        logger.info(f'Registered {run_id}')
+                        logger.info(f'[run_id={run_id}]: registered')
                         asyncio.create_task(dispatch_run(run_id))
                     else:
-                        logger.info(f'Run {run_id}: {run_details}')
-            logger.debug(f'Sleep {REQUEST_DELAY_TIME} before next request')
+                        logger.info(f'[run_id={run_id}]: {run_details}')
+            logger.debug(f'Sleep {REQUEST_DELAY_TIME}s before next request')
             await asyncio.sleep(REQUEST_DELAY_TIME)
         else:
             await asyncio.sleep(EXTENDED_DELAY_TIME)

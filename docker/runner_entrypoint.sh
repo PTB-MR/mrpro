@@ -24,6 +24,7 @@ remove() {
 trap 'remove; exit 130' INT
 trap 'remove; exit 143' TERM
 
-./run.sh "$*" &
+# ./run.sh actually does not need any arguments if those were specified in ./config.sh
+./run.sh &
 
 wait $!
