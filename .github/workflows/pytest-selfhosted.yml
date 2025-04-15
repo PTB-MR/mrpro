@@ -5,15 +5,17 @@
 # with the "Administration:write" and "Self-hosted runners:write".
 #
 # The following environmental variables need to be set:
-# GITHUB_PERSONAL_TOKEN - the organization token
 # GITHUB_OWNER - the organization (PTB-MR) in this particular case.
+# The following start arguments need to be specified for entrypoint:
+# the 1st positional argument -
+# RUNNER_TOKEN - the runner registration token,
+# (see https://docs.github.com/en/rest/actions/self-hosted-runners?apiVersion=2022-11-28#create-a-registration-token-for-an-organization)
+# the 2nd positional argument (optional)
+# RUN_ID - if the runner should run in ephemeral mode (one workflow run - one runner)
 #
-# I would recommend to save this variables to a text file named `runner.env` at the host machine with following content:
-# GITHUB_PERSONAL_TOKEN=XXX
-# GITHUB_OWNER=PTB-MR
 #
 # Run with docker:
-# docker run --gpus <GPU_ID> --env-file runner.env ghcr.io/ptb-mr/mrpro_runner:latest
+# docker run --gpus <GPU_ID> --env-file runner.env ghcr.io/ptb-mr/mrpro_runner:latest (and pass the arguments here)
 #
 # Run with singularity:
 # You can convert the existing docker container to the singularity container via:
@@ -25,19 +27,21 @@
 #
 # If you want to run the singularity container in ephemeral mode (one runner - one job) you need to specify a unique id for each runner
 # as an extra argument to the singularity command:
-# NVIDIA_VISIBLE_DEVICES=<GPU_ID> singularity exec --nv --env-file runner.env --pwd /actions-runner --writable-tmpfs --contain mrpro-runner.sif /actions-runner/entrypoint.sh 123456
+# NVIDIA_VISIBLE_DEVICES=<GPU_ID> singularity exec --nv --env-file runner.env --pwd /actions-runner --writable-tmpfs --contain mrpro-runner.sif /actions-runner/entrypoint.sh "RUNNER_TOKEN" "RUN_ID"
 #
 # Use the ./github/slurm_dispatcher.py to dispatch each job to the isolated singularity container
 name: PyTest-selfhosted
 
 on:
-  pull_request:
-    paths-ignore:
-      - "**.md"
+  issue_comment:
+    types: [created, edited]
 
 jobs:
   test:
     name: Run Tests and Coverage Report
+    if: >-
+      ${{ github.event.issue.pull_request &&
+          contains(github.event.comment.body, 'selfhosted run') }}
     runs-on: [self-hosted] #gpu
     environment: pytest-cuda
 
@@ -46,22 +50,23 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install MRpro and Dependencies
-        run: pip install --upgrade --upgrade-strategy eager .[test]
+        run: pip install --upgrade --upgrade-strategy eager .[tests]
 
       - name: Run PyTest and Generate Coverage Report
         # shell bash sets the -o pipefail
         run: |
-          pytest -n 4 -m "cuda"
+          pytest -n 4 -m "cuda" --junitxml=pytest.xml \
+          --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt
         shell: bash
 
-      # - name: Upload PyTest Coverage Report
-      #   if: always()
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: pytest-report-selfhosted
-      #     path: |
-      #       pytest-coverage.txt
-      #       pytest.xml
+      - name: Upload PyTest Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-report-selfhosted
+          path: |
+            pytest-coverage.txt
+            pytest.xml
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
 

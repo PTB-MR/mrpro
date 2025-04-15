@@ -1,24 +1,21 @@
 #!/bin/sh
-registration_url="https://api.github.com/orgs/${GITHUB_OWNER}/actions/runners/registration-token"
-echo "Requesting registration URL at '${registration_url}'"
+# the 1st argument must be the token for the runner registration
+# (see .github/slurm_dispatcher.py)
 
-payload=$(curl -sX POST -H "Authorization: token ${GITHUB_PERSONAL_TOKEN}" ${registration_url})
-export RUNNER_TOKEN=$(echo $payload | jq .token --raw-output)
-
-# if the 1st argument for the script is given: run in ephemeral mode (one runner takes one job)
+# if the 2nd argument for the script is given: run in ephemeral mode (one runner takes one job)
 # constructing the unique name for the runner (see .github/slurm_dispatcher.py)
 ./config.sh \
-    --name $(hostname)-${1:-default} \
-    --token ${RUNNER_TOKEN} \
+    --name $(hostname)-${2:-default} \
+    --token $1 \
     --labels my-runner \
     --url https://github.com/${GITHUB_OWNER} \
     --work "/work" \
     --unattended \
     --replace \
-    ${1:+--ephemeral}
+    ${2:+--ephemeral}
 
 remove() {
-    ./config.sh remove --unattended --token "${RUNNER_TOKEN}"
+    ./config.sh remove --token "$1"
 }
 
 trap 'remove; exit 130' INT

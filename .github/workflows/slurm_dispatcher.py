@@ -50,10 +50,10 @@ EXTENDED_DELAY_TIME = 10 * 60
 
 # we need to propagate the run_id to runners to have the unique names of runners for each run
 # moreover, the runner should start with `--ephemeral` to take only one job (see the docker/runner_entrypoint.sh)
-async def dispatch_run(run_id: int):
+async def dispatch_run(runner_token: str, run_id: int):
     process = await asyncio.create_subprocess_exec(
         # pass the run_id as a unique identifier for the runner name
-        *[*SLURM_SUBMIT_COMMAND, str(run_id)],
+        *[*SLURM_SUBMIT_COMMAND, runner_token, str(run_id)],
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
@@ -82,8 +82,13 @@ api_headers = {
     'X-GitHub-Api-Version': '2022-11-28',
 }
 
-query = f'https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPOSITORY}/actions/workflows/{WORKFLOW_ID}/runs'
+# check if the is any workflow for WORKFLOW_ID is queued
+runs_query = f'https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPOSITORY}/actions/workflows/{WORKFLOW_ID}/runs'
 params = {'status': 'queued'}
+
+# obtain a token to register a runner
+# the idea to do it here to isolate the GITHUB_PERSONAL_TOKEN from runner container
+runner_token_query = f'https://api.github.com/orgs/{GITHUB_OWNER}/actions/runners/registration-token'
 
 scheduled_runs = {}
 logger = logging.getLogger('SlurmDispatcher')
@@ -91,8 +96,8 @@ logger = logging.getLogger('SlurmDispatcher')
 
 async def main():
     while True:
-        logger.debug(f'Request GitHub API, query: {query}, params: {params}')
-        resp = r.get(query, params=params, headers=api_headers, timeout=10)
+        logger.debug(f'Request GitHub API, query: {runs_query}, params: {params}')
+        resp = r.get(runs_query, params=params, headers=api_headers, timeout=10)
         logger.debug(f'Response code: {resp.status_code}')
         if resp.status_code == 200:
             payload = resp.json()
@@ -100,10 +105,15 @@ async def main():
                 for workflow_run in payload.get('workflow_runs'):
                     run_id = workflow_run.get('id')
                     run_details = scheduled_runs.get(run_id)
+                    # this means there is no runner dispatched for the run
                     if run_details is None:
-                        scheduled_runs[run_id] = {'pid': None, 'state': JobState.REGISTERED}
-                        logger.info(f'[run_id={run_id}]: registered')
-                        asyncio.create_task(dispatch_run(run_id))
+                        resp_token = r.post(runner_token_query, headers=api_headers, timeout=10)
+                        if resp_token.status_code == 201:
+                            runner_token = resp_token.json().get('token')
+                            if runner_token is not None:
+                                scheduled_runs[run_id] = {'pid': None, 'state': JobState.REGISTERED}
+                                logger.info(f'[run_id={run_id}]: registered')
+                                asyncio.create_task(dispatch_run(runner_token, run_id))
                     else:
                         logger.info(f'[run_id={run_id}]: {run_details}')
             logger.debug(f'Sleep {REQUEST_DELAY_TIME}s before next request')
