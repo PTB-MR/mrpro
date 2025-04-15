@@ -8,10 +8,10 @@ from mrpro.data import KData, KTrajectory, SpatialDimension
 from mrpro.data.enums import TrajType
 from mrpro.data.traj_calculators import KTrajectoryCartesian
 from mrpro.operators import FourierOp
+from mrpro.utils import RandomGenerator
 from typing_extensions import Unpack
 
 from tests import (
-    RandomGenerator,
     dotproduct_adjointness_test,
     forward_mode_autodiff_of_linear_operator_test,
     gradient_of_linear_operator_test,
@@ -31,8 +31,8 @@ def create_data(
     type_kz: str,
 ) -> tuple[torch.Tensor, KTrajectory]:
     """Create k-space trajectory and random image."""
-    random_generator = RandomGenerator(seed=0)
-    img = random_generator.complex64_tensor(size=img_shape)
+    rng = RandomGenerator(seed=0)
+    img = rng.complex64_tensor(size=img_shape)
     trajectory = create_traj(nkx, nky, nkz, type_kx, type_ky, type_kz)
     return img, trajectory
 
@@ -60,9 +60,9 @@ def create_fourier_op_and_range_domain(
     )
     fourier_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
 
-    random_generator = RandomGenerator(seed=0)
-    u = random_generator.complex64_tensor(size=img_shape)
-    v = random_generator.complex64_tensor(size=k_shape)
+    rng = RandomGenerator(seed=0)
+    u = rng.complex64_tensor(size=img_shape)
+    v = rng.complex64_tensor(size=k_shape)
     return fourier_op, u, v
 
 
@@ -372,3 +372,98 @@ def test_fourier_op_repr_mixed_fft_nufft():
     assert 'FastFourierOp' in repr_str
     assert 'NonUniformFastFourierOp' in repr_str
     assert 'CartesianSamplingOp' in repr_str
+
+
+@pytest.mark.cuda
+def test_fourier_op_cuda() -> None:
+    """Test Fourier operator works on CUDA devices."""
+
+    # Create a trajectory with both Cartesian (on-grid) and non-Cartesian (off-grid) components
+    img_shape = (1, 2, 20, 20, 20)
+    k_shape = (1, 2, 40, 40, 40)
+    nkx = (1, 1, 1, 1, 40)
+    nky = (1, 1, 1, 40, 1)
+    nkz = (1, 1, 40, 1, 1)
+    type_kx = 'uniform'
+    type_ky = 'uniform'
+    type_kz = 'non-uniform'
+    trajectory = create_traj(nkx, nky, nkz, type_kx, type_ky, type_kz)
+
+    recon_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
+    encoding_matrix = SpatialDimension(
+        int(trajectory.kz.max() - trajectory.kz.min() + 1),
+        int(trajectory.ky.max() - trajectory.ky.min() + 1),
+        int(trajectory.kx.max() - trajectory.kx.min() + 1),
+    )
+
+    random_generator = RandomGenerator(seed=0)
+    x = random_generator.complex64_tensor(size=img_shape)
+
+    # Create on CPU, transfer to GPU, run on GPU
+    fourier_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
+    operator = fourier_op.H @ fourier_op
+    operator.cuda()
+    (result,) = operator(x.cuda())
+    assert result.is_cuda
+
+    # Create on CPU, run on CPU
+    fourier_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
+    operator = fourier_op.H @ fourier_op
+    (result,) = operator(x)
+    assert result.is_cpu
+
+    # Create on GPU, run on GPU
+    fourier_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory.cuda())
+    operator = fourier_op.H @ fourier_op
+    (result,) = operator(x.cuda())
+    assert result.is_cuda
+
+    # Create on GPU, transfer to CPU, run on CPU
+    fourier_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory.cuda())
+    operator = fourier_op.H @ fourier_op
+    operator.cpu()
+    (result,) = operator(x)
+    assert result.is_cpu
+
+
+@pytest.mark.cuda
+def test_fourier_op_gram_cuda() -> None:
+    """Test gram Fourier operator works on CUDA devices."""
+    # Create a trajectory with both Cartesian (on-grid) and non-Cartesian (off-grid) components
+    img_shape = (1, 2, 20, 20, 20)
+    k_shape = (1, 2, 40, 40, 40)
+    nkx = (1, 1, 1, 1, 40)
+    nky = (1, 1, 1, 40, 1)
+    nkz = (1, 1, 40, 1, 1)
+    type_kx = 'uniform'
+    type_ky = 'uniform'
+    type_kz = 'non-uniform'
+    trajectory = create_traj(nkx, nky, nkz, type_kx, type_ky, type_kz)
+
+    recon_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
+    encoding_matrix = SpatialDimension(
+        int(trajectory.kz.max() - trajectory.kz.min() + 1),
+        int(trajectory.ky.max() - trajectory.ky.min() + 1),
+        int(trajectory.kx.max() - trajectory.kx.min() + 1),
+    )
+
+    random_generator = RandomGenerator(seed=0)
+    x = random_generator.complex64_tensor(size=img_shape)
+
+    # Create FourierOp.gram on CPU, transfer to GPU, run on GPU
+    gram_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory).gram.cuda()
+    operator = gram_op.H @ gram_op
+    (result,) = operator(x.cuda())
+    assert result.is_cuda
+
+    # Create FourierOp.gram on GPU, run on GPU
+    gram_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory).cuda().gram
+    operator = gram_op.H @ gram_op
+    (result,) = operator(x.cuda())
+    assert result.is_cuda
+
+    # Create FourierOp.gram on GPU, transfer to CPU, run on CPU
+    gram_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory).cuda().gram.cpu()
+    operator = gram_op.H @ gram_op
+    (result,) = operator(x)
+    assert result.is_cpu

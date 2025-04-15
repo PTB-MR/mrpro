@@ -19,8 +19,7 @@ from mrpro.phantoms.brainweb import (
     resize,
     trim_indices,
 )
-
-from tests import RandomGenerator
+from mrpro.utils import RandomGenerator
 
 BRAINWEBTESTSHAPE = (362 // 2, 434 // 2, 362 // 2)  # reduce the size of the brainweb data for faster testing
 

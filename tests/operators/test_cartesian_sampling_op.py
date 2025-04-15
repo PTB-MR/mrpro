@@ -7,10 +7,10 @@ import torch
 from einops import rearrange
 from mrpro.data import KTrajectory, SpatialDimension
 from mrpro.operators import CartesianSamplingOp
+from mrpro.utils import RandomGenerator
 from typing_extensions import Unpack
 
 from tests import (
-    RandomGenerator,
     dotproduct_adjointness_test,
     forward_mode_autodiff_of_linear_operator_test,
     gradient_of_linear_operator_test,
@@ -32,8 +32,8 @@ def test_cart_sampling_op_data_match() -> None:
     trajectory = create_traj(nkx, nky, nkz, type_kx, type_ky, type_kz)
 
     # Create matching data
-    random_generator = RandomGenerator(seed=0)
-    kdata = random_generator.complex64_tensor(size=k_shape)
+    rng = RandomGenerator(seed=0)
+    kdata = rng.complex64_tensor(size=k_shape)
 
     # Create sampling operator
     encoding_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
@@ -114,9 +114,9 @@ def create_cart_sampling_op_and_range_domain(
 
     encoding_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
     sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
-    random_generator = RandomGenerator(seed=0)
-    u = random_generator.complex64_tensor(size=k_shape)
-    v = random_generator.complex64_tensor(size=(*k_shape[:-3], *trajectory.shape[-3:]))
+    rng = RandomGenerator(seed=0)
+    u = rng.complex64_tensor(size=k_shape)
+    v = rng.complex64_tensor(size=(*k_shape[:-3], *trajectory.shape[-3:]))
     return sampling_op, u, v
 
 
@@ -193,9 +193,9 @@ def test_cart_sampling_op_oversampling(k0_min: int, k0_max: int, k2_min: int, k2
     with pytest.warns(UserWarning, match='K-space points lie outside of the encoding_matrix'):
         sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
 
-    random_generator = RandomGenerator(seed=0)
-    u = random_generator.complex64_tensor(size=(3, 2, 5, kz.shape[-3], ky.shape[-2], kx.shape[-1]))
-    v = random_generator.complex64_tensor(size=(3, 2, 5, *encoding_matrix.zyx))
+    rng = RandomGenerator(seed=0)
+    u = rng.complex64_tensor(size=(3, 2, 5, kz.shape[-3], ky.shape[-2], kx.shape[-1]))
+    v = rng.complex64_tensor(size=(3, 2, 5, *encoding_matrix.zyx))
 
     assert sampling_op.adjoint(u)[0].shape[-3:] == encoding_matrix.zyx
     assert sampling_op(v)[0].shape[-3:] == (kz.shape[-3], ky.shape[-2], kx.shape[-1])
@@ -246,27 +246,31 @@ def test_cart_sampling_op_cuda() -> None:
     trajectory = KTrajectory.from_tensor(torch.stack(traj_list, dim=1))
 
     encoding_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
-    random_generator = RandomGenerator(seed=0)
-    input_data = random_generator.complex64_tensor(size=k_shape)
+    rng = RandomGenerator(seed=0)
+    input_data = rng.complex64_tensor(size=k_shape)
 
     # Create on CPU, transfer to GPU and run on GPU
     sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
-    sampling_op.cuda()
-    (sampling_output,) = sampling_op(input_data.cuda())
-    assert sampling_output.is_cuda
+    operator = sampling_op.H @ sampling_op
+    operator.cuda()
+    (result,) = operator(input_data.cuda())
+    assert result.is_cuda
 
     # Create on CPU and run on CPU
     sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
-    (sampling_output,) = sampling_op(input_data)
-    assert sampling_output.is_cpu
+    operator = sampling_op.H @ sampling_op
+    (result,) = operator(input_data)
+    assert result.is_cpu
 
     # Create on GPU and run on GPU
     sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory.cuda())
-    (sampling_output,) = sampling_op(input_data.cuda())
-    assert sampling_output.is_cuda
+    operator = sampling_op.H @ sampling_op
+    (result,) = operator(input_data.cuda())
+    assert result.is_cuda
 
     # Create on GPU, transfer to CPU and run on CPU
     sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory.cuda())
-    sampling_op.cpu()
-    (sampling_output,) = sampling_op(input_data)
-    assert sampling_output.is_cpu
+    operator = sampling_op.H @ sampling_op
+    operator.cpu()
+    (result,) = operator(input_data)
+    assert result.is_cpu
