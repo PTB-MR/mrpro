@@ -2,10 +2,10 @@ import pytest
 import torch
 from mrpro.operators import IdentityOp, LinearOperator, MagnitudeOp, Operator, ZeroOp
 from mrpro.operators.LinearOperator import LinearOperatorSum
+from mrpro.utils import RandomGenerator
 from typing_extensions import assert_type
 
 from tests import (
-    RandomGenerator,
     dotproduct_adjointness_test,
     forward_mode_autodiff_of_linear_operator_test,
     gradient_of_linear_operator_test,
@@ -14,8 +14,8 @@ from tests import (
 
 def test_zero_op_keepshape() -> None:
     """Test that the zero operator returns zeros."""
-    generator = RandomGenerator(seed=0)
-    x = generator.complex64_tensor(2, 3, 4)
+    rng = RandomGenerator(seed=0)
+    x = rng.complex64_tensor(2, 3, 4)
     operator = ZeroOp(keep_shape=True)
     (actual,) = operator(x)
     expected = torch.zeros_like(x)
@@ -24,8 +24,8 @@ def test_zero_op_keepshape() -> None:
 
 def test_zero_op_scalar() -> None:
     """Test that the zero operator returns single zero."""
-    generator = RandomGenerator(seed=0)
-    x = generator.complex64_tensor(2, 3, 4)
+    rng = RandomGenerator(seed=0)
+    x = rng.complex64_tensor(2, 3, 4)
     operator = ZeroOp(keep_shape=False)
     (actual,) = operator(x)
     expected = torch.tensor(0)
@@ -64,36 +64,36 @@ def test_zero_op_neutral_op() -> None:
 
 def test_zero_op_adjoint_keepshape() -> None:
     """Test that the adjoint of the zero operator is the zero operator."""
-    generator = RandomGenerator(seed=0)
-    u = generator.complex64_tensor(2, 3, 4)
-    v = generator.complex64_tensor(2, 3, 4)
+    rng = RandomGenerator(seed=0)
+    u = rng.complex64_tensor(2, 3, 4)
+    v = rng.complex64_tensor(2, 3, 4)
     operator = ZeroOp(keep_shape=True)
     dotproduct_adjointness_test(operator, u, v)
 
 
 def test_zero_op_grad_keepshape() -> None:
     """Test gradient of zero operator."""
-    generator = RandomGenerator(seed=0)
-    u = generator.complex64_tensor(2, 3, 4)
-    v = generator.complex64_tensor(2, 3, 4)
+    rng = RandomGenerator(seed=0)
+    u = rng.complex64_tensor(2, 3, 4)
+    v = rng.complex64_tensor(2, 3, 4)
     operator = ZeroOp(keep_shape=True)
     gradient_of_linear_operator_test(operator, u, v)
 
 
 def test_zero_op_forward_mode_autodiff_keepshape() -> None:
     """Test forward-mode autodiff of zero operator."""
-    generator = RandomGenerator(seed=0)
-    u = generator.complex64_tensor(2, 3, 4)
-    v = generator.complex64_tensor(2, 3, 4)
+    rng = RandomGenerator(seed=0)
+    u = rng.complex64_tensor(2, 3, 4)
+    v = rng.complex64_tensor(2, 3, 4)
     operator = ZeroOp(keep_shape=True)
     forward_mode_autodiff_of_linear_operator_test(operator, u, v)
 
 
 def test_zero_op_adjoint_scalar() -> None:
     """Test that the adjoint of the zero operator is the zero operator."""
-    generator = RandomGenerator(seed=0)
-    u = generator.complex64_tensor(2, 3, 4)
-    v = generator.complex64_tensor(2, 3, 4)
+    rng = RandomGenerator(seed=0)
+    u = rng.complex64_tensor(2, 3, 4)
+    v = rng.complex64_tensor(2, 3, 4)
     # We can't test the operator directly, because the adjointness is only after
     # broadcasting the scalar to the shape of the input and expading the dtype.
     # We achieve this by instead testing ZeroOp + IdentityOp
@@ -105,18 +105,18 @@ def test_zero_op_adjoint_scalar() -> None:
 
 def test_zero_op_grad_scalar() -> None:
     """Test gradient of zero operator."""
-    generator = RandomGenerator(seed=0)
-    u = generator.complex64_tensor(2, 3, 4)
-    v = generator.complex64_tensor(2, 3, 4)
+    rng = RandomGenerator(seed=0)
+    u = rng.complex64_tensor(2, 3, 4)
+    v = rng.complex64_tensor(2, 3, 4)
     operator = LinearOperatorSum(ZeroOp(keep_shape=False), IdentityOp())
     gradient_of_linear_operator_test(operator, u, v)
 
 
 def test_zero_op_forward_mode_autodiff_scalar() -> None:
     """Test forward-mode autodiff of zero operator."""
-    generator = RandomGenerator(seed=0)
-    u = generator.complex64_tensor(2, 3, 4)
-    v = generator.complex64_tensor(2, 3, 4)
+    rng = RandomGenerator(seed=0)
+    u = rng.complex64_tensor(2, 3, 4)
+    v = rng.complex64_tensor(2, 3, 4)
     operator = LinearOperatorSum(ZeroOp(keep_shape=False), IdentityOp())
     forward_mode_autodiff_of_linear_operator_test(operator, u, v)
 

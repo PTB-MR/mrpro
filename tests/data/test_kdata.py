@@ -7,9 +7,9 @@ from mrpro.data import KData, KTrajectory, SpatialDimension
 from mrpro.data.acq_filters import has_n_coils, is_coil_calibration_acquisition, is_image_acquisition
 from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
-from mrpro.utils import split_idx
+from mrpro.utils import RandomGenerator, split_idx
 
-from tests import RandomGenerator, relative_image_difference
+from tests import relative_image_difference
 from tests.phantoms import EllipsePhantomTestData
 
 
@@ -279,7 +279,7 @@ def test_KData_split_k1_into_other(consistently_shaped_kdata, n_other_split: int
     kdata_split = consistently_shaped_kdata.split_k1_into_other(idx_split, other_label)
 
     assert kdata_split.data.shape == (idx_split.shape[0] * n_other, n_coils, n_k2, k1_per_block, n_k0)
-    assert kdata_split.traj.broadcasted_shape == (idx_split.shape[0] * n_other, 1, n_k2, k1_per_block, n_k0)
+    assert kdata_split.traj.shape == (idx_split.shape[0] * n_other, 1, n_k2, k1_per_block, n_k0)
     new_idx = getattr(kdata_split.header.acq_info.idx, other_label)
     assert new_idx.shape == (idx_split.shape[0] * n_other, 1, n_k2, k1_per_block, 1)
 
@@ -321,7 +321,7 @@ def test_KData_remove_readout_os(monkeypatch, random_kheader) -> None:
     n_k1 = 240
     n_k0_oversampled = 320
 
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
 
     # Set parameters need in remove_os
     monkeypatch.setattr(random_kheader.encoding_matrix, 'x', n_k0_oversampled)
@@ -341,9 +341,9 @@ def test_KData_remove_readout_os(monkeypatch, random_kheader) -> None:
     k_tensor = repeat(kdata_os, 'k1 k0 -> other coils k2 k1 k0', other=1, coils=n_coils, k2=1)
 
     # Create random 2D Cartesian trajectory
-    kx = random_generator.float32_tensor(size=(1, 1, 1, 1, n_k0_oversampled))
-    ky = random_generator.float32_tensor(size=(1, 1, 1, n_k1, 1))
-    kz = random_generator.float32_tensor(size=(1, 1, 1, 1, 1))
+    kx = rng.float32_tensor(size=(1, 1, 1, 1, n_k0_oversampled))
+    ky = rng.float32_tensor(size=(1, 1, 1, n_k1, 1))
+    kz = rng.float32_tensor(size=(1, 1, 1, 1, 1))
     trajectory = KTrajectory(kz, ky, kx)
 
     # Create KData

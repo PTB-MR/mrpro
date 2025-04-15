@@ -3,10 +3,10 @@
 import pytest
 import torch
 from mrpro.operators import ZeroPadOp
+from mrpro.utils import RandomGenerator
 from typing_extensions import Unpack
 
 from tests import (
-    RandomGenerator,
     dotproduct_adjointness_test,
     forward_mode_autodiff_of_linear_operator_test,
     gradient_of_linear_operator_test,
@@ -17,9 +17,9 @@ def create_zero_pad_op_and_domain_range(
     u_shape: tuple[int, int, int, Unpack[tuple[int, ...]]], v_shape: tuple[int, int, int, Unpack[tuple[int, ...]]]
 ) -> tuple[ZeroPadOp, torch.Tensor, torch.Tensor]:
     """Create a zero padding operator and an element from domain and range."""
-    generator = RandomGenerator(seed=0)
-    u = generator.complex64_tensor(u_shape)
-    v = generator.complex64_tensor(v_shape)
+    rng = RandomGenerator(seed=0)
+    u = rng.complex64_tensor(u_shape)
+    v = rng.complex64_tensor(v_shape)
     zero_padding_op = ZeroPadOp(dim=(-3, -2, -1), original_shape=u_shape, padded_shape=v_shape)
     return zero_padding_op, u, v
 
@@ -28,8 +28,8 @@ def test_zero_pad_op_content() -> None:
     """Test correct padding and cropping (i.e. negative padding size)."""
     original_shape = (2, 30, 3, 40, 50, 2)
     padded_shape = (2, 10, 3, 30, 80, 2)
-    generator = RandomGenerator(seed=0)
-    original_data = generator.complex64_tensor(original_shape)
+    rng = RandomGenerator(seed=0)
+    original_data = rng.complex64_tensor(original_shape)
     padding_dimensions = (-5, -3, -2)
     zero_padding_op = ZeroPadOp(
         dim=padding_dimensions,

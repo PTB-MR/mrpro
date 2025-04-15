@@ -7,12 +7,12 @@ import pytest
 import torch
 from mrpro.operators import WaveletOp
 from mrpro.operators.WaveletOp import WaveletType
+from mrpro.utils import RandomGenerator
 from ptwt.conv_transform import wavedec
 from ptwt.conv_transform_2 import wavedec2
 from ptwt.conv_transform_3 import wavedec3
 
 from tests import (
-    RandomGenerator,
     dotproduct_adjointness_test,
     forward_mode_autodiff_of_linear_operator_test,
     gradient_of_linear_operator_test,
@@ -28,7 +28,7 @@ def create_wavelet_op_and_domain_range(
     wavelet_name: WaveletType,
 ) -> tuple[WaveletOp, torch.Tensor, torch.Tensor]:
     """Create a wavelet operator and an element from domain and range."""
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
 
     wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim, wavelet_name=wavelet_name)
 
@@ -41,8 +41,8 @@ def create_wavelet_op_and_domain_range(
     range_shape[dim_sorted[-1]] = int(wavelet_stack_length)
     [range_shape.pop(d) for d in dim_sorted[:-1]]
 
-    u = random_generator.complex64_tensor(size=img_shape)
-    v = random_generator.complex64_tensor(size=range_shape)
+    u = rng.complex64_tensor(size=img_shape)
+    v = rng.complex64_tensor(size=range_shape)
     return wavelet_op, u, v
 
 
@@ -58,8 +58,8 @@ def test_wavelet_op_coefficient_transform(
     img_shape: Sequence[int], domain_shape: Sequence[int], dim: tuple[int] | tuple[int, int] | tuple[int, int, int]
 ) -> None:
     """Test transform between ptwt and mrpro coefficient format."""
-    random_generator = RandomGenerator(seed=0)
-    img = random_generator.float32_tensor(size=img_shape)
+    rng = RandomGenerator(seed=0)
+    img = rng.float32_tensor(size=img_shape)
     wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim)
     if len(dim) == 1:
         coeff_ptwt = wavedec(img, 'haar', level=2, mode='reflect')
@@ -115,9 +115,9 @@ def test_wavelet_op_complex_real_shape() -> None:
     img_shape = (6, 10, 20, 30)
     domain_shape = (20, 30, 6)
     dim = (-2, -1, -4)
-    random_generator = RandomGenerator(seed=0)
-    img_complex = random_generator.complex64_tensor(size=img_shape)
-    img_real = random_generator.float32_tensor(size=img_shape)
+    rng = RandomGenerator(seed=0)
+    img_complex = rng.complex64_tensor(size=img_shape)
+    img_real = rng.float32_tensor(size=img_shape)
     wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim, wavelet_name='db4', level=None)
     (coeff_complex,) = wavelet_op(img_complex)
     (coeff_real,) = wavelet_op(img_real)
@@ -150,8 +150,8 @@ def test_wavelet_op_isometry(
     wavelet_name: WaveletType,
 ) -> None:
     """Test that the wavelet operator is a linear isometry."""
-    random_generator = RandomGenerator(seed=0)
-    img = random_generator.complex64_tensor(size=img_shape)
+    rng = RandomGenerator(seed=0)
+    img = rng.complex64_tensor(size=img_shape)
     wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim, wavelet_name=wavelet_name, level=None)
     operator_isometry_test(wavelet_op, img)
 
@@ -177,8 +177,8 @@ def test_wavelet_op_unitary(
     wavelet_name: WaveletType,
 ) -> None:
     """Test if wavelet operator is unitary."""
-    random_generator = RandomGenerator(seed=0)
-    img = random_generator.complex64_tensor(size=img_shape)
+    rng = RandomGenerator(seed=0)
+    img = rng.complex64_tensor(size=img_shape)
     wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim, wavelet_name=wavelet_name)
     linear_operator_unitary_test(wavelet_op, img)
 

@@ -1,6 +1,5 @@
 """MR quantitative data (QData) class."""
 
-import dataclasses
 from pathlib import Path
 
 import numpy as np
@@ -9,15 +8,17 @@ from einops import repeat
 from pydicom import dcmread
 from typing_extensions import Self
 
-from mrpro.data.Data import Data
+from mrpro.data.Dataclass import Dataclass
 from mrpro.data.IHeader import IHeader
 from mrpro.data.KHeader import KHeader
 from mrpro.data.QHeader import QHeader
 
 
-@dataclasses.dataclass(init=False, slots=True, frozen=True)
-class QData(Data):
+class QData(Dataclass):
     """MR quantitative data (QData) class."""
+
+    data: torch.Tensor
+    """Tensor containing quantitative image data with dimensions `(*other, coils, z, y, x)`."""
 
     header: QHeader
     """Header describing quantitative data."""
@@ -28,7 +29,7 @@ class QData(Data):
         Parameters
         ----------
         data
-            quantitative image data tensor with dimensions `(other, coils, z, y, x)`
+            quantitative image data tensor with dimensions `(*other, coils, z, y, x)`
         header
             MRpro header containing required meta data for the QHeader
         """
@@ -59,15 +60,3 @@ class QData(Data):
         qdata = repeat(qdata, 'y x -> other coils z y x', other=1, coils=1, z=1)
         header = QHeader.from_dicom(dataset)
         return cls(data=qdata, header=header)
-
-    def __repr__(self):
-        """Representation method for QData class."""
-        try:
-            device = str(self.device)
-        except RuntimeError:
-            device = 'mixed'
-        out = (
-            f'{type(self).__name__} with shape: {list(self.data.shape)!s} and dtype {self.data.dtype}\n'
-            f'Device: {device}\nResolution [m]: {self.header.resolution!s}.'
-        )
-        return out
