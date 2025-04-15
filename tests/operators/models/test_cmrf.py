@@ -3,8 +3,9 @@ from collections.abc import Sequence
 import pytest
 import torch
 from mrpro.operators.models.cMRF import CardiacFingerprinting
+from mrpro.utils import RandomGenerator
 from mrpro.utils.reshape import unsqueeze_right
-from tests import RandomGenerator, autodiff_test
+from tests import autodiff_test
 
 
 def test_cmrf_basic(parameter_shape: Sequence[int] = (2, 1, 3, 4, 2)) -> None:

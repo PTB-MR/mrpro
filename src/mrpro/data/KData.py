@@ -1,7 +1,6 @@
 """MR raw data / k-space data class."""
 
 import copy
-import dataclasses
 import datetime
 import warnings
 from collections.abc import Callable, Sequence
@@ -17,11 +16,11 @@ from typing_extensions import Self, TypeVar
 
 from mrpro.data.acq_filters import has_n_coils, is_image_acquisition
 from mrpro.data.AcqInfo import AcqInfo, convert_time_stamp_osi2, convert_time_stamp_siemens
+from mrpro.data.Dataclass import Dataclass
 from mrpro.data.EncodingLimits import EncodingLimits
 from mrpro.data.enums import AcqFlags
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KTrajectory import KTrajectory
-from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.Rotation import Rotation
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 from mrpro.data.traj_calculators.KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
@@ -62,9 +61,8 @@ OTHER_LABELS = (
 )
 
 
-@dataclasses.dataclass(slots=True, frozen=True)
 class KData(
-    MoveDataMixin,
+    Dataclass,
 ):
     """MR raw data / k-space data class."""
 
@@ -232,10 +230,10 @@ class KData(
                 )
             case KTrajectory():
                 try:
-                    torch.broadcast_shapes(trajectory.broadcasted_shape, (data.shape[0], *data.shape[-3:]))
+                    torch.broadcast_shapes(trajectory.shape, (data.shape[0], *data.shape[-3:]))
                 except RuntimeError:
                     raise ValueError(
-                        f'Trajectory shape {trajectory.broadcasted_shape} does not match data shape {data.shape}.'
+                        f'Trajectory shape {trajectory.shape} does not match data shape {data.shape}.'
                     ) from None
                 trajectory_ = trajectory
             case _:
@@ -298,7 +296,7 @@ class KData(
 
         # Second, determine the sorting order
         acq_indices = np.stack([getattr(self.header.acq_info.idx, label).ravel() for label in KDIM_SORT_LABELS], axis=0)
-        sort_idx = np.lexsort(acq_indices)  # torch does not have lexsort as of pytorch 2.6 (March 2025)
+        sort_idx = torch.as_tensor(np.lexsort(acq_indices))  # torch has no lexsort as of pytorch 2.6 (March 2025)
 
         # Finally, reshape and sort the tensors in acqinfo and acqinfo.idx, and kdata.
         header = self.header.apply(

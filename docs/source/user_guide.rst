@@ -15,7 +15,7 @@ MRpro is available on `pypi <https://pypi.org/project/mrpro/>`_ and can be insta
 
 To install additional dependencies used in our example notebooks, use::
 
-    pip install mrpro[notebook]
+    pip install mrpro[notebooks]
 
 You can also install the latest development directly from github using::
 
