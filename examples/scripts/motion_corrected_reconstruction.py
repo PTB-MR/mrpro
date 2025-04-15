@@ -57,7 +57,6 @@ fname = path_data + 'meas_MID00274_FID22431_Test_short_libbalanceCheckOn_phantom
 n_pe_ms = 0.36
 
 # ### Imports
-import matplotlib.pyplot as plt
 import torch
 import numpy as np
 from einops import rearrange, repeat
@@ -138,34 +137,34 @@ def rearrange_k2_k1_into_k1(kdata: KData) -> KData:
 
 # %%
 kdata = KData.from_file(fname, KTrajectoryRpe(angle=torch.pi * 0.618034))
-
-# Speed up things
-kdata = kdata.compress_coils(n_compressed_coils=6)
+kdata = kdata.compress_coils(n_compressed_coils=8)
 kdata = kdata.remove_readout_os()
 
 # Calculate coil maps
-tstart = time.time()
-avg_recon = DirectReconstruction(kdata, csm = None)
-avg_im = avg_recon(kdata)
-csm_maps = CsmData.from_idata_inati(avg_im, smoothing_width = 5)
-print(f'Csm {(time.time()-tstart)/60}min')
+csm_maps = CsmData.from_kdata_inati(kdata, smoothing_width = 5)
 
 #  SENSE reconstruction
 iterative_sense = IterativeSENSEReconstruction(kdata, csm=csm_maps)
 img_sense = iterative_sense.forward(kdata)
 img_sense = torch.squeeze(img_sense.rss())
-img_sense /= img_sense.max()
 
+# %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show plotting details"}
+import matplotlib.pyplot as plt
 
-fig, ax = plt.subplots(1,3, squeeze=False, figsize=(8, 4))
-[a.set_xticks([]) for a in ax.flatten()]
-[a.set_yticks([]) for a in ax.flatten()]
-ax[0,0].imshow(torch.rot90(img_sense[:,80,:]), vmin=0, vmax=0.2, cmap='grey')
-ax[0,0].set_title('Coronal', fontsize=18)
-ax[0,1].imshow(torch.flipud(torch.rot90(img_sense[:,:,80])), vmin=0, vmax=0.2, cmap='grey')
-ax[0,1].set_title('Transversal', fontsize=18)
-ax[0,2].imshow(torch.rot90(img_sense[100,:,:]), vmin=0, vmax=0.2, cmap='grey')
-ax[0,2].set_title('Saggital', fontsize=18)
+def show_views(image: torch.Tensor) -> None:
+    """Plot coronal, transversal and saggital view."""
+    image_views = [image[:,80,:], torch.fliplr(image[:,:,80]), image[100,:,:]]
+    _, axes = plt.subplots(1,3, squeeze=False, figsize=(12, 6))
+    for idx, (view, title) in enumerate(zip(image_views, ['Coronal', 'Transversal', 'Saggital'])):
+        axes[0,idx].imshow(torch.rot90(view), vmin=0, vmax=0.2, cmap='grey')
+        axes[0,idx].set_title(title, fontsize=18)
+        axes[0,idx].set_xticks([])
+        axes[0, idx].set_yticks([])
+    plt.show()
+
+# %%
+# Visualise anatomical views of 3D image
+show_views(img_sense/img_sense.max())
 
 
 
