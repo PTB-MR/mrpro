@@ -13,7 +13,7 @@
 #
 # where $n$ describes complex Gaussian noise. The image $x$ can be obtained by minimizing the functional $F$
 #
-# $ F(x) = ||(Ax - y)||_2^2 $
+# $ F(x) = \frac{1}{2}||Ax - y||_2^2 $
 #
 #
 # Setting the derivative of the functional $F$ to zero and rearranging yields
