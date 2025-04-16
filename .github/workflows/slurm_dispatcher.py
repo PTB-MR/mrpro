@@ -7,16 +7,35 @@ import requests as r
 
 
 class JobState(StrEnum):
+    """
+    Enumeration of possible job states in the runner dispatch workflow.
+
+    Attributes
+    ----------
+        REGISTERED: The job has been detected and registered but not yet dispatched.
+        DISPATCHED: The job has been assigned to a runner and is currently in progress.
+        FINISHED: The job has completed execution and is no longer tracked.
+    """
+
     REGISTERED = 'REGISTERED'
     DISPATCHED = 'DISPATCHED'
     FINISHED = 'FINISHED'
 
 
-GITHUB_OWNER = os.environ.get('GITHUB_OWNER')
-GITHUB_REPOSITORY = os.environ.get('GITHUB_REPOSITORY')
-GITHUB_PERSONAL_TOKEN = os.environ.get('GITHUB_PERSONAL_TOKEN')
-# this workflow_id corresponds to the self-hosted pytest workflow
-WORKFLOW_ID = '132920098'
+scheduled_runs = {}
+logger = logging.getLogger('SlurmDispatcher')
+
+
+REQUIRED_ENV_VARS = ('GITHUB_OWNER', 'GITHUB_REPOSITORY', 'GITHUB_PERSONAL_TOKEN', 'WORKFLOW_ID')
+ENV_VARS = {var_name: os.environ.get(var_name) for var_name in REQUIRED_ENV_VARS}
+
+unset_vars = list(filter(lambda kv: kv[1] is None, ENV_VARS.items()))
+
+if unset_vars:
+    error_message = f'{", ".join(unset_vars)} are not set'
+    logger.critical(error_message)
+    raise ValueError(error_message)
+
 SLURM_SUBMIT_COMMAND = [
     '/usr/bin/srun',
     '--cpus-per-task=6',
@@ -36,21 +55,31 @@ SLURM_SUBMIT_COMMAND = [
     '/actions-runner/entrypoint.sh',
 ]
 
-# all times in seconds
-
-# how long to wait for the job to be fetched as complete
-# since the github runner possibly ensures that the job is finished before turning off
-# this can be reduced to 0
 GITHUB_API_DELAY = 0.5 * 60
-# period to ask the GitHub API for new jobs
+""" time in seconds to wait after the runner completed """
+
 REQUEST_DELAY_TIME = 1.5 * 60
-# if the GitHub API returns an error, wait for this time before retrying
+""" period in seconds to ask the GitHub REST API for new jobs  """
+
 EXTENDED_DELAY_TIME = 10 * 60
+""" time in seconds to wait befory response if GitHub REST API returns an error"""
 
 
-# we need to propagate the run_id to runners to have the unique names of runners for each run
-# moreover, the runner should start with `--ephemeral` to take only one job (see the docker/runner_entrypoint.sh)
-async def dispatch_run(runner_token: str, run_id: int):
+async def dispatch_run(runner_token: str, run_id: int) -> None:
+    """
+    Dispatches and monitors a subprocess for a given run in an asynchronous manner.
+
+    This function launches a subprocess using the SLURM submission command,
+    uniquely identified by the provided `run_id` and authenticated via `runner_token`.
+    It updates the `scheduled_runs` dictionary to reflect the current state of the run,
+    logs process output (stdout and stderr), and ensures cleanup after execution.
+
+    Please note that the runner should be configured to run in "ephemeral" mode.
+
+    Args:
+        runner_token (str): A token used to authenticate the runner process.
+        run_id (int): A unique identifier for the run, used to track and name the process.
+    """
     process = await asyncio.create_subprocess_exec(
         # pass the run_id as a unique identifier for the runner name
         *[*SLURM_SUBMIT_COMMAND, runner_token, str(run_id)],
@@ -73,31 +102,41 @@ async def dispatch_run(runner_token: str, run_id: int):
     scheduled_runs.pop(run_id)
 
 
-if None in (GITHUB_OWNER, GITHUB_REPOSITORY, GITHUB_PERSONAL_TOKEN):
-    raise ValueError('Specify the environment variables')
-
-api_headers = {
-    'Authorization': 'Bearer ' + GITHUB_PERSONAL_TOKEN,
+API_HEADERS = {
+    'Authorization': 'Bearer {GITHUB_PERSONAL_TOKEN}'.format(**ENV_VARS),
     'Accept': 'application/vnd.github+json',
     'X-GitHub-Api-Version': '2022-11-28',
 }
+""" headers required by GitHub REST API """
 
 # check if the is any workflow for WORKFLOW_ID is queued
-runs_query = f'https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPOSITORY}/actions/workflows/{WORKFLOW_ID}/runs'
-params = {'status': 'queued'}
+RUNS_CHECK_QUERY = (
+    'https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPOSITORY}/actions/workflows/{WORKFLOW_ID}/runs'.format(
+        **ENV_VARS
+    )
+)
+""" GitHub REST API query to obain a list of queued jobs """
 
-# obtain a token to register a runner
-# the idea to do it here to isolate the GITHUB_PERSONAL_TOKEN from runner container
-runner_token_query = f'https://api.github.com/orgs/{GITHUB_OWNER}/actions/runners/registration-token'
+RUNS_CHECK_PARAMS = {'status': 'queued'}
+"""  GitHub REST API list of queued jobs filters """
 
-scheduled_runs = {}
-logger = logging.getLogger('SlurmDispatcher')
+RUNNER_TOKEN_QUERY = 'https://api.github.com/orgs/{GITHUB_OWNER}/actions/runners/registration-token'.format(**ENV_VARS)
+""" GitHub REST API query to obatin a runner registration token """
 
 
-async def main():
+async def main() -> None:
+    """
+    Periodically polls the GitHub API for new workflow runs and dispatches runners as needed.
+
+    This coroutine continuously sends GET requests to check for pending GitHub Actions
+    workflow runs. If a new unhandled run is found, it requests a runner token and
+    schedules it for execution via the `dispatch_run` function.
+
+    Runs indefinitely until cancelled or the event loop is stopped.
+    """
     while True:
-        logger.debug(f'Request GitHub API, query: {runs_query}, params: {params}')
-        resp = r.get(runs_query, params=params, headers=api_headers, timeout=10)
+        logger.debug(f'Request GitHub API, query: {RUNS_CHECK_QUERY}, params: {RUNS_CHECK_PARAMS}')
+        resp = r.get(RUNS_CHECK_QUERY, params=RUNS_CHECK_PARAMS, headers=API_HEADERS, timeout=10)
         logger.debug(f'Response code: {resp.status_code}')
         if resp.status_code == 200:
             payload = resp.json()
@@ -107,7 +146,7 @@ async def main():
                     run_details = scheduled_runs.get(run_id)
                     # this means there is no runner dispatched for the run
                     if run_details is None:
-                        resp_token = r.post(runner_token_query, headers=api_headers, timeout=10)
+                        resp_token = r.post(RUNNER_TOKEN_QUERY, headers=API_HEADERS, timeout=10)
                         if resp_token.status_code == 201:
                             runner_token = resp_token.json().get('token')
                             if runner_token is not None:
