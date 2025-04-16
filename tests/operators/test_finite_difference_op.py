@@ -77,3 +77,29 @@ def test_finite_difference_op_forward_mode_autodiff(
 ) -> None:
     """Test the forward-mode autodiff of the finite difference operator."""
     forward_mode_autodiff_of_linear_operator_test(*create_finite_difference_op_and_range_domain(dim, mode, pad_mode))
+
+
+@pytest.mark.cuda
+def test_finite_difference_op_cuda() -> None:
+    """Test finite difference operator works on CUDA devices."""
+
+    # Set dimensional parameters
+    im_shape = (5, 6, 4, 10, 20, 16)
+    dim = (-3, -2, -1)
+
+    # Generate data
+    random_generator = RandomGenerator(seed=0)
+    u = random_generator.complex64_tensor(size=im_shape)
+
+    # Create on CPU, run on CPU
+    finite_difference_op = FiniteDifferenceOp(dim, mode='central', pad_mode='circular')
+    operator = finite_difference_op.H @ finite_difference_op
+    (finite_difference_output,) = operator(u)
+    assert finite_difference_output.is_cpu
+
+    # Transfer to GPU, run on GPU
+    finite_difference_op = FiniteDifferenceOp(dim, mode='central', pad_mode='circular')
+    operator = finite_difference_op.H @ finite_difference_op
+    operator.cuda()
+    (finite_difference_output,) = operator(u.cuda())
+    assert finite_difference_output.is_cuda
