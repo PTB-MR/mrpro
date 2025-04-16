@@ -45,7 +45,7 @@ zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 # $B=\mathrm{Id}$ for a pre-trained network $u_{\theta}$ and initial image $x_0$ [Kofler et al., IOP PMB 2020].
 #
 # In this example we are going to use a high-quality image to regularize the reconstruction of an undersampled image.
-# Both images are obtained from the same data acquisition - one using all the acquired data ($x_{reg}$),
+# Both images are obtained from the same data acquisition - one using all the acquired data ($x_{\mathrm{reg}}$),
 # and one using only parts of it ($x$). This is, of course, an unrealistic case but it will allow us to demonstrate
 # the effect of the regularization.
 #
