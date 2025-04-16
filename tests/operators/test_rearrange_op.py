@@ -67,3 +67,28 @@ def test_rearrange_op_invalid() -> None:
     """Test with invalid rule."""
     with pytest.raises(ValueError, match='pattern should match'):
         RearrangeOp('missing arrow')
+
+
+@pytest.mark.cuda
+def test_rearrange_op_cuda() -> None:
+    """Test rearrange operator works with CUDA devices."""
+    # Generate random tensor
+    input_shape = (1, 2, 3)
+    rule = 'a b c-> b a c'
+    additional_info = None
+    generator = RandomGenerator(seed=0)
+    generate_tensor = generator.complex128_tensor
+    u = generate_tensor(size=input_shape)
+
+    # Create on CPU, run on CPU
+    rearrange_op = RearrangeOp(rule, additional_info)
+    operator = rearrange_op.H @ rearrange_op
+    (result,) = operator(u)
+    assert result.is_cpu
+
+    # Create on CPU, transfer to GPU, run on GPU
+    rearrange_op = RearrangeOp(rule, additional_info)
+    operator = rearrange_op.H @ rearrange_op
+    operator.cuda()
+    (result,) = operator(u.cuda())
+    assert result.is_cuda
