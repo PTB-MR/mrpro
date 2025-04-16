@@ -115,7 +115,7 @@ RUNS_CHECK_QUERY = (
         **ENV_VARS
     )
 )
-""" GitHub REST API query to obain a list of queued jobs """
+""" GitHub REST API query to obtain a list of queued jobs """
 
 RUNS_CHECK_PARAMS = {'status': 'queued'}
 """  GitHub REST API list of queued jobs filters """
