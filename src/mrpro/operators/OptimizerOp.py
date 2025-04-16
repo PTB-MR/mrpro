@@ -122,8 +122,9 @@ class OptimizerOp(Operator):
 
         Example
         -------
-            Solving :math:`\|q(x)-y\|^2 + \lambda*\|x-x_reg\|^2` with
-            y, lambda and x_reg parameters. The solution x* should be differentiable with respect to these.
+            Solving :math:`\|q(x)-y\|^2 + \lambda*\|x-x_\mathrm{reg}\|^2` with
+            :math:`y`, :math:`\lambda` and :math:`x_\mathrm{reg}` parameters. The solution :math:`x^*` should be
+            differentiable with respect to these.
 
             Use::
 
@@ -150,7 +151,7 @@ class OptimizerOp(Operator):
         """
         parameters = tuple(p.detach().clone() for p in parameters)
         initial_values = self.initializer(*parameters)
-        initial_values = tuple(x.clone() if x in parameters else x for x in initial_values)
+        initial_values = tuple(x.clone() if any(x is p for p in parameters) else x for x in initial_values)
         initial_values = tuple(x.detach().requires_grad_(True) for x in initial_values)
         if TYPE_CHECKING:
             # For  mypy
