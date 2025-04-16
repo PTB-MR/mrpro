@@ -21,8 +21,7 @@ from mrpro.operators.LinearOperator import LinearOperator
 class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
     r"""Regularized iterative SENSE reconstruction.
 
-    This algorithm solves the problem :math:`\min_{x} \frac{1}{2}||Ax - y||_2^2 +
-    \frac{1}{2}\lambda||Bx - x_{reg}||_2^2`
+    This algorithm solves the problem :math:`\min_{x} ||Ax - y||_2^2 + \lambda||Bx - x_{reg}||_2^2`
     by using a conjugate gradient algorithm to solve
     :math:`H x = b` with :math:`H = A^H A + \lambda B^H B` and :math:`b = A^H y + \lambda B^H x_{reg}` where :math:`A`
     is the acquisition model (coil sensitivity maps, Fourier operator, k-space sampling), :math:`y` is the acquired

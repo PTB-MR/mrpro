@@ -28,14 +28,15 @@ zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 #
 # where $n$ describes complex Gaussian noise. The image $x$ can be obtained by minimizing the functional $F$
 #
-# $ F(x) = \frac{1}{2}||Ax - y||_2^2 +  \frac{l}{2}||Bx - x_{reg}||_2^2$
+# $ F(x) = ||Ax - y||_2^2 + \lambda||Bx - x_\mathrm{reg}||_2^2$
 #
-# where $l$ is the strength of the regularization, $B$ is a linear operator and $x_{reg}$ is a regularization image.
-# With this functional $F$ we obtain a solution which is close to $x_{reg}$ and to the acquired data $y$.
+# where $\lambda$ is the strength of the regularization, $B$ is a linear operator and $x_\mathrm{reg}$ is a
+# regularization image.
+# With this functional $F$ we obtain a solution which is close to $x_\mathrm{reg}$ and to the acquired data $y$.
 #
 # Setting the derivative (see https://www.matrixcalculus.org) of the functional $F$ to zero and rearranging yields
 #
-# $ (A^H A + l B^H B) x = A^H y + l B^H x_{reg}$
+# $ (A^H A + l B^H B) x = A^H y + \lambda B^H x_\mathrm{reg}$
 #
 # which is a linear system $Hx = b$ that needs to be solved for $x$.
 #
@@ -158,7 +159,7 @@ show_images(
 # to build your own reconstruction pipeline.
 
 # %% [markdown]
-# ##### Set-up the density compensation operator $W$ and acquisition model $A$
+# ##### Set-up the acquisition model $A$
 #
 # This is very similar to <project:iterative_sense_reconstruction_radial2D.ipynb> .
 # For more details, please refer to that notebook.
@@ -169,7 +170,8 @@ csm_operator = csm.as_operator()
 acquisition_operator = fourier_operator @ csm_operator
 
 # %% [markdown]
-# We calculate $b = A^H y + \lambda B^H x_{reg}$, using the identity operator as $B$ and $\lambda = 1.0$.
+# ##### Set-up the right-hand side $b$
+# We calculate $b = A^H y + \lambda B^H x_\mathrm{reg}$, using the identity operator as $B$ and $\lambda = 1.0$.
 
 # %%
 regularization_weight = 1.0
