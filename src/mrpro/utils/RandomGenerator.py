@@ -27,7 +27,6 @@ def check_bounds(low: float | int | torch.Tensor, high: float | int | torch.Tens
         minval, maxval = info.min, info.max
     else:
         info = torch.iinfo(dtype)
-        minval, maxval = info.min, info.max
         minval = info.min
         if dtype in (torch.int64, torch.uint64):
             maxval = info.max  # https://github.com/pytorch/pytorch/issues/81446
