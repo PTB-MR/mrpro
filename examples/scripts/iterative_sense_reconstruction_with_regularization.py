@@ -28,7 +28,7 @@ zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 #
 # where $n$ describes complex Gaussian noise. The image $x$ can be obtained by minimizing the functional $F$
 #
-# $ F(x) = ||Ax - y||_2^2 + l||Bx - x_{reg}||_2^2$
+# $ F(x) = \frac{1}{2}||Ax - y||_2^2 +  \frac{l}{2}||Bx - x_{reg}||_2^2$
 #
 # where $l$ is the strength of the regularization, $B$ is a linear operator and $x_{reg}$ is a regularization image.
 # With this functional $F$ we obtain a solution which is close to $x_{reg}$ and to the acquired data $y$.
