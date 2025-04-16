@@ -34,7 +34,7 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
     """Number of CG iterations."""
 
     regularization_data: torch.Tensor
-    """Regularization data (i.e. prior) :math:`x_{\mathrm{reg}}`."""
+    r"""Regularization data (i.e. prior) :math:`x_{\mathrm{reg}}`."""
 
     regularization_weight: torch.Tensor
     r"""Strength of the regularization :math:`\lambda`."""
@@ -79,7 +79,8 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
             Noise used for prewhitening. If `None`, no prewhitening is performed
         dcf
             K-space sampling density compensation. If `None`, set up based on `kdata`.
-            Used to obtain a good starting point for the CG algorithm.
+            Used to obtain a the starting point for the CG algorithm as the scaled density compensated direct
+            reconstruction [FESSLER2010]_.
         n_iterations
             Number of CG iterations
         regularization_data
@@ -89,6 +90,11 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
         regularization_op
             Linear operator :math:`B` applied to the current estimate in the regularization term. If None, nothing is
             applied to the current estimate.
+
+        References
+        ----------
+        .. [FESSLER2010] Fessler, J.A., Noll, D.C: Iterative Reconstruction Methods for Non-Cartesian MRI.
+           https://ece-classes.usc.edu/ee591/library/Fessler-Iterative%20Reconstruction.pdf
 
         Raises
         ------

@@ -39,13 +39,14 @@ zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 #
 # which is a linear system $Hx = b$ that needs to be solved for $x$.
 #
-# One important question of course is, what to use for $x_{reg}$. For dynamic images (e.g. cine MRI) low-resolution
-# dynamic images or high-quality static images have been proposed. In recent years, the output of neural networks
-# has also been used as an image regularizer.
+# One important question of course is, what to use as $x_\mathrm{{reg}}$ and $B$. For dynamic images (e.g. cine MRI)
+# low-resolution dynamic images or high-quality static images have been proposed.
+# In recent years, the output of neural networks has also been used, i.e. $x_{\mathrm{reg}} = u_{\theta}(x_0)$
+# $B=\mathrm{Id}$ for a pre-trained network $u_{\theta}$ and initial image $x_0$ [Kofler et al., IOP PMB 2020].
 #
 # In this example we are going to use a high-quality image to regularize the reconstruction of an undersampled image.
 # Both images are obtained from the same data acquisition - one using all the acquired data ($x_{reg}$),
-# and one using only parts of it ($x$). This of course is an unrealistic case but it will allow us to demonstrate
+# and one using only parts of it ($x$). This is, of course, an unrealistic case but it will allow us to demonstrate
 # the effect of the regularization.
 #
 # ```{note}
@@ -77,7 +78,7 @@ kdata_undersampled = mrpro.data.KData.from_file(
 )
 
 # %% [markdown]
-# ##### Obtain Image $x_{reg}$ from fully sampled data
+# ##### Obtain image $x_{\mathrm{reg}}$ from fully sampled data
 # We first reconstruct the fully sampled image to use it as a regularization image.
 # In a real-world scenario, we would not have this image and would have to use a low-resolution image as a prior, or use
 # a neural network to estimate the regularization image.
@@ -168,15 +169,16 @@ csm_operator = csm.as_operator()
 acquisition_operator = fourier_operator @ csm_operator
 
 # %% [markdown]
-# ##### Calculate the right-hand-side of the linear system
-# We calculate $b = A^H y + l x_{reg}$.
+# We calculate $b = A^H y + \lambda B^H x_{reg}$, using the identity operator as $B$ and $\lambda = 1.0$.
 
 # %%
 regularization_weight = 1.0
 regularization_image = img_iterative_sense.data
+regularization_operator = mrpro.operators.IdentityOp()
 
+(regularization,) = (regularization_weight * regularization_operator.H)(regularization_image)
 (right_hand_side,) = (acquisition_operator.H)(kdata_undersampled.data)
-right_hand_side = right_hand_side + regularization_weight * regularization_image
+right_hand_side = right_hand_side + regularization
 
 # %% [markdown]
 # ##### Set-up the linear self-adjoint operator $H$
