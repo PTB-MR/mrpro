@@ -5,9 +5,9 @@ from collections.abc import Sequence
 import pytest
 import torch
 from mrpro.operators import PCACompressionOp
+from mrpro.utils import RandomGenerator
 
 from tests import (
-    RandomGenerator,
     dotproduct_adjointness_test,
     forward_mode_autodiff_of_linear_operator_test,
     gradient_of_linear_operator_test,
@@ -19,11 +19,11 @@ def create_pca_compression_op_and_domain_range(
 ) -> tuple[PCACompressionOp, torch.Tensor, torch.Tensor]:
     """Create a pca compression operator and an element from domain and range."""
     # Create test data
-    generator = RandomGenerator(seed=0)
-    data_to_calculate_compression_matrix_from = generator.complex64_tensor(init_data_shape)
-    u = generator.complex64_tensor(input_shape)
+    rng = RandomGenerator(seed=0)
+    data_to_calculate_compression_matrix_from = rng.complex64_tensor(init_data_shape)
+    u = rng.complex64_tensor(input_shape)
     output_shape = (*input_shape[:-1], n_components)
-    v = generator.complex64_tensor(output_shape)
+    v = rng.complex64_tensor(output_shape)
 
     # Create operator and apply
     pca_comp_op = PCACompressionOp(data=data_to_calculate_compression_matrix_from, n_components=n_components)
@@ -73,9 +73,9 @@ def test_pca_compression_op_wrong_shapes() -> None:
     input_shape = (100, 3)
 
     # Create test data
-    generator = RandomGenerator(seed=0)
-    data_to_calculate_compression_matrix_from = generator.complex64_tensor(init_data_shape)
-    input_data = generator.complex64_tensor(input_shape)
+    rng = RandomGenerator(seed=0)
+    data_to_calculate_compression_matrix_from = rng.complex64_tensor(init_data_shape)
+    input_data = rng.complex64_tensor(input_shape)
 
     pca_comp_op = PCACompressionOp(data=data_to_calculate_compression_matrix_from, n_components=2)
 
@@ -84,3 +84,40 @@ def test_pca_compression_op_wrong_shapes() -> None:
 
     with pytest.raises(RuntimeError, match='Matrix.H'):
         pca_comp_op.adjoint(input_data)
+
+
+@pytest.mark.cuda
+def test_pca_compression_op_cuda() -> None:
+    """Test if PCA compression operator works on CUDA devices."""
+    init_data_shape = (40, 10)
+    n_components = 6
+
+    # Create test data
+    generator = RandomGenerator(seed=0)
+    data_to_calculate_compression_matrix_from = generator.complex64_tensor(init_data_shape)
+
+    # Create on CPU, transfer to GPU, run on GPU
+    pca_comp_op = PCACompressionOp(data=data_to_calculate_compression_matrix_from, n_components=n_components)
+    operator = pca_comp_op.H @ pca_comp_op
+    operator.cuda()
+    (comp_result,) = operator(data_to_calculate_compression_matrix_from.cuda())
+    assert comp_result.is_cuda
+
+    # Create on CPU, run on CPU
+    pca_comp_op = PCACompressionOp(data=data_to_calculate_compression_matrix_from, n_components=n_components)
+    operator = pca_comp_op.H @ pca_comp_op
+    (comp_result,) = operator(data_to_calculate_compression_matrix_from)
+    assert comp_result.is_cpu
+
+    # Create on GPU, run on GPU
+    pca_comp_op = PCACompressionOp(data=data_to_calculate_compression_matrix_from.cuda(), n_components=n_components)
+    operator = pca_comp_op.H @ pca_comp_op
+    (comp_result,) = operator(data_to_calculate_compression_matrix_from.cuda())
+    assert comp_result.is_cuda
+
+    # Create on GPU, transfer to CPU, run on CPU
+    pca_comp_op = PCACompressionOp(data=data_to_calculate_compression_matrix_from.cuda(), n_components=n_components)
+    operator = pca_comp_op.H @ pca_comp_op
+    operator.cpu()
+    (comp_result,) = operator(data_to_calculate_compression_matrix_from)
+    assert comp_result.is_cpu

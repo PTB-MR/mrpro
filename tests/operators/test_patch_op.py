@@ -5,8 +5,9 @@ from collections.abc import Sequence
 import pytest
 import torch
 from mrpro.operators.PatchOp import PatchOp
+from mrpro.utils import RandomGenerator
 
-from tests import RandomGenerator, autodiff_test, dotproduct_adjointness_test
+from tests import autodiff_test, dotproduct_adjointness_test
 
 TESTCASES = pytest.mark.parametrize(
     ('input_shape', 'arguments', 'output_shape'),
@@ -108,7 +109,7 @@ def test_patch_op_cuda() -> None:
     """Test the cMRF model works on cuda devices."""
 
     rng = RandomGenerator(8)
-    u = rng.complex64_tensor((2, 3, 4))
+    u = rng.complex64_tensor((10, 3, 4))
 
     # Create on CPU, transfer to GPU and run on GPU
     model = PatchOp(0, 2, 3, 2)
