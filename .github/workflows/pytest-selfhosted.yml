@@ -33,15 +33,18 @@
 name: PyTest-selfhosted
 
 on:
-  issue_comment:
-    types: [created, edited]
+  pull_request:
+    types: [labeled]
+  push:
+    branches:
+      - main
 
 jobs:
   test:
     name: Run Tests and Coverage Report
     if: >-
-      ${{ github.event.issue.pull_request &&
-          contains(github.event.comment.body, 'selfhosted run') }}
+      ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+          (github.event_name == 'pull_request' && github.event.label.name == 'pytest-selfhosted') }}
     runs-on: [self-hosted] #gpu
     environment: pytest-cuda
 
@@ -67,6 +70,7 @@ jobs:
           path: |
             pytest-coverage.txt
             pytest.xml
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
 
