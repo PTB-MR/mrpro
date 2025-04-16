@@ -83,7 +83,7 @@ img_direct = direct_reconstruction(kdata)
 # from ``direct_reconstruction``. We use *early stopping* after 4 iterations by setting `n_iterations`.
 #
 # ```{note}
-# When setting up the reconstruction can also provide the `~mrpro.data.KData` and let
+# When setting up the reconstruction we can also provide the `~mrpro.data.KData` and let
 #  `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction` figure
 # out the Fourier operator, estimate the coil sensitivity maps, and choose a density weighting.\
 # We can also provide `~mrpro.data.KData` and some information, such as the sensitivity maps.
