@@ -35,7 +35,7 @@ zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 #
 # Setting the derivative (see https://www.matrixcalculus.org) of the functional $F$ to zero and rearranging yields
 #
-# $ (A^H A + l B) x = A^H y + l x_{reg}$
+# $ (A^H A + l B^H B) x = A^H y + l B^H x_{reg}$
 #
 # which is a linear system $Hx = b$ that needs to be solved for $x$.
 #
