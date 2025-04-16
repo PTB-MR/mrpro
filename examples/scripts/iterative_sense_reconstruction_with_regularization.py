@@ -180,7 +180,7 @@ right_hand_side = right_hand_side + regularization_weight * regularization_image
 
 # %% [markdown]
 # ##### Set-up the linear self-adjoint operator $H$
-# We define $H = A^H A + \lambda$. We can use `~mrpro.operators.LinearOperator.gram` to get an efficient
+# We define $H = A^H A + \lambda B^HB$. We can use `~mrpro.operators.LinearOperator.gram` to get an efficient
 # implementation of $A^H A$. We use the `~mrpro.operators.IdentityOp` and make
 # use of operator addition using ``+`` and multiplication using ``*``.
 # The resulting operator is a `~mrpro.operators.LinearOperator` object.
