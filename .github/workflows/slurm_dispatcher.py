@@ -29,10 +29,10 @@ logger = logging.getLogger('SlurmDispatcher')
 REQUIRED_ENV_VARS = ('GITHUB_OWNER', 'GITHUB_REPOSITORY', 'GITHUB_PERSONAL_TOKEN', 'WORKFLOW_ID')
 ENV_VARS = {var_name: os.environ.get(var_name) for var_name in REQUIRED_ENV_VARS}
 
-unset_vars = list(filter(lambda kv: kv[1] is None, ENV_VARS.items()))
+UNSET_VARS = [key for key, value in ENV_VARS.items() if value is None]
 
-if unset_vars:
-    error_message = f'{", ".join(unset_vars)} are not set'
+if UNSET_VARS:
+    error_message = f'{", ".join(str(name) for name in UNSET_VARS)} - not set'
     logger.critical(error_message)
     raise ValueError(error_message)
 
