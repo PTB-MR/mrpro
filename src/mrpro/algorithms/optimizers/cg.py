@@ -73,7 +73,7 @@ def cg(
 ) -> tuple[torch.Tensor, ...] | tuple[torch.Tensor]:
     r"""(Preconditioned) Conjugate Gradient for solving :math:`Hx=b`.
 
-    This algorithm solves systems of the form :math:`H x = b`, where :math:`H` is a self-adjoint positive semidefinite 
+    This algorithm solves systems of the form :math:`H x = b`, where :math:`H` is a self-adjoint positive semidefinite
     linear operator and :math:`b` is the right-hand side.
 
      The method performs the following steps:
@@ -91,10 +91,10 @@ def cg(
     The operator can be either a `LinearOperator` or a `LinearOperatorMatrix`.
     In both cases, this implementation does not verify if the operator is self-adjoint and positive semidefinite.
     It will silently return the wrong result if the assumptions are not met.
-    It can solve a batch of :math:`N` systems jointly if `right_hand_side` has a batch dimension 
+    It can solve a batch of :math:`N` systems jointly if `right_hand_side` has a batch dimension
     and the operator interprets the batch dimension as :math:`H` being block-diagonal with blocks :math:`H_i`
     resulting in :math:`b = [b_1, ..., b_N] ^T`.
-    
+
     If `preconditioner_inverse` is provided, it solves :math:`M^{-1}Hx = M^{-1}b`
     implicitly, where `preconditioner_inverse(r)` computes :math:`M^{-1}r`.
 
