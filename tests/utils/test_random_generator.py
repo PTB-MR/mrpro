@@ -176,7 +176,7 @@ def test_int32_tensor(size: Sequence[int] = (4,), low: int = -1 << 31, high: int
         assert len(torch.unique(tensor)) > 1
 
 
-def test_int64_tensor(size: Sequence[int] = (4,), low: int = -1 << 63, high: int = (1 << 63) - 1) -> None:
+def test_int64_tensor(size: Sequence[int] = (4,), low: int = -1 << 63, high: int = 1 << 63) -> None:
     """Test int64_tensor for shape, bounds, and value differences."""
     rng = RandomGenerator(seed=42)
     tensor = rng.int64_tensor(size=size, low=low, high=high)
