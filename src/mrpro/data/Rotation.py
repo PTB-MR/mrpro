@@ -57,6 +57,7 @@ from scipy._lib._util import check_random_state
 from typing_extensions import Self, Unpack, overload
 
 from mrpro.data.SpatialDimension import SpatialDimension
+from mrpro.utils import reduce_repeat
 from mrpro.utils.indexing import Indexer
 from mrpro.utils.typing import NestedSequence, TorchIndexerType
 from mrpro.utils.vmf import sample_vmf
@@ -1629,6 +1630,26 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         quaternions = torch.stack([indexer(q) for q in self._quaternions.unbind(-1)], -1)
         inversion = indexer(self._is_improper)
         return type(self)(quaternions, normalize=False, inversion=inversion)
+
+    def _reduce_repeats_(self, tol: float = 1e-6, dim: Sequence[int] | None = None) -> Self:
+        """Reduce repeated dimensions to singleton.
+
+        Parameters
+        ----------
+        tol
+            tolerance to apply to quaternions
+        dim
+            dimensions to try to reduce to singletons. `None` means all.
+        """
+        if dim is None:
+            quaternion_dim: Sequence[int] = range(self._quaternions.ndim - 1)
+        else:
+            quaternion_dim = [
+                d - 1 if d < 0 else d for d in dim if d > -self._quaternions.ndim + 1 and d < self._quaternions.ndim - 1
+            ]
+        self._quaternions.data = reduce_repeat(self._quaternions, tol, quaternion_dim)
+        self._is_improper.data = reduce_repeat(self._is_improper, tol, dim)
+        return self
 
     @property
     def quaternion_x(self) -> torch.Tensor:
