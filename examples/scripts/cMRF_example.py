@@ -1,20 +1,23 @@
 # %% [markdown]
 # # Cardiac MRF reconstructions
 #
-# This notebook provides the image reconstruction and parameter estimation methods required to reconstruct cardiac MR Fingerprinting (cMRF) data.
+# This notebook provides the image reconstruction and parameter estimation methods required to reconstruct cardiac MR
+# Fingerprinting (cMRF) data.
 
 
 # %% [markdown]
 #
 # # Overview
 # %%
-# In this notebook the cardiac MR Fingerprinting (cMRF) data acquired at one scanner and the corresponding spin-echo reference sequence are reconstructed and
-# $T_1$ and $T_2$ maps are estimated. This example is based on the same data as for one of the scanners in the scanner comparison example in [SCHUE2024].
-# Average $T_1$ and $T_2$ are calculated in circular ROIs for different tissue types represented in the phantom.
+# In this notebook the cardiac MR Fingerprinting (cMRF) data acquired at one scanner and the corresponding spin-echo
+# reference sequence are reconstructed and $T_1$ and $T_2$ maps are estimated. This example is based on the same
+# data as for one of the scanners in the scanner comparison example in [SCHUE2024].  Average $T_1$ and $T_2$ are
+# calculated in circular ROIs for different tissue types represented in the phantom.
 
 
-# For the reconstruction of the acquired data the cMRF signal model is used. This model simulates a cardiac MR fingerprinting sequence as described in [HAMI2017]_ using the extended phase
-# graph (`~mrpro.operators.models.EPG`) formalism.
+# For the reconstruction of the acquired data the cMRF signal model is used. This model simulates a cardiac MR
+# fingerprinting sequence as described in [HAMI2017]_ using the extended phase graph
+# (`~mrpro.operators.models.EPG`) formalism.
 
 # It is a four-fold repetition of
 
@@ -24,16 +27,22 @@
 
 #         [INV TI=30ms][ACQ]                     [ACQ]     [T2-prep TE=50ms][ACQ]    [T2-prep TE=100ms][ACQ]
 
-# In order not to reconstruct all acquired images, the acquired data is split into windows of 20 acquisitions. The windows have an overap of 10 acquisitins among each other.
-# As a result the acquired data is averaged over these windows, so that less images have to be reconstructed.
+# In order not to reconstruct all acquired images, the acquired data is split into windows of 20 acquisitions. The
+# windows have an overap of 10 acquisitins among each other.  As a result the acquired data is averaged over these
+# windows, so that less images have to be reconstructed.
 
-# We carry out dictionary matching to estimate the quantitative parameters from a series of qualitative images. For this we employ `~mrpro.operators.DictionaryMatchOp`.
-# It performs absolute normalized dot product matching between a dictionary of signals, i.e. find the entry :math:`d^*` in the dictionary maximizing :math:`\left|\frac{d}{\|d\|} \cdot \frac{y}{\|y\|}\right|`
-# and returns the associated signal model parameters :math:`x` generating the matching signal :math:`d^*=d(x)`.
+# We carry out dictionary matching to estimate the quantitative parameters from a series of qualitative images. For
+# this we employ `~mrpro.operators.DictionaryMatchOp`. It performs absolute normalized dot product matching between
+# a dictionary of signals, i.e. find the entry :math:`d^*` in the dictionary maximizing
+# :math:`\left|\frac{d}{\|d\|} \cdot \frac{y}{\|y\|}\right|` and returns the associated signal model parameters
+# :math:`x` generating the matching signal :math:`d^*=d(x)`.
 
-# At initialization, the cMRF signal model from before needs to be provided. In addition to the extended phase graph formalism the simulated signal is averaged over 45 acquisition windows consisting of 20 acquisitions with an overlap of ten acquisitions.
-# Then parameters like $m_0$, $T_1$ and $T_2$ are provided as entries for the dictionary and the cMRF signal model from before is applied on them.
-# Given the reconstructed images from above, the tuple of ($m_0$, $T_1$, $T_2$)-values in the dictionary that result in a signal with the highest dot-product similarity will be returned.
+# At initialization, the cMRF signal model from before needs to be provided. In addition to the extended phase graph
+# formalism the simulated signal is averaged over 45 acquisition windows consisting of 20 acquisitions with an overlap
+# of ten acquisitions. Then parameters like $m_0$, $T_1$ and $T_2$ are provided as entries for the dictionary and the
+# cMRF signal model from before is applied on them. Given the reconstructed images from above, the tuple of
+# ($m_0$, $T_1$, $T_2$)-values in the dictionary that result in  a signal with the highest dot-product similarity
+# will be returned.
 
 # References
 # ----------
@@ -77,7 +86,21 @@ data_folder = '/echo/redsha01/Sequences_Evaluation/mrpro/examples/scripts/cMRF_e
 # %%
 # Function to mimic the averaging reconstruction of the actual acquired data when creatig the simulated signal model
 class SignalAverage(Operator[torch.Tensor, tuple[torch.Tensor,]]):
+    """Signal Averaging Operator.
+
+    This operator can be used to average multiple signal amplitudes over a window of several signal ampltitudes.
+    """
+
     def __init__(self, idx: torch.Tensor, dim: int = 0) -> None:
+        """Initialize SignalAverage.
+
+        Parameters
+        ----------
+        idx
+            acquisition indices over which the signals are averaged
+        dim
+            averaging takes place over the dimension dim + 1
+        """
         super().__init__()
         if idx.ndim != 2:
             raise ValueError('idx must have exactly 2 dimensions and shape (n_sets, n_points_per_average)')
@@ -85,17 +108,35 @@ class SignalAverage(Operator[torch.Tensor, tuple[torch.Tensor,]]):
         self.dim = dim
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Perform signal averaging.
+
+        Given x values as input_signal, the averaged signal over the dimension dim + 1 and the indices idx
+        will be returned
+
+        Parameters
+        ----------
+        x
+            signal amplitudes of all acquisitions
+
+        Returns
+        -------
+        x_mean
+            tuple of averaged signal with shape (x_mean,)
+        """
         if self.dim >= x.ndim or self.dim < -x.ndim:
             raise ValueError(f'Dimension {self.dim} out of range for input with {x.ndim} dimensions')
         dim = self.dim % x.ndim
-
         index = (*(slice(None),) * (dim), self.idx)
         x_indexed = x[*index]
-        return (x_indexed.mean(dim + 1),)
+        x_mean = x_indexed.mean(dim + 1)
+        return (x_mean,)
 
 
 # Function to reconstruct the cMRF scans and estimate the $T_1$ and $T_2$ maps.
-def reco_cMRF_scans(pname: str, scan_name: str, t1: torch.Tensor, t2: torch.Tensor):
+def reco_cmrf_scans(
+    pname: Path, scan_name: str, t1: torch.Tensor, t2: torch.Tensor
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Reconstruct cMRF scans."""
     n_lines_per_img = 20
     n_lines_overlap = 10
     # Image reconstruction of average image
@@ -122,7 +163,8 @@ def reco_cMRF_scans(pname: str, scan_name: str, t1: torch.Tensor, t2: torch.Tens
 
     # This model simulates a cardiac MR fingerprinting sequence using the extended phase graph formalism.
     epg_mrf_fisp = mrpro.operators.models.cMRF.CardiacFingerprinting(acq_t_ms, te)
-    # The simulated signal is then averaged over 45 acquisition windows consisting of 20 acquisitions with an overlap of ten acquisitions
+    # The simulated signal is then averaged over 45 acquisition windows consisting of 20 acquisitions with an overlap of
+    # ten acquisitions
     model = SignalAverage(dyn_idx, dim=0) @ epg_mrf_fisp
     # Appending m0-, t1- and t2-values to create a dictionary of signals according to the signal model calculated before
     dictionary = mrpro.operators.DictionaryMatchOp(model).append(m0, t1, t2)
@@ -131,8 +173,9 @@ def reco_cMRF_scans(pname: str, scan_name: str, t1: torch.Tensor, t2: torch.Tens
     return t1_match, t2_match
 
 
-# Function to calculate the mean and standard deviation of the tubes in the image data
-def image_statistics(idat: torch.Tensor, mask_name: str):
+# Function to calculate the mean and standard deviation of the $T_1$- and $T_2$-values in the ROI in the image data
+def image_statistics(idat: torch.Tensor, mask_name: Path) -> tuple[torch.Tensor, torch.Tensor]:
+    """Calculate mean value and standard deviation in the ROI."""
     if mask_name is not None:
         mask = np.squeeze(np.load(mask_name))
 
@@ -144,15 +187,18 @@ def image_statistics(idat: torch.Tensor, mask_name: str):
         mean.append(torch.mean(idat[mask == idx_value + 1]))
         std_deviation.append(torch.std(idat[mask == idx_value + 1]))
 
-    mean = np.array(mean) * 1000  # convert times from second to milliseconds
-    std_deviation = np.array(std_deviation) * 1000  # convert times from second to milliseconds
+    mean = torch.Tensor(mean) * 1000  # convert time values from second to milliseconds
+    std_deviation = torch.Tensor(std_deviation) * 1000  # convert time values from second to milliseconds
     return mean, std_deviation
 
 
-# Function to calculate the coefficient of determination $R^2$ for the pre-calculated reference time values and the cMRF time values
-def R_squared(mean_ref: torch.Tensor, mean_cmrf: torch.Tensor):
+# Function to calculate the coefficient of determination $R^2$ for the pre-calculated reference time values and the cMRF
+# time values
+def r_squared(mean_ref: torch.Tensor, mean_cmrf: torch.Tensor) -> float:
+    """Calculate of coefficient of determination."""
+
     # Function for the linear fit
-    def linear(parameter: float, x: float):
+    def linear(parameter: torch.Tensor, x: torch.Tensor):
         return parameter[0] * x + parameter[1]
 
     data = odr.RealData(mean_ref, mean_cmrf)
@@ -162,15 +208,16 @@ def R_squared(mean_ref: torch.Tensor, mean_cmrf: torch.Tensor):
 
     # Calculation of R^2
     residual = mean_cmrf - linear(output.beta, mean_ref)
-    res_total = np.sum((mean_cmrf - np.mean(t1_mean_cmrf)) ** 2)
-    res_sq = np.sum(residual**2)
+    res_total = torch.sum((mean_cmrf - torch.mean(t1_mean_cmrf)) ** 2)
+    res_sq = torch.sum(residual**2)
     r2 = 1 - res_sq / res_total
     return r2
 
 
 # %% [markdown]
 # ## Run through all datasets and calculate $T_1$ and $T_2$ maps
-# Now we can go through the acquisition at the scanner, reconstruct the cMRF and reference scans, estimate $T_1$ and $T_2$ maps.
+# Now we can go through the acquisition at the scanner, reconstruct the cMRF and reference scans, estimate $T_1$ and
+# $T_2$ maps.
 # %%
 # Define the $T_1$ and $T_2$ values to be included in the dictionaries
 t1 = (
@@ -186,7 +233,7 @@ cmrf_t2_maps = []
 pname = data_folder / Path('scanner1/')
 
 # cMRF $T_1$ and $T_2$ maps
-t1_map_cmrf, t2_map_cmrf = reco_cMRF_scans(pname, 'cMRF.h5', t1, t2)
+t1_map_cmrf, t2_map_cmrf = reco_cmrf_scans(pname, 'cMRF.h5', t1, t2)
 cmrf_t1_maps.append(t1_map_cmrf)
 cmrf_t2_maps.append(t2_map_cmrf)
 
@@ -213,10 +260,12 @@ plt.show()
 
 # %%
 # Pre-calculated $T_1$ and $T_2$ spin-echo reference values (mean values and standard deviations of nine tubes)
-t1_mean_ref = np.array([1022.1182, 336.3131, 287.9800, 1379.6000, 430.5941, 430.7805, 1755.2736, 557.5124, 580.6965])
-t1_std_ref = np.array([11.9088, 5.3222, 4.0151, 23.9967, 6.8682, 3.1816, 28.1794, 5.6234, 2.5456])
-t2_mean_ref = np.array([29.6749, 33.0909, 113.3586, 37.0100, 32.2871, 122.6585, 185.3682, 32.6070, 120.7962])
-t2_std_ref = np.array([0.9688, 1.055, 3.5473, 1.2806, 1.4131, 2.5434, 3.3448, 1.4000, 4.2746])
+t1_mean_ref = torch.tensor(
+    [1022.1182, 336.3131, 287.9800, 1379.6000, 430.5941, 430.7805, 1755.2736, 557.5124, 580.6965]
+)
+t1_std_ref = torch.tensor([11.9088, 5.3222, 4.0151, 23.9967, 6.8682, 3.1816, 28.1794, 5.6234, 2.5456])
+t2_mean_ref = torch.tensor([29.6749, 33.0909, 113.3586, 37.0100, 32.2871, 122.6585, 185.3682, 32.6070, 120.7962])
+t2_std_ref = torch.tensor([0.9688, 1.055, 3.5473, 1.2806, 1.4131, 2.5434, 3.3448, 1.4000, 4.2746])
 
 # $T_1$ and $T_2$ cMRF values (mean values and standard deviations of nine tubes)
 t1_mean_cmrf, t1_std_cmrf = image_statistics(cmrf_t1_maps[0][0], pname / 'mask.npy')
@@ -229,22 +278,22 @@ ax[0].plot([0, 2000], [0, 2000], color='darkorange')
 ax[0].text(
     200,
     1800,
-    rf'$R^2$ = {R_squared(t1_mean_ref, t1_mean_cmrf):.4f}',
+    rf'$R^2$ = {r_squared(t1_mean_ref, t1_mean_cmrf):.4f}',
     fontsize=12,
     verticalalignment='top',
     horizontalalignment='left',
-    bbox=dict(facecolor='white', alpha=0.5),
+    bbox={'facecolor': 'white', 'alpha': 0.5},
 )
 ax[1].errorbar(t2_mean_ref, t2_mean_cmrf, t2_std_cmrf, t2_std_ref, fmt='o', color='teal')
 ax[1].plot([0, 200], [0, 200], color='darkorange')
 ax[1].text(
     20,
     180,
-    rf'$R^2$ = {R_squared(t2_mean_ref, t2_mean_cmrf):.4f}',
+    rf'$R^2$ = {r_squared(t2_mean_ref, t2_mean_cmrf):.4f}',
     fontsize=12,
     verticalalignment='top',
     horizontalalignment='left',
-    bbox=dict(facecolor='white', alpha=0.5),
+    bbox={'facecolor': 'white', 'alpha': 0.5},
 )
 
 for pidx in range(2):
@@ -258,9 +307,11 @@ plt.tight_layout()
 # %% [markdown]
 # ## Assertion of cMRF results
 # Assertion verifies if cMRF results match the pre-calculated reference values
-assert np.max(abs((t1_mean_ref - t1_mean_cmrf) / t1_mean_ref)) < 0.15, (
+assert torch.max(abs((t1_mean_ref - t1_mean_cmrf) / t1_mean_ref)) < 0.15, (
     'Relative difference of cMRF T1 values and reference T1 values is hgher than 15%'
 )
-assert np.max(abs((t2_mean_ref - t2_mean_cmrf) / t2_mean_ref)) < 0.15, (
+assert torch.max(abs((t2_mean_ref - t2_mean_cmrf) / t2_mean_ref)) < 0.15, (
     'Relative difference of cMRF T2 values and reference T2 values is hgher than 15%'
 )
+
+# %%
