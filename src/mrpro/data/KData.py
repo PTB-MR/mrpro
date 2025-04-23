@@ -511,6 +511,7 @@ class KData(Dataclass):
         # Adapt header parameters
         header = copy.deepcopy(self.header)
         header.encoding_matrix.x = cropped_data.shape[-1]
+        header.encoding_fov.x = self.header.recon_fov.x
 
         return type(self)(header, cropped_data, cropped_traj)
 
