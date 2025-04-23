@@ -11,7 +11,6 @@ from typing_extensions import Any, Protocol, Self, TypeVar, dataclass_transform,
 
 from mrpro.utils.indexing import HasIndex, Indexer
 from mrpro.utils.reduce_repeat import reduce_repeat
-from mrpro.utils.summarize import summarize_object
 from mrpro.utils.typing import TorchIndexerType
 
 
@@ -67,7 +66,7 @@ class Dataclass:
     This class extends the functionality of the standard `dataclasses.dataclass` by adding
     - a `apply` method to apply a function to all fields
     - a `~Dataclass.clone` method to create a deep copy of the object
-    - `~Dataclass.to`, `~Dataclass.cpu`, `~Dataclass.cuda` merhods to move all tensor fields to a device
+    - `~Dataclass.to`, `~Dataclass.cpu`, `~Dataclass.cuda` methods to move all tensor fields to a device
 
     It is intended to be used as a base class for all dataclasses in the `mrpro` package.
     """
