@@ -11,6 +11,7 @@ from typing_extensions import Any, Protocol, Self, TypeVar, dataclass_transform,
 
 from mrpro.utils.indexing import HasIndex, Indexer
 from mrpro.utils.reduce_repeat import reduce_repeat
+from mrpro.utils.summarize import summarize_object
 from mrpro.utils.typing import TorchIndexerType
 
 
