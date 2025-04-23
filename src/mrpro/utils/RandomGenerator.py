@@ -263,6 +263,7 @@ class RandomGenerator:
             Lower bound (inclusive).
         high
             Upper bound (exclusive).
+            Maximum value is (1 << 63) - 1 due to https://github.com/pytorch/pytorch/issues/81446
 
         Returns
         -------
