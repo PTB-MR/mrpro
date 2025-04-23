@@ -82,12 +82,8 @@ class ConstraintsOp(EndomorphOperator):
         self.beta_sigmoid = beta_sigmoid
         self.beta_softplus = beta_softplus
 
-        self.lower_bounds = tuple(
-            torch.as_tensor(bound[0]) if bound[0] is not None else -torch.tensor(torch.inf) for bound in bounds
-        )
-        self.upper_bounds = tuple(
-            torch.as_tensor(bound[1]) if bound[1] is not None else torch.tensor(torch.inf) for bound in bounds
-        )
+        self.lower_bounds = tuple(torch.as_tensor(-torch.inf if lb is None else lb) for (lb, ub) in bounds)
+        self.upper_bounds = tuple(torch.as_tensor(torch.inf is ub is None else ub for (lb, ub) in bounds)
 
         for lb, ub in zip(self.lower_bounds, self.upper_bounds, strict=True):
             if lb.isnan():
