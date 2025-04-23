@@ -32,6 +32,10 @@ def reduce_repeat(tensor: torch.Tensor, tol: float = 1e-6, dim: Sequence[int] | 
         if tensor.stride(d) == 0:
             # broadcasted dimension
             return True
+        if tol >= 0 and tensor.dtype == torch.bool:
+            # either all true or all false
+            return bool((tensor.all(dim=d) | ~tensor.any(dim=d)).all())
+
         # If the distance between min and max is smaller than the tolerance, all values are the same.
         return bool(torch.all((tensor.amax(dim=d) - tensor.amin(dim=d)) <= tol).item())
 
