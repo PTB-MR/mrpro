@@ -91,9 +91,9 @@ class ConstraintsOp(EndomorphOperator):
 
         for lb, ub in zip(self.lower_bounds, self.upper_bounds, strict=True):
             if lb.isnan():
-                raise ValueError('nan is not a valid lower bound.')
+                raise ValueError('nan is invalid as lower bound.')
             if ub.isnan():
-                raise ValueError('nan is not a valid upper bound.')
+                raise ValueError('nan is invalid as upper bound.')
             if lb >= ub:
                 raise ValueError(
                     'bounds should be ( (a1,b1), (a2,b2), ...) with ai < bi if neither ai or bi is None;'
