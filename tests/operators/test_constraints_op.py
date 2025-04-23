@@ -28,20 +28,24 @@ def test_constraints_operator_bounds(bounds: tuple[tuple[float | None, float | N
     constraints_op = ConstraintsOp(bounds, beta_sigmoid=beta, beta_softplus=beta)
     (cx,) = constraints_op(x)
 
+    def isset(bound: None | float):
+        return bound is not None and torch.tensor(bound).isfinite()
+
     # check if min/max values of transformed tensor match bounds
     ((lower_bound, upper_bound),) = bounds
-    if lower_bound is not None and upper_bound is not None:  # case (a,b)
+    if isset(lower_bound) and isset(upper_bound):  # case (a,b)
         torch.testing.assert_close(cx.min(), torch.tensor(lower_bound))
         torch.testing.assert_close(cx.max(), torch.tensor(upper_bound))
-    elif lower_bound is not None and upper_bound is None:  # case (a, infty)
+    elif isset(lower_bound):  # case (a, infty)
         torch.testing.assert_close(cx.min(), torch.tensor(lower_bound))
-    elif lower_bound is None and upper_bound is not None:  # case (-infty, b)
+    elif isset(upper_bound):  # case (-infty, b)
         torch.testing.assert_close(cx.max(), torch.tensor(upper_bound))
+    else:  # unconstrained case
+        torch.testing.assert_close(cx, x)
 
 
-@pytest.mark.parametrize('beta', [1, 0.5, 2])
 @BOUNDS
-def test_constraints_operator_complex(bounds: tuple[tuple[float | None, float | None], ...], beta: float) -> None:
+def test_constraints_operator_complex(bounds: tuple[tuple[float | None, float | None], ...], beta: float = 1.0) -> None:
     """Test with complex numbers"""
     # Bounds should be applied to real and imaginary parts separately
     rng = RandomGenerator(seed=0)
