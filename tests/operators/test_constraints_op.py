@@ -41,6 +41,23 @@ def test_constraints_operator_bounds(bounds: tuple[tuple[float | None, float | N
 
 @pytest.mark.parametrize('beta', [1, 0.5, 2])
 @BOUNDS
+def test_constraints_operator_complex(bounds: tuple[tuple[float | None, float | None], ...], beta: float) -> None:
+    """Test with complex numbers"""
+    # Bounds should be applied to real and imaginary parts separately
+    rng = RandomGenerator(seed=0)
+    x = rng.complex64_tensor((10,))
+    constraints_op = ConstraintsOp(bounds, beta_sigmoid=beta, beta_softplus=beta)
+
+    (actual,) = constraints_op(x)
+    expected = constraints_op(x.real)[0] + 1j * constraints_op(x.imag)[0]
+    torch.testing.assert_close(actual, expected)
+
+    (inverted,) = constraints_op.inverse(actual)
+    torch.testing.assert_close(inverted, x)
+
+
+@pytest.mark.parametrize('beta', [1, 0.5, 2])
+@BOUNDS
 def test_constraints_operator_inverse(bounds: tuple[tuple[float | None, float | None], ...], beta: float) -> None:
     """Tests if operator inverse inverses the operator."""
     rng = RandomGenerator(seed=0)

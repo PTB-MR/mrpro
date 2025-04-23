@@ -3,14 +3,13 @@
 from collections.abc import Sequence
 
 import torch
-import torch.nn.functional as F  # noqa: N812
 
 from mrpro.operators.EndomorphOperator import EndomorphOperator, endomorph
 
 
 def sigmoid(x: torch.Tensor, beta: float = 1.0) -> torch.Tensor:
     """Beta scaled sigmoid function."""
-    return F.sigmoid(beta * x)
+    return torch.nn.functional.sigmoid(beta * x)
 
 
 def sigmoid_inverse(x: torch.Tensor, beta: float = 1.0) -> torch.Tensor:
@@ -47,7 +46,7 @@ class ConstraintsOp(EndomorphOperator):
         If an input tensor is bounded from below OR above, a softplus transformation is applied.
 
         If an input is complex valued, the bounds are to the real and imaginary parts separately,
-        i.e., for bounds (a,b), the complex number is contrained in the rectangle of the complex plane
+        i.e., for bounds (a,b), the complex number is constrained to a rectangle in the complex plane
         with corners a+ai, a+bi, b+ai, b+bi.
 
         Parameters
@@ -83,54 +82,60 @@ class ConstraintsOp(EndomorphOperator):
         self.beta_sigmoid = beta_sigmoid
         self.beta_softplus = beta_softplus
 
-        self.lower_bounds = [torch.as_tensor(bound[0]) if bound[0] is not None else None for bound in bounds]
-        self.upper_bounds = [torch.as_tensor(bound[1]) if bound[1] is not None else None for bound in bounds]
+        self.lower_bounds = tuple(
+            torch.as_tensor(bound[0]) if bound[0] is not None else -torch.tensor(torch.inf) for bound in bounds
+        )
+        self.upper_bounds = tuple(
+            torch.as_tensor(bound[1]) if bound[1] is not None else torch.tensor(torch.inf) for bound in bounds
+        )
 
         for lb, ub in zip(self.lower_bounds, self.upper_bounds, strict=True):
-            if lb is not None and lb.isnan():
+            if lb.isnan():
                 raise ValueError('nan is not a valid lower bound.')
-            if ub is not None and ub.isnan():
+            if ub.isnan():
                 raise ValueError('nan is not a valid upper bound.')
-            if lb is not None and ub is not None and lb >= ub:
+            if lb >= ub:
                 raise ValueError(
                     'bounds should be ( (a1,b1), (a2,b2), ...) with ai < bi if neither ai or bi is None;'
                     f'\nbound tuple {lb, ub} is invalid as the lower bound is higher than the upper bound',
                 )
 
-    def _apply_forward(self, item: torch.Tensor, lb: torch.Tensor | None, ub: torch.Tensor | None) -> torch.Tensor:
+    def _apply_forward(self, item: torch.Tensor, lb: torch.Tensor, ub: torch.Tensor) -> torch.Tensor:
         """Apply the forward transformation to the input tensor."""
         if item.dtype.is_complex:
             real = self._apply_forward(item.real, lb, ub)
             imag = self._apply_forward(item.imag, lb, ub)
             return torch.complex(real, imag)
 
-        if (lb is not None and not torch.isneginf(lb)) and (ub is not None and not torch.isposinf(ub)):
+        if not lb.isneginf() and not ub.isposinf():
             # bounds are (lb,ub)
             return lb + (ub - lb) * sigmoid(item, beta=self.beta_sigmoid)
 
-        if lb is not None and (ub is None or torch.isposinf(ub)):
+        if not lb.isneginf():
             # bounds are (lb,inf)
             return lb + softplus(item, beta=self.beta_softplus)
 
-        if (lb is None or torch.isneginf(lb)) and ub is not None:
+        if not ub.isposinf():
             # bounds are (-inf,ub)
             return ub - softplus(-item, beta=self.beta_softplus)
 
-    def _apply_inverse(self, item: torch.Tensor, lb: torch.Tensor | None, ub: torch.Tensor | None) -> torch.Tensor:
+        return item  # unconstrained case
+
+    def _apply_inverse(self, item: torch.Tensor, lb: torch.Tensor, ub: torch.Tensor) -> torch.Tensor:
         if item.dtype.is_complex:
             real = self._apply_inverse(item.real, lb, ub)
             imag = self._apply_inverse(item.imag, lb, ub)
             return torch.complex(real, imag)
 
-        if (lb is not None and not torch.isneginf(lb)) and (ub is not None and not torch.isposinf(ub)):
+        if not lb.isneginf() and not ub.isposinf():
             # bounds are (lb,ub)
             return sigmoid_inverse((item - lb) / (ub - lb), beta=self.beta_sigmoid)
 
-        if lb is not None and (ub is None or torch.isposinf(ub)):
+        if not lb.isneginf():
             # bounds are (lb,inf)
             return softplus_inverse(item - lb, beta=self.beta_softplus)
 
-        if (lb is None or torch.isneginf(lb)) and ub is not None:
+        if not ub.isposinf():
             # bounds are (-inf,ub)
             return -softplus_inverse(-(item - ub), beta=self.beta_softplus)
 
