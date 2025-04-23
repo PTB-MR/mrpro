@@ -4,7 +4,8 @@ from dataclasses import field
 
 import pytest
 import torch
-from mrpro.data import Dataclass, Rotation
+from mrpro.data import Dataclass, Rotation, SpatialDimension
+from mrpro.utils import RandomGenerator
 from typing_extensions import Any
 
 
@@ -21,13 +22,13 @@ class SharedModule(torch.nn.Module):
 class A(Dataclass):
     """Test class A."""
 
-    floattensor: torch.Tensor = field(default_factory=lambda: torch.ones(1, 20))
-    floattensor2: torch.Tensor = field(default_factory=lambda: torch.zeros(10, 1))
-    complextensor: torch.Tensor = field(default_factory=lambda: torch.ones(1, 1, dtype=torch.complex64))
-    inttensor: torch.Tensor = field(default_factory=lambda: torch.ones(10, 20, dtype=torch.int32))
-    booltensor: torch.Tensor = field(default_factory=lambda: torch.ones(1, 1, dtype=torch.bool))
+    floattensor: torch.Tensor = field(default_factory=lambda: RandomGenerator(0).float32_tensor((1, 20)))
+    floattensor2: torch.Tensor = field(default_factory=lambda: RandomGenerator(1).float32_tensor((10, 1)))
+    complextensor: torch.Tensor = field(default_factory=lambda: RandomGenerator(2).complex64_tensor((1, 1)))
+    inttensor: torch.Tensor = field(default_factory=lambda: RandomGenerator(3).int32_tensor((10, 20)))
+    booltensor: torch.Tensor = field(default_factory=lambda: RandomGenerator(4).bool_tensor((10, 20)))
     module: torch.nn.Module = field(default_factory=lambda: torch.nn.Linear(1, 1))
-    rotation: Rotation = field(default_factory=lambda: Rotation.identity((10, 20)))
+    rotation: Rotation = field(default_factory=lambda: Rotation.random((10, 20), 0))
 
 
 class B(Dataclass):
@@ -35,11 +36,11 @@ class B(Dataclass):
 
     child: A = field(default_factory=A)
     module: SharedModule = field(default_factory=SharedModule)
-    floattensor: torch.Tensor = field(default_factory=lambda: torch.ones(10, 20))
-    complextensor: torch.Tensor = field(default_factory=lambda: torch.ones(1, 1, dtype=torch.complex64))
-    inttensor: torch.Tensor = field(default_factory=lambda: torch.ones(10, 20, dtype=torch.int32))
-    booltensor: torch.Tensor = field(default_factory=lambda: torch.ones(10, 1, dtype=torch.bool))
-    doubletensor: torch.Tensor = field(default_factory=lambda: torch.ones(1, 20, dtype=torch.float64))
+    floattensor: torch.Tensor = field(default_factory=lambda: RandomGenerator(0).float32_tensor((10, 20)))
+    complextensor: torch.Tensor = field(default_factory=lambda: RandomGenerator(1).complex64_tensor((1, 1)))
+    inttensor: torch.Tensor = field(default_factory=lambda: RandomGenerator(2).int32_tensor((10, 20)))
+    booltensor: torch.Tensor = field(default_factory=lambda: RandomGenerator(3).bool_tensor((10, 1)))
+    doubletensor: torch.Tensor = field(default_factory=lambda: RandomGenerator(4).float64_tensor((1, 20)))
 
 
 def _assert_attribute_properties(
@@ -303,3 +304,31 @@ def test_dataclass_getitem(index, expected_shape: tuple[int, ...]) -> None:
     check_broadcastable(indexed.child.rotation.shape, expected_shape)
     check_broadcastable(indexed.child.shape, expected_shape)
     check_broadcastable(indexed.shape, expected_shape)
+
+
+def test_dataclass_reduce_repeat() -> None:
+    """Test reduction of repeated dimensions."""
+
+    class Container(Dataclass):
+        a: torch.Tensor
+        b: SpatialDimension
+        c: Rotation
+
+    rng = RandomGenerator(10)
+
+    a = rng.float32_tensor((5, 1, 1, 1))
+    a_expanded = a.expand(5, 2, 3, 1)
+
+    b = SpatialDimension(*rng.float32_tensor((3, 1, 1, 3)))
+    b_expanded = SpatialDimension(*[x.expand(1, 2, 3) for x in b.zyx])
+
+    c_matrix = torch.eye(3).reshape(1, 1, 3, 3)
+    c_expanded = Rotation.from_matrix(c_matrix.expand(5, 2, 3, 3))
+
+    test = Container(a_expanded, b_expanded, c_expanded)
+
+    torch.testing.assert_close(test.a, a)
+    torch.testing.assert_close(test.b.z, b.z)
+    torch.testing.assert_close(test.b.y, b.y)
+    torch.testing.assert_close(test.b.x, b.x)
+    torch.testing.assert_close(test.c.as_matrix(), c_matrix)

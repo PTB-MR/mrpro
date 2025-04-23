@@ -16,7 +16,7 @@ from typing_extensions import Self, TypeVar
 
 from mrpro.data.acq_filters import has_n_coils, is_image_acquisition
 from mrpro.data.AcqInfo import AcqInfo, convert_time_stamp_osi2, convert_time_stamp_siemens
-from mrpro.data.Dataclass import Dataclass
+from mrpro.data.Dataclass import Dataclass, HasReduceRepeats
 from mrpro.data.EncodingLimits import EncodingLimits
 from mrpro.data.enums import AcqFlags
 from mrpro.data.KHeader import KHeader
@@ -24,6 +24,7 @@ from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.Rotation import Rotation
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 from mrpro.data.traj_calculators.KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
+from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.typing import FileOrPath
 
 RotationOrTensor = TypeVar('RotationOrTensor', bound=torch.Tensor | Rotation)
@@ -60,10 +61,10 @@ OTHER_LABELS = (
     'user7',
 )
 
+T = TypeVar('T', Rotation, torch.Tensor, Rotation | torch.Tensor)
 
-class KData(
-    Dataclass,
-):
+
+class KData(Dataclass):
     """MR raw data / k-space data class."""
 
     header: KHeader
@@ -252,13 +253,21 @@ class KData(
         Reshapes the data to ("all other labels", coils, k2, k1, k0).
         Within "all other labels", the order is determined by `KDIM_SORT_LABELS`.
         """
+        shape = self.shape
+
+        def expand(x: T) -> T:
+            return x.expand(*shape[:-4], -1, shape[-3], shape[-2], -1)
+
         # First, determine if we can split into k2 and k1 and how large these should be
-        acq_indices_other = torch.stack([getattr(self.header.acq_info.idx, label) for label in OTHER_LABELS], dim=0)
+        acq_indices_other = torch.stack(
+            [expand(getattr(self.header.acq_info.idx, label)) for label in OTHER_LABELS],
+            dim=0,
+        )
         _, n_acqs_per_other = torch.unique(acq_indices_other, dim=1, return_counts=True)
         # unique counts of acquisitions for each combination of the label values in "other"
         n_acqs_per_other = torch.unique(n_acqs_per_other)
 
-        acq_indices_other_k2 = torch.cat((acq_indices_other, self.header.acq_info.idx.k2.unsqueeze(0)), dim=0)
+        acq_indices_other_k2 = torch.cat((acq_indices_other, expand(self.header.acq_info.idx.k2).unsqueeze(0)), dim=0)
         _, n_acqs_per_other_and_k2 = torch.unique(acq_indices_other_k2, dim=1, return_counts=True)
         # unique counts of acquisitions for each combination of other **and k2**
         n_acqs_per_other_and_k2 = torch.unique(n_acqs_per_other_and_k2)
@@ -295,13 +304,18 @@ class KData(
             n_k2 = 1
 
         # Second, determine the sorting order
-        acq_indices = np.stack([getattr(self.header.acq_info.idx, label).ravel() for label in KDIM_SORT_LABELS], axis=0)
+        acq_indices = np.stack(
+            [expand(getattr(self.header.acq_info.idx, label)).ravel() for label in KDIM_SORT_LABELS],
+            axis=0,
+        )
         sort_idx = torch.as_tensor(np.lexsort(acq_indices))  # torch has no lexsort as of pytorch 2.6 (March 2025)
 
         # Finally, reshape and sort the tensors in acqinfo and acqinfo.idx, and kdata.
         header = self.header.apply(
             lambda field: rearrange(
-                cast(Rotation | torch.Tensor, rearrange(field, '... coils k2 k1 k0 -> (... k2 k1) coils k0'))[sort_idx],
+                cast(Rotation | torch.Tensor, rearrange(expand(field), '... coils k2 k1 k0 -> (... k2 k1) coils k0'))[
+                    sort_idx
+                ],
                 '(other k2 k1) coils k0 -> other coils k2 k1 k0',
                 k1=n_k1,
                 k2=n_k2,
@@ -312,20 +326,23 @@ class KData(
         )
 
         data = rearrange(
-            rearrange(self.data, '... coils k2 k1 k0-> (... k2 k1) coils k0 ')[sort_idx],
+            rearrange(expand(self.data), '... coils k2 k1 k0-> (... k2 k1) coils k0 ')[sort_idx],
             '(other k2 k1) coils k0 -> other coils k2 k1 k0',
             k1=n_k1,
             k2=n_k2,
         )
 
-        kz, ky, kx = rearrange(
-            self.traj.as_tensor(-1).flatten(end_dim=-4)[sort_idx],
-            '(other k2 k1) coils k0 zyx -> zyx other coils k2 k1 k0 ',
-            k1=n_k1,
-            k2=n_k2,
+        kz, ky, kx = (
+            rearrange(
+                expand(t).flatten(end_dim=-3)[sort_idx],
+                '(other k2 k1) coils k0 ->other coils k2 k1 k0 ',
+                k1=n_k1,
+                k2=n_k2,
+            )
+            for t in (self.traj.kz, self.traj.ky, self.traj.kx)
         )
         traj = KTrajectory(kz, ky, kx, self.traj.grid_detection_tolerance, self.traj.repeat_detection_tolerance)
-        return type(self)(header=header, data=data, traj=traj)
+        return type(self)(header=header._reduce_repeats_(), data=data, traj=traj._reduce_repeats_())
 
     def __repr__(self):
         """Representation method for KData class."""
@@ -608,5 +625,36 @@ class KData(
             k1=n_k1_per_split,
         )
         setattr(header.acq_info.idx, other_label, new_idx)
-
+        header._reduce_repeats_()
         return type(self)(header, data, type(self.traj).from_tensor(traj))
+
+    def _reduce_repeats_(self, tol: float = 1e-6, dim: Sequence[int] | None = None, recurse: bool = True) -> Self:
+        """Reduce repeated dimensions in fields to singleton.
+
+        .. warning::
+
+            This function does not reduce the `data` field.
+
+        Parameters
+        ----------
+        tol
+            tolerance.
+        dim
+            dimensions to try to reduce to singletons. `None` means all.
+        recurse
+            recurse into dataclass fields. If `False`, for this `~mrpro.data.KData` class, the function will be a no-op.
+        """
+        if not recurse:
+            # as we skip data, there is nothing to do if we dont recurse
+            return self
+
+        def apply_reduce(data: T) -> T:
+            if isinstance(data, torch.Tensor):
+                return cast(T, reduce_repeat(data, tol, dim))
+            if isinstance(data, HasReduceRepeats) and not isinstance(data, Dataclass):
+                data._reduce_repeats_(tol, dim)
+            return cast(T, data)
+
+        self.header.apply_(apply_reduce, recurse=True)
+        self.traj.apply_(apply_reduce, recurse=True)
+        return self
