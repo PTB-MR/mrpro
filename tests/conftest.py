@@ -181,16 +181,12 @@ def random_ismrmrd_file(random_acquisition, random_noise_acquisition, full_heade
         yield file.name
 
 
-@pytest.fixture(params=({'seed': 0},))
-def random_kheader(request, random_full_ismrmrd_header, random_acq_info) -> KHeader:
+@pytest.fixture
+def random_kheader(random_full_ismrmrd_header, random_acq_info) -> KHeader:
     """Random (not necessarily valid) KHeader."""
-    seed = request.param['seed']
-    rng = RandomGenerator(seed)
-    trajectory = generate_random_trajectory(rng)
     kheader = KHeader.from_ismrmrd(
         random_full_ismrmrd_header,
         acq_info=random_acq_info,
-        defaults={'trajectory': trajectory},
     )
     return kheader
 

@@ -1,11 +1,17 @@
 """Base class for all data classes."""
 
 import dataclasses
+import enum
+import importlib
 from collections.abc import Callable, Iterator, Sequence
 from copy import copy as shallowcopy
 from copy import deepcopy
+from datetime import datetime
+from pathlib import Path
 from typing import ClassVar, TypeAlias, cast
 
+import h5py
+import numpy as np
 import torch
 from typing_extensions import Any, Protocol, Self, TypeVar, dataclass_transform, overload, runtime_checkable
 
@@ -13,12 +19,26 @@ from mrpro.utils.indexing import HasIndex, Indexer
 from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.typing import TorchIndexerType
 
+_MRP_ATTR_PY_TYPE = 'py_type'
+_MRP_ATTR_PY_MODULE = 'py_module'
+_MRP_ATTR_CLASS_NAME = 'class_name'
+_MRP_VERSION = 1
+
 
 @runtime_checkable
 class HasReduceRepeats(Protocol):
     """Objects that have a _reduce_repeats method."""
 
     def _reduce_repeats_(self, tol: float = 1e-6, dim: Sequence[int] | None = None, recurse: bool = True) -> Self: ...
+
+
+@runtime_checkable
+class HasBroadcastedRearrange(Protocol):
+    """Objects that have a _broadcasted_rearrange method."""
+
+    def _broadcasted_rearrange(
+        self, pattern: str, broadcasted_shape: Sequence[int], reduce_views: bool = True, **axes_lengths
+    ) -> Self: ...
 
 
 class InconsistentDeviceError(ValueError):
@@ -66,7 +86,7 @@ class Dataclass:
     This class extends the functionality of the standard `dataclasses.dataclass` by adding
     - a `apply` method to apply a function to all fields
     - a `~Dataclass.clone` method to create a deep copy of the object
-    - `~Dataclass.to`, `~Dataclass.cpu`, `~Dataclass.cuda` methods to move all tensor fields to a device
+    - `~Dataclass.to`, `~Dataclass.cpu`, `~Dataclass.cuda` merhods to move all tensor fields to a device
 
     It is intended to be used as a base class for all dataclasses in the `mrpro` package.
     """
@@ -608,20 +628,6 @@ class Dataclass:
 
     # endregion Properties
 
-    def __repr__(self) -> str:
-        """Representation method for Dataclass."""
-        try:
-            device = str(self.device)
-        except RuntimeError:
-            device = 'mixed'
-        name = type(self).__name__
-        output = f'{name} with (broadcasted) shape {list(self.shape)!s} on device "{device}".\n'
-        output += 'Fields:\n'
-        output += '\n'.join(
-            f'   {field.name} <{type(getattr(self, field.name)).__name__}>' for field in dataclasses.fields(self)
-        )
-        return output
-
     # region Indexing
     def __getitem__(self, index: TorchIndexerType | Indexer) -> Self:
         """Index the dataclass."""
@@ -645,3 +651,173 @@ class Dataclass:
         return new
 
     # endregion Indexing
+
+    # region mrp file
+    def _mrp_save_to_group(self, group: h5py.Group):
+        """Save the dataclass to an HDF5 group."""
+        group.attrs[_MRP_ATTR_PY_MODULE] = self.__class__.__module__
+        group.attrs[_MRP_ATTR_CLASS_NAME] = self.__class__.__name__
+
+        for field in dataclasses.fields(self):
+            value = getattr(self, field.name)
+            field_name = field.name
+
+            if field_name.startswith('_'):
+                continue
+
+            match value:
+                case None:
+                    continue
+
+                case _ if hasattr(value, '_mrp_save_to_group'):
+                    subgroup = group.create_group(field_name)
+                    value._mrp_save_to_group(subgroup)
+
+                case torch.Tensor():
+                    ds = group.create_dataset(field_name, data=value.numpy(force=True))
+                    ds.attrs[_MRP_ATTR_PY_TYPE] = 'torch.Tensor'
+
+                case list() | tuple():
+                    try:
+                        ds = group.create_dataset(field_name, data=np.array(value))
+                        ds.attrs[_MRP_ATTR_PY_TYPE] = type(value).__name__
+                    except ValueError as e:
+                        raise TypeError(
+                            f"Field '{field_name}': Could not convert list/tuple "
+                            f'to NumPy array. Ensure contents are uniform scalars. '
+                            f'Error: {e}'
+                        ) from e
+
+                case datetime():
+                    ds = group.create_dataset(field_name, data=np.array(value.timestamp()))
+                    ds.attrs[_MRP_ATTR_PY_TYPE] = 'timestamp'
+
+                case enum.Enum():
+                    ds = group.create_dataset(field_name, data=value.value)
+                    ds.attrs[_MRP_ATTR_PY_TYPE] = 'enum'
+                    ds.attrs[_MRP_ATTR_PY_MODULE] = value.__class__.__module__
+                    ds.attrs[_MRP_ATTR_CLASS_NAME] = value.__class__.__name__
+
+                case str() | int() | float() | bool():
+                    ds = group.create_dataset(field_name, data=value)
+                    ds.attrs[_MRP_ATTR_PY_TYPE] = type(value).__name__
+
+                case _:
+                    raise TypeError(
+                        f"Field '{field_name}': Unsupported type {type(value).__name__} for MRP serialization."
+                    )
+
+    @staticmethod
+    def _mrp_load_from_group(group: h5py.Group) -> Any:  # noqa: ANN401
+        init_args: dict[str, Any] = {}
+
+        module_name = group.attrs.get(_MRP_ATTR_PY_MODULE, None)
+        class_name = group.attrs.get(_MRP_ATTR_CLASS_NAME, None)
+
+        if not isinstance(module_name, str) or not isinstance(class_name, str):
+            raise ValueError('Missing module or class name in HDF5 group')
+
+        try:
+            module = importlib.import_module(module_name)
+            target_cls = getattr(module, class_name)
+        except (ImportError, AttributeError) as e:
+            raise ImportError(f"Could not import class '{class_name}' from module '{module_name}'. Error: {e}") from e
+
+        for field_name, h5_item in group.items():
+            if isinstance(h5_item, h5py.Group):
+                init_args[field_name] = Dataclass._mrp_load_from_group(h5_item)
+
+            elif isinstance(h5_item, h5py.Dataset):
+                py_type_str = h5_item.attrs.get(_MRP_ATTR_PY_TYPE, None)
+                if py_type_str is None:
+                    raise ValueError(f"Dataset '{field_name}' missing '{_MRP_ATTR_PY_TYPE}' attribute.")
+
+                try:
+                    data = h5_item[()]  # Try scalar load
+                except (AttributeError, TypeError, ValueError):
+                    data = h5_item[:]  # Fallback to array load
+
+                # Reconstruct Python object based on stored type string
+                match py_type_str:
+                    case 'torch.Tensor':
+                        init_args[field_name] = torch.from_numpy(data)
+                    case 'list':
+                        init_args[field_name] = data.tolist()
+                    case 'tuple':
+                        init_args[field_name] = tuple(data.tolist())
+                    case 'enum':
+                        enum_module_name = h5_item.attrs.get(_MRP_ATTR_PY_MODULE, None)
+                        enum_class_name = h5_item.attrs.get(_MRP_ATTR_CLASS_NAME, None)
+                        if not isinstance(enum_module_name, str) or not isinstance(enum_class_name, str):
+                            raise ValueError('Missing module or class name for enum')
+                        try:
+                            enum_module = importlib.import_module(enum_module_name)
+                            enum_cls = getattr(enum_module, enum_class_name)
+                            init_args[field_name] = enum_cls(data.decode() if isinstance(data, bytes) else data)
+                        except Exception as e:
+                            raise RuntimeError(
+                                f"Could not load enum '{enum_class_name}' from '{enum_module_name}'. Error: {e}"
+                            ) from e
+                    case 'str':
+                        init_args[field_name] = str(data)
+                    case 'bool':
+                        init_args[field_name] = bool(data)
+                    case 'int':
+                        init_args[field_name] = int(data)
+                    case 'float':
+                        init_args[field_name] = float(data)
+                    case 'timestamp':
+                        init_args[field_name] = datetime.fromtimestamp(data)
+                    case _:
+                        raise RuntimeError(f"Unknown type '{py_type_str}' for dataset '{field_name}'")
+
+        return target_cls(**init_args)
+
+    def save_as_mrp(self, filepath: str | Path) -> None:
+        """Save the dataclass to an MRP file.
+
+        ``MRP` is a mrpro specific file format based on HDF5. It is a simple serialization of dataclasses.
+
+        Parameters
+        ----------
+        filepath
+            The path to save the MRP file to.
+        """
+        filepath = Path(filepath)
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+        with h5py.File(filepath, 'w') as f:
+            f.attrs['version'] = _MRP_VERSION
+            f.attrs[_MRP_ATTR_PY_MODULE] = self.__class__.__module__
+            f.attrs[_MRP_ATTR_CLASS_NAME] = self.__class__.__name__
+            self._mrp_save_to_group(f)
+
+    @classmethod
+    def from_mrp(cls, filepath: str | Path) -> Self:
+        """Load a dataclass from an MRP file.
+
+        Parameters
+        ----------
+        filepath
+            The path to the MRP file.
+        """
+        filepath = Path(filepath)
+        if not filepath.exists():
+            raise FileNotFoundError(f'HDF5 file not found: {filepath}')
+
+        with h5py.File(filepath, 'r') as f:
+            if (version := f.attrs.get('version', None)) != _MRP_VERSION:
+                raise ValueError(f'Unsupported MRP version: {version}')
+
+            root_module = f.attrs.get(_MRP_ATTR_PY_MODULE, None)
+            root_class = f.attrs.get(_MRP_ATTR_CLASS_NAME, None)
+            if root_module != cls.__module__ or root_class != cls.__name__:
+                raise ValueError(f"Loaded class '{root_class}' does not match requested type {cls.__name__}")
+
+            instance = cls._mrp_load_from_group(f)
+
+            if not isinstance(instance, cls):
+                raise TypeError(f'Loaded object type {type(instance)} is not compatible with requested type {cls}')
+
+            return instance
+
+    # endregion mrp file
