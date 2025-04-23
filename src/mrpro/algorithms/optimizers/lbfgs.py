@@ -1,7 +1,7 @@
 """LBFGS for solving non-linear minimization problems."""
 
 from collections.abc import Callable, Sequence
-from typing import Literal
+from typing import Literal, Unpack
 
 import torch
 from torch.optim import LBFGS
@@ -18,7 +18,7 @@ class LBFGSStatus(OptimizerStatus):
 
 
 def lbfgs(
-    f: OperatorType,
+    f: OperatorType | Callable[[Unpack[tuple[torch.Tensor, ...]]], tuple[torch.Tensor]],
     initial_parameters: Sequence[torch.Tensor],
     learning_rate: float = 1.0,
     max_iterations: int = 100,

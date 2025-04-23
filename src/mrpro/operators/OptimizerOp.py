@@ -2,7 +2,7 @@
 
 import functools
 from collections.abc import Callable
-from typing import TYPE_CHECKING, TypeAlias, Unpack
+from typing import TYPE_CHECKING, TypeVar, TypeVarTuple, Unpack, cast
 
 import torch
 
@@ -10,16 +10,16 @@ from mrpro.algorithms.optimizers.cg import cg
 from mrpro.algorithms.optimizers.lbfgs import lbfgs
 from mrpro.operators.Operator import Operator
 
-ArgumentType: TypeAlias = tuple[torch.Tensor, ...]
-VariableType: TypeAlias = tuple[torch.Tensor, ...]
-ObjectiveType: TypeAlias = Callable[[Unpack[VariableType]], tuple[torch.Tensor]]
-FactoryType: TypeAlias = Callable[[Unpack[ArgumentType]], ObjectiveType]
-OptimizeFunctionType: TypeAlias = Callable[[ObjectiveType, VariableType], VariableType]
+ArgumentType = TypeVarTuple('ArgumentType')
+VariableType = TypeVar('VariableType', bound=tuple[torch.Tensor, ...])
+ObjectiveType = Callable[[VariableType], tuple[torch.Tensor]]
+FactoryType = Callable[[Unpack[tuple[torch.Tensor, ...]]], Callable]
+OptimizeFunctionType = Callable[[Callable, VariableType], VariableType]
 
 default_lbfgs = functools.partial(
     lbfgs,
     learning_rate=1.0,
-    max_iterations=20,
+    max_iterations=40,
     tolerance_change=1e-8,
     tolerance_grad=1e-7,
     history_size=20,
@@ -31,31 +31,57 @@ default_lbfgs = functools.partial(
 class OptimizeCtx(torch.autograd.function.FunctionCtx):
     """Rype hinting the CTX object."""
 
-    factory: FactoryType
+    factory: Callable[
+        [Unpack[tuple[torch.Tensor, ...]]], Callable[[Unpack[tuple[torch.Tensor, ...]]], tuple[torch.Tensor]]
+    ]
     len_x: int
     needs_input_grad: tuple[bool, ...]
     saved_tensors: tuple[torch.Tensor, ...]
 
 
-class _OptimizerImplicitBackward(torch.autograd.Function):
+class OptimizeFunction(torch.autograd.Function):
     """Implicit Backward."""
+
+    if TYPE_CHECKING:
+
+        @classmethod
+        def apply(
+            cls,
+            factory: Callable[
+                [Unpack[tuple[torch.Tensor, ...]]], Callable[[Unpack[tuple[torch.Tensor, ...]]], tuple[torch.Tensor]]
+            ],
+            initial_values: tuple[torch.Tensor, ...],
+            optimize: Callable[
+                [Callable[[*tuple[Unpack[tuple[torch.Tensor, ...]]]], tuple[torch.Tensor]], tuple[torch.Tensor, ...]],
+                tuple[torch.Tensor, ...],
+            ] = default_lbfgs,
+            *parameters: torch.Tensor,
+        ) -> tuple[torch.Tensor, ...]:
+            """Apply the function. Only used for type hinting."""
+            return super().apply(factory, initial_values, optimize, *parameters)
 
     @staticmethod
     def forward(
         ctx: OptimizeCtx,
-        factory: FactoryType,
-        initial_values: VariableType,
-        optimize: OptimizeFunctionType = default_lbfgs,
-        *parameters: Unpack[ArgumentType],
-    ) -> VariableType:
+        factory: Callable[
+            [Unpack[tuple[torch.Tensor, ...]]], Callable[[Unpack[tuple[torch.Tensor, ...]]], tuple[torch.Tensor]]
+        ],
+        initial_values: tuple[torch.Tensor, ...],
+        optimize: Callable[
+            [Callable[[*tuple[Unpack[tuple[torch.Tensor, ...]]]], tuple[torch.Tensor]], tuple[torch.Tensor, ...]],
+            tuple[torch.Tensor, ...],
+        ] = default_lbfgs,
+        *parameters: torch.Tensor,
+    ) -> tuple[torch.Tensor, ...]:
         """Optimize."""
         ctx.factory = factory
+
+        parameters_ = tuple(p.detach().clone() for p in parameters if isinstance(p, torch.Tensor))
+        initial_values_ = tuple(x.detach().requires_grad_(True) for x in initial_values if isinstance(x, torch.Tensor))
         f = factory(*parameters)
         xprime = optimize(f, initial_values)
-        for xp in xprime:
-            xp.grad = None
-        ctx.save_for_backward(*xprime, *parameters)
-        ctx.len_x = len(initial_values)
+        ctx.save_for_backward(*xprime, *parameters_)
+        ctx.len_x = len(initial_values_)
         return xprime
 
     @staticmethod
@@ -72,11 +98,11 @@ class _OptimizerImplicitBackward(torch.autograd.Function):
         objective = ctx.factory(*parameters)
 
         def hvp(*v: torch.Tensor) -> tuple[torch.Tensor, ...]:
-            return torch.autograd.functional.vhp(objective, xprime, v=v)[1:]
+            return torch.autograd.functional.vhp(lambda *x: objective(*x)[0], xprime, v=v)[1]
 
-        hessian_inverse_grad = cg(hvp, grad_outputs)
+        hessian_inverse_grad = cg(hvp, grad_outputs, max_iterations=200, tolerance=1e-6)
         with torch.enable_grad():
-            dobjective_dxprime = torch.autograd.grad(objective(*xprime), xprime, create_graph=True)[0]
+            dobjective_dxprime = torch.autograd.grad(objective(*xprime), xprime, create_graph=True)
             # - d^2_obective / d_xprime d_params Hessian^-1_grad
             grad_params = list(torch.autograd.grad(dobjective_dxprime, dparams, hessian_inverse_grad))
         grad_inputs: list[torch.Tensor | None] = [None, None, None]  # factory, x0, optimize
@@ -89,7 +115,7 @@ class _OptimizerImplicitBackward(torch.autograd.Function):
         return tuple(grad_inputs)
 
 
-class OptimizerOp(Operator):
+class OptimizerOp(Operator[Unpack[ArgumentType], VariableType]):
     """Differentiable Optimization Operator.
 
     One of the building blocks of PINQI [ZIMM2024]_
@@ -137,11 +163,12 @@ class OptimizerOp(Operator):
         -------
             The argmin `x^*`
         """
+        super().__init__()
         self.factory = factory
         self.optimize = optimize
         self.initializer = initializer
 
-    def forward(self, *parameters: torch.Tensor) -> tuple[torch.Tensor, ...]:
+    def forward(self, *parameters: Unpack[ArgumentType]) -> VariableType:
         """Find the argmin.
 
         Parameters
@@ -149,16 +176,9 @@ class OptimizerOp(Operator):
         parameters
             Parameters of the argmin problem.
         """
-        parameters = tuple(p.detach().clone() for p in parameters)
         initial_values = self.initializer(*parameters)
         initial_values = tuple(x.clone() if any(x is p for p in parameters) else x for x in initial_values)
-        initial_values = tuple(x.detach().requires_grad_(True) for x in initial_values)
-        if TYPE_CHECKING:
-            # For  mypy
-            result = _OptimizerImplicitBackward.forward(
-                OptimizeCtx(), self.factory, initial_values, self.optimize, *parameters
-            )
-        else:
-            # Actually used at runtime
-            result = _OptimizerImplicitBackward.apply(self.factory, initial_values, self.optimize, *parameters)
-        return result
+        result = OptimizeFunction.apply(
+            self.factory, initial_values, self.optimize, *cast(tuple[torch.Tensor, ...], parameters)
+        )
+        return cast(VariableType, result)

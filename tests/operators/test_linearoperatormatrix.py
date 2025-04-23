@@ -320,3 +320,13 @@ def test_linearoperatormatrix_from_diagonal():
     actual = matrix(*xs)
     expected = tuple(op(x)[0] for op, x in zip(ops, xs, strict=False))
     torch.testing.assert_close(actual, expected)
+
+
+def test_linearoperatormatrix_gram():
+    """Test gram of LinearOperatorMatrix."""
+    rng = RandomGenerator(0)
+    matrix = random_linearoperatormatrix((2, 2), (4, 10), rng)
+    vector = tuple(rng.complex64_tensor((2, 10)))
+    result = matrix.gram(*vector)
+    expected = (matrix.H @ matrix)(*vector)
+    torch.testing.assert_close(result, expected)

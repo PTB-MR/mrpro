@@ -186,11 +186,4 @@ def cg(
             )
             if continue_iterations is False:
                 break
-    if (
-        isinstance(operator, LinearOperator)
-        and isinstance(right_hand_side, torch.Tensor)
-        and (initial_value is None or isinstance(initial_value, torch.Tensor))
-    ):
-        # For backward compatibility if called with a single tensor and operator.
-        return solution[0]
     return solution

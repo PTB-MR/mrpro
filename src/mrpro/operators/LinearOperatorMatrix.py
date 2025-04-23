@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import operator
 from collections.abc import Callable, Iterator, Sequence
-from functools import reduce
+from functools import cached_property, reduce
 from types import EllipsisType
 from typing import cast
 
@@ -224,6 +224,24 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
     def H(self) -> Self:  # noqa N802
         """Adjoints of the operators."""
         return self.__class__([[op.H for op in row] for row in zip(*self._operators, strict=True)])
+
+    @cached_property
+    def gram(self) -> Self:
+        """Gram matrix of the operators."""
+        n, m = self.shape
+        if n != m:
+            raise ValueError('Gram is only defined for square operators.')
+        operators: list[list[LinearOperator]] = [[ZeroOp() for _ in range(n)] for _ in range(n)]
+
+        for i in range(n):
+            operators[i][i] = reduce(operator.add, (self._operators[k][i].gram for k in range(n)))
+            # off-diagonals: only compute upper triangular part, then mirror
+            for j in range(i + 1, n):
+                operators[i][j] = reduce(
+                    operator.add, (self._operators[k][i].H @ self._operators[k][j] for k in range(n))
+                )
+                operators[j][i] = operators[i][j].H
+        return self.__class__(operators)
 
     def adjoint(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Apply the adjoint of the operator to the input.

@@ -1,6 +1,7 @@
 """Fourier Operator."""
 
 from collections.abc import Sequence
+from functools import cached_property
 
 import torch
 from typing_extensions import Self
@@ -160,7 +161,7 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
             (x,) = self._non_uniform_fast_fourier_op.adjoint(x)
         return (x,)
 
-    @property
+    @cached_property
     def gram(self) -> LinearOperator:
         """Return the gram operator."""
         return FourierGramOp(self)
