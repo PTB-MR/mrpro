@@ -62,8 +62,8 @@ class Indexer:
         with the length equal to the shape of the sequences, is added. Indexed dimensions are kept as singleton.
         The different sequences must have the same shape, otherwise an IndexError is raised.
         Note that, as in numpy and torch, vectorized indexing is performed, not outer indexing.
-        If a single integer tensor is used, the indexed dimension will be replaced by the last dimension of the indexing tensor and
-        other dimensions of the indexing tensor are added at the beginning of the result.
+        If a single integer tensor is used, the indexed dimension will be replaced by the last dimension of the
+        indexing tensor and other dimensions of the indexing tensor are added at the beginning of the result.
     - None
         New axes can be added to the front of tensor by using None in the index.
         This is only allowed at the beginning of the index.

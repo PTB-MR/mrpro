@@ -37,10 +37,10 @@ The index can contain slices, integers, boolean masks, sequences of integers, No
 - **None**: Adds new axes at the beginning.
 - **Ellipsis**: Expanded to `slice(None)` for all axes not indexed.
 
-The indexing is applied recursivly to all tensors in the dataclass, ensuring that the dimensions are consistent across all tensors.
+The indexing is applied recursively to all tensors in the dataclass, ensuring that the dimensions are consistent across all tensors.
 Indexing is applied as-if all tensors where broadcasted to the `.shape` of the dataclass the indexing is applied to.
 So, for example, indexing a `KData` object in the `coils` dimension result in the same trajecktory as before, as
-trajectories always have coils=1. The behaviour is as-if is broadcasted along the coil dimensions, then indexing is applied, then the boadcasted dimensions is reduced back to singleton.
+trajectories always have coils=1. The behavior is as-if is broadcasted along the coil dimensions, then indexing is applied, then the boadcasted dimensions is reduced back to singleton.
 
 
 SpatialDimension

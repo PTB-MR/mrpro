@@ -5,7 +5,7 @@ import datetime
 import warnings
 from collections.abc import Callable, Sequence
 from types import EllipsisType
-from typing import Literal, cast
+from typing import cast
 
 import h5py
 import ismrmrd
@@ -515,58 +515,34 @@ class KData(Dataclass):
 
         return type(self)(header, cropped_data, cropped_traj)
 
-    def select_other_subset(
+    def index_by_label(
         self: Self,
-        subset_idx: torch.Tensor,
-        subset_label: Literal['average', 'slice', 'contrast', 'phase', 'repetition', 'set'],
+        index: torch.Tensor | Sequence[int],
+        idx_name: str,
     ) -> Self:
-        """Select a subset from the other dimension of KData.
-
-        Note: This function will be deprecated in the future.
+        """Select a subset based on values of a specific acquisition index label.
 
         Parameters
         ----------
-        kdata
-            K-space data `(other coils k2 k1 k0)`
-        subset_idx
-            Index which elements of the other subset to use, e.g. phase 0,1,2 and 5
-        subset_label
-            Name of the other label, e.g. phase
+        index
+             Which elements to use, e.g. to get phase 0,1,2 and 5,
+             use ``(0, 1, 2, 5)`` or ``torch.tensor([0, 1, 2, 5])``
+             Must be one dimensional and integer
+        idx_name
+            Name of the label, e.g. ``phase``
 
         Returns
         -------
             K-space data `(other_subset coils k2 k1 k0)`
-
-        Raises
-        ------
-        `ValueError`
-            If the subset indices are not available in the data
         """
-        # Flatten multi-dimensional other
-        n_other = self.data.shape[:-4]  # Assume that data is not broadcasted along other
-        header = self.header.apply(
-            lambda field: rearrange(
-                field.expand(*n_other, *field.shape[-4:]), '... coils k2 k1 k0->(...) coils k2 k1 k0'
-            )
-            if isinstance(field, torch.Tensor | Rotation)
-            else field
-        )
-        traj = self.traj.as_tensor()
-        traj = torch.broadcast_to(traj, (traj.shape[0], *self.data.shape[:-4], *traj.shape[-4:]))  # broadcast "other"
-        traj = traj.flatten(start_dim=1, end_dim=-5)  # flatten "other" dimensions
-        data = self.data.flatten(end_dim=-5)
+        index_: torch.Tensor = torch.atleast_1d(torch.as_tensor(index, device=self.device))
+        if index_.ndim > 1:
+            raise ValueError(f'Index must be 1D, got {index_.shape}')
+        if index_.dtype not in (torch.int32, torch.int64, torch.uint8, torch.uint16, torch.uint32, torch.uint64):
+            raise ValueError(f'Index must be integer, got {index_.dtype}')
 
-        # Find elements in the subset
-        label_idx = getattr(header.acq_info.idx, subset_label)
-        if not all(el in torch.unique(label_idx) for el in subset_idx):
-            raise ValueError('Subset indices are outside of the available index range')
-        other_idx = torch.cat([torch.where(idx == label_idx[:, 0, 0, 0, 0])[0] for idx in subset_idx], dim=0)
-
-        # Select subset
-        header.acq_info.apply_(lambda field: field[other_idx] if isinstance(field, torch.Tensor | Rotation) else field)
-        data = data[other_idx]
-        traj = traj[:, other_idx]
-        return type(self)(header, data, type(self.traj).from_tensor(traj))
+        idx = (getattr(self.header.acq_info.idx, idx_name) == index_).nonzero(as_tuple=True)
+        return self[idx]
 
     def _reduce_repeats_(self, tol: float = 1e-6, dim: Sequence[int] | None = None, recurse: bool = True) -> Self:
         """Reduce repeated dimensions in fields to singleton.

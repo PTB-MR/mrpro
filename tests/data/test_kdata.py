@@ -258,14 +258,6 @@ def test_KData_clone(ismrmrd_cart):
 
 
 @pytest.mark.parametrize(
-    ('n_other_split', 'other_label'),
-    [
-        (10, 'average'),
-        (5, 'repetition'),
-        (7, 'contrast'),
-    ],
-)
-@pytest.mark.parametrize(
     ('subset_label', 'subset_idx'),
     [
         ('repetition', torch.tensor([1], dtype=torch.int32)),
