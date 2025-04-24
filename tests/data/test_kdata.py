@@ -7,7 +7,7 @@ from mrpro.data import KData, KTrajectory, SpatialDimension
 from mrpro.data.acq_filters import has_n_coils, is_coil_calibration_acquisition, is_image_acquisition
 from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
-from mrpro.utils import RandomGenerator, split_idx
+from mrpro.utils import RandomGenerator
 
 from tests import relative_image_difference
 from tests.phantoms import EllipsePhantomTestData
@@ -265,25 +265,6 @@ def test_KData_clone(ismrmrd_cart):
         (7, 'contrast'),
     ],
 )
-def test_KData_split_k1_into_other(consistently_shaped_kdata, n_other_split: int, other_label: str) -> None:
-    """Test splitting of the k1 dimension into other."""
-    *n_others, n_coils, n_k2, n_k1, n_k0 = consistently_shaped_kdata.data.shape
-    n_other = torch.tensor(n_others).prod().item()
-
-    # Split index
-    k1_per_block = n_k1 // n_other_split
-    idx_k1 = torch.linspace(0, n_k1 - 1, n_k1, dtype=torch.int32)
-    idx_split = split_idx(idx_k1, k1_per_block)
-
-    # Split data
-    kdata_split = consistently_shaped_kdata.split_k1_into_other(idx_split, other_label)
-
-    assert kdata_split.data.shape == (idx_split.shape[0] * n_other, n_coils, n_k2, k1_per_block, n_k0)
-    assert kdata_split.traj.shape == (idx_split.shape[0] * n_other, 1, n_k2, k1_per_block, n_k0)
-    new_idx = getattr(kdata_split.header.acq_info.idx, other_label)
-    assert new_idx.shape == (idx_split.shape[0] * n_other, 1, 1, 1, 1)
-
-
 @pytest.mark.parametrize(
     ('subset_label', 'subset_idx'),
     [

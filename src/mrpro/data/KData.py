@@ -11,7 +11,7 @@ import h5py
 import ismrmrd
 import numpy as np
 import torch
-from einops import rearrange, repeat
+from einops import rearrange
 from typing_extensions import Self, TypeVar
 
 from mrpro.data.acq_filters import has_n_coils, is_image_acquisition
@@ -566,66 +566,6 @@ class KData(Dataclass):
         header.acq_info.apply_(lambda field: field[other_idx] if isinstance(field, torch.Tensor | Rotation) else field)
         data = data[other_idx]
         traj = traj[:, other_idx]
-        return type(self)(header, data, type(self.traj).from_tensor(traj))
-
-    def split_k1_into_other(
-        self,
-        split_idx: torch.Tensor,
-        other_label: Literal['average', 'slice', 'contrast', 'phase', 'repetition', 'set'],
-    ) -> Self:
-        """Based on an index tensor, split the data in e.g. phases.
-
-        Parameters
-        ----------
-        split_idx
-            2D index describing  the k1 points in each block to be moved to the other dimension
-            `(other_split, k1_per_split)`
-        other_label
-            Label of other dimension, e.g. repetition, phase
-
-        Returns
-        -------
-            K-space data with new shape `((other other_split) coils k2 k1_per_split k0)`
-
-        """
-        n_other_split, n_k1_per_split = split_idx.shape
-        n_k1 = self.data.shape[-2]  # This assumes that data is not broadcasted along k1
-
-        def split(data: RotationOrTensor) -> RotationOrTensor:
-            # broadcast "k1"
-            expanded = data.expand((*data.shape[:-2], n_k1, data.shape[-1]))
-            # cast due to https://github.com/python/mypy/issues/10817
-            return cast(RotationOrTensor, expanded[..., split_idx, :])
-
-        data = rearrange(
-            split(self.data.flatten(end_dim=-5)), 'other coils k2 other_split k1 k0->(other other_split) coils k2 k1 k0'
-        )
-
-        traj = self.traj.as_tensor()
-        traj = torch.broadcast_to(traj, (traj.shape[0], *self.data.shape[:-4], *traj.shape[-4:]))  # broadcast "other"
-        traj = traj.flatten(start_dim=1, end_dim=-5)  # flatten "other" dimensions
-        traj = rearrange(split(traj), 'dim other coils k2 other_split k1 k0->dim (other other_split) coils k2 k1 k0')
-
-        header = self.header.apply(
-            lambda field: rearrange(
-                split(  # type: ignore[type-var] # mypy does not recognize return type of rearrange here
-                    rearrange(field, '... coils k2 k1 k0 -> (...) coils k2 k1 k0 ')  # flatten "other" dimensions
-                ),
-                'other coils k2 other_split k1 k0->(other other_split) coils k2 k1 k0',
-            )
-            if isinstance(field, Rotation | torch.Tensor)
-            else field
-        )
-
-        new_idx = repeat(
-            torch.arange(n_other_split),
-            'other_split-> (other_split other) 1 k2 k1 1',
-            other=data.shape[0] // n_other_split,
-            k2=data.shape[-3],
-            k1=n_k1_per_split,
-        )
-        setattr(header.acq_info.idx, other_label, new_idx)
-        header._reduce_repeats_()
         return type(self)(header, data, type(self.traj).from_tensor(traj))
 
     def _reduce_repeats_(self, tol: float = 1e-6, dim: Sequence[int] | None = None, recurse: bool = True) -> Self:
