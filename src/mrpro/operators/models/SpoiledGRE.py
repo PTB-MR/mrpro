@@ -1,4 +1,4 @@
-"""FLASH/Spoiled gradient echo signal model."""
+"""Spoiled gradient echo signal model."""
 
 import torch
 
@@ -6,13 +6,16 @@ from mrpro.operators.SignalModel import SignalModel
 from mrpro.utils.reshape import unsqueeze_right
 
 
-class FLASH(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
-    """FLASH/Spoiled gradient echo signal model."""
+class SpoiledGRE(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
+    """Spoiled gradient echo signal model."""
 
     def __init__(
         self, flip_angle: float | torch.Tensor, echo_time: float | torch.Tensor, repetition_time: float | torch.Tensor
     ) -> None:
-        r"""Initialize FLASH/Spoiled gradient echo signal model.
+        r"""Initialize spoiled gradient echo signal model.
+
+        Assumes perfect spoiling and a longitudinal steady state.
+        This is a simplified special case of `~mrpro.operators.models.TransientSteadyStateWithPreparation`.
 
         The model is defined as:
         :math:`S = M_0 e^{-t_r / T_2^*}  \frac{\sin(\alpha)(1 - e^{-t_e / T_1})}{(1 - \cos(\alpha) e^{-t_e / T_1})}`
@@ -41,10 +44,18 @@ class FLASH(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         ----------
         m0
             Equilibrium signal.
+            Shape `...`, for example `*other, coils, z, y, x` or `samples.`
         t1
             T1 relaxation time.
+            Shape `...`, for example `*other, coils, z, y, x` or `samples.`
         t2star
             T2* relaxation time.
+            Shape `...`, for example `*other, coils, z, y, x` or `samples.`
+
+        Returns
+        -------
+            Signal
+            Shape `1 ...`, for example `1, *other, coils, z, y, x` or `1, samples`, respectively.
         """
         ndim = max(m0.ndim, t1.ndim, t2star.ndim) + 1
         flip_angle = unsqueeze_right(self.flip_angle, ndim - self.flip_angle.ndim)
