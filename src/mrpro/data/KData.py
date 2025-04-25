@@ -367,10 +367,6 @@ class KData(Dataclass):
         header = self.header.to_ismrmrd()
         header.acquisitionSystemInformation.receiverChannels = self.data.shape[-4]
 
-        trajectory = self.traj.as_tensor(-1)
-        trajectory_shape = (*self.data[..., 0, None, :, :, :].shape, 3)  # no coils
-        trajectory = torch.broadcast_to(trajectory, trajectory_shape)
-
         # Calculate the encoding limits as min/max of the acquisition indices
         def limits_from_acq_idx(acq_idx_tensor: torch.Tensor) -> Limits:
             return Limits(int(acq_idx_tensor.min().item()), int(acq_idx_tensor.max().item()), 0)
@@ -384,6 +380,7 @@ class KData(Dataclass):
 
         # For the k-space center of k1 and k2 we can only make an educated guess on where it is:
         # k-space point closest to 0
+        trajectory = self.traj.as_tensor(-1)
         kspace_center_idx = torch.argmin(trajectory.abs().sum(dim=-1))
         encoding_limits.k1.center = int(
             self.header.acq_info.idx.k1.broadcast_to(trajectory.shape[:-1]).flatten()[kspace_center_idx].item()
@@ -413,20 +410,18 @@ class KData(Dataclass):
         for other in np.ndindex(self.data.shape[:-4]):
             for k2 in range(self.data.shape[-3]):
                 for k1 in range(self.data.shape[-2]):
-                    self.header.acq_info.write_to_ismrmrd_acquisition(acq, (*other, 0, k2, k1, 0), convert_time_stamp)
+                    # Select current readout for all coils
+                    kdata = self[(*other, slice(None), k2, k1, slice(None))]  # type: ignore[index]
+                    kdata.header.acq_info.write_to_ismrmrd_acquisition(acq, convert_time_stamp)
 
-                    # Rearrange, switch from zyx to xyz and set trajectory
-                    ismrmrd_traj = trajectory[(*other, 0, k2, k1)].numpy()[:, ::-1]  # zyx -> xyz
-                    acq.traj[:] = ismrmrd_traj
-                    acq.center_sample = np.argmin(np.abs(ismrmrd_traj[:, 0]))
+                    acq.traj[:] = torch.squeeze(kdata.traj.as_tensor(-1)).numpy()[:, ::-1]  # zyx -> xyz
+                    acq.center_sample = np.argmin(np.abs(acq.traj[:, 0]))
 
                     # Reversed readouts means that the k-space is traversed from positive to negative
                     if acq.flags & AcqFlags.ACQ_IS_REVERSE.value:
                         acq.center_sample += 1
 
-                    # Set the data and append
-                    idx = other + (slice(None),) + (k2, k1)  # python 3.10 and mypy #noqa: RUF005
-                    acq.data[:] = self.data[idx].numpy()
+                    acq.data[:] = torch.squeeze(kdata.data).numpy()
                     dataset.append_acquisition(acq)
 
                     acq.scan_counter += 1
