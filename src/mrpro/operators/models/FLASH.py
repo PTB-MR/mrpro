@@ -15,10 +15,10 @@ class FLASH(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         r"""Initialize FLASH/Spoiled gradient echo signal model.
 
         The model is defined as:
-        :math:`S = M_0 e^{-t_i / T_{2*}}  \frac{\sin(\alpha)(1 - e^{-t_e / T_1})}{(1 - \cos(\alpha) e^{-t_e / T_1})}`
+        :math:`S = M_0 e^{-t_r / T_2^*}  \frac{\sin(\alpha)(1 - e^{-t_e / T_1})}{(1 - \cos(\alpha) e^{-t_e / T_1})}`
 
         where :math:`M_0` is the magnetization at the beginning of the sequence, :math:`\alpha` is the flip angle,
-        :math:`t_e` is the echo time, and :math:`t_i` is the repetition time.
+        :math:`t_e` is the echo time, and :math:`t_r` is the repetition time.
 
         Parameters
         ----------
@@ -40,7 +40,7 @@ class FLASH(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         Parameters
         ----------
         m0
-            Magnetization at the beginning of the sequence.
+            Equilibrium signal.
         t1
             T1 relaxation time.
         t2star

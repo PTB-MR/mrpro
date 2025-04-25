@@ -17,15 +17,15 @@ def test_flash_special_values(parameter_shape: Sequence[int] = (2, 5, 10, 10, 10
     t1 = rng.float32_tensor(parameter_shape, low=1e-10, high=2)
     t2star = rng.float32_tensor(parameter_shape, low=1e-10, high=0.5)
 
-    # no flip angle -> no signal
+    # flip angle = 0 -> no signal
     (actual,) = FLASH(flip_angle=0.0, echo_time=1.0, repetition_time=1.0)(m0, t1, t2star)
     assert torch.isclose(actual, torch.tensor(0.0j)).all()
 
-    # no repetition time -> no signal
+    # repetition time = 0 -> no signal
     (actual,) = FLASH(flip_angle=1.0, echo_time=1.0, repetition_time=0.0)(m0, t1, t2star)
     assert torch.isclose(actual, torch.tensor(0.0j)).all()
 
-    # no echo time -> signal independent of t2star
+    # echo time = 0 -> signal independent of t2star
     constant_m0 = m0.mean(None, keepdim=True)
     constant_t1 = t1.mean(None, keepdim=True)
     (actual,) = FLASH(flip_angle=1.0, echo_time=0.0, repetition_time=1.0)(constant_m0, constant_t1, t2star)
