@@ -5,7 +5,7 @@ import datetime
 import warnings
 from collections.abc import Callable, Sequence
 from types import EllipsisType
-from typing import cast
+from typing import Literal, cast
 
 import h5py
 import ismrmrd
@@ -16,7 +16,7 @@ from typing_extensions import Self, TypeVar
 
 from mrpro.data.acq_filters import has_n_coils, is_image_acquisition
 from mrpro.data.AcqInfo import AcqInfo, convert_time_stamp_osi2, convert_time_stamp_siemens
-from mrpro.data.Dataclass import Dataclass, HasReduceRepeats
+from mrpro.data.Dataclass import Dataclass
 from mrpro.data.EncodingLimits import EncodingLimits
 from mrpro.data.enums import AcqFlags
 from mrpro.data.KHeader import KHeader
@@ -24,7 +24,6 @@ from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.Rotation import Rotation
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 from mrpro.data.traj_calculators.KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
-from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.typing import FileOrPath
 
 RotationOrTensor = TypeVar('RotationOrTensor', bound=torch.Tensor | Rotation)
@@ -494,12 +493,13 @@ class KData(Dataclass):
 
         return type(self)(header, cropped_data, cropped_traj)
 
-       def select_other_subset(
+    def select_other_subset(
         self: Self,
         subset_idx: torch.Tensor,
         subset_label: Literal['average', 'slice', 'contrast', 'phase', 'repetition', 'set'],
     ) -> Self:
         """Select a subset from the other dimension of KData.
+
         Note: This function will be deprecated in the future.
 
         Parameters
@@ -510,9 +510,11 @@ class KData(Dataclass):
             Index which elements of the other subset to use, e.g. phase 0,1,2 and 5
         subset_label
             Name of the other label, e.g. phase
+
         Returns
         -------
             K-space data `(other_subset coils k2 k1 k0)`
+
         Raises
         ------
         `ValueError`
