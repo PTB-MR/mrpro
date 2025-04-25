@@ -311,36 +311,15 @@ class KData(Dataclass):
         sort_idx = torch.as_tensor(np.lexsort(acq_indices))  # torch has no lexsort as of pytorch 2.6 (March 2025)
 
         # Finally, reshape and sort the tensors in acqinfo and acqinfo.idx, and kdata.
-        header = self.header.apply(
-            lambda field: rearrange(
-                cast(Rotation | torch.Tensor, rearrange(expand(field), '... coils k2 k1 k0 -> (... k2 k1) coils k0'))[
-                    sort_idx
-                ],
-                '(other k2 k1) coils k0 -> other coils k2 k1 k0',
-                k1=n_k1,
-                k2=n_k2,
-                k0=1,
+        def sort(x: T) -> T:
+            flat = cast(T, rearrange(expand(x), '... coils k2 k1 k0 -> (... k2 k1) coils k0'))
+            return cast(
+                T, rearrange(flat[sort_idx], '(other k2 k1) coils k0 -> other coils k2 k1 k0', k1=n_k1, k2=n_k2)
             )
-            if isinstance(field, torch.Tensor | Rotation)
-            else field
-        )
 
-        data = rearrange(
-            rearrange(expand(self.data), '... coils k2 k1 k0-> (... k2 k1) coils k0 ')[sort_idx],
-            '(other k2 k1) coils k0 -> other coils k2 k1 k0',
-            k1=n_k1,
-            k2=n_k2,
-        )
-
-        kz, ky, kx = (
-            rearrange(
-                expand(t).flatten(end_dim=-3)[sort_idx],
-                '(other k2 k1) coils k0 ->other coils k2 k1 k0 ',
-                k1=n_k1,
-                k2=n_k2,
-            )
-            for t in (self.traj.kz, self.traj.ky, self.traj.kx)
-        )
+        header = self.header.apply(lambda field: sort(field) if isinstance(field, torch.Tensor | Rotation) else field)
+        data = sort(self.data)
+        kz, ky, kx = (sort(t) for t in (self.traj.kz, self.traj.ky, self.traj.kx))
         traj = KTrajectory(kz, ky, kx, self.traj.grid_detection_tolerance, self.traj.repeat_detection_tolerance)
         return type(self)(header=header._reduce_repeats_(), data=data, traj=traj._reduce_repeats_())
 
