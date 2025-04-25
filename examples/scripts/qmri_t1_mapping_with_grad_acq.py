@@ -119,7 +119,7 @@ img_rss_dynamic /= img_rss_dynamic.max()
 # Visualize the first six dynamic images
 fig, ax = plt.subplots(2, 3, squeeze=False)
 for idx, cax in enumerate(ax.flatten()):
-    cax.imshow(img_rss_dynamic[idx, 0, :, :], cmap='gray', vmin=0, vmax=0.8)
+    cax.imshow(img_rss_dynamic[idx, 0, 0], cmap='gray', vmin=0, vmax=0.8)
     cax.set_title(f'Dynamic {idx}')
 plt.show()
 # %% [markdown]
