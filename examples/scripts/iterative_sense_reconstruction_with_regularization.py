@@ -202,7 +202,7 @@ operator = acquisition_operator.gram + mrpro.operators.IdentityOp() * regulariza
 # %%
 dcf_operator = mrpro.data.DcfData.from_traj_voronoi(kdata_undersampled.traj).as_operator()
 (initial_value,) = (acquisition_operator.H @ dcf_operator)(kdata_undersampled.data)
-img_manual = mrpro.algorithms.optimizers.cg(operator, right_hand_side, initial_value=initial_value, tolerance=1e-7)
+(img_manual,) = mrpro.algorithms.optimizers.cg(operator, right_hand_side, initial_value=initial_value, tolerance=1e-7)
 
 # %% [markdown]
 # #####  Display the reconstructed image

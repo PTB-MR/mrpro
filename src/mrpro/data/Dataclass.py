@@ -1,16 +1,24 @@
 """Base class for all data classes."""
 
 import dataclasses
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Sequence
 from copy import copy as shallowcopy
 from copy import deepcopy
 from typing import ClassVar, TypeAlias, cast
 
 import torch
-from typing_extensions import Any, Self, TypeVar, dataclass_transform, overload
+from typing_extensions import Any, Protocol, Self, TypeVar, dataclass_transform, overload, runtime_checkable
 
 from mrpro.utils.indexing import HasIndex, Indexer
+from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.typing import TorchIndexerType
+
+
+@runtime_checkable
+class HasReduceRepeats(Protocol):
+    """Objects that have a _reduce_repeats method."""
+
+    def _reduce_repeats_(self, tol: float = 1e-6, dim: Sequence[int] | None = None, recurse: bool = True) -> Self: ...
 
 
 class InconsistentDeviceError(ValueError):
@@ -58,20 +66,31 @@ class Dataclass:
     This class extends the functionality of the standard `dataclasses.dataclass` by adding
     - a `apply` method to apply a function to all fields
     - a `~Dataclass.clone` method to create a deep copy of the object
-    - `~Dataclass.to`, `~Dataclass.cpu`, `~Dataclass.cuda` merhods to move all tensor fields to a device
+    - `~Dataclass.to`, `~Dataclass.cpu`, `~Dataclass.cuda` methods to move all tensor fields to a device
 
     It is intended to be used as a base class for all dataclasses in the `mrpro` package.
     """
 
     __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]]
+    __auto_reduce_repeats: bool
+    __initialized: bool
 
-    def __init_subclass__(cls, no_new_attributes: bool = True, *args, **kwargs) -> None:  # noqa: D417
+    def __init_subclass__(  # noqa: D417
+        cls,
+        no_new_attributes: bool = True,
+        auto_reduce_repeats: bool = True,
+        *args,
+        **kwargs,
+    ) -> None:
         """Create a new dataclass subclass.
 
         Parameters
         ----------
         no_new_attributes
             If `True`, new attributes cannot be added to the class after it is created.
+        auto_reduce_repeats
+            If `True`, try to reduce dimensions only containing repeats to singleton.
+            This will be done after init and post_init.
         """
         dataclasses.dataclass(cls, repr=False)  # type: ignore[call-overload]
         super().__init_subclass__(**kwargs)
@@ -87,6 +106,8 @@ class Dataclass:
 
             cls.__setattr__ = new_setattr  # type: ignore[method-assign, assignment]
 
+        cls.__auto_reduce_repeats = auto_reduce_repeats
+
         if child_post_init and child_post_init is not Dataclass.__post_init__:
 
             def chained_post_init(self: Dataclass, *args, **kwargs) -> None:
@@ -98,6 +119,30 @@ class Dataclass:
     def __post_init__(self) -> None:
         """Can be overridden in subclasses to add custom initialization logic."""
         self.__initialized = True
+        if self.__auto_reduce_repeats:
+            self._reduce_repeats_(recurse=False)
+
+    def _reduce_repeats_(self, tol: float = 1e-6, dim: Sequence[int] | None = None, recurse: bool = True) -> Self:
+        """Reduce repeated dimensions in fields to singleton.
+
+        Parameters
+        ----------
+        tol
+            tolerance.
+        dim
+            dimensions to try to reduce to singletons. `None` means all.
+        recurse
+            recurse into dataclass fields.
+        """
+
+        def apply_reduce(data: T) -> T:
+            if isinstance(data, torch.Tensor):
+                return cast(T, reduce_repeat(data, tol, dim))
+            if isinstance(data, HasReduceRepeats) and not isinstance(data, Dataclass):
+                data._reduce_repeats_(tol, dim)
+            return cast(T, data)
+
+        return self.apply_(apply_reduce, recurse=recurse)
 
     def items(self) -> Iterator[tuple[str, Any]]:
         """Get an iterator over names and values of fields."""

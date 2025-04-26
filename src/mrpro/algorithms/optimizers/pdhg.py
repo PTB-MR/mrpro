@@ -168,10 +168,10 @@ def pdhg(
         operator_norm = operator_matrix.operator_norm(*[torch.randn_like(v) for v in initial_values]).amax()
         if primal_stepsize is None and dual_stepsize is None:
             primal_stepsize_ = dual_stepsize_ = 1.0 / operator_norm
-        elif primal_stepsize is None:
+        elif primal_stepsize is None and dual_stepsize is not None:
             primal_stepsize_ = 1 / (operator_norm * dual_stepsize)
             dual_stepsize_ = dual_stepsize
-        elif dual_stepsize is None:
+        elif dual_stepsize is None and primal_stepsize is not None:
             dual_stepsize_ = 1 / (operator_norm * primal_stepsize)
             primal_stepsize_ = primal_stepsize
     else:

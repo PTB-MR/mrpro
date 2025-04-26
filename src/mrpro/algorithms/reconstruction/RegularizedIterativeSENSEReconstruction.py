@@ -147,7 +147,7 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
         else:
             # The right and side is not a good starting point without DCF.
             initial_value = torch.zeros_like(right_hand_side)
-        img_tensor = cg(
+        (img_tensor,) = cg(
             operator,
             right_hand_side,
             initial_value=initial_value,
