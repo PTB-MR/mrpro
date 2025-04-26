@@ -273,7 +273,7 @@ def test_dataclass_repr() -> None:
         doubletensor=torch.linspace(-1, 1, 20).double(),
     )
     actual = repr(data)
-    expected = """B with (broadcasted) shape [10, 20].
+    expected = """B on device "cpu" with (broadcasted) shape [10, 20].
   child: A<10, 20>
   module: SharedModule(...)
   floattensor: Tensor<10, 1>, x ∈ [0, 9], μ=4.5, [0, 1,  ..., 8, 9]

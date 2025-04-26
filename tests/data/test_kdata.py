@@ -446,14 +446,14 @@ def test_KData_repr(consistently_shaped_kdata: KData) -> None:
     actual_str = str(consistently_shaped_kdata)
     assert actual_str == actual_repr
     assert re.match(
-        r"""KData with \(broadcasted\) shape \[2, 3, 3, 13, 11, 10\]\.
+        r"""KData on device "cpu" with \(broadcasted\) shape \[2, 3, 3, 13, 11, 10\]\.
 \s{2}data: Tensor<2, 3, 3, 13, 11, 10>, \|x\| ∈ \[(.*?),\s*(.*?)\]\s*,\s*μ=(.*?),\s*\[(.*?),\s*\.\.\.,\s*(.*?)\]
-\s{2}traj: KTrajectory with \(broadcasted\) shape \[2, 1, 1, 13, 11, 10\]\.
+\s{2}traj: KTrajectory on device "cpu" with \(broadcasted\) shape \[2, 1, 1, 13, 11, 10\]\.
 \s{5}kz: Tensor<2, 1, 1, 13, 1, 1>, x ∈ \[(.*?),\s*(.*?)\]\s*,\s*μ=(.*?),\s*\[(.*?),\s*\.\.\.,\s*(.*?)\]
 \s{5}ky: Tensor<2, 1, 1, 1, 11, 1>, x ∈ \[(.*?),\s*(.*?)\]\s*,\s*μ=(.*?),\s*\[\s*(.*?),\s*\.\.\.,\s*(.*?)\s*\]
 \s{5}kx: Tensor<2, 1, 1, 1, 1, 10>, x ∈ \[(.*?),\s*(.*?)\]\s*,\s*μ=(.*?),\s*\[(.*?),\s*\.\.\.,\s*(.*?)\]
 \s{5}grid_detection_tolerance:\s*(.*?)
-\s{2}header:\s{2}KHeader with \(broadcasted\) shape \[2, 1, 1, 13, 11, 1\]\.
+\s{2}header:\s{2}KHeader on device "cpu" with \(broadcasted\) shape \[2, 1, 1, 13, 11, 1\]\.
 \s{5}recon_matrix: z=17, y=83, x=47
 \s{5}encoding_matrix: z=73, y=81, x=66
 \s{5}recon_fov: z=(.*?),\s*y=(.*?),\s*x=(.*?)

@@ -616,7 +616,7 @@ class Dataclass:
 
         try:
             device = self.device
-            if device and device.type != 'cpu':
+            if device:
                 header.append(f'on device "{device}"')
         except RuntimeError:
             header.append('on mixed devices')
