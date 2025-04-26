@@ -59,6 +59,7 @@ from typing_extensions import Self, Unpack, overload
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils import reduce_repeat
 from mrpro.utils.indexing import Indexer
+from mrpro.utils.reshape import broadcasted_rearrange
 from mrpro.utils.typing import NestedSequence, TorchIndexerType
 from mrpro.utils.vmf import sample_vmf
 
@@ -440,8 +441,8 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         if quaternions_.shape[-1] != 4:
             raise ValueError(f'Expected `quaternions` to have shape (..., 4), got {quaternions_.shape}.')
 
-        reflection_ = torch.as_tensor(reflection)
-        inversion_ = torch.as_tensor(inversion)
+        reflection_ = torch.as_tensor(reflection, device=quaternions_.device)
+        inversion_ = torch.as_tensor(inversion, device=quaternions_.device)
         if reflection_.any():
             axis, angle = _quaternion_to_axis_angle(quaternions_)
             angle = (angle + torch.pi * reflection_.float()).unsqueeze(-1)
@@ -1651,6 +1652,18 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         self._is_improper.data = reduce_repeat(self._is_improper, tol, dim)
         return self
 
+    def _broadcasted_rearrange(
+        self, pattern: str, broadcasted_shape: Sequence[int], reduce_views: bool = True, **axes_lengths: int
+    ) -> Self:
+        quaternions = [
+            broadcasted_rearrange(q, pattern, broadcasted_shape, reduce_views=reduce_views, **axes_lengths)
+            for q in self._quaternions.unbind(-1)
+        ]
+        inversion = broadcasted_rearrange(
+            self._is_improper, pattern, broadcasted_shape=broadcasted_shape, reduce_views=reduce_views, **axes_lengths
+        )
+        return type(self)(torch.stack(quaternions, -1), False, False, inversion)
+
     @property
     def quaternion_x(self) -> torch.Tensor:
         """Get x component of the quaternion."""
@@ -2090,6 +2103,13 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         return self.__class__(
             self._quaternions.unsqueeze(quaternion_dim), inversion=self._is_improper.unsqueeze(dim), copy=True
         )
+
+    @property
+    def device(self) -> torch.device:
+        """Get the device of the Rotation."""
+        if self._quaternions.device != self._is_improper.device:
+            raise RuntimeError('Quaternion and is_improper tensors are on different devices.')
+        return self._quaternions.device
 
 
 class RotationBackend(AbstractBackend):

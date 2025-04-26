@@ -91,10 +91,6 @@ class KTrajectoryCalculator(ABC):
             k0[reversed_readout_mask] = torch.flip(k0[reversed_readout_mask], (-1,))
         return k0
 
-    def __repr__(self) -> str:
-        """Get string representation."""
-        return f'{type(self).__name__}()'
-
 
 class DummyTrajectory(KTrajectoryCalculator):
     """Simple Dummy trajectory that returns zeros.

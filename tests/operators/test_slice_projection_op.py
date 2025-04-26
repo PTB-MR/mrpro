@@ -234,3 +234,29 @@ def test_slice_projection_op_forward_mode_autodiff(
     """Test forward-mode autodiff of slice projection operator."""
     with pytest.raises(RuntimeError, match='Sparse CSR tensors'):
         forward_mode_autodiff_of_linear_operator_test(*create_slice_projection_op_and_domain_range(optimize_for, dtype))
+
+
+@pytest.mark.cuda
+def test_slice_projection_op_cuda() -> None:
+    """Test slice projection operator works on CUDA devices."""
+    rng = RandomGenerator(0)
+    input_shape = SpatialDimension(10, 20, 30)
+    slice_rotation = Rotation.random(4)
+    slice_shift = rng.float32_tensor(4)
+    slice_profile = SliceGaussian(1.0)
+    u = rng.float32_tensor(input_shape.zyx)
+
+    # Create on CPU, transfer to GPU, run on GPU
+    sliceprojection_op = SliceProjectionOp(
+        input_shape=input_shape,
+        slice_rotation=slice_rotation,
+        slice_shift=slice_shift,
+        slice_profile=slice_profile,
+        optimize_for='forward',
+    )
+    operator = sliceprojection_op.H @ sliceprojection_op
+    operator.cuda()
+    (result,) = operator(u.cuda())
+    assert result.is_cuda
+
+    # Creation on GPU is not supported (see docstring)
