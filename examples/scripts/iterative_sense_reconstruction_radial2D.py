@@ -183,7 +183,7 @@ initial_value = u * scale
 
 # %%
 (img_manual,) = mrpro.algorithms.optimizers.cg(
-    operator, right_hand_side, initial_value=right_hand_side, max_iterations=4, tolerance=0.0
+    operator, right_hand_side, initial_value=initial_value, max_iterations=4, tolerance=0.0
 )
 
 # %% [markdown]
