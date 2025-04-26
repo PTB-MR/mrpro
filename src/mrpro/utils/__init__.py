@@ -10,8 +10,7 @@ from mrpro.utils.indexing import Indexer
 from mrpro.utils.pad_or_crop import pad_or_crop
 from mrpro.utils.split_idx import split_idx
 from mrpro.utils.sliding_window import sliding_window
-from mrpro.utils.reshape import broadcast_right, unsqueeze_left, unsqueeze_right, reduce_view, reshape_broadcasted, ravel_multi_index, unsqueeze_tensors_left, unsqueeze_tensors_right, unsqueeze_at, unsqueeze_tensors_at
-from mrpro.utils.summarize import summarize_object, summarize_values
+from mrpro.utils.reshape import broadcast_right, unsqueeze_left, unsqueeze_right, reduce_view, reshape_broadcasted, ravel_multi_index, unsqueeze_tensors_left, unsqueeze_tensors_right, unsqueeze_at, unsqueeze_tensors_at, broadcasted_rearrange
 from mrpro.utils.TensorAttributeMixin import TensorAttributeMixin
 from mrpro.utils.RandomGenerator import RandomGenerator
 
@@ -20,6 +19,7 @@ __all__ = [
     "RandomGenerator",
     "TensorAttributeMixin",
     "broadcast_right",
+    "broadcasted_rearrange",
     "fill_range_",
     "pad_or_crop",
     "ravel_multi_index",
@@ -30,8 +30,6 @@ __all__ = [
     "sliding_window",
     "smap",
     "split_idx",
-    "summarize_object",
-    "summarize_values",
     "typing",
     "unit_conversion",
     "unsqueeze_at",
@@ -39,5 +37,5 @@ __all__ = [
     "unsqueeze_right",
     "unsqueeze_tensors_at",
     "unsqueeze_tensors_left",
-    "unsqueeze_tensors_right",
+    "unsqueeze_tensors_right"
 ]

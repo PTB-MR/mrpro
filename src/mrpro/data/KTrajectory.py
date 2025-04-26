@@ -13,6 +13,7 @@ from mrpro.data.enums import TrajType
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.reshape import unsqueeze_at
+from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 from mrpro.utils.typing import FileOrPath
 
 
@@ -255,3 +256,11 @@ class KTrajectory(Dataclass):
         """
         shape = self.shape
         return torch.stack([traj.expand(*shape) for traj in (self.kz, self.ky, self.kx)], dim=stack_dim)
+
+    def __repr__(self):
+        """Representation method for KTrajectory class."""
+        z = summarize_tensorvalues(torch.tensor(self.kz.shape))
+        y = summarize_tensorvalues(torch.tensor(self.ky.shape))
+        x = summarize_tensorvalues(torch.tensor(self.kx.shape))
+        out = f'{type(self).__name__} with shape: kz={z}, ky={y}, kx={x}'
+        return out

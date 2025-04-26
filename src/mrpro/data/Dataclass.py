@@ -6,12 +6,13 @@ from copy import copy as shallowcopy
 from copy import deepcopy
 from typing import ClassVar, TypeAlias, cast
 
+import einops
 import torch
 from typing_extensions import Any, Protocol, Self, TypeVar, dataclass_transform, overload, runtime_checkable
 
 from mrpro.utils.indexing import HasIndex, Indexer
 from mrpro.utils.reduce_repeat import reduce_repeat
-from mrpro.utils.summarize import summarize_object
+from mrpro.utils.reshape import broadcasted_rearrange
 from mrpro.utils.typing import TorchIndexerType
 
 
@@ -20,6 +21,15 @@ class HasReduceRepeats(Protocol):
     """Objects that have a _reduce_repeats method."""
 
     def _reduce_repeats_(self, tol: float = 1e-6, dim: Sequence[int] | None = None, recurse: bool = True) -> Self: ...
+
+
+@runtime_checkable
+class HasBroadcastedRearrange(Protocol):
+    """Objects that have a _broadcasted_rearrange method."""
+
+    def _broadcasted_rearrange(
+        self, pattern: str, broadcasted_shape: Sequence[int], reduce_views: bool = True, **axes_lengths
+    ) -> Self: ...
 
 
 class InconsistentDeviceError(ValueError):
@@ -67,7 +77,7 @@ class Dataclass:
     This class extends the functionality of the standard `dataclasses.dataclass` by adding
     - a `apply` method to apply a function to all fields
     - a `~Dataclass.clone` method to create a deep copy of the object
-    - `~Dataclass.to`, `~Dataclass.cpu`, `~Dataclass.cuda` merhods to move all tensor fields to a device
+    - `~Dataclass.to`, `~Dataclass.cpu`, `~Dataclass.cuda` methods to move all tensor fields to a device
 
     It is intended to be used as a base class for all dataclasses in the `mrpro` package.
     """
@@ -609,51 +619,19 @@ class Dataclass:
 
     # endregion Properties
 
-    # region Representation
     def __repr__(self) -> str:
-        """Get string representation of Dataclass."""
-        header = [type(self).__name__]
-
+        """Representation method for Dataclass."""
         try:
-            device = self.device
-            if device and device.type != 'cpu':
-                header.append(f'on device "{device}"')
+            device = str(self.device)
         except RuntimeError:
-            header.append('on mixed devices')
-
-        try:
-            if shape := self.shape:
-                header.append(f'with (broadcasted) shape {list(shape)!s}')
-        except RuntimeError:
-            header.append('with inconsistent shape')
-
-        output = ' '.join(header) + '.\n'
-
+            device = 'mixed'
+        name = type(self).__name__
+        output = f'{name} with (broadcasted) shape {list(self.shape)!s} on device "{device}".\n'
+        output += 'Fields:\n'
         output += '\n'.join(
-            f'  {field.name}: {summarize_object(value)}'
-            for field in dataclasses.fields(self)
-            if not (field.name.startswith('_') or (value := getattr(self, field.name, None)) is None)
+            f'   {field.name} <{type(getattr(self, field.name)).__name__}>' for field in dataclasses.fields(self)
         )
         return output
-
-    # We return the same for __repr__ and __str__.
-    # This break the "_str_ if for users, _repr_ for developers rule" of python.
-    # But it makes interactive work on repl or notebooks easier, as `obj` can be used instead
-    # of `print(obj)`. It would be infeasable for most dataclasses to implement a proper  __repr__
-    # that uniquely describes the data and could be used to recreate the object anyways.
-
-    def __str__(self) -> str:
-        """Return the same as __repr__."""
-        return repr(self)
-
-    def __shortstr__(self) -> str:
-        """Return a short string representation."""
-        output = type(self).__name__
-        if self.shape:
-            output = output + f'<{", ".join(map(str, self.shape))}>'
-        return output
-
-    # endregion Representation
 
     # region Indexing
     def __getitem__(self, index: TorchIndexerType | Indexer) -> Self:
@@ -678,3 +656,68 @@ class Dataclass:
         return new
 
     # endregion Indexing
+
+    def rearrange(self, pattern: str, **axes_lengths: int) -> Self:
+        """Rearrange the data according to the specified pattern.
+
+        Similar to einops.rearrange, allowing flexible rearrangement of data dimensions.
+
+        Examples
+        --------
+        >>> # Split the phase encode lines into 8 cardiac phases
+        >>> data.rearrange('batch coils k2 (phase k1) k0 -> batch phase coils k0 k1 k2', phase=8)
+        >>> # Split the k-space samples into 64 k1 and 64 k2 lines
+        >>> data.rearrange('... 1 1 (k2 k1 k0) -> ... k2 k1 k0', k2=64, k1=64, k0=128)
+
+        Parameters
+        ----------
+        pattern
+            String describing the rearrangement pattern. See `einops.rearrange` and the examples above for more details.
+        **axes_lengths : dict
+            Optional dictionary mapping axis names to their lengths.
+            Used when pattern contains unknown dimensions.
+
+        Returns
+        -------
+        Self
+            The rearranged data with the same type as the input.
+
+        """
+        memo: dict = {}
+        shape = self.shape
+
+        def apply_rearrange(data: T) -> T:
+            def rearrange_tensor(data: torch.Tensor) -> torch.Tensor:
+                return broadcasted_rearrange(data, pattern, shape, reduce_views=True, **axes_lengths)
+
+            if isinstance(data, torch.Tensor):
+                return cast(T, rearrange_tensor(data))
+            if isinstance(data, HasBroadcastedRearrange):
+                return cast(T, data._broadcasted_rearrange(pattern, shape, reduce_views=True, **axes_lengths))
+            elif isinstance(data, Dataclass):
+                return cast(T, shallowcopy(data).apply_(apply_rearrange, memo=memo, recurse=False))
+            else:
+                return data
+
+        new = shallowcopy(self)
+        return new.apply_(apply_rearrange, memo=memo, recurse=False)
+
+    def split(self, dim: int, size: int = 1, step: int = 1):
+        shape = self.shape
+        slices = [slice(start, start + size) for start in range(0, shape[dim], step)]
+        result = [self[slice] for slice in slices]
+        return result
+
+    def sliding_window(self, dim, size, stride, dilation): ...
+
+
+class FakeDataclassBackend(einops._backends.AbstractBackend):
+    """Einops backend for Dataclass: Will only raise an error if used."""
+
+    framework_name = 'mrpro'
+
+    def is_appropriate_type(self, x) -> bool:  # noqa: ANN001
+        """Check if the object is a Dataclass."""
+        if isinstance(x, Dataclass):
+            raise NotImplementedError('To use einops with Dataclass, please use the rearrange method of the Dataclass.')
+        return False
