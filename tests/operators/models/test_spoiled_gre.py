@@ -10,7 +10,7 @@ from tests import autodiff_test
 from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
 
 
-def test_gre_special_values(parameter_shape: Sequence[int] = (2, 5, 10, 10, 10)) -> None:
+def test_spoiled_gre_special_values(parameter_shape: Sequence[int] = (2, 5, 10, 10, 10)) -> None:
     """Test spoiled gradient echo signal at special input values."""
     rng = RandomGenerator(1)
     m0 = rng.complex64_tensor(parameter_shape, low=1e-10, high=10)
@@ -33,7 +33,7 @@ def test_gre_special_values(parameter_shape: Sequence[int] = (2, 5, 10, 10, 10))
 
 
 @SHAPE_VARIATIONS_SIGNAL_MODELS
-def test_gre_shape(
+def test_spoiled_gre_shape(
     parameter_shape: Sequence[int], contrast_dim_shape: Sequence[int], signal_shape: Sequence[int]
 ) -> None:
     """Test correct signal shapes."""
@@ -50,8 +50,8 @@ def test_gre_shape(
     assert signal.isfinite().all()
 
 
-def test_autodiff_gre(parameter_shape: Sequence[int] = (2, 5, 10, 10)) -> None:
-    """Test autodiff works for gre model."""
+def test_autodiff_spoiled_gre(parameter_shape: Sequence[int] = (2, 5, 10, 10)) -> None:
+    """Test autodiff works for spoiled gre model."""
     model = SpoiledGRE(flip_angle=0.1, echo_time=1e-3, repetition_time=10e-3)
     rng = RandomGenerator(2)
     m0 = rng.complex64_tensor(parameter_shape, low=1e-10, high=10)
@@ -62,8 +62,8 @@ def test_autodiff_gre(parameter_shape: Sequence[int] = (2, 5, 10, 10)) -> None:
 
 
 @pytest.mark.cuda
-def test_gre_cuda(parameter_shape: Sequence[int] = (2, 5, 10, 10, 10)) -> None:
-    """Test the gre model works on cuda devices."""
+def test_spoiled_gre_cuda(parameter_shape: Sequence[int] = (2, 5, 10, 10, 10)) -> None:
+    """Test the spoiled gre model works on cuda devices."""
     rng = RandomGenerator(1)
     m0 = rng.complex64_tensor(parameter_shape, low=1e-10, high=10)
     t1 = rng.float32_tensor(parameter_shape, low=1e-10, high=2)

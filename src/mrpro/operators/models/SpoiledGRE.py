@@ -20,7 +20,7 @@ class SpoiledGRE(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         The model is defined as:
         :math:`S = M_0 e^{-t_r / T_2^*}  \frac{\sin(\alpha)(1 - e^{-t_e / T_1})}{(1 - \cos(\alpha) e^{-t_e / T_1})}`
 
-        where :math:`M_0` is the magnetization at the beginning of the sequence, :math:`\alpha` is the flip angle,
+        where :math:`M_0` is the equilibrium magnetization, :math:`\alpha` is the flip angle,
         :math:`t_e` is the echo time, and :math:`t_r` is the repetition time.
 
         Parameters
@@ -44,13 +44,13 @@ class SpoiledGRE(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         ----------
         m0
             Equilibrium signal.
-            Shape `...`, for example `*other, coils, z, y, x` or `samples.`
+            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
         t1
             T1 relaxation time.
-            Shape `...`, for example `*other, coils, z, y, x` or `samples.`
+            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
         t2star
             T2* relaxation time.
-            Shape `...`, for example `*other, coils, z, y, x` or `samples.`
+            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
 
         Returns
         -------
