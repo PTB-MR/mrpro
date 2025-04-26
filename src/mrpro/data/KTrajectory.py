@@ -1,23 +1,23 @@
 """KTrajectory dataclass."""
 
 from collections.abc import Callable
-from typing import Annotated, Literal
+from typing import Literal
 
 import ismrmrd
 import numpy as np
 import torch
 from typing_extensions import Self
 
-from mrpro.data.CheckDataMixin import CheckDataMixin, DType, Shape
 from mrpro.data.Dataclass import Dataclass
 from mrpro.data.enums import TrajType
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.reshape import unsqueeze_at
+from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 from mrpro.utils.typing import FileOrPath
 
 
-class KTrajectory(Dataclass, CheckDataMixin):
+class KTrajectory(Dataclass):
     """K-space trajectory.
 
     Contains the trajectory in k-space along the three dimensions `kz`, `ky`, `kx`,
@@ -33,14 +33,14 @@ class KTrajectory(Dataclass, CheckDataMixin):
         - `kz` is zero with shape `(1, 1, 1, 1, 1)`
     """
 
-    kz: Annotated[torch.Tensor, Shape('*#other coils=1 #k2 #k1 #k0'), DType(torch.float32, torch.float64)]
-    """Trajectory in z direction / phase encoding direction k2 if Cartesian."""
+    kz: torch.Tensor
+    """Trajectory in z direction / phase encoding direction k2 if Cartesian. Shape `(*other, coils=1, k2, k1, k0)`"""
 
-    ky: Annotated[torch.Tensor, Shape('*#other coils=1 #k2 #k1 #k0'), DType(torch.float32, torch.float64)]
-    """Trajectory in y direction / phase encoding direction k1 if Cartesian."""
+    ky: torch.Tensor
+    """Trajectory in y direction / phase encoding direction k1 if Cartesian. Shape `(*other, coils=1, k2, k1, k0)`"""
 
-    kx: Annotated[torch.Tensor, Shape('*#other coils=1 #k2 #k1 #k0'), DType(torch.float32, torch.float64)]
-    """Trajectory in x direction / phase encoding direction k0 if Cartesian."""
+    kx: torch.Tensor
+    """Trajectory in x direction / phase encoding direction k0 if Cartesian. Shape `(*other, coils=1, k2, k1, k0)`"""
 
     grid_detection_tolerance: float = 1e-3
     """tolerance of how close trajectory positions have to be to integer grid points."""
@@ -256,3 +256,11 @@ class KTrajectory(Dataclass, CheckDataMixin):
         """
         shape = self.shape
         return torch.stack([traj.expand(*shape) for traj in (self.kz, self.ky, self.kx)], dim=stack_dim)
+
+    def __repr__(self):
+        """Representation method for KTrajectory class."""
+        z = summarize_tensorvalues(torch.tensor(self.kz.shape))
+        y = summarize_tensorvalues(torch.tensor(self.ky.shape))
+        x = summarize_tensorvalues(torch.tensor(self.kx.shape))
+        out = f'{type(self).__name__} with shape: kz={z}, ky={y}, kx={x}'
+        return out

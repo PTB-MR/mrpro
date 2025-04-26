@@ -441,8 +441,8 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         if quaternions_.shape[-1] != 4:
             raise ValueError(f'Expected `quaternions` to have shape (..., 4), got {quaternions_.shape}.')
 
-        reflection_ = torch.as_tensor(reflection)
-        inversion_ = torch.as_tensor(inversion)
+        reflection_ = torch.as_tensor(reflection, device=quaternions_.device)
+        inversion_ = torch.as_tensor(inversion, device=quaternions_.device)
         if reflection_.any():
             axis, angle = _quaternion_to_axis_angle(quaternions_)
             angle = (angle + torch.pi * reflection_.float()).unsqueeze(-1)
@@ -2103,6 +2103,13 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         return self.__class__(
             self._quaternions.unsqueeze(quaternion_dim), inversion=self._is_improper.unsqueeze(dim), copy=True
         )
+
+    @property
+    def device(self) -> torch.device:
+        """Get the device of the Rotation."""
+        if self._quaternions.device != self._is_improper.device:
+            raise RuntimeError('Quaternion and is_improper tensors are on different devices.')
+        return self._quaternions.device
 
 
 class RotationBackend(AbstractBackend):

@@ -251,22 +251,26 @@ def test_cart_sampling_op_cuda() -> None:
 
     # Create on CPU, transfer to GPU and run on GPU
     sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
-    sampling_op.cuda()
-    (sampling_output,) = sampling_op(input_data.cuda())
-    assert sampling_output.is_cuda
+    operator = sampling_op.H @ sampling_op
+    operator.cuda()
+    (result,) = operator(input_data.cuda())
+    assert result.is_cuda
 
     # Create on CPU and run on CPU
     sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
-    (sampling_output,) = sampling_op(input_data)
-    assert sampling_output.is_cpu
+    operator = sampling_op.H @ sampling_op
+    (result,) = operator(input_data)
+    assert result.is_cpu
 
     # Create on GPU and run on GPU
     sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory.cuda())
-    (sampling_output,) = sampling_op(input_data.cuda())
-    assert sampling_output.is_cuda
+    operator = sampling_op.H @ sampling_op
+    (result,) = operator(input_data.cuda())
+    assert result.is_cuda
 
     # Create on GPU, transfer to CPU and run on CPU
     sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory.cuda())
-    sampling_op.cpu()
-    (sampling_output,) = sampling_op(input_data)
-    assert sampling_output.is_cpu
+    operator = sampling_op.H @ sampling_op
+    operator.cpu()
+    (result,) = operator(input_data)
+    assert result.is_cpu

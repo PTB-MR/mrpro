@@ -3,9 +3,9 @@
 import copy
 import datetime
 import warnings
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Sequence
 from types import EllipsisType
-from typing import Annotated, Literal, cast
+from typing import Literal, cast
 
 import h5py
 import ismrmrd
@@ -16,7 +16,6 @@ from typing_extensions import Self, TypeVar
 
 from mrpro.data.acq_filters import has_n_coils, is_image_acquisition
 from mrpro.data.AcqInfo import AcqInfo, convert_time_stamp_osi2, convert_time_stamp_siemens
-from mrpro.data.CheckDataMixin import CheckDataMixin, DType, Shape
 from mrpro.data.Dataclass import Dataclass, HasReduceRepeats
 from mrpro.data.EncodingLimits import EncodingLimits
 from mrpro.data.enums import AcqFlags
@@ -27,8 +26,6 @@ from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalcula
 from mrpro.data.traj_calculators.KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
 from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.typing import FileOrPath
-
-from ..utils.summarize import summarize_object
 
 RotationOrTensor = TypeVar('RotationOrTensor', bound=torch.Tensor | Rotation)
 
@@ -67,24 +64,24 @@ OTHER_LABELS = (
 T = TypeVar('T', Rotation, torch.Tensor, Rotation | torch.Tensor)
 
 
-class KData(Dataclass, CheckDataMixin):
+class KData(Dataclass):
     """MR raw data / k-space data class."""
 
-    header: Annotated[KHeader, Shape('*#other 1 #k2 #k1 1')]
+    header: KHeader
     """Header information for k-space data"""
 
-    data: Annotated[torch.Tensor, Shape('*#other coils #k2 #k1 #k0'), DType(torch.complex64, torch.complex128)]
-    """K-space data."""
+    data: torch.Tensor
+    """K-space data. Shape `(*other coils k2 k1 k0)`"""
 
-    traj: Annotated[KTrajectory, Shape('*#other 1 #k2 #k1 #k0')]
-    """K-space trajectory along kz, ky and kx."""
+    traj: KTrajectory
+    """K-space trajectory along kz, ky and kx. Shape `(*other k2 k1 k0)`"""
 
     @classmethod
     def from_file(
         cls,
         filename: FileOrPath,
         trajectory: KTrajectoryCalculator | KTrajectory | KTrajectoryIsmrmrd,
-        header_overwrites: Mapping[str, object] | None = None,
+        header_overwrites: dict[str, object] | None = None,
         dataset_idx: int = -1,
         acquisition_filter_criterion: Callable = is_image_acquisition,
     ) -> Self:
@@ -250,26 +247,6 @@ class KData(Dataclass, CheckDataMixin):
         kdata = kdata.reshape_by_idx()
         return kdata
 
-    def __repr__(self):
-        """Representation method for KData class."""
-        traj = KTrajectory(self.traj.kz, self.traj.ky, self.traj.kx)
-        try:
-            device = str(self.device)
-        except RuntimeError:
-            device = 'mixed'
-        out = (
-            f'{type(self).__name__} with shape {list(self.data.shape)!s} and dtype {self.data.dtype}\n'
-            f'Device: {device}\n'
-            f'{traj}\n'
-            f'{self.header}'
-        )
-        return out
-
-    @property
-    def dtype(self) -> torch.dtype:
-        """Data type of the k-space data."""
-        return self.data.dtype
-
     def reshape_by_idx(self) -> Self:
         """Sort and reshape according to the acquisistion indices.
 
@@ -369,17 +346,18 @@ class KData(Dataclass, CheckDataMixin):
 
     def __repr__(self):
         """Representation method for KData class."""
-        traj_info = '\n   '.join(repr(self.traj).splitlines())
-        header_info = '\n   '.join(repr(self.header).splitlines())
-        representation = '\n'.join(
-            [
-                super().__repr__().splitlines()[0],
-                f'  data: {summarize_object(self.data)}',
-                f'  traj: {traj_info}',
-                f'  header:  {header_info}',
-            ]
+        traj = KTrajectory(self.traj.kz, self.traj.ky, self.traj.kx)
+        try:
+            device = str(self.device)
+        except RuntimeError:
+            device = 'mixed'
+        out = (
+            f'{type(self).__name__} with shape {list(self.data.shape)!s} and dtype {self.data.dtype}\n'
+            f'Device: {device}\n'
+            f'{traj}\n'
+            f'{self.header}'
         )
-        return representation
+        return out
 
     def compress_coils(
         self: Self,
@@ -533,6 +511,7 @@ class KData(Dataclass, CheckDataMixin):
         # Adapt header parameters
         header = copy.deepcopy(self.header)
         header.encoding_matrix.x = cropped_data.shape[-1]
+        header.encoding_fov.x = self.header.recon_fov.x
 
         return type(self)(header, cropped_data, cropped_traj)
 

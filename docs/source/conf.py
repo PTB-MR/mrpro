@@ -7,15 +7,13 @@ import re
 import shutil
 import sys
 from pathlib import Path
-from typing import get_overloads, get_args
-import inspect
+from typing import get_overloads
+
 import nbformat
-import sphinx.ext.napoleon
 import sphinx.util.inspect
 from sphinx.ext.autodoc import AttributeDocumenter, ClassDocumenter, MethodDocumenter, PropertyDocumenter
 from sphinx.util.inspect import isclassmethod, isstaticmethod, signature, stringify_signature
 from sphinx_pyproject import SphinxConfig
-from mrpro.data.CheckDataMixin import Annotation, Shape,DType
 
 from mrpro import __version__ as project_version
 
@@ -63,7 +61,6 @@ intersphinx_mapping = {
 autosectionlabel_prefix_document = True
 napoleon_use_param = True
 napoleon_use_rtype = False
-napoleon_google_docstring = False
 typehints_defaults = 'comma'
 typehints_use_signature = True
 typehints_use_signature_return = True
@@ -290,7 +287,7 @@ def sync_notebooks(source_folder, dest_folder):
                     print('NORUN: Skipping execution.')
                     mode = 'off'
                 else:
-                    print("Setting execution mode to 'force'.")
+                    print('Setting execution mode to "force".')
                     mode = 'force'
             else:
                 print(f'Existing {dest_file}. Skipping execution.')
@@ -308,74 +305,12 @@ def object_description_function_repr_overwrite(obj, *, _seen: frozenset[int] = f
         return obj.__name__ + '()'
     return object_description_original(obj, _seen=_seen)
 
-from typing_extensions import get_origin, Any, Annotated, Union
-from types import UnionType
-
-class CustomAttributeDocumenter(AttributeDocumenter):
-    """Add shape and dtype information to attributes."""
-    priority = AttributeDocumenter.priority + 1
-
-    def parse_annotation(self, ann) -> str:
-        def _parse(tp) -> list[tuple[str | None, object]]:
-            origin = get_origin(tp)
-            if origin is Union or isinstance(tp, UnionType):
-                return [item for arg in get_args(tp) for item in _parse(arg)]
-            elif origin is Annotated:
-                base, *annotations = get_args(tp)
-                meta_str = ''
-                for annotation in annotations:
-                    if isinstance(annotation, Shape):
-                        meta_str += f'shape: `{str(annotation)}` '
-                    if isinstance(annotation, DType):
-                        meta_str +=  f'dtype: `{str(annotation)}` '
-                return [(meta_str, base)]
-            else:
-                return [(None, tp)]
-
-        branches = _parse(ann)
-        annotated = [(s, base) for s, base in branches if s is not None]
-        plain = [base for s, base in branches if s is None]
-        if not annotated:
-            return ''
-        include_type_condition = plain or len({base for _, base in annotated}) > 1
-        fmt = lambda s, base: f'{s} if {base.__name__}' if include_type_condition and get_origin(base) is None and hasattr(base, '__name__') else s
-        return ' OR '.join(fmt(s, base) for s, base in annotated)
-
-    def get_doc(self) -> list[list[str]]:
-        doc = super().get_doc()
-        if not self.import_object() and self.parent and hasattr(self.parent, '__annotations__'):
-            return doc
-        obj_name = self.objpath[-1]
-        if obj_name not in self.parent.__annotations__:
-            return doc
-        annotation_string = self.parse_annotation(self.parent.__annotations__[obj_name])
-        if not annotation_string:
-            return doc
-        if doc[0][-1] == '':
-            doc[0].insert(-1,annotation_string)
-        else:
-            doc[0].append(annotation_string)
-        return doc
-
-def overwrite_napolean_consume_inline_attribute(self:sphinx.ext.napoleon.NumpyDocstring) -> tuple[str, list[str]]:
-        """Disable `type:` parsing in attribute docstrings in napoleon to allow use of colons."""
-        _desc = self._lines.next()
-        _descs = [_desc, *self._dedent(self._consume_to_end())]
-        _descs = self.__class__(_descs, self._config).lines()
-        return '', _descs
-
 def setup(app):
     app.set_html_assets_policy('always')  # forces mathjax on all pages
     app.connect('autodoc-before-process-signature', rewrite_dataclass_init_default_factories)
     app.connect('autodoc-process-signature', autodoc_inherit_overload, 0)
     app.connect('source-read', replace_patterns_in_markdown)
     app.add_autodocumenter(CustomClassDocumenter, True)
-    app.add_autodocumenter(CustomAttributeDocumenter, True)
-
     sphinx.util.inspect.object_description = object_description_function_repr_overwrite
-    sphinx.ext.napoleon.NumpyDocstring._consume_inline_attribute = overwrite_napolean_consume_inline_attribute
-
-
-
 
     sync_notebooks(app.srcdir.parent.parent / 'examples' / 'notebooks', app.srcdir / '_notebooks')

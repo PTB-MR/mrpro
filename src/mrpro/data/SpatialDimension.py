@@ -49,16 +49,7 @@ class XYZ(Protocol[T]):
 
 
 class SpatialDimension(Dataclass, Generic[T_co]):
-    """Spatial dataclass of float/int/tensors (z, y, x).
-
-    Contains either three scalar or three vector entries for the spatial directions.
-    So a SpatialDimension[int] will have x, y, and z as integer scalar values,
-    a SpatailDimension[torch.Tensor] will have three tensors as attributes.
-
-    ```{note}
-    If used for k-space dimensions, such as encoding matrix, we consider k0=x, k1=y and k2=z
-    ```
-    """
+    """Spatial dataclass of float/int/tensors (z, y, x)."""
 
     z: T_co
     y: T_co
@@ -149,10 +140,8 @@ class SpatialDimension(Dataclass, Generic[T_co]):
         """
         return (self.z, self.y, self.x)
 
-    def __shortstr__(self) -> str:
-        """Return a short string representation."""
-        if isinstance(self.x, VectorTypes) or isinstance(self.y, VectorTypes) or isinstance(self.z, VectorTypes):
-            super().__shortstr__()
+    def __str__(self) -> str:
+        """Return a string representation of the SpatialDimension."""
         return f'z={self.z}, y={self.y}, x={self.x}'
 
     def __getitem__(self: SpatialDimension[T_co], idx: type_utils.TorchIndexerType | Indexer) -> SpatialDimension[T_co]:

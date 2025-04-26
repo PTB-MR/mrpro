@@ -27,7 +27,6 @@ def check_bounds(low: float | int | torch.Tensor, high: float | int | torch.Tens
         minval, maxval = info.min, info.max
     else:
         info = torch.iinfo(dtype)
-        minval, maxval = info.min, info.max
         minval = info.min
         if dtype in (torch.int64, torch.uint64):
             maxval = info.max  # https://github.com/pytorch/pytorch/issues/81446
@@ -264,6 +263,7 @@ class RandomGenerator:
             Lower bound (inclusive).
         high
             Upper bound (exclusive).
+            Maximum value is (1 << 63) - 1 due to https://github.com/pytorch/pytorch/issues/81446
 
         Returns
         -------
@@ -827,3 +827,48 @@ class RandomGenerator:
             Tensor containing a random permutation.
         """
         return torch.randperm(n, generator=self.generator, dtype=dtype)
+
+    def gaussian_variable_density_samples(
+        self, shape: Sequence[int], low: int, high: int, fwhm: float = float('inf'), always_sample: Sequence[int] = ()
+    ) -> torch.Tensor:
+        """Generate Gaussian variable density samples.
+
+        Generates indices in [low, high[ with a gaussian weighting.
+
+        Parameters
+        ----------
+        shape
+            Shape of the output tensor. The generated indices are 1D and in the last dimension.
+            All other dimensions are batch dimensions.
+        low
+            Lower bound of the sampling domain.
+        high
+            Upper bound of the sampling domain.
+        fwhm
+            Full-width at half-maximum of the Gaussian.
+        always_sample
+            indices that should always included in the samples.
+            For example, `range(-n_center//2, n_center//2)`
+
+        Returns
+        -------
+            1D tensor of selected indices.
+        """
+        *n_batch, n_samples = shape
+        if n_samples > high - low:
+            raise ValueError('n_samples must be <= (high - low)')
+        n_random = n_samples - len(always_sample)
+        if n_random < 0:
+            raise ValueError('more always sampled points requested than total number of samples')
+        elif n_random == 0:
+            return torch.tensor(always_sample).sort().values.broadcast_to(*n_batch, -1)
+        pdf = torch.exp(-torch.tensor(2.0).log() * (2 * torch.arange(low, high) / fwhm) ** 2)
+        pdf[[x - low for x in always_sample]] = 0
+        if len(shape) > 1:
+            pdf = pdf.broadcast_to((*n_batch, -1)).flatten(end_dim=-2)
+
+        idx_rand = pdf.multinomial(n_random, False, generator=self.generator) + low
+        if len(shape) > 1:
+            idx_rand = idx_rand.unflatten(0, n_batch)
+        idx_always = torch.tensor(always_sample).broadcast_to(*n_batch, -1)
+        return torch.cat([idx_rand, idx_always], -1).sort().values
