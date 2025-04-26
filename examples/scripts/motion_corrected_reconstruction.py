@@ -153,7 +153,7 @@ def rearrange_k2_k1_into_k1(kdata: KData) -> KData:
 kdata = KData.from_file(data_folder / 'grpe_t1_free_breathing.mrd', KTrajectoryRpe(angle=torch.pi * 0.618034))
 
 # Calculate coil maps
-csm_maps = CsmData.from_kdata_inati(kdata, smoothing_width=5)
+csm_maps = CsmData.from_kdata_inati(kdata, smoothing_width=3)
 
 #  SENSE reconstruction
 iterative_sense = IterativeSENSEReconstruction(kdata, csm=csm_maps)
