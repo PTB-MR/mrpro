@@ -9,6 +9,7 @@ from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from typing import ClassVar, TypeAlias, cast
+from warnings import warn
 
 import h5py
 import numpy as np
@@ -806,7 +807,7 @@ class Dataclass:
 
         with h5py.File(filepath, 'r') as f:
             if (version := f.attrs.get('version', None)) != _MRP_VERSION:
-                raise ValueError(f'Unsupported MRP version: {version}')
+                warn(f'Unsupported MRP version {version}. Only version {_MRP_VERSION} is supported.', stacklevel=2)
 
             root_module = f.attrs.get(_MRP_ATTR_PY_MODULE, None)
             root_class = f.attrs.get(_MRP_ATTR_CLASS_NAME, None)
