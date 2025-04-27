@@ -49,7 +49,16 @@ class XYZ(Protocol[T]):
 
 
 class SpatialDimension(Dataclass, Generic[T_co]):
-    """Spatial dataclass of float/int/tensors (z, y, x)."""
+    """Spatial dataclass of float/int/tensors (z, y, x).
+
+    Contains either three scalar or three vector entries for the spatial directions.
+    So a SpatialDimension[int] will have x, y, and z as integer scalar values,
+    a SpatailDimension[torch.Tensor] will have three tensors as attributes.
+
+    ```{note}
+    If used for k-space dimensions, such as encoding matrix, we consider k0=x, k1=y and k2=z
+    ```
+    """
 
     z: T_co
     y: T_co
