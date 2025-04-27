@@ -5,13 +5,18 @@ import torch
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
+from mrpro.utils.unit_conversion import GYROMAGNETIC_RATIO_PROTON
 
 
 class KTrajectorySpiral2D(KTrajectoryCalculator):
-    """A Spiral variable density trajectory.
+    """A spiral variable density trajectory.
 
-    Implements the spiral trajectory calculation as described in
-    Simple Analytic Variable Density Spiral Design by Kim et al., MRM 2003
+    Implements the spiral trajectory calculation as described in [KIM2003]_.
+
+    References
+    ----------
+    .. [KIM2003] Kim, D.-h., Adalsteinsson, E. and Spielman, D.M. (2003), Simple analytic variable density spiral
+       design. Magn. Reson. Med., 50: 214-219. https://doi.org/10.1002/mrm.10493
     """
 
     def __init__(
@@ -20,7 +25,7 @@ class KTrajectorySpiral2D(KTrajectoryCalculator):
         angle: float = 2.39996,
         acceleration_per_interleave: float = 20.0,
         density_factor: float = 1.0,
-        gamma: float = 42577478,
+        gamma: float = GYROMAGNETIC_RATIO_PROTON,
         max_gradient: float = 0.1,
         max_slewrate: float = 100,
     ):
@@ -28,23 +33,23 @@ class KTrajectorySpiral2D(KTrajectoryCalculator):
 
         Parameters
         ----------
-        max_gradient
-            Maximum gradient amplitude [T/m].
-        max_slewrate
-            Maximum slew rate [T/m/s].
-        density_factor
-            Density factor alpha.
         fov
             Field of view [m].
+        angle
+            Angle between interleaves [rad].
+            Usually set to 2pi/n_interleaves or golden angle (default).
         acceleration_per_interleave
             Acceleration per interleave.
             Overall acceleration is (acceleration_per_interleave/n_interleaves),
-            where n_interleaves is determined by k1_idx
-        angle
-            Angle between interleaves [rad].
-            Usully set to 2pi/n_interleaves
+            where n_interleaves is determined by k1_idx.
+        density_factor
+            Density factor alpha. 1.0 is constant density, values > 1.0 sample more densely at the center.
         gamma
             Gyromagnetic ratio [Hz/T].
+        max_gradient
+            Maximum gradient amplitude  [T/m].
+        max_slewrate
+            Maximum slew rate [T/m/s].
         """
         self.density_factor = density_factor
         self.max_gradient_gamma = max_gradient * gamma
@@ -56,8 +61,6 @@ class KTrajectorySpiral2D(KTrajectoryCalculator):
             self.fov = fov
         elif fov.x != fov.y:
             raise ValueError('Only square FOV is supported.')
-        elif fov.z != 0:
-            raise ValueError('Only 2D trajectories are supported.')
         else:
             self.fov = fov.x
 
@@ -95,14 +98,14 @@ class KTrajectorySpiral2D(KTrajectoryCalculator):
 
         Returns
         -------
-        Spiral Trajectory
+            Spiral Trajectory
         """
         if encoding_matrix.x != encoding_matrix.y:
             raise ValueError('Only square encoding matrices are supported.')
         if encoding_matrix.z != 1:
             raise ValueError('Only 2D trajectories are supported.')
 
-        lam = 0.5 * (encoding_matrix.x / self.fov)
+        lam = 0.5 * (encoding_matrix.x / self.fov)  # description after eq. 1
         n_turns = 1 / (
             1 - (1 - (2 * self.acceleration_per_interleave) / encoding_matrix.x) ** (1 / self.density_factor)
         )  # eq. 10
