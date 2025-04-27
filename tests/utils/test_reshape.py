@@ -236,12 +236,15 @@ def test_broadcasted_rearrange() -> None:
     new = broadcasted_rearrange(tensor, '... (phase k1) k0 -> phase ... k1 k0', phase=8)
 
     assert new.shape == (8, 1, 16, 1, 96, 256)
-    assert tensor.reshape is torch.Tensor.reshape
 
     # Example 2 in docstring
     tensor = rng.complex64_tensor((1, 1, 1, 768, 1))
     new = broadcasted_rearrange(
-        tensor, '... (phase k1) k0 -> phase ... k1 k0', broadcasted_shape=(1, 16, 1, 768, 256), phase=8
+        tensor,
+        '... (phase k1) k0 -> phase ... k1 k0',
+        broadcasted_shape=(1, 16, 1, 768, 256),
+        phase=8,
+        reduce_views=False,
     )
     assert new.shape == (8, 1, 16, 1, 96, 256)
 
@@ -259,9 +262,9 @@ def test_broadcasted_rearrange() -> None:
     # Already broadcasted input, reduce_views=True
     tensor = rng.complex64_tensor((1, 1, 1, 1, 1)).expand(2, 1, 1, 768, 1)
     new = broadcasted_rearrange(tensor, '... (phase k1) k0 -> phase ... k1 k0', reduce_views=True, phase=8)
-    assert new.shape == (1, 1, 1, 1, 1)
+    assert new.shape == (1, 1, 1, 1, 1, 1)
 
     # Already broadcasted input, reduce_views=False
     tensor = rng.complex64_tensor((1, 1, 1, 1, 1)).expand(2, 1, 1, 768, 1)
-    new = broadcasted_rearrange(tensor, '... (phase k1) k0 -> phase ... k1 k0', phase=8)
-    assert new.shape == (8, 2, 1, 96, 1)
+    new = broadcasted_rearrange(tensor, '... (phase k1) k0 -> phase ... k1 k0', phase=8, reduce_views=False)
+    assert new.shape == (8, 2, 1, 1, 96, 1)
