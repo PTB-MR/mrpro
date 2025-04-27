@@ -3,7 +3,7 @@
 import copy
 import datetime
 import warnings
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from types import EllipsisType
 from typing import Literal, cast
 
@@ -11,7 +11,7 @@ import h5py
 import ismrmrd
 import numpy as np
 import torch
-from einops import rearrange, repeat
+from einops import rearrange
 from typing_extensions import Self, TypeVar
 
 from mrpro.data.acq_filters import has_n_coils, is_image_acquisition
@@ -25,6 +25,8 @@ from mrpro.data.Rotation import Rotation
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 from mrpro.data.traj_calculators.KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
 from mrpro.utils.typing import FileOrPath
+
+from ..utils.summarize import summarize_object
 
 RotationOrTensor = TypeVar('RotationOrTensor', bound=torch.Tensor | Rotation)
 
@@ -60,10 +62,10 @@ OTHER_LABELS = (
     'user7',
 )
 
+T = TypeVar('T', Rotation, torch.Tensor, Rotation | torch.Tensor)
 
-class KData(
-    Dataclass,
-):
+
+class KData(Dataclass):
     """MR raw data / k-space data class."""
 
     header: KHeader
@@ -80,7 +82,7 @@ class KData(
         cls,
         filename: FileOrPath,
         trajectory: KTrajectoryCalculator | KTrajectory | KTrajectoryIsmrmrd,
-        header_overwrites: dict[str, object] | None = None,
+        header_overwrites: Mapping[str, object] | None = None,
         dataset_idx: int = -1,
         acquisition_filter_criterion: Callable = is_image_acquisition,
     ) -> Self:
@@ -252,13 +254,21 @@ class KData(
         Reshapes the data to ("all other labels", coils, k2, k1, k0).
         Within "all other labels", the order is determined by `KDIM_SORT_LABELS`.
         """
+        shape = self.shape
+
+        def expand(x: T) -> T:
+            return x.expand(*shape[:-4], -1, shape[-3], shape[-2], -1)
+
         # First, determine if we can split into k2 and k1 and how large these should be
-        acq_indices_other = torch.stack([getattr(self.header.acq_info.idx, label) for label in OTHER_LABELS], dim=0)
+        acq_indices_other = torch.stack(
+            [expand(getattr(self.header.acq_info.idx, label)) for label in OTHER_LABELS],
+            dim=0,
+        )
         _, n_acqs_per_other = torch.unique(acq_indices_other, dim=1, return_counts=True)
         # unique counts of acquisitions for each combination of the label values in "other"
         n_acqs_per_other = torch.unique(n_acqs_per_other)
 
-        acq_indices_other_k2 = torch.cat((acq_indices_other, self.header.acq_info.idx.k2.unsqueeze(0)), dim=0)
+        acq_indices_other_k2 = torch.cat((acq_indices_other, expand(self.header.acq_info.idx.k2).unsqueeze(0)), dim=0)
         _, n_acqs_per_other_and_k2 = torch.unique(acq_indices_other_k2, dim=1, return_counts=True)
         # unique counts of acquisitions for each combination of other **and k2**
         n_acqs_per_other_and_k2 = torch.unique(n_acqs_per_other_and_k2)
@@ -295,52 +305,38 @@ class KData(
             n_k2 = 1
 
         # Second, determine the sorting order
-        acq_indices = np.stack([getattr(self.header.acq_info.idx, label).ravel() for label in KDIM_SORT_LABELS], axis=0)
+        acq_indices = np.stack(
+            [expand(getattr(self.header.acq_info.idx, label)).ravel() for label in KDIM_SORT_LABELS],
+            axis=0,
+        )
         sort_idx = torch.as_tensor(np.lexsort(acq_indices))  # torch has no lexsort as of pytorch 2.6 (March 2025)
 
         # Finally, reshape and sort the tensors in acqinfo and acqinfo.idx, and kdata.
-        header = self.header.apply(
-            lambda field: rearrange(
-                cast(Rotation | torch.Tensor, rearrange(field, '... coils k2 k1 k0 -> (... k2 k1) coils k0'))[sort_idx],
-                '(other k2 k1) coils k0 -> other coils k2 k1 k0',
-                k1=n_k1,
-                k2=n_k2,
-                k0=1,
+        def sort(x: T) -> T:
+            flat = cast(T, rearrange(expand(x), '... coils k2 k1 k0 -> (... k2 k1) coils k0'))
+            return cast(
+                T, rearrange(flat[sort_idx], '(other k2 k1) coils k0 -> other coils k2 k1 k0', k1=n_k1, k2=n_k2)
             )
-            if isinstance(field, torch.Tensor | Rotation)
-            else field
-        )
 
-        data = rearrange(
-            rearrange(self.data, '... coils k2 k1 k0-> (... k2 k1) coils k0 ')[sort_idx],
-            '(other k2 k1) coils k0 -> other coils k2 k1 k0',
-            k1=n_k1,
-            k2=n_k2,
-        )
-
-        kz, ky, kx = rearrange(
-            self.traj.as_tensor(-1).flatten(end_dim=-4)[sort_idx],
-            '(other k2 k1) coils k0 zyx -> zyx other coils k2 k1 k0 ',
-            k1=n_k1,
-            k2=n_k2,
-        )
+        header = self.header.apply(lambda field: sort(field) if isinstance(field, torch.Tensor | Rotation) else field)
+        data = sort(self.data)
+        kz, ky, kx = (sort(t) for t in (self.traj.kz, self.traj.ky, self.traj.kx))
         traj = KTrajectory(kz, ky, kx, self.traj.grid_detection_tolerance, self.traj.repeat_detection_tolerance)
-        return type(self)(header=header, data=data, traj=traj)
+        return type(self)(header=header._reduce_repeats_(), data=data, traj=traj._reduce_repeats_())
 
     def __repr__(self):
         """Representation method for KData class."""
-        traj = KTrajectory(self.traj.kz, self.traj.ky, self.traj.kx)
-        try:
-            device = str(self.device)
-        except RuntimeError:
-            device = 'mixed'
-        out = (
-            f'{type(self).__name__} with shape {list(self.data.shape)!s} and dtype {self.data.dtype}\n'
-            f'Device: {device}\n'
-            f'{traj}\n'
-            f'{self.header}'
+        traj_info = '\n   '.join(repr(self.traj).splitlines())
+        header_info = '\n   '.join(repr(self.header).splitlines())
+        representation = '\n'.join(
+            [
+                super().__repr__().splitlines()[0],
+                f'  data: {summarize_object(self.data)}',
+                f'  traj: {traj_info}',
+                f'  header:  {header_info}',
+            ]
         )
-        return out
+        return representation
 
     def compress_coils(
         self: Self,
@@ -494,6 +490,7 @@ class KData(
         # Adapt header parameters
         header = copy.deepcopy(self.header)
         header.encoding_matrix.x = cropped_data.shape[-1]
+        header.encoding_fov.x = self.header.recon_fov.x
 
         return type(self)(header, cropped_data, cropped_traj)
 
@@ -548,64 +545,4 @@ class KData(
         header.acq_info.apply_(lambda field: field[other_idx] if isinstance(field, torch.Tensor | Rotation) else field)
         data = data[other_idx]
         traj = traj[:, other_idx]
-        return type(self)(header, data, type(self.traj).from_tensor(traj))
-
-    def split_k1_into_other(
-        self,
-        split_idx: torch.Tensor,
-        other_label: Literal['average', 'slice', 'contrast', 'phase', 'repetition', 'set'],
-    ) -> Self:
-        """Based on an index tensor, split the data in e.g. phases.
-
-        Parameters
-        ----------
-        split_idx
-            2D index describing  the k1 points in each block to be moved to the other dimension
-            `(other_split, k1_per_split)`
-        other_label
-            Label of other dimension, e.g. repetition, phase
-
-        Returns
-        -------
-            K-space data with new shape `((other other_split) coils k2 k1_per_split k0)`
-
-        """
-        n_other_split, n_k1_per_split = split_idx.shape
-        n_k1 = self.data.shape[-2]  # This assumes that data is not broadcasted along k1
-
-        def split(data: RotationOrTensor) -> RotationOrTensor:
-            # broadcast "k1"
-            expanded = data.expand((*data.shape[:-2], n_k1, data.shape[-1]))
-            # cast due to https://github.com/python/mypy/issues/10817
-            return cast(RotationOrTensor, expanded[..., split_idx, :])
-
-        data = rearrange(
-            split(self.data.flatten(end_dim=-5)), 'other coils k2 other_split k1 k0->(other other_split) coils k2 k1 k0'
-        )
-
-        traj = self.traj.as_tensor()
-        traj = torch.broadcast_to(traj, (traj.shape[0], *self.data.shape[:-4], *traj.shape[-4:]))  # broadcast "other"
-        traj = traj.flatten(start_dim=1, end_dim=-5)  # flatten "other" dimensions
-        traj = rearrange(split(traj), 'dim other coils k2 other_split k1 k0->dim (other other_split) coils k2 k1 k0')
-
-        header = self.header.apply(
-            lambda field: rearrange(
-                split(  # type: ignore[type-var] # mypy does not recognize return type of rearrange here
-                    rearrange(field, '... coils k2 k1 k0 -> (...) coils k2 k1 k0 ')  # flatten "other" dimensions
-                ),
-                'other coils k2 other_split k1 k0->(other other_split) coils k2 k1 k0',
-            )
-            if isinstance(field, Rotation | torch.Tensor)
-            else field
-        )
-
-        new_idx = repeat(
-            torch.arange(n_other_split),
-            'other_split-> (other_split other) 1 k2 k1 1',
-            other=data.shape[0] // n_other_split,
-            k2=data.shape[-3],
-            k1=n_k1_per_split,
-        )
-        setattr(header.acq_info.idx, other_label, new_idx)
-
         return type(self)(header, data, type(self.traj).from_tensor(traj))
