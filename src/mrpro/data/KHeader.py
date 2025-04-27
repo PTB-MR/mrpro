@@ -5,7 +5,6 @@ import datetime as dt
 import warnings
 from collections.abc import Mapping
 from dataclasses import field
-from typing import TYPE_CHECKING
 
 import ismrmrd.xsd.ismrmrdschema.ismrmrd as ismrmrdschema
 import torch
