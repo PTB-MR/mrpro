@@ -300,7 +300,7 @@ class Indexer:
             # for a single vectorized index, torch would insert it at the same position
             # this would shift the other axes, potentially causing violations of the shape invariants.
             # thus, we move the inserted axis to the beginning of the tensor, after axes inserted by None.
-            # We keep the last axes if the of the vectorized index in the indexed axis.
+            # We keep the last axes of the vectorized index in the indexed axis.
             move_source_start = next(i for i, idx in enumerate(fancy_index) if isinstance(idx, torch.Tensor))
             move_source = tuple(range(move_source_start, move_source_start + len(vectorized_shape) - 1))
             move_target_start = next(i for i, idx in enumerate(fancy_index) if idx is not None)

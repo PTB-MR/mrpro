@@ -3,16 +3,16 @@ Data Structures, Dimensions, and Indexing
 
 In MRpro, we use `torch.Tensors` and "Dataclasses" to store and manage data. Dataclasses serve as containers for different tensors, metadata, and other dataclasses, ensuring a consistent and structured approach to data handling.
 
-For example `mrpro.data.KData`  contains complex raw data, trajectory information, and headers.
+For example `mrpro.data.KData` contains complex raw data, trajectory information, and headers.
 
 Dimensions and Broadcasting Rules
 ---------------------------------
 MRpro follows a consistent convention of using at least 5-dimensional tensors for data representation:
 
 - K-space data: `(*other, coils, k2, k1, k0)`
-- Real space data: `(*other, coil, z, y, x)`
+- Real space (image) data: `(*other, coils, z, y, x)`
 
-Here, `*other` represents additional acquisition parameters, such as inversion time or slice. Singleton dimensions are enforced for quantities that do not vary along a specific axis, ensuring they are broadcastable.
+Here, `*other` represents additional dimensions, such slice positions, repetitions or cardiac phases. Singleton dimensions are enforced for quantities that do not vary along a specific axis, ensuring they are broadcastable.
 
 For example, a 2D Cartesian trajectory might have:
 - kx field: `(other, coils=1, k2=1, k1=1, k0)`
@@ -23,7 +23,7 @@ Neither kx nor ky have this shape, but both can be broadcasted to this shape.
 
 Indexing Conventions
 --------------------
-Dataclasses support advanced indexing. Itfollows numpy-like rules with two key exceptions:
+Dataclasses support advanced indexing. It follows numpy-like rules with two key exceptions:
 1. Indexing never removes dimensions.
 2. New dimensions are added at the beginning.
 
@@ -34,13 +34,13 @@ The index can contain slices, integers, boolean masks, sequences of integers, No
 - **Boolean masks**: Singleton dimensions in the mask are interpreted as full slices. If the mask has more than one non-singleton dimension, a new dimension is added at the beginning.
 - **Sequences of integers**: Result in concatenation along the indexed dimension. If more than one sequence is used, a new dimension is added at the beginning.
 - **Integer tensors**: If a single indexing tensor is used, the indexed dimension will be replaced by the last dimension of the indexing tensor. Other dimensions of the indexing tensor are added at the beginning of the result. If multiple indexing tensors are used, the indexed dimension will be replaced by a singleton dimension and all new dimensions are added at the beginning of the result.
-- **None**: Adds new axes at the beginning.
+- **None**: Can only be used to add new axes at the beginning.
 - **Ellipsis**: Expanded to `slice(None)` for all axes not indexed.
 
 The indexing is applied recursively to all tensors in the dataclass, ensuring that the dimensions are consistent across all tensors.
-Indexing is applied as-if all tensors where broadcasted to the `.shape` of the dataclass the indexing is applied to.
-So, for example, indexing a `KData` object in the `coils` dimension result in the same trajecktory as before, as
-trajectories always have coils=1. The behavior is as-if is broadcasted along the coil dimensions, then indexing is applied, then the boadcasted dimensions is reduced back to singleton.
+Indexing is applied as if all tensors where broadcasted to the `.shape` of the dataclass the indexing is applied to.
+So, for example, indexing a `KData` object in the `coils` dimension results in the same trajecktory as before, as
+trajectories always have coils=1. The behavior is as if the trajectory is broadcasted along the coil dimensions, then indexing is applied, then the boadcasted dimensions is reduced back to singleton.
 
 
 SpatialDimension
@@ -70,8 +70,6 @@ Below are practical examples demonstrating the use of dataclasses, indexing, and
 .. code-block:: python
 
     import mrpro
-    from mrpro.data.SpatialDimension import SpatialDimension
-    from  import Rotation
 
     # Example: Indexing a broadcasted tensor
     kdata = mrpro.data.KData.from_file('example.mrd')
@@ -85,4 +83,4 @@ Below are practical examples demonstrating the use of dataclasses, indexing, and
     # Example: Creating and using SpatialDimension and Rotation
     position = mrpro.data.SpatialDimension(z=3, y=2, x=1)
     rotation = mrpro.data.Rotation.from_euler("xyz", (0,0,torch.pi))
-    rotated = rotation(spatial_dim)
+    rotated = rotation(position)
