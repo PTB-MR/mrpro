@@ -13,6 +13,7 @@ from typing_extensions import Any, Protocol, Self, TypeVar, dataclass_transform,
 from mrpro.utils.indexing import HasIndex, Indexer
 from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.reshape import broadcasted_concatenate, broadcasted_rearrange
+from mrpro.utils.summarize import summarize_object
 from mrpro.utils.typing import TorchIndexerType
 
 
@@ -627,19 +628,51 @@ class Dataclass:
 
     # endregion Properties
 
+    # region Representation
     def __repr__(self) -> str:
-        """Representation method for Dataclass."""
+        """Get string representation of Dataclass."""
+        header = [type(self).__name__]
+
         try:
-            device = str(self.device)
+            device = self.device
+            if device:
+                header.append(f'on device "{device}"')
         except RuntimeError:
-            device = 'mixed'
-        name = type(self).__name__
-        output = f'{name} with (broadcasted) shape {list(self.shape)!s} on device "{device}".\n'
-        output += 'Fields:\n'
+            header.append('on mixed devices')
+
+        try:
+            if shape := self.shape:
+                header.append(f'with (broadcasted) shape {list(shape)!s}')
+        except RuntimeError:
+            header.append('with inconsistent shape')
+
+        output = ' '.join(header) + '.\n'
+
         output += '\n'.join(
-            f'   {field.name} <{type(getattr(self, field.name)).__name__}>' for field in dataclasses.fields(self)
+            f'  {field.name}: {summarize_object(value)}'
+            for field in dataclasses.fields(self)
+            if not (field.name.startswith('_') or (value := getattr(self, field.name, None)) is None)
         )
         return output
+
+    # We return the same for __repr__ and __str__.
+    # This break the "_str_ if for users, _repr_ for developers rule" of python.
+    # But it makes interactive work on repl or notebooks easier, as `obj` can be used instead
+    # of `print(obj)`. It would be infeasable for most dataclasses to implement a proper  __repr__
+    # that uniquely describes the data and could be used to recreate the object anyways.
+
+    def __str__(self) -> str:
+        """Return the same as __repr__."""
+        return repr(self)
+
+    def __shortstr__(self) -> str:
+        """Return a short string representation."""
+        output = type(self).__name__
+        if self.shape:
+            output = output + f'<{", ".join(map(str, self.shape))}>'
+        return output
+
+    # endregion Representation
 
     # region Indexing
     def __getitem__(self, index: TorchIndexerType | Indexer) -> Self:
@@ -778,7 +811,8 @@ class Dataclass:
             value_self = getattr(new, field.name)
             value_others = [getattr(other, field.name) for other in others]
             if all(isinstance(v, list) for v in (value_self, *value_others)):
-                value_self.extend(getattr(other, field.name) for other in others)
+                for v in value_others:
+                    value_self.extend(v)
             elif all(isinstance(v, torch.Tensor) for v in (value_self, *value_others)):
                 tensors = [t.broadcast_to(s) for t, s in zip((value_self, *value_others), shapes, strict=True)]
                 setattr(new, field.name, broadcasted_concatenate(tensors, dim=dim))
