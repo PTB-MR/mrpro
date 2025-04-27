@@ -368,7 +368,7 @@ def broadcasted_rearrange(
 
     >>> tensor=torch.randn(1, 1, 1, 768, 1)
     >>> broadcasted_rearrange(tensor, '... (phase k1) k0 -> phase ... k1 k0',
-    >>>    broadcasted_shape=(1, 16, 1, 768, 256) phase=8, reduce_view=True).shape
+    >>>    broadcasted_shape=(1, 16, 1, 768, 256) phase=8, reduce_views=True).shape
     torch.Size([8, 1, 1, 1, 96, 1]) # Dimensions that are stride-0 are reduced to singleton dimensions
 
     ```

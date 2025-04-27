@@ -2,6 +2,7 @@
 
 from mrpro.operators.models.SaturationRecovery import SaturationRecovery
 from mrpro.operators.models.InversionRecovery import InversionRecovery
+from mrpro.operators.models.SpoiledGRE import SpoiledGRE
 from mrpro.operators.models.MOLLI import MOLLI
 from mrpro.operators.models.WASABI import WASABI
 from mrpro.operators.models.WASABITI import WASABITI
@@ -17,6 +18,7 @@ __all__ = [
     "MOLLI",
     "MonoExponentialDecay",
     "SaturationRecovery",
+    "SpoiledGRE",
     "TransientSteadyStateWithPreparation",
     "WASABI",
     "WASABITI"
