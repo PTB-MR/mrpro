@@ -811,7 +811,8 @@ class Dataclass:
             value_self = getattr(new, field.name)
             value_others = [getattr(other, field.name) for other in others]
             if all(isinstance(v, list) for v in (value_self, *value_others)):
-                value_self.extend(getattr(other, field.name) for other in others)
+                for v in value_others:
+                    value_self.extend(v)
             elif all(isinstance(v, torch.Tensor) for v in (value_self, *value_others)):
                 tensors = [t.broadcast_to(s) for t, s in zip((value_self, *value_others), shapes, strict=True)]
                 setattr(new, field.name, broadcasted_concatenate(tensors, dim=dim))
