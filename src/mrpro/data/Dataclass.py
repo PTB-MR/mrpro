@@ -629,6 +629,20 @@ class Dataclass:
 
     # endregion Properties
 
+    def __repr__(self) -> str:
+        """Representation method for Dataclass."""
+        try:
+            device = str(self.device)
+        except RuntimeError:
+            device = 'mixed'
+        name = type(self).__name__
+        output = f'{name} with (broadcasted) shape {list(self.shape)!s} on device "{device}".\n'
+        output += 'Fields:\n'
+        output += '\n'.join(
+            f'   {field.name} <{type(getattr(self, field.name)).__name__}>' for field in dataclasses.fields(self)
+        )
+        return output
+
     # region Indexing
     def __getitem__(self, index: TorchIndexerType | Indexer) -> Self:
         """Index the dataclass."""
