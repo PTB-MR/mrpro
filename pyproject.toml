@@ -102,10 +102,9 @@ notebooks = [
     "ipywidgets",
     "jupytext",
     "matplotlib",
+    "cmap",
 ]
-dev = [
-    "mrpro[tests, docs]"
-]
+dev = ["mrpro[tests, docs]"]
 
 [project.urls]
 "Documentation" = "https://ptb-mr.github.io/mrpro/"
