@@ -41,4 +41,5 @@ __all__ = [
     "unsqueeze_tensors_at",
     "unsqueeze_tensors_left",
     "unsqueeze_tensors_right",
+    "zero_pad_or_crop"
 ]
