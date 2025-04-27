@@ -5,9 +5,10 @@ from __future__ import annotations
 import math
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import TypeAlias, TypeVarTuple, Unpack
+from typing import TypeAlias
 
 import torch
+from typing_extensions import TypeVarTuple, Unpack
 
 import mrpro.operators
 from mrpro.operators.Operator import Operator
