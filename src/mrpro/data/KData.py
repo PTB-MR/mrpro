@@ -3,7 +3,7 @@
 import copy
 import datetime
 import warnings
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from types import EllipsisType
 from typing import Literal, cast
 
@@ -26,6 +26,8 @@ from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalcula
 from mrpro.data.traj_calculators.KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
 from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.typing import FileOrPath
+
+from ..utils.summarize import summarize_object
 
 RotationOrTensor = TypeVar('RotationOrTensor', bound=torch.Tensor | Rotation)
 
@@ -81,7 +83,7 @@ class KData(Dataclass):
         cls,
         filename: FileOrPath,
         trajectory: KTrajectoryCalculator | KTrajectory | KTrajectoryIsmrmrd,
-        header_overwrites: dict[str, object] | None = None,
+        header_overwrites: Mapping[str, object] | None = None,
         dataset_idx: int = -1,
         acquisition_filter_criterion: Callable = is_image_acquisition,
     ) -> Self:
@@ -345,18 +347,17 @@ class KData(Dataclass):
 
     def __repr__(self):
         """Representation method for KData class."""
-        traj = KTrajectory(self.traj.kz, self.traj.ky, self.traj.kx)
-        try:
-            device = str(self.device)
-        except RuntimeError:
-            device = 'mixed'
-        out = (
-            f'{type(self).__name__} with shape {list(self.data.shape)!s} and dtype {self.data.dtype}\n'
-            f'Device: {device}\n'
-            f'{traj}\n'
-            f'{self.header}'
+        traj_info = '\n   '.join(repr(self.traj).splitlines())
+        header_info = '\n   '.join(repr(self.header).splitlines())
+        representation = '\n'.join(
+            [
+                super().__repr__().splitlines()[0],
+                f'  data: {summarize_object(self.data)}',
+                f'  traj: {traj_info}',
+                f'  header:  {header_info}',
+            ]
         )
-        return out
+        return representation
 
     def compress_coils(
         self: Self,
