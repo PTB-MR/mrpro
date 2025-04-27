@@ -19,7 +19,6 @@ def test_optimizer_op_gradcheck() -> None:
     true_m0 = rng.complex128_tensor(size=(3, 2))
     true_t1 = rng.float64_tensor(size=(3, 2), low=0.1, high=2)
     (signal,) = InversionRecovery(torch.tensor([0.5, 1.0, 1.5, 3], dtype=torch.float64))(true_m0, true_t1)
-    # signal += rng.complex128_tensor(size=(3, 2), high=0.0001)
     t1_reg = true_t1 + rng.rand_like(true_t1, low=-0.01, high=0.01)
     m0_reg = true_m0 + rng.rand_like(true_m0, high=0.01)
     m0_reg.requires_grad = True

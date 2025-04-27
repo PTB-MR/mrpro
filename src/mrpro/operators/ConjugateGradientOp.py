@@ -176,10 +176,13 @@ class ConjugateGradientOp(torch.nn.Module):
         ----------
         parameters
             The parameters passed to the operator and right-hand side factory functions.
+        initial_value
+            The initial value for the conjugate gradient method.
+            If `None`, the initial value is set to zero.
         """
         if self.implicit_backward:
             solution = ConjugateGradientFunction.apply(self.operator_factory, self.rhs_factory, *parameters)
-        else:
+        else:  # unrolled CG
             op = self.operator_factory(*parameters)
             rhs = self.rhs_factory(*parameters)
             if isinstance(op, LinearOperator):
