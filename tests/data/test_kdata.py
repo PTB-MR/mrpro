@@ -7,9 +7,9 @@ from mrpro.data import KData, KTrajectory, SpatialDimension
 from mrpro.data.acq_filters import has_n_coils, is_coil_calibration_acquisition, is_image_acquisition
 from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
-from mrpro.utils import split_idx
+from mrpro.utils import RandomGenerator, split_idx
 
-from tests import RandomGenerator, relative_image_difference
+from tests import relative_image_difference
 from tests.phantoms import EllipsePhantomTestData
 
 
@@ -37,8 +37,8 @@ def test_KData_random_cart_undersampling_shape(ismrmrd_cart_random_us):
 
 def test_KData_raise_wrong_trajectory_shape(ismrmrd_cart):
     """Wrong KTrajectory shape raises exception."""
-    kx = ky = kz = torch.zeros(5, 1, 2, 3, 4)
-    trajectory = KTrajectory(kz, ky, kx, repeat_detection_tolerance=None)
+    rng = RandomGenerator(seed=0)
+    trajectory = KTrajectory(*rng.float32_tensor((3, 5, 1, 2, 3, 4)))
     with pytest.raises(ValueError):
         _ = KData.from_file(ismrmrd_cart.filename, trajectory)
 
@@ -281,7 +281,7 @@ def test_KData_split_k1_into_other(consistently_shaped_kdata, n_other_split: int
     assert kdata_split.data.shape == (idx_split.shape[0] * n_other, n_coils, n_k2, k1_per_block, n_k0)
     assert kdata_split.traj.shape == (idx_split.shape[0] * n_other, 1, n_k2, k1_per_block, n_k0)
     new_idx = getattr(kdata_split.header.acq_info.idx, other_label)
-    assert new_idx.shape == (idx_split.shape[0] * n_other, 1, n_k2, k1_per_block, 1)
+    assert new_idx.shape == (idx_split.shape[0] * n_other, 1, 1, 1, 1)
 
 
 @pytest.mark.parametrize(
@@ -321,7 +321,7 @@ def test_KData_remove_readout_os(monkeypatch, random_kheader) -> None:
     n_k1 = 240
     n_k0_oversampled = 320
 
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
 
     # Set parameters need in remove_os
     monkeypatch.setattr(random_kheader.encoding_matrix, 'x', n_k0_oversampled)
@@ -341,9 +341,9 @@ def test_KData_remove_readout_os(monkeypatch, random_kheader) -> None:
     k_tensor = repeat(kdata_os, 'k1 k0 -> other coils k2 k1 k0', other=1, coils=n_coils, k2=1)
 
     # Create random 2D Cartesian trajectory
-    kx = random_generator.float32_tensor(size=(1, 1, 1, 1, n_k0_oversampled))
-    ky = random_generator.float32_tensor(size=(1, 1, 1, n_k1, 1))
-    kz = random_generator.float32_tensor(size=(1, 1, 1, 1, 1))
+    kx = rng.float32_tensor(size=(1, 1, 1, 1, n_k0_oversampled))
+    ky = rng.float32_tensor(size=(1, 1, 1, n_k1, 1))
+    kz = rng.float32_tensor(size=(1, 1, 1, 1, 1))
     trajectory = KTrajectory(kz, ky, kx)
 
     # Create KData

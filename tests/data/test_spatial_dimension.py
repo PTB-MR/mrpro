@@ -3,9 +3,8 @@
 import pytest
 import torch
 from mrpro.data import SpatialDimension
+from mrpro.utils import RandomGenerator
 from typing_extensions import Any, assert_type
-
-from tests import RandomGenerator
 
 
 def test_spatial_dimension_from_xyz_int() -> None:
@@ -31,9 +30,9 @@ def test_spatial_dimension_from_xyz_tensor() -> None:
         z = 3 * torch.ones(1, 2, 3)
 
     spatial_dimension = SpatialDimension.from_xyz(XYZtensor())
-    assert torch.equal(spatial_dimension.x, XYZtensor.x)
-    assert torch.equal(spatial_dimension.y, XYZtensor.y)
-    assert torch.equal(spatial_dimension.z, XYZtensor.z)
+    assert torch.equal(spatial_dimension.x.expand(1, 2, 3), XYZtensor.x)
+    assert torch.equal(spatial_dimension.y.expand(1, 2, 3), XYZtensor.y)
+    assert torch.equal(spatial_dimension.z.expand(1, 2, 3), XYZtensor.z)
 
 
 def test_spatial_dimension_from_array() -> None:
@@ -84,11 +83,12 @@ def test_spatial_dimension_from_array_wrongshape() -> None:
         _ = SpatialDimension.from_array_xyz(tensor_wrongshape)
 
 
-def test_spatial_dimension_broadcasting() -> None:
+def test_spatial_dimension_broadcasting():
     """Test shape broadcasting"""
-    z = torch.ones(2, 1, 1)
-    y = torch.ones(1, 2, 1)
-    x = torch.ones(1, 1, 2)
+    rng = RandomGenerator(0)
+    z = rng.float32_tensor((2, 1, 1))
+    y = rng.float32_tensor((1, 2, 1))
+    x = rng.float32_tensor((1, 1, 2))
     spatial_dimension = SpatialDimension(z, y, x)
     assert spatial_dimension.shape == (2, 2, 2)
 

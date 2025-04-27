@@ -170,7 +170,7 @@ operator = acquisition_operator.H @ dcf_operator @ acquisition_operator
 # to stop the iterations when the residual is below a certain threshold.
 
 # %%
-img_manual = mrpro.algorithms.optimizers.cg(
+(img_manual,) = mrpro.algorithms.optimizers.cg(
     operator, right_hand_side, initial_value=right_hand_side, max_iterations=4, tolerance=0.0
 )
 

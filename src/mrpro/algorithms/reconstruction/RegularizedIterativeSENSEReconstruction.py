@@ -129,7 +129,7 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
             operator = operator + self.regularization_weight * self.regularization_op.H @ self.regularization_op
             right_hand_side += self.regularization_weight * self.regularization_op.H(self.regularization_data)[0]
 
-        img_tensor = cg(
+        (img_tensor,) = cg(
             operator,
             right_hand_side,
             initial_value=right_hand_side,
