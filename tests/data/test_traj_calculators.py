@@ -236,8 +236,8 @@ def test_KTrajectorySpiral():
     """Test the generation of a 2D spiral trajectory"""
     trajectory_calculator = KTrajectorySpiral2D()
     trajectory = trajectory_calculator(
-        n_k0=1024, k1_idx=torch.arange(4)[None, None, :], encoding_matrix=SpatialDimension(1, 256, 256)
+        n_k0=1024, k1_idx=torch.arange(4)[:, None], encoding_matrix=SpatialDimension(1, 256, 256)
     )
-    assert trajectory.kz.shape == (1, 1, 1, 1)
-    assert trajectory.ky.shape == (1, 1, 4, 1024)
-    assert trajectory.kx.shape == (1, 1, 4, 1024)
+    assert trajectory.kz.shape == (1, 1, 1, 1, 1)
+    assert trajectory.ky.shape == (1, 1, 1, 4, 1024)
+    assert trajectory.kx.shape == (1, 1, 1, 4, 1024)

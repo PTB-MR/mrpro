@@ -5,6 +5,7 @@ import torch
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
+from mrpro.utils.reshape import unsqueeze_left
 from mrpro.utils.unit_conversion import GYROMAGNETIC_RATIO_PROTON
 
 
@@ -138,6 +139,7 @@ class KTrajectorySpiral2D(KTrajectoryCalculator):
         tau_t = tau(t)
         k = lam * tau_t**self.density_factor * torch.exp(1j * max_angle * tau_t)  # eq. 2
         phase_rotation = torch.exp(1j * self.angle * k1_idx)
-        k = k[None, :] * phase_rotation[..., None]
+        k = k[None, :] * phase_rotation
+        k = unsqueeze_left(k, 5 - k.ndim)
         trajectory = KTrajectory(kx=k.real, ky=k.imag, kz=torch.zeros_like(k.real))
         return trajectory
