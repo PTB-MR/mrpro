@@ -144,6 +144,7 @@ module = [
     "pywt.*",
     "torchvision.*",
     "platformdirs",
+    "cmap",
 ]
 ignore_missing_imports = true
 
