@@ -240,7 +240,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
         return self.H(*x)
 
     @classmethod
-    def from_diagonal(cls, *operators: LinearOperator):
+    def from_diagonal(cls, *operators: LinearOperator) -> Self:
         """Create a diagonal `LinearOperatorMatrix`.
 
         Construct a square `LinearOperatorMatrix` with the given linear operators on the diagonal,

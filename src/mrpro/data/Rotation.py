@@ -57,6 +57,7 @@ from scipy._lib._util import check_random_state
 from typing_extensions import Self, Unpack, overload
 
 from mrpro.data.SpatialDimension import SpatialDimension
+from mrpro.utils import reduce_repeat
 from mrpro.utils.indexing import Indexer
 from mrpro.utils.typing import NestedSequence, TorchIndexerType
 from mrpro.utils.vmf import sample_vmf
@@ -439,8 +440,8 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         if quaternions_.shape[-1] != 4:
             raise ValueError(f'Expected `quaternions` to have shape (..., 4), got {quaternions_.shape}.')
 
-        reflection_ = torch.as_tensor(reflection)
-        inversion_ = torch.as_tensor(inversion)
+        reflection_ = torch.as_tensor(reflection, device=quaternions_.device)
+        inversion_ = torch.as_tensor(inversion, device=quaternions_.device)
         if reflection_.any():
             axis, angle = _quaternion_to_axis_angle(quaternions_)
             angle = (angle + torch.pi * reflection_.float()).unsqueeze(-1)
@@ -1630,6 +1631,26 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         inversion = indexer(self._is_improper)
         return type(self)(quaternions, normalize=False, inversion=inversion)
 
+    def _reduce_repeats_(self, tol: float = 1e-6, dim: Sequence[int] | None = None) -> Self:
+        """Reduce repeated dimensions to singleton.
+
+        Parameters
+        ----------
+        tol
+            tolerance to apply to quaternions
+        dim
+            dimensions to try to reduce to singletons. `None` means all.
+        """
+        if dim is None:
+            quaternion_dim: Sequence[int] = range(self._quaternions.ndim - 1)
+        else:
+            quaternion_dim = [
+                d - 1 if d < 0 else d for d in dim if d > -self._quaternions.ndim + 1 and d < self._quaternions.ndim - 1
+            ]
+        self._quaternions.data = reduce_repeat(self._quaternions, tol, quaternion_dim)
+        self._is_improper.data = reduce_repeat(self._is_improper, tol, dim)
+        return self
+
     @property
     def quaternion_x(self) -> torch.Tensor:
         """Get x component of the quaternion."""
@@ -2069,6 +2090,13 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         return self.__class__(
             self._quaternions.unsqueeze(quaternion_dim), inversion=self._is_improper.unsqueeze(dim), copy=True
         )
+
+    @property
+    def device(self) -> torch.device:
+        """Get the device of the Rotation."""
+        if self._quaternions.device != self._is_improper.device:
+            raise RuntimeError('Quaternion and is_improper tensors are on different devices.')
+        return self._quaternions.device
 
 
 class RotationBackend(AbstractBackend):
