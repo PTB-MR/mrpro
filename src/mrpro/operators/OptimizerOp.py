@@ -2,7 +2,7 @@
 
 import functools
 from collections.abc import Callable
-from typing import TYPE_CHECKING, TypeVar, TypeVarTuple, Unpack, cast
+from typing import TYPE_CHECKING, Any, TypeVar, TypeVarTuple, Unpack, cast
 
 import torch
 
@@ -12,8 +12,8 @@ from mrpro.operators.Operator import Operator
 
 ArgumentType = TypeVarTuple('ArgumentType')
 VariableType = TypeVar('VariableType', bound=tuple[torch.Tensor, ...])
-ObjectiveType = Callable[[VariableType], tuple[torch.Tensor]]
-FactoryType = Callable[[Unpack[tuple[torch.Tensor, ...]]], Callable]
+ObjectiveType = Callable[..., tuple[torch.Tensor]] | Operator[Any, tuple[torch.Tensor]]
+FactoryType = Callable[..., ObjectiveType]
 OptimizeFunctionType = Callable[[Callable, VariableType], VariableType]
 
 default_lbfgs = functools.partial(
@@ -47,9 +47,7 @@ class OptimizeFunction(torch.autograd.Function):
         @classmethod
         def apply(
             cls,
-            factory: Callable[
-                [Unpack[tuple[torch.Tensor, ...]]], Callable[[Unpack[tuple[torch.Tensor, ...]]], tuple[torch.Tensor]]
-            ],
+            factory: Callable[..., Callable[..., tuple[torch.Tensor]]],
             initial_values: tuple[torch.Tensor, ...],
             optimize: Callable[
                 [Callable[[*tuple[Unpack[tuple[torch.Tensor, ...]]]], tuple[torch.Tensor]], tuple[torch.Tensor, ...]],
@@ -100,7 +98,7 @@ class OptimizeFunction(torch.autograd.Function):
         def hvp(*v: torch.Tensor) -> tuple[torch.Tensor, ...]:
             return torch.autograd.functional.vhp(lambda *x: objective(*x)[0], xprime, v=v)[1]
 
-        hessian_inverse_grad = cg(hvp, grad_outputs, max_iterations=200, tolerance=1e-6)
+        hessian_inverse_grad = cg(hvp, grad_outputs, max_iterations=100, tolerance=1e-7)
         with torch.enable_grad():
             dobjective_dxprime = torch.autograd.grad(objective(*xprime), xprime, create_graph=True)
             # - d^2_obective / d_xprime d_params Hessian^-1_grad
@@ -177,8 +175,8 @@ class OptimizerOp(Operator[Unpack[ArgumentType], VariableType]):
             Parameters of the argmin problem.
         """
         initial_values = self.initializer(*parameters)
-        initial_values = tuple(x.clone() if any(x is p for p in parameters) else x for x in initial_values)
+        initial_values_ = tuple(x.clone() if any(x is p for p in parameters) else x for x in initial_values)
         result = OptimizeFunction.apply(
-            self.factory, initial_values, self.optimize, *cast(tuple[torch.Tensor, ...], parameters)
+            self.factory, initial_values_, self.optimize, *cast(tuple[torch.Tensor, ...], parameters)
         )
         return cast(VariableType, result)

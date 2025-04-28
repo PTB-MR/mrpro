@@ -62,7 +62,9 @@ class ConjugateGradientFunction(torch.autograd.Function):
                 raise ValueError('LinearOperator requires a single right-hand side tensor.')
             if initial_value is not None and len(initial_value) != 1:
                 raise ValueError('LinearOperator requires a single initial value tensor.')
-            solution = cg(operator, rhs, initial_value=initial_value, tolerance=fwd_tol, max_iterations=max_iterations)
+            solution: tuple[torch.Tensor, ...] = cg(
+                operator, rhs, initial_value=initial_value, tolerance=fwd_tol, max_iterations=max_iterations
+            )
         else:
             solution = cg(operator, rhs, initial_value=initial_value, tolerance=fwd_tol, max_iterations=max_iterations)
         ctx.save_for_backward(*solution, *inputs)
@@ -97,8 +99,9 @@ class ConjugateGradientFunction(torch.autograd.Function):
             grad_iter = iter(grads)
         else:
             grad_iter = iter(())
-        grads = tuple(next(grad_iter) if need else None for need in ctx.needs_input_grad[2:])
-        return (None, None, *grads)  # operator_factory, rhs_factory, *inputs
+
+        grad_input = tuple(next(grad_iter) if need else None for need in ctx.needs_input_grad[2:])
+        return (None, None, *grad_input)  # operator_factory, rhs_factory, *inputs
 
 
 class ConjugateGradientOp(torch.nn.Module):
