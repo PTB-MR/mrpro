@@ -1,10 +1,11 @@
 """LBFGS for solving non-linear minimization problems."""
 
 from collections.abc import Callable, Sequence
-from typing import Literal, Unpack
+from typing import Literal
 
 import torch
 from torch.optim import LBFGS
+from typing_extensions import Unpack
 
 from mrpro.algorithms.optimizers.OptimizerStatus import OptimizerStatus
 from mrpro.operators.Operator import OperatorType
