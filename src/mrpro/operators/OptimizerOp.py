@@ -2,9 +2,10 @@
 
 import functools
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, TypeVar, TypeVarTuple, Unpack, cast
+from typing import TYPE_CHECKING, cast
 
 import torch
+from typing_extensions import Any, TypeVar, TypeVarTuple, Unpack
 
 from mrpro.algorithms.optimizers.cg import cg
 from mrpro.algorithms.optimizers.lbfgs import lbfgs
