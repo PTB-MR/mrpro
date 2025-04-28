@@ -355,7 +355,13 @@ def broadcasted_rearrange(
     This operation includes functionality of transpose (axes permutation),
     reshape (view), squeeze, unsqueeze, repeat, and tile functions.
 
-    Example:
+    If a tensor has stride-0 dimensions, by default they will be preserved as stride-0
+    if possible and not made contiguous, thus saving memory.
+    If `reduce_views` is True, then stride-0 dimensions will be reduced to singleton dimensions after rearranging.
+    Optionally performs broadcasting to a specified shape before rearranging.
+
+    Examples
+    --------
     ```python
     >>> tensor = torch.randn(1, 16, 1, 768, 256)
     >>> broadcasted_rearrange(tensor, '... (phase k1) k0 -> phase ... k1 k0', phase=8, reduce_views=False).shape
@@ -370,13 +376,7 @@ def broadcasted_rearrange(
     >>> broadcasted_rearrange(tensor, '... (phase k1) k0 -> phase ... k1 k0',
     >>>    broadcasted_shape=(1, 16, 1, 768, 256) phase=8, reduce_views=True).shape
     torch.Size([8, 1, 1, 1, 96, 1]) # Dimensions that are stride-0 are reduced to singleton dimensions
-
     ```
-
-    If a tensor has stride-0 dimensions, by default they will be preserved as stride-0
-    if possible and not made contiguous, thus saving memory.
-    If `reduce_views` is True, then stride-0 dimensions will be reduced to singleton dimensions after rearranging.
-    Optionally performs broadcasting to a specified shape before rearranging.
 
     Parameters
     ----------
