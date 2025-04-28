@@ -11,7 +11,7 @@
 # %%
 # In this notebook the cardiac MR Fingerprinting (cMRF) data acquired at one scanner and the corresponding spin-echo
 # reference sequence are reconstructed and $T_1$ and $T_2$ maps are estimated. This example is based on the same
-# data as for one of the scanners in the scanner comparison example in [SCHUE2024].  Average $T_1$ and $T_2$ are
+# data as for one of the scanners in the scanner comparison example in [SCHUE2024]. Average $T_1$ and $T_2$ are
 # calculated in circular ROIs for different tissue types represented in the phantom.
 
 
@@ -28,7 +28,7 @@
 #         [INV TI=30ms][ACQ]                     [ACQ]     [T2-prep TE=50ms][ACQ]    [T2-prep TE=100ms][ACQ]
 
 # In order not to reconstruct all acquired images, the acquired data is split into windows of 20 acquisitions. The
-# windows have an overap of 10 acquisitins among each other.  As a result the acquired data is averaged over these
+# windows have an overap of 10 acquisitins among each other. As a result the acquired data is averaged over these
 # windows, so that less images have to be reconstructed.
 
 # We carry out dictionary matching to estimate the quantitative parameters from a series of qualitative images. For
@@ -68,7 +68,7 @@ from pathlib import Path
 
 import zenodo_get
 
-dataset = '14617082'  # FIXME: Change to real dataset!
+dataset = '15182376'
 
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
@@ -86,8 +86,8 @@ avg_recon = mrpro.algorithms.reconstruction.DirectReconstruction(kdata)
 
 import torch
 
-n_acq_per_image = 10
-n_overlap = 5
+n_acq_per_image = 20
+n_overlap = 10
 n_acq_per_block = 47
 n_blocks = 15
 
@@ -108,21 +108,32 @@ t2_keys = torch.arange(0.006, 0.5, 0.002)[None, :]
 m0_keys = torch.tensor(1.0)
 
 model = mrpro.operators.AveragingOp(dim=0, idx=split_indices) @ mrpro.operators.models.CardiacFingerprinting(
-    kdata.header.acq_info.acquisition_time_stamp.squeeze(), echo_time=0.00155
+    kdata.header.acq_info.acquisition_time_stamp.squeeze(),
+    echo_time=0.00155,
+    repetition_time=0.01,
+    t2_prep_echo_times=(0.03, 0.05, 0.1),
 )
+
 dictionary = mrpro.operators.DictionaryMatchOp(model, index_of_scaling_parameter=0).append(m0_keys, t1_keys, t2_keys)
 m0_match, t1_match, t2_match = dictionary(img)
+t1_match = t1_match.squeeze()
+t2_match = t2_match.squeeze()
+
+# Loading of reference maps and time conversion from ms to s
+import numpy as np
+
+ref_t1_maps = torch.tensor(np.load(data_folder / 'ref_t1.npy')) / 1000
+ref_t2_maps = torch.tensor(np.load(data_folder / 'ref_t2.npy')) / 1000
 
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show statistics helper functions"}
-import numpy as np
 
 
 def image_statistics(idat: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
     """Calculate mean value and standard deviation in the ROIs."""
     mask = np.squeeze(np.load(data_folder / 'mask.npy'))
     n_tubes = 9
-    mean = torch.cat([torch.mean(idat[mask == idx]) for idx in range(1, n_tubes + 1)])
-    std_deviation = torch.cat([torch.std(idat[mask == idx]) for idx in range(1, n_tubes + 1)])
+    mean = torch.stack([torch.mean(idat[mask == idx]) for idx in range(1, n_tubes + 1)])
+    std_deviation = torch.stack([torch.std(idat[mask == idx]) for idx in range(1, n_tubes + 1)])
     return mean, std_deviation
 
 
@@ -171,23 +182,19 @@ show_image(t1_match, t2_match)
 # We can also plot the statistics of the cMRF $T_1$ and $T_2$ maps and compare them to pre-calculated reference values,
 # obtained from a separate reference scan.
 # %% tags=["hide-input"] mystnb={"code_prompt_show": "Show plotting code"}
-# Pre-calculated $T_1$ and $T_2$ spin-echo reference values for the nine tubes
-t1_mean_ref = torch.tensor([1.022, 0.336, 0.287, 1.379, 0.430, 0.430, 1.755, 0.557, 0.580])
-t1_std_ref = torch.tensor([0.012, 0.005, 0.004, 0.024, 0.007, 0.003, 0.028, 0.006, 0.003])
-t2_mean_ref = torch.tensor([0.030, 0.033, 0.113, 0.037, 0.032, 0.123, 0.185, 0.032, 0.120])
-t2_std_ref = torch.tensor([0.009, 0.001, 0.003, 0.001, 0.001, 0.002, 0.003, 0.001, 0.004])
 
-
+t1_mean_ref, t1_std_ref = image_statistics(ref_t1_maps)
+t2_mean_ref, t2_std_ref = image_statistics(ref_t2_maps)
 t1_mean_cmrf, t1_std_cmrf = image_statistics(t1_match)
 t2_mean_cmrf, t2_std_cmrf = image_statistics(t2_match)
 
 
 fig, ax = plt.subplots(1, 2, figsize=(12, 7))
 ax[0].errorbar(t1_mean_ref, t1_mean_cmrf, t1_std_cmrf, t1_std_ref, fmt='o', color='teal')
-ax[0].plot([0, 2000], [0, 2000], color='darkorange')
+ax[0].plot([0, 2.0], [0, 2.0], color='darkorange')
 ax[0].text(
-    200,
-    1800,
+    0.2,
+    1.800,
     rf'$R^2$ = {r_squared(t1_mean_ref, t1_mean_cmrf):.4f}',
     fontsize=12,
     verticalalignment='top',
@@ -200,10 +207,10 @@ ax[0].grid()
 ax[0].set_aspect('equal', adjustable='box')
 
 ax[1].errorbar(t2_mean_ref, t2_mean_cmrf, t2_std_cmrf, t2_std_ref, fmt='o', color='teal')
-ax[1].plot([0, 200], [0, 200], color='darkorange')
+ax[1].plot([0, 0.2], [0, 0.2], color='darkorange')
 ax[1].text(
-    20,
-    180,
+    0.02,
+    0.180,
     rf'$R^2$ = {r_squared(t2_mean_ref, t2_mean_cmrf):.4f}',
     fontsize=12,
     verticalalignment='top',
