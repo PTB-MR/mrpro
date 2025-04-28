@@ -388,7 +388,7 @@ def test_dataclass_concatenate() -> None:
     concatenated = a.concatenate(b, c, dim=0)
     assert concatenated.shape == (30, 20)
     assert concatenated.floattensor.shape == (1, 20)  # broadcasted
-    assert concatenated.floattensor2.shape == (30, 1)  # non-broadcasted in concatenation dimension
+    assert concatenated.floattensor2.shape == (30, 1)  # not broadcasted in concatenation dimension
     assert concatenated.split(dim=0, size=10) == (a, b, c)
 
 

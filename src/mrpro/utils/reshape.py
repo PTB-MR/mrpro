@@ -357,7 +357,7 @@ def broadcasted_rearrange(
 
     Example:
     ```python
-    >>> tensor = torch.randn(1, 16, 1, 8, 256)
+    >>> tensor = torch.randn(1, 16, 1, 768, 256)
     >>> broadcasted_rearrange(tensor, '... (phase k1) k0 -> phase ... k1 k0', phase=8, reduce_views=False).shape
     torch.Size([8, 1, 16, 1, 96, 256])
 
@@ -461,6 +461,6 @@ def broadcasted_concatenate(tensors: Sequence[torch.Tensor], dim: int, reduce_vi
     tensors = [t[idx] for t in tensors]
     result = torch.cat(tensors, dim=dim)
 
-    if not reduce_views:  # dimensions are already reduced, we would to undo.
+    if not reduce_views:  # dimensions are already reduced, we would undo this here.
         result = result.expand(broadcasted_shape)
     return result
