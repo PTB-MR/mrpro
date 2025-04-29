@@ -5,10 +5,10 @@ from __future__ import annotations
 import operator
 from collections.abc import Iterator
 from functools import reduce
-from typing import TypeVarTuple, cast, overload
+from typing import cast
 
 import torch
-from typing_extensions import Unpack
+from typing_extensions import TypeVarTuple, Unpack, overload
 
 from mrpro.operators.Functional import ProximableFunctional
 from mrpro.operators.Operator import Operator
