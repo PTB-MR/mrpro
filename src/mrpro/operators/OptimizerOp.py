@@ -83,8 +83,8 @@ class OptimizeFunction(torch.autograd.Function):
 
         parameters_ = tuple(p.detach().clone() for p in parameters if isinstance(p, torch.Tensor))
         initial_values_ = tuple(x.detach().requires_grad_(True) for x in initial_values if isinstance(x, torch.Tensor))
-        f = factory(*parameters)
-        xprime = optimize(f, initial_values)
+        objective = factory(*parameters)
+        xprime = optimize(objective, initial_values)
         ctx.save_for_backward(*xprime, *parameters_)
         ctx.len_x = len(initial_values_)
         return xprime
@@ -153,15 +153,15 @@ class OptimizerOp(Operator[Unpack[ArgumentType], VariableType]):
 
         Example
         -------
-            Solving :math:`\|q(x)-y\|^2 + \lambda*\|x-x_\mathrm{reg}\|^2` with
-            :math:`y`, :math:`\lambda` and :math:`x_\mathrm{reg}` parameters. The solution :math:`x^*` should be
+            Solving :math:`\|q(x)-y\|^2 + \alpha*\|x-x_\mathrm{reg}\|^2` with
+            :math:`y`, :math:`\alpha` and :math:`x_\mathrm{reg}` parameters. The solution :math:`x^*` should be
             differentiable with respect to these.
 
             Use::
 
-                def factory(y, lambda, x_reg):
-                    return L2squared(y)@q+lambda*L2squared(x_reg)
-                def initializer(_y, _lambda, _xreg):
+                def factory(y, alpha, x_reg):
+                    return L2squared(y)@q+alpha*L2squared(x_reg)
+                def initializer(_y, _alpha, _xreg):
                     return (x_reg,)
 
         Returns

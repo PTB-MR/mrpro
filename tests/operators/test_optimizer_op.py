@@ -21,6 +21,7 @@ def test_optimizer_op_gradcheck() -> None:
     (signal,) = InversionRecovery(torch.tensor([0.5, 1.0, 1.5, 3], dtype=torch.float64))(true_m0, true_t1)
     t1_reg = true_t1 + rng.rand_like(true_t1, low=-0.01, high=0.01)
     m0_reg = true_m0 + rng.rand_like(true_m0, high=0.01)
+    t1_reg.requires_grad = True
     m0_reg.requires_grad = True
 
     def factory(

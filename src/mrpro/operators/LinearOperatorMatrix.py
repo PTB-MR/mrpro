@@ -229,18 +229,14 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
     def gram(self) -> Self:
         """Gram matrix of the operators."""
         n, m = self.shape
-        if n != m:
-            raise ValueError('Gram is only defined for square operators.')
-        operators: list[list[LinearOperator]] = [[ZeroOp() for _ in range(n)] for _ in range(n)]
-
-        for i in range(n):
-            operators[i][i] = reduce(operator.add, (self._operators[k][i].gram for k in range(n)))
-            # off-diagonals: only compute upper triangular part, then mirror
-            for j in range(i + 1, n):
-                operators[i][j] = reduce(
-                    operator.add, (self._operators[k][i].H @ self._operators[k][j] for k in range(n))
+        operators: list[list[LinearOperator]] = [[ZeroOp() for _ in range(m)] for _ in range(m)]
+        for j in range(m):
+            operators[j][j] = reduce(operator.add, (self._operators[i][j].gram for i in range(n)), ZeroOp())
+            for k in range(j + 1, m):
+                operators[j][k] = reduce(
+                    operator.add, (self._operators[i][j].H @ self._operators[i][k] for i in range(n)), ZeroOp()
                 )
-                operators[j][i] = operators[i][j].H
+                operators[k][j] = operators[j][k].H
         return self.__class__(operators)
 
     def adjoint(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:

@@ -1,4 +1,4 @@
-"""Regularized least squares operator."""
+"""Conjugate gradient operator."""
 
 from collections.abc import Callable
 from typing import TYPE_CHECKING, TypeVar

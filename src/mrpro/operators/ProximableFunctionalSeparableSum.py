@@ -14,7 +14,6 @@ from mrpro.operators.Functional import ProximableFunctional
 from mrpro.operators.Operator import Operator
 
 T = TypeVarTuple('T')
-T2 = TypeVarTuple('T2')
 
 
 class ProximableFunctionalSeparableSum(Operator[Unpack[T], tuple[torch.Tensor]]):
