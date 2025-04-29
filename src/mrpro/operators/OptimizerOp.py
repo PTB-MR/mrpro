@@ -51,7 +51,10 @@ class OptimizeFunction(torch.autograd.Function):
             factory: Callable[..., Callable[..., tuple[torch.Tensor]]],
             initial_values: tuple[torch.Tensor, ...],
             optimize: Callable[
-                [Callable[[*tuple[Unpack[tuple[torch.Tensor, ...]]]], tuple[torch.Tensor]], tuple[torch.Tensor, ...]],
+                [
+                    Callable[[Unpack[tuple[Unpack[tuple[torch.Tensor, ...]]]]], tuple[torch.Tensor]],
+                    tuple[torch.Tensor, ...],
+                ],
                 tuple[torch.Tensor, ...],
             ] = default_lbfgs,
             *parameters: torch.Tensor,
@@ -67,7 +70,10 @@ class OptimizeFunction(torch.autograd.Function):
         ],
         initial_values: tuple[torch.Tensor, ...],
         optimize: Callable[
-            [Callable[[*tuple[Unpack[tuple[torch.Tensor, ...]]]], tuple[torch.Tensor]], tuple[torch.Tensor, ...]],
+            [
+                Callable[[Unpack[tuple[Unpack[tuple[torch.Tensor, ...]]]]], tuple[torch.Tensor]],
+                tuple[torch.Tensor, ...],
+            ],
             tuple[torch.Tensor, ...],
         ] = default_lbfgs,
         *parameters: torch.Tensor,
