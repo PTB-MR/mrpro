@@ -18,7 +18,7 @@ def test_interpolate_linear(data: torch.Tensor, size: int, data_dtype: torch.dty
     """Linear ramp should remain a linear ramp after inear interpolation."""
     result = interpolate(data.to(dtype=data_dtype), size=(size,), dim=(4,), mode='linear')
     assert result.dtype == data_dtype
-    assert torch.sum((torch.diff(result[..., 1:-1], dim=-1) - data.shape[-1] / size).abs()) < 1e-2
+    assert torch.diff(result[..., 1:-1], dim=-1).isclose(torch.tensor(data.shape[-1] / size, dtype=data_dtype)).all()
 
 
 @pytest.mark.parametrize('data_dtype', [torch.float32, torch.float64, torch.complex64, torch.complex128])

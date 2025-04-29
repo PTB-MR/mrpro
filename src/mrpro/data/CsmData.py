@@ -48,7 +48,6 @@ def get_downsampled_size(
     )
 
 
-
 class CsmData(QData):
     """Coil sensitivity map class."""
 

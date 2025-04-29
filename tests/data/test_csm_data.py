@@ -62,15 +62,15 @@ def test_CsmData_downsampling(
     """CsmData downsampling does not change smooth coil sensitivity maps."""
     idata, csm_ref = multi_coil_image(n_coils=4, ph_ellipse=ellipse_phantom, random_kheader=random_kheader)
 
-    # Estimate coil sensitivity maps on original image size
+    # Estimate coil sensitivity maps on original image size with smoothing width = 3
     smoothing_width = SpatialDimension(z=1, y=3, x=3)
-    csm = csm_method(idata, smoothing_width)
+    csm_from_original_image = csm_method(idata, smoothing_width)
 
-    # Estimate coil sensitivity maps on low resolution image
-    csm_from_lowres_image = csm_method(idata, downsampled_size=idata.data.shape[-1] // 6, smoothing_width=1)
+    # Estimate coil sensitivity maps on 3x downsampled image with smoothing width = 1
+    csm_from_lowres_image = csm_method(idata, downsampled_size=idata.data.shape[-1] // 3, smoothing_width=1)
 
     # assert that both coil sensitivity maps are equal, not just close
-    torch.testing.assert_close(csm.data, csm_from_lowres_image.data, rtol=1e-2, atol=1e-2)
+    torch.testing.assert_close(csm_from_original_image.data, csm_from_lowres_image.data, rtol=1e-2, atol=1e-2)
 
 
 def test_CsmData_kdata_walsh(ismrmrd_cart_single_rep) -> None:
