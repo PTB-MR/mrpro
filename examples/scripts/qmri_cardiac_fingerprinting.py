@@ -1,5 +1,5 @@
 # %% [markdown]
-# # Cardiac MRF reconstructions
+# # Cardiac MR Fingerprinting
 #
 # This notebook provides the image reconstruction and parameter estimation methods required to reconstruct cardiac MR
 # Fingerprinting (cMRF) data.
@@ -8,10 +8,11 @@
 #
 # ## Overview
 # In this notebook the data from a cardiac MR Fingerprinting (cMRF) experiment is reconstructed and
-# $T_1$ and $T_2$ maps are estimated. This example uses data from [SCHUE2024] of a phantom consisting of 9 tubes.
-# Average $T_1$ and $T_2$ are calculated for each tube.
+# $T_1$ and $T_2$ maps are estimated. This example uses data from [Schuenke et al., 2024](in submission) of a phantom
+# consisting of 9 tubes. Average $T_1$ and $T_2$ are calculated for each tube.
 #
-# The fingerprinting sequence as described in [HAMI2017]_ and [SCHUE2024] is a three-fold repetition of
+# The fingerprinting sequence as described by [Hamilton et al., 2017](https://doi.org/10.1002/mrm.26668) and
+# [Schuenke et al., 2024](in submission) is a three-fold repetition of
 # %%
 # Block 0          Block 1          Block 2          Block 3          Block 4
 # R-peak           R-peak           R-peak           R-peak           R-peak
@@ -22,18 +23,10 @@
 #
 # We carry out dictionary matching to estimate $T_1$ and $T_2$ from a series of reconstructed qualitative images using
 # normalized dot product matching between the images and a dictionary of pre-calculated signals. Pixelwise, we find the
-# entry :math:`d^*` in the dictionary maximizing :math:`\left|\frac{d}{\|d\|} \cdot \frac{y}{\|y\|}\right|`. The
-# parameters :math:`x` generating the matching signal :math:`d^*=d(x)` are then used to estimate the quantitative
-# parameters.
+# entry $d^*$ in the dictionary maximizing $\left|\frac{d}{\|d\|} \cdot \frac{y}{\|y\|}\right|$ for the reconstructed
+# signal $y$. The parameters $x$ generating the matching dictionary entry $d^*=d(x)$ are then used to estimate
+# the quantitative parameters.
 #
-# References
-# ----------
-# .. [SCHUE2024] Schuenke, P. et al. (2024) Open-Source Cardiac MR Fingerprinting (in submission)
-# .. [HAMI2017] Hamilton, J. I. et al. (2017) MR fingerprinting for rapid quantification of myocardial T1, T2, and
-#    proton spin density. Magn. Reson. Med. 77 http://doi.wiley.com/10.1002/mrm.26668
-# .. [WEIG2015] Weigel M. (2015) Extended phase graphs: dephasing, RF pulses, and echoes - pure and simple.
-#    J Magn Reson Imaging. 41(2):266-95. https://doi.org/10.1002/jmri.24619
-
 # %% [markdown]
 #
 # In the following we are going to:
