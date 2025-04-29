@@ -3,6 +3,7 @@
 import dataclasses
 import datetime as dt
 import warnings
+from collections.abc import Mapping
 from dataclasses import field
 from typing import TYPE_CHECKING
 
@@ -15,7 +16,6 @@ from mrpro.data.AcqInfo import AcqInfo
 from mrpro.data.Dataclass import Dataclass
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
-from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 from mrpro.utils.unit_conversion import deg_to_rad, mm_to_m, ms_to_s
 
 if TYPE_CHECKING:
@@ -118,7 +118,7 @@ class KHeader(Dataclass):
         header: ismrmrdschema.ismrmrdHeader,
         acq_info: AcqInfo,
         defaults: dict | None = None,
-        overwrite: dict | None = None,
+        overwrite: Mapping[str, object] | None = None,
         encoding_number: int = 0,
     ) -> Self:
         """Create an Header from ISMRMRD Data.
@@ -232,18 +232,3 @@ class KHeader(Dataclass):
                 'Consider setting them via the defaults dictionary',
             ) from None
         return instance
-
-    def __repr__(self):
-        """Representation method for KHeader class."""
-        te = summarize_tensorvalues(self.te)
-        ti = summarize_tensorvalues(self.ti)
-        fa = summarize_tensorvalues(self.fa)
-        out = (
-            f'FOV [m]: {self.encoding_fov!s}\n'
-            f'TE [s]: {te}\n'
-            f'TI [s]: {ti}\n'
-            f'Flip angle [rad]: {fa}\n'
-            f'Encoding matrix: {self.encoding_matrix!s} \n'
-            f'Recon matrix: {self.recon_matrix!s} \n'
-        )
-        return out
