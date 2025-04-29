@@ -56,7 +56,7 @@ class ConjugateGradientFunction(torch.autograd.Function):
         operator = operator_factory(*inputs)
         rhs = rhs_factory(*inputs)
         rhs_norm = sum((r.abs().square().sum() for r in rhs), torch.tensor(0.0)).sqrt().item()
-        fwd_tol = tolerance * rhs_norm
+        fwd_tol = tolerance * max(rhs_norm, 1e-6)  # clip in case rhs is 0
         if isinstance(operator, LinearOperator):
             if len(rhs) != 1:
                 raise ValueError('LinearOperator requires a single right-hand side tensor.')
@@ -89,12 +89,14 @@ class ConjugateGradientFunction(torch.autograd.Function):
         inputs_with_grad = tuple(i for i, need_grad in zip(inputs, ctx.needs_input_grad[2:], strict=True) if need_grad)
         if inputs_with_grad:
             rhs_norm = sum((r.abs().square().sum() for r in grad_output), torch.tensor(0.0)).sqrt().item()
-            bwd_tol = ctx.tolerance * rhs_norm
+            bwd_tol = ctx.tolerance * max(rhs_norm, 1e-6)  # clip in case rhs is 0
             with torch.no_grad():
                 if isinstance(operator, LinearOperatorMatrix):
                     z = cg(operator.H, grad_output, tolerance=bwd_tol, max_iterations=ctx.max_iterations)
                 else:
                     z = cg(operator.H, grad_output[0], tolerance=bwd_tol, max_iterations=ctx.max_iterations)
+            if any(zi.isnan().any() for zi in z):
+                raise RuntimeError('NaN in ConjugateGradientFunction.backward')
             with torch.enable_grad():
                 residual = tuple(r - ax for r, ax in zip(rhs, operator(*(s.detach() for s in solution)), strict=True))
             grads = torch.autograd.grad(outputs=residual, inputs=inputs_with_grad, grad_outputs=z, allow_unused=True)
