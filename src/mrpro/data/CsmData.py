@@ -41,11 +41,12 @@ def get_downsampled_size(
     if isinstance(downsampled_size, int):
         downsampled_size = SpatialDimension(z=downsampled_size, y=downsampled_size, x=downsampled_size)
 
-    downsampled_size.z = min(downsampled_size.z, data_size[-3])
-    downsampled_size.y = min(downsampled_size.y, data_size[-2])
-    downsampled_size.x = min(downsampled_size.x, data_size[-1])
+    return (
+        min(downsampled_size.z, data_size[-3]),
+        min(downsampled_size.y, data_size[-2]),
+        min(downsampled_size.x, data_size[-1]),
+    )
 
-    return downsampled_size.zyx
 
 
 class CsmData(QData):
@@ -77,7 +78,7 @@ class CsmData(QData):
             Default is `None`, which means that all elements are processed at once.
         downsampled_size
             IData will be downsampled to this size before calculating the csm to speed up the calculation and
-            reduce memory requirements. The final csm will be upsampled to the original size. If set to None no
+            reduce memory requirements. The final csm will be upsampled to the original size. If set to `None` no
             downsampling will be performed.
 
         Returns
@@ -116,7 +117,7 @@ class CsmData(QData):
             Default is `None`, which means that all elements are processed at once.
         downsampled_size
             IData will be downsampled to this size before calculating the csm to speed up the calculation and
-            reduce memory requirements. The final csm will be upsampled to the original size. If set to None no
+            reduce memory requirements. The final csm will be upsampled to the original size. If set to `None` no
             downsampling will be performed.
 
 
@@ -164,7 +165,7 @@ class CsmData(QData):
             Default is `None`, which means that all elements are processed at once.
         downsampled_size
             IData will be downsampled to this size before calculating the csm to speed up the calculation and
-            reduce memory requirements. The final csm will be upsampled to the original size. If set to None no
+            reduce memory requirements. The final csm will be upsampled to the original size. If set to `None` no
             downsampling will be performed.
 
         Returns
@@ -200,10 +201,10 @@ class CsmData(QData):
             Size of the smoothing kernel.
         chunk_size_otherdim:
             How many elements of the other dimensions should be processed at once.
-            Default is None, which means that all elements are processed at once.
+            Default is `None`, which means that all elements are processed at once.
         downsampled_size
             IData will be downsampled to this size before calculating the csm to speed up the calculation and
-            reduce memory requirements. The final csm will be upsampled to the original size. If set to None no
+            reduce memory requirements. The final csm will be upsampled to the original size. If set to `None` no
             downsampling will be performed.
 
         Returns
