@@ -17,7 +17,6 @@ from mrpro.data.KHeader import KHeader
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.reduce_repeat import reduce_repeat
-from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 from mrpro.utils.unit_conversion import deg_to_rad, mm_to_m, ms_to_s
 
 
@@ -291,11 +290,3 @@ class IHeader(Dataclass):
             tr=tr,
             te=te,
         )
-
-    def __repr__(self):
-        """Representation method for IHeader class."""
-        te = summarize_tensorvalues(self.te)
-        ti = summarize_tensorvalues(self.ti)
-        fa = summarize_tensorvalues(self.fa)
-        out = f'Resolution [m/pixel]: {self.resolution!s}\nTE [s]: {te}\nTI [s]: {ti}\nFlip angle [rad]: {fa}.'
-        return out
