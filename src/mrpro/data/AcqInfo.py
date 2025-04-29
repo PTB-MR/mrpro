@@ -342,31 +342,33 @@ class AcqInfo(Dataclass):
             additional_values = tuple(tensor_5d(headers[field]) for field in additional_fields)
             return acq_info, additional_values
 
-    def write_to_ismrmrd_acquisition(
+    def write_single_acquisition_to_ismrmrd_acquisition(
         self,
         acquisition: ismrmrd.Acquisition,
         convert_time_stamp: Callable[[float], int] = convert_time_stamp_to_siemens,
     ) -> ismrmrd.Acquisition:
         """Overwrite ISMRMRD acquisition information for single acquisition."""
-        acquisition.flags = self.flags.item()
-        acquisition.idx.kspace_encode_step_1 = self.idx.k1.item()
-        acquisition.idx.kspace_encode_step_2 = self.idx.k2.item()
-        acquisition.idx.average = self.idx.average.item()
-        acquisition.idx.slice = self.idx.slice.item()
-        acquisition.idx.contrast = self.idx.contrast.item()
-        acquisition.idx.phase = self.idx.phase.item()
-        acquisition.idx.repetition = self.idx.repetition.item()
-        acquisition.idx.set = self.idx.set.item()
-        acquisition.idx.segment = self.idx.segment.item()
+        if np.prod(self.shape) != 1:
+            raise ValueError('Only single acquisition (single readout for all coils) can be written.')
+        acquisition.flags = self.flags
+        acquisition.idx.kspace_encode_step_1 = self.idx.k1
+        acquisition.idx.kspace_encode_step_2 = self.idx.k2
+        acquisition.idx.average = self.idx.average
+        acquisition.idx.slice = self.idx.slice
+        acquisition.idx.contrast = self.idx.contrast
+        acquisition.idx.phase = self.idx.phase
+        acquisition.idx.repetition = self.idx.repetition
+        acquisition.idx.set = self.idx.set
+        acquisition.idx.segment = self.idx.segment
         acquisition.idx.user = (
-            self.idx.user0.item(),
-            self.idx.user1.item(),
-            self.idx.user2.item(),
-            self.idx.user3.item(),
-            self.idx.user4.item(),
-            self.idx.user5.item(),
-            self.idx.user6.item(),
-            self.idx.user7.item(),
+            self.idx.user0,
+            self.idx.user1,
+            self.idx.user2,
+            self.idx.user3,
+            self.idx.user4,
+            self.idx.user5,
+            self.idx.user6,
+            self.idx.user7,
         )
         # active_channesl, number_of_samples and trajectory_dimensions are read-only and cannot be set
         acquisition.patient_table_position = self.patient_table_position[0].apply(m_to_mm).zyx[::-1]  # zyx -> xyz
@@ -375,26 +377,26 @@ class AcqInfo(Dataclass):
         acquisition.phase_dir = directions[1].zyx[::-1]
         acquisition.read_dir = directions[2].zyx[::-1]
         acquisition.position = self.position[0].apply(m_to_mm).zyx[::-1]
-        acquisition.sample_time_us = self.sample_time_us.item()
+        acquisition.sample_time_us = self.sample_time_us
         acquisition.user_float = (
-            self.user.float0.item(),
-            self.user.float1.item(),
-            self.user.float2.item(),
-            self.user.float3.item(),
-            self.user.float4.item(),
-            self.user.float5.item(),
-            self.user.float6.item(),
-            self.user.float7.item(),
+            self.user.float0,
+            self.user.float1,
+            self.user.float2,
+            self.user.float3,
+            self.user.float4,
+            self.user.float5,
+            self.user.float6,
+            self.user.float7,
         )
         acquisition.user_int = (
-            self.user.int0.item(),
-            self.user.int1.item(),
-            self.user.int2.item(),
-            self.user.int3.item(),
-            self.user.int4.item(),
-            self.user.int5.item(),
-            self.user.int6.item(),
-            self.user.int7.item(),
+            self.user.int0,
+            self.user.int1,
+            self.user.int2,
+            self.user.int3,
+            self.user.int4,
+            self.user.int5,
+            self.user.int6,
+            self.user.int7,
         )
         acquisition.acquisition_time_stamp = convert_time_stamp(self.acquisition_time_stamp.item())
         acquisition.physiology_time_stamp = (

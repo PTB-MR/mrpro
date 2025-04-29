@@ -411,17 +411,19 @@ class KData(Dataclass):
             for k2 in range(self.data.shape[-3]):
                 for k1 in range(self.data.shape[-2]):
                     # Select current readout for all coils
-                    kdata = self[(*other, slice(None), k2, k1, slice(None))]  # type: ignore[index]
-                    kdata.header.acq_info.write_to_ismrmrd_acquisition(acq, convert_time_stamp)
+                    single_acquisition = self[(*other, slice(None), k2, k1, slice(None))]  # type: ignore[index]
+                    single_acquisition.header.acq_info.write_single_acquisition_to_ismrmrd_acquisition(
+                        acq, convert_time_stamp
+                    )
 
-                    acq.traj[:] = torch.squeeze(kdata.traj.as_tensor(-1)).numpy()[:, ::-1]  # zyx -> xyz
+                    acq.traj[:] = torch.squeeze(single_acquisition.traj.as_tensor(-1)).numpy()[:, ::-1]  # zyx -> xyz
                     acq.center_sample = np.argmin(np.abs(acq.traj[:, 0]))
 
                     # Reversed readouts means that the k-space is traversed from positive to negative
                     if acq.flags & AcqFlags.ACQ_IS_REVERSE.value:
                         acq.center_sample += 1
 
-                    acq.data[:] = torch.squeeze(kdata.data).numpy()
+                    acq.data[:] = torch.squeeze(single_acquisition.data).numpy()
                     dataset.append_acquisition(acq)
 
                     acq.scan_counter += 1
