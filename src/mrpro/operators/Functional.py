@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import TypeAlias
+from typing import TYPE_CHECKING, TypeAlias
 
 import torch
 from typing_extensions import TypeVarTuple, Unpack
@@ -13,9 +13,11 @@ from typing_extensions import TypeVarTuple, Unpack
 import mrpro.operators
 from mrpro.operators.Operator import Operator
 
-T = TypeVarTuple('T')
-FunctionalType: TypeAlias = Operator[Unpack[T], tuple[torch.Tensor]]
-"""An Operator that returns a single tensor."""
+if TYPE_CHECKING:
+    T = TypeVarTuple('T')
+    FunctionalType: TypeAlias = Operator[Unpack[T], tuple[torch.Tensor]]
+else:  # python 3.10 runtime compatibility. typing_extension
+    FunctionalType: TypeAlias = Operator
 
 
 def throw_if_negative_or_complex(
