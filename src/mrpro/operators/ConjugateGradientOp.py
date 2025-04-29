@@ -88,11 +88,13 @@ class ConjugateGradientFunction(torch.autograd.Function):
             operator = ctx.operator_factory(*inputs)
         inputs_with_grad = tuple(i for i, need_grad in zip(inputs, ctx.needs_input_grad[2:], strict=True) if need_grad)
         if inputs_with_grad:
+            rhs_norm = sum((r.abs().square().sum() for r in grad_output), torch.tensor(0.0)).sqrt().item()
+            bwd_tol = ctx.tolerance * rhs_norm
             with torch.no_grad():
                 if isinstance(operator, LinearOperatorMatrix):
-                    z = cg(operator.H, grad_output)
+                    z = cg(operator.H, grad_output, tolerance=bwd_tol, max_iterations=ctx.max_iterations)
                 else:
-                    z = cg(operator.H, grad_output[0])
+                    z = cg(operator.H, grad_output[0], tolerance=bwd_tol, max_iterations=ctx.max_iterations)
             with torch.enable_grad():
                 residual = tuple(r - ax for r, ax in zip(rhs, operator(*(s.detach() for s in solution)), strict=True))
             grads = torch.autograd.grad(outputs=residual, inputs=inputs_with_grad, grad_outputs=z, allow_unused=True)
@@ -152,10 +154,12 @@ class ConjugateGradientOp(torch.nn.Module):
             If `False`, the backward pass is done using unrolling the CG loop.
         tolerance
             The tolerance for the conjugate gradient method. The tolerance is relative
-            to the norm of the right-hand side. The same tolerance is used in the backward pass
-            if using implicit differentiation.
+            to the norm of the right-hand side. The same relative tolerance is used in the
+            backward pass if using implicit differentiation.
         max_iterations
             The maximum number of iterations for the conjugate gradient method.
+            The same maximum number of iterations is used in the backward pass if using
+            implicit differentiation.
 
         .. warning::
             If implicit_backward is `True`, the problem has to converge, otherwise the backward
@@ -188,12 +192,18 @@ class ConjugateGradientOp(torch.nn.Module):
         else:  # unrolled CG
             op = self.operator_factory(*parameters)
             rhs = self.rhs_factory(*parameters)
+            rhs_norm = sum((r.abs().square().sum() for r in rhs), torch.tensor(0.0)).sqrt().item()
+            fwd_tol = self.tolerance * rhs_norm
             if isinstance(op, LinearOperator):
                 if len(rhs) != 1:
                     raise ValueError('LinearOperator requires a single right-hand side tensor.')
                 if initial_value is not None and len(initial_value) != 1:
                     raise ValueError('LinearOperator requires a single initial value tensor.')
-                solution = cg(op, rhs, initial_value=initial_value)
+                solution = cg(
+                    op, rhs, initial_value=initial_value, tolerance=fwd_tol, max_iterations=self.max_iterations
+                )
             else:
-                solution = cg(op, rhs, initial_value=initial_value)
+                solution = cg(
+                    op, rhs, initial_value=initial_value, tolerance=fwd_tol, max_iterations=self.max_iterations
+                )
         return solution
