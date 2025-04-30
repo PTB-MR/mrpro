@@ -30,9 +30,9 @@ def test_spatial_dimension_from_xyz_tensor() -> None:
         z = 3 * torch.ones(1, 2, 3)
 
     spatial_dimension = SpatialDimension.from_xyz(XYZtensor())
-    assert torch.equal(spatial_dimension.x, XYZtensor.x)
-    assert torch.equal(spatial_dimension.y, XYZtensor.y)
-    assert torch.equal(spatial_dimension.z, XYZtensor.z)
+    assert torch.equal(spatial_dimension.x.expand(1, 2, 3), XYZtensor.x)
+    assert torch.equal(spatial_dimension.y.expand(1, 2, 3), XYZtensor.y)
+    assert torch.equal(spatial_dimension.z.expand(1, 2, 3), XYZtensor.z)
 
 
 def test_spatial_dimension_from_array() -> None:
@@ -83,11 +83,12 @@ def test_spatial_dimension_from_array_wrongshape() -> None:
         _ = SpatialDimension.from_array_xyz(tensor_wrongshape)
 
 
-def test_spatial_dimension_broadcasting() -> None:
+def test_spatial_dimension_broadcasting():
     """Test shape broadcasting"""
-    z = torch.ones(2, 1, 1)
-    y = torch.ones(1, 2, 1)
-    x = torch.ones(1, 1, 2)
+    rng = RandomGenerator(0)
+    z = rng.float32_tensor((2, 1, 1))
+    y = rng.float32_tensor((1, 2, 1))
+    x = rng.float32_tensor((1, 1, 2))
     spatial_dimension = SpatialDimension(z, y, x)
     assert spatial_dimension.shape == (2, 2, 2)
 
@@ -103,6 +104,12 @@ def test_spatial_dimension_dtype() -> None:
     assert SpatialDimension(z=1.0, y=2, x=3).dtype == float
     assert SpatialDimension(torch.ones(1), torch.ones(1).int(), torch.ones(1)).dtype == torch.float32
     assert SpatialDimension(torch.ones(1).int(), torch.ones(1).int(), torch.ones(1).int()).dtype == torch.int32
+
+
+def test_spatial_dimension_int_repr() -> None:
+    """Test repr as edgecase without shape and device."""
+    actual = repr(SpatialDimension(1, 2, 3))
+    assert actual == 'SpatialDimension.\n  z: 1\n  y: 2\n  x: 3'
 
 
 def test_spatial_dimension_apply_() -> None:

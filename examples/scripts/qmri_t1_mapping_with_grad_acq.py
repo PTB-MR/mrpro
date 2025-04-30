@@ -94,14 +94,16 @@ plt.show()
 
 # %% [markdown]
 # ## Split the data into dynamics and reconstruct dynamic images
-# We split the k-space data into different dynamics with 30 radial lines, each and no data overlap between the different
-# dynamics. Then we again perform a simple direct reconstruction, where we use the same coil sensitivity map (which we
+# We sort and split the k-space data into different dynamics with 30 radial lines each
+# As the radial lines are stored in the `k1` (second last dimension), we split by indexing in that dimension.
+# Then we again perform a simple direct reconstruction, where we use the same coil sensitivity map (which we
 # estimated above) for each dynamic.
 
 # %%
-
-idx_dynamic = mrpro.utils.split_idx(kdata.header.acq_info.acquisition_time_stamp.squeeze().argsort(), 30, 0)
-kdata_dynamic = kdata.split_k1_into_other(idx_dynamic, other_label='repetition')
+n_lines_per_dynamic = 30
+sorted_idx = kdata.header.acq_info.acquisition_time_stamp.squeeze().argsort()
+split_idx = sorted_idx.unfold(0, n_lines_per_dynamic, n_lines_per_dynamic)
+kdata_dynamic = kdata[..., split_idx, :]
 
 # %%
 # Perform the reconstruction
@@ -117,7 +119,7 @@ img_rss_dynamic /= img_rss_dynamic.max()
 # Visualize the first six dynamic images
 fig, ax = plt.subplots(2, 3, squeeze=False)
 for idx, cax in enumerate(ax.flatten()):
-    cax.imshow(img_rss_dynamic[idx, 0, :, :], cmap='gray', vmin=0, vmax=0.8)
+    cax.imshow(img_rss_dynamic[idx, 0, 0], cmap='gray', vmin=0, vmax=0.8)
     cax.set_title(f'Dynamic {idx}')
 plt.show()
 # %% [markdown]
