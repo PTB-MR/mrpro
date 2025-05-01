@@ -511,7 +511,10 @@ class TseBlock(EPGBlock):
                 f'Shapes of flip_angles ({refocusing_flip_angles_.shape}) and rf_phases ({refocusing_rf_phases_.shape})'
                 f' cannot be broadcasted.',
             ) from None
+
         self.te = torch.as_tensor(te)
+        if (self.te < 0).any():
+            raise ValueError(f'Negative echo time ({self.te.amin()}) not allowed.')
 
     @property
     def duration(self) -> torch.Tensor:
@@ -829,5 +832,6 @@ __all__ = [
     'RFBlock',
     'T1RhoPrepBlock',
     'T2PrepBlock',
+    'TseBlock',
     'initial_state',
 ]
