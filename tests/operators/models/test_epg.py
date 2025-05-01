@@ -381,7 +381,7 @@ def test_EpgTse_parameter_broadcasting() -> None:
     """Verify correct broadcasting of values."""
     refocusing_rf_phases = torch.ones((1,))
     refocusing_flip_angles = torch.ones((20,))
-    epg_model = EpgTseModel(refocusing_flip_angles, refocusing_rf_phases, te=-0.1)
+    epg_model = EpgTseModel(refocusing_flip_angles, refocusing_rf_phases, te=0.1)
     m0 = t1 = t2 = b1_relative = torch.randn((30,))
     (epg_signal,) = epg_model(m0, t1, t2, b1_relative)
     assert epg_signal.shape == (20, 30)
