@@ -4,6 +4,7 @@ import warnings
 
 import torch
 from einops import rearrange, repeat
+from typing_extensions import Self
 
 from mrpro.data.enums import TrajType
 from mrpro.data.KTrajectory import KTrajectory
@@ -237,14 +238,14 @@ class CartesianSamplingOp(LinearOperator):
         return data_scattered
 
     @property
-    def gram(self) -> 'CartesianSamplingGramOp':
+    def gram(self) -> 'CartesianMaskingOp':
         """Return the Gram operator for this Cartesian Sampling Operator.
 
         Returns
         -------
             Gram operator for this Cartesian Sampling Operator.
         """
-        return CartesianSamplingGramOp(self)
+        return CartesianMaskingOp.from_sampling_op(self)
 
     def __repr__(self) -> str:
         """Representation method for CartesianSamplingOperator."""
@@ -266,30 +267,53 @@ class CartesianSamplingOp(LinearOperator):
         return out
 
 
-class CartesianSamplingGramOp(LinearOperator):
-    """Gram operator for the Cartesian Sampling Operator.
+class CartesianMaskingOp(LinearOperator):
+    """Cartesian Masking Operator.
 
-    The Gram operator is the composition CartesianSamplingOp.H @ CartesianSamplingOp.
+    The Cartesian Masking Operator is the composition CartesianSamplingOp.H @ CartesianSamplingOp,
+    which sets to zero all non sampled Cartesian k-space points.
     """
 
-    def __init__(self, sampling_op: CartesianSamplingOp):
-        """Initialize Cartesian Sampling Gram Operator class.
+    def __init__(self, mask: torch.Tensor | None):
+        """Initialize Cartesian Sampling Masking Operator from a mask.
 
-        This should not be used directly, but rather through the `gram` method of a
-        :class:`mrpro.operator.CartesianSamplingOp` object.
+        Parameters
+        ----------
+        mask
+            The mask to use for the Cartesian Masking Operator.
+
+        """
+        super().__init__()
+        self.mask = mask
+
+    @classmethod
+    def from_trajectory(cls, traj: KTrajectory, encoding_matrix: SpatialDimension[int]) -> 'CartesianMaskingOp':
+        """Initialize Cartesian Sampling Masking Operator from a trajectory.
+
+        Parameters
+        ----------
+        traj
+            The trajectory to use for the Cartesian Masking Operator.
+        encoding_matrix
+            The encoding matrix to use for the Cartesian Masking Operator.
+        """
+        return cls.from_sampling_op(CartesianSamplingOp(encoding_matrix, traj))
+
+    @classmethod
+    def from_sampling_op(cls, sampling_op: CartesianSamplingOp) -> Self:
+        """Initialize Cartesian Sampling Masking Operator from a Cartesian Sampling Operator.
 
         Parameters
         ----------
         sampling_op
             The Cartesian Sampling Operator for which to create the Gram operator.
         """
-        super().__init__()
         if sampling_op._needs_indexing:
             ones = torch.ones(*sampling_op._trajectory_shape[:-3], *sampling_op._sorted_grid_shape.zyx)
             (mask,) = sampling_op.adjoint(*sampling_op.forward(ones))
-            self._mask: torch.Tensor | None = mask
         else:
-            self._mask = None
+            mask = None
+        return cls(mask)
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the Gram operator.
@@ -303,9 +327,9 @@ class CartesianSamplingGramOp(LinearOperator):
         -------
             Output data
         """
-        if self._mask is None:
+        if self.mask is None:
             return (x,)
-        return (x * self._mask,)
+        return (x * self.mask,)
 
     def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the adjoint of the Gram operator.
@@ -320,3 +344,13 @@ class CartesianSamplingGramOp(LinearOperator):
             Output data
         """
         return self.forward(y)
+
+    @property
+    def H(self) -> Self:  # noqa: N802
+        """Return the adjoint of the Cartesian Masking Operator.
+
+        Returns
+        -------
+            the same operator, as the masking operator is self-adjoint.
+        """
+        return self
