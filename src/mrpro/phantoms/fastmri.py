@@ -10,7 +10,7 @@ from einops import rearrange
 
 import mrpro
 from mrpro.data.KData import KData
-from mrpro.utils.typing import PathLike
+from mrpro.utils.typing import FileOrPath
 
 
 class FastMRIDataset(torch.utils.data.Dataset):
@@ -20,7 +20,7 @@ class FastMRIDataset(torch.utils.data.Dataset):
     The data has to be downloaded beforehand. See https://fastmri.med.nyu.edu/ for more information.
     """
 
-    def __init__(self, data_path: PathLike):
+    def __init__(self, data_path: FileOrPath):
         """Initialize the dataset.
 
         Parameters
@@ -45,7 +45,7 @@ class FastMRIDataset(torch.utils.data.Dataset):
 
     def __len__(self) -> int:
         """Get length (number of slices) of the dataset."""
-        return self._accum_slices[-1].item()
+        return int(self._accum_slices[-1])
 
     def __getitem__(self, idx: int) -> KData:
         """Get a single slice."""
