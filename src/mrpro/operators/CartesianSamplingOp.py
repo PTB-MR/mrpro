@@ -309,7 +309,11 @@ class CartesianMaskingOp(LinearOperator):
             The Cartesian Sampling Operator for which to create the Gram operator.
         """
         if sampling_op._needs_indexing:
-            ones = torch.ones(*sampling_op._trajectory_shape[:-3], *sampling_op._sorted_grid_shape.zyx)
+            ones = torch.ones(
+                *sampling_op._trajectory_shape[:-3],
+                *sampling_op._sorted_grid_shape.zyx,
+                device=sampling_op._fft_idx.device,
+            )
             (mask,) = sampling_op.adjoint(*sampling_op.forward(ones))
         else:
             mask = None
