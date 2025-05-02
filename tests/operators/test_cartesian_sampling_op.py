@@ -285,7 +285,7 @@ def test_cart_masking_op_adjointness():
 
 @SAMPLING_PARAMETERS
 def test_cart_masking_op_from_trajectory(sampling: str) -> None:
-    """Test the CartesianMaskingOp from a trajectory"""
+    """Test the CartesianMaskingOp creation from a trajectory."""
     type_kx = 'uniform'
     type_ky = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
     type_kz = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
