@@ -284,7 +284,7 @@ class CartesianMaskingOp(LinearOperator):
 
         """
         super().__init__()
-        self.mask = mask
+        self.mask = None if mask is None else mask.float()
 
     @classmethod
     def from_trajectory(cls, traj: KTrajectory, encoding_matrix: SpatialDimension[int]) -> 'CartesianMaskingOp':
