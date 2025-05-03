@@ -35,7 +35,7 @@
 # iterations. Increase 'n_iterations_tv' in the code to 100 to get a better image quality.
 
 # %%
-n_iterations_tv = 10
+n_iterations_tv = 100
 
 # %% [markdown]
 # ### Data acquisition
@@ -153,7 +153,7 @@ def rearrange_k2_k1_into_k1(kdata: KData) -> KData:
 kdata = KData.from_file(data_folder / 'grpe_t1_free_breathing.mrd', KTrajectoryRpe(angle=torch.pi * 0.618034))
 
 # Calculate coil maps
-csm_maps = CsmData.from_kdata_inati(kdata, smoothing_width=3)
+csm_maps = CsmData.from_kdata_inati(kdata, smoothing_width=5, downsampled_size=64)
 
 #  SENSE reconstruction
 iterative_sense = IterativeSENSEReconstruction(kdata, csm=csm_maps)
@@ -246,6 +246,11 @@ resp_idx = split_idx(
     torch.argsort(respiratory_navigator), int(kdata.data.shape[-2] * 0.36), int(kdata.data.shape[-2] * 0.18)
 )
 kdata_resp_resolved = kdata.split_k1_into_other(resp_idx, other_label='repetition')
+
+n_points_per_motion_state = int(kdata.data.shape[-2] * 0.36)
+sorted_idx = respiratory_navigator.argsort()
+split_idx = sorted_idx.unfold(0, n_points_per_motion_state, n_points_per_motion_state//2)
+kdata_resp_resolved = kdata[..., split_idx, :]
 
 # %% [markdown]
 # ### 3. Reconstruct dynamic images of different breathing states
