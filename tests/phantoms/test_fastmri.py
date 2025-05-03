@@ -113,7 +113,7 @@ def mock_fastmri_knee_data(tmp_path_factory):
 
 
 @pytest.mark.parametrize(
-    'data_fixture,n_slices,n_coils,n_k1',
+    ('data_fixture', 'n_slices', 'n_coils', 'n_k1'),
     [
         ('mock_fastmri_brain_data', N_SLICES_BRAIN, N_COILS_BRAIN, N_K1_BRAIN),
         ('mock_fastmri_knee_data', N_SLICES_KNEE, N_COILS_KNEE, N_K1_KNEE),
@@ -134,7 +134,7 @@ def test_fastmri_kdata_dataset(request, data_fixture, n_slices, n_coils, n_k1):
 
 
 @pytest.mark.parametrize(
-    'data_fixture,n_slices,n_coils',
+    ('data_fixture', 'n_slices', 'n_coils'),
     [
         ('mock_fastmri_brain_data', N_SLICES_BRAIN, N_COILS_BRAIN),
         ('mock_fastmri_knee_data', N_SLICES_KNEE, N_COILS_KNEE),
@@ -155,7 +155,7 @@ def test_fastmri_image_dataset(request, data_fixture, n_slices, n_coils, coil_co
 
 
 @pytest.mark.parametrize(
-    'data_fixture,n_coils',
+    ('data_fixture', 'n_coils'),
     [
         ('mock_fastmri_brain_data', N_COILS_BRAIN),
         ('mock_fastmri_knee_data', N_COILS_KNEE),
