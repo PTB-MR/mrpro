@@ -2,185 +2,189 @@
 
 import h5py
 import pytest
+import torch
 from mrpro.data import KData
-from mrpro.phantoms.fastmri import FastMRIDataset
+from mrpro.phantoms import FastMRIImageDataset, FastMRIKDataDataset
 from mrpro.utils import RandomGenerator
 
-MINIMAL_HEADER_XML = r"""<?xml version="1.0" encoding="utf-8"?>
-<ismrmrdHeader xmlns="http://www.ismrm.org/ISMRMRD" xmlns:xs="http://www.w3.org/2001/XMLSchema"
-xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.ismrm.org/ISMRMRD ismrmrd.xsd">
-   <studyInformation>
-      <studyTime>15:05:07</studyTime>
-   </studyInformation>
-   <measurementInformation>
-      <measurementID>25077_449075862_449075873_819</measurementID>
-      <patientPosition>HFS</patientPosition>
-      <protocolName>AX</protocolName>
-      <frameOfReferenceUID>1.3.12.2.1107.5.2.30.25077.1.20180401144405156.0.0.4998</frameOfReferenceUID>
-   </measurementInformation>
-   <acquisitionSystemInformation>
-      <systemVendor>SIEMENS</systemVendor>
-      <systemModel>Avanto</systemModel>
-      <systemFieldStrength_T>1.494</systemFieldStrength_T>
-      <relativeReceiverNoiseBandwidth>0.793</relativeReceiverNoiseBandwidth>
-      <receiverChannels>4</receiverChannels>
-      <institutionName>NYU</institutionName>
-   </acquisitionSystemInformation>
-   <experimentalConditions>
-      <H1resonanceFrequency_Hz>63646310</H1resonanceFrequency_Hz>
-   </experimentalConditions>
-   <encoding>
-      <encodedSpace>
-         <matrixSize>
-            <x>640</x>
-            <y>322</y>
-            <z>1</z>
-         </matrixSize>
-         <fieldOfView_mm>
-            <x>440</x>
-            <y>221.98</y>
-            <z>7.5</z>
-         </fieldOfView_mm>
-      </encodedSpace>
-      <reconSpace>
-         <matrixSize>
-            <x>320</x>
-            <y>320</y>
-            <z>1</z>
-         </matrixSize>
-         <fieldOfView_mm>
-            <x>220</x>
-            <y>220</y>
-            <z>5</z>
-         </fieldOfView_mm>
-      </reconSpace>
-      <trajectory>cartesian</trajectory>
-      <encodingLimits>
-         <kspace_encoding_step_1>
-            <minimum>0</minimum>
-            <maximum>225</maximum>
-            <center>113</center>
-         </kspace_encoding_step_1>
-         <kspace_encoding_step_2>
-            <minimum>0</minimum>
-            <maximum>0</maximum>
-            <center>0</center>
-         </kspace_encoding_step_2>
-         <average>
-            <minimum>0</minimum>
-            <maximum>0</maximum>
-            <center>0</center>
-         </average>
-         <slice>
-            <minimum>0</minimum>
-            <maximum>33</maximum>
-            <center>0</center>
-         </slice>
-         <contrast>
-            <minimum>0</minimum>
-            <maximum>0</maximum>
-            <center>0</center>
-         </contrast>
-         <phase>
-            <minimum>0</minimum>
-            <maximum>0</maximum>
-            <center>0</center>
-         </phase>
-         <repetition>
-            <minimum>0</minimum>
-            <maximum>0</maximum>
-            <center>0</center>
-         </repetition>
-         <set>
-            <minimum>0</minimum>
-            <maximum>0</maximum>
-            <center>0</center>
-         </set>
-         <segment>
-            <minimum>0</minimum>
-            <maximum>0</maximum>
-            <center>0</center>
-         </segment>
-      </encodingLimits>
-      <parallelImaging>
-         <accelerationFactor>
-            <kspace_encoding_step_1>1</kspace_encoding_step_1>
-            <kspace_encoding_step_2>1</kspace_encoding_step_2>
-         </accelerationFactor>
-         <calibrationMode>other</calibrationMode>
-         <interleavingDimension>other</interleavingDimension>
-      </parallelImaging>
-   </encoding>
-   <sequenceParameters>
-      <TR>500</TR>
-      <TE>9.3</TE>
-      <TI>100</TI>
-      <flipAngle_deg>140</flipAngle_deg>
-      <sequence_type>TurboSpinEcho</sequence_type>
-      <echo_spacing>9.3</echo_spacing>
-   </sequenceParameters>
-</ismrmrdHeader>
-"""
-
-N_COILS = 2
+N_COILS_BRAIN = 16
+N_COILS_KNEE = 15
 N_K0 = 640
-N_K1 = 322
+N_K1_BRAIN = 322
+N_K1_KNEE = 368
 N_SLICES_BRAIN = 2
 N_SLICES_KNEE = 3
 
 
 @pytest.fixture(scope='session')
-def mock_fastmri_data(tmp_path_factory):
-    """Create temporary HDF5 files mimicking FastMRI data structure."""
-
-    test_dir = tmp_path_factory.mktemp('fastmri_test_data')
+def mock_fastmri_brain_data(tmp_path_factory):
+    """Create temporary HDF5 files mimicking FastMRI brain data."""
+    test_dir = tmp_path_factory.mktemp('fastmri_brain_test_data')
     rng = RandomGenerator(0)
-
+    header = r"""<?xml version="1.0" encoding="utf-8"?>
+    <ismrmrdHeader xmlns="http://www.ismrm.org/ISMRMRD" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.ismrm.org/ISMRMRD ismrmrd.xsd">
+        <experimentalConditions>
+        <H1resonanceFrequency_Hz>63646310</H1resonanceFrequency_Hz>
+    </experimentalConditions>
+    <encoding>
+        <encodedSpace>
+            <matrixSize>
+                <x>640</x>
+                <y>322</y>
+                <z>1</z>
+            </matrixSize>
+            <fieldOfView_mm>
+                <x>440</x>
+                <y>221.98</y>
+                <z>7.5</z>
+            </fieldOfView_mm>
+        </encodedSpace>
+        <reconSpace>
+            <matrixSize>
+                <x>320</x>
+                <y>320</y>
+                <z>1</z>
+            </matrixSize>
+            <fieldOfView_mm>
+                <x>220</x>
+                <y>220</y>
+                <z>5</z>
+            </fieldOfView_mm>
+        </reconSpace>
+    </encoding>
+    </ismrmrdHeader>
+"""
     with h5py.File(test_dir / 'brain_file.h5', 'w') as f:
-        kspace_brain = rng.complex64_tensor((N_COILS, N_SLICES_BRAIN, N_K0, N_K1)).numpy()
+        kspace_brain = rng.complex64_tensor((N_COILS_BRAIN, N_SLICES_BRAIN, N_K0, N_K1_BRAIN)).numpy()
         f.create_dataset('kspace', data=kspace_brain)
         f.attrs['acquisition'] = 'AXT2_FLAIR'
-        f.create_dataset('ismrmrd_header', data=MINIMAL_HEADER_XML.encode('utf-8'))
-
-    with h5py.File(test_dir / 'knee_file.h5', 'w') as f:
-        kspace_knee = rng.complex64_tensor((N_SLICES_KNEE, N_COILS, N_K0, N_K1)).numpy()
-        f.create_dataset('kspace', data=kspace_knee)
-        f.attrs['acquisition'] = 'CORPDFS_FBK'
-        f.create_dataset('ismrmrd_header', data=MINIMAL_HEADER_XML.encode('utf-8'))
+        f.create_dataset('ismrmrd_header', data=header.encode('utf-8'))
 
     return test_dir
 
 
-def test_fastmri_dataset_init_len(mock_fastmri_data):
-    """Test dataset initialization and length calculation."""
-    dataset = FastMRIDataset(data_path=mock_fastmri_data)
-    assert len(dataset) == N_SLICES_BRAIN + N_SLICES_KNEE
+@pytest.fixture(scope='session')
+def mock_fastmri_knee_data(tmp_path_factory):
+    """Create temporary HDF5 files mimicking FastMRI knee data."""
+    test_dir = tmp_path_factory.mktemp('fastmri_knee_test_data')
+    rng = RandomGenerator(1)
+    header = r"""<?xml version="1.0" encoding="utf-8"?>
+    <ismrmrdHeader xmlns="http://www.ismrm.org/ISMRMRD" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.ismrm.org/ISMRMRD ismrmrd.xsd">
+        <experimentalConditions>
+        <H1resonanceFrequency_Hz>63646310</H1resonanceFrequency_Hz>
+    </experimentalConditions>
+    <encoding>
+        <encodedSpace>
+            <matrixSize>
+                <x>640</x>
+                <y>368</y>
+                <z>1</z>
+            </matrixSize>
+            <fieldOfView_mm>
+                <x>280</x>
+                <y>161</y>
+                <z>4.5</z>
+            </fieldOfView_mm>
+        </encodedSpace>
+        <reconSpace>
+            <matrixSize>
+                <x>320</x>
+                <y>320</y>
+                <z>1</z>
+            </matrixSize>
+            <fieldOfView_mm>
+                <x>140</x>
+                <y>140</y>
+                <z>3</z>
+            </fieldOfView_mm>
+        </reconSpace>
+    </encoding>
+    </ismrmrdHeader>
+    """
+    with h5py.File(test_dir / 'knee_file.h5', 'w') as f:
+        kspace_knee = rng.complex64_tensor((N_SLICES_KNEE, N_COILS_KNEE, N_K0, N_K1_KNEE)).numpy()
+        f.create_dataset('kspace', data=kspace_knee)
+        f.attrs['acquisition'] = 'CORPDFS_FBK'
+        f.create_dataset('ismrmrd_header', data=header.encode('utf-8'))
+
+    return test_dir
 
 
-def test_fastmri_dataset_getitem(mock_fastmri_data):
-    """Test __getitem__ for both brain and knee slices."""
-    dataset = FastMRIDataset(data_path=mock_fastmri_data)
+@pytest.mark.parametrize(
+    'data_fixture,n_slices,n_coils,n_k1',
+    [
+        ('mock_fastmri_brain_data', N_SLICES_BRAIN, N_COILS_BRAIN, N_K1_BRAIN),
+        ('mock_fastmri_knee_data', N_SLICES_KNEE, N_COILS_KNEE, N_K1_KNEE),
+    ],
+)
+def test_fastmri_kdata_dataset(request, data_fixture, n_slices, n_coils, n_k1):
+    """Test KDataDataset for both brain and knee data."""
+    data_path = request.getfixturevalue(data_fixture)
+    dataset = FastMRIKDataDataset(data_path=data_path)
+    assert len(dataset) == n_slices
 
-    # Test brain slice (index within the first file)
-    idx_brain = N_SLICES_BRAIN // 2
-    kdata_brain = dataset[idx_brain]
-    assert isinstance(kdata_brain, KData)
-    assert kdata_brain.shape == (1, N_COILS, 1, N_K1, N_K0)
+    kdata = dataset[n_slices // 2]
+    assert isinstance(kdata, KData)
+    assert kdata.shape == (1, n_coils, 1, n_k1, N_K0)
 
-    # Test knee slice (index within the second file)
-    idx_knee = N_SLICES_BRAIN + N_SLICES_KNEE // 2
-    kdata_knee = dataset[idx_knee]
-    assert isinstance(kdata_knee, KData)
-    assert kdata_knee.shape == (1, N_COILS, 1, N_K1, N_K0)
-
-    # Test negative index
     kdata_last = dataset[-1]
-    assert kdata_last.data.shape == (1, N_COILS, 1, N_K1, N_K0)
+    assert kdata_last.data.shape == (1, n_coils, 1, n_k1, N_K0)
 
 
-def test_fastmri_dataset_getitem_out_of_bounds(mock_fastmri_data):
+@pytest.mark.parametrize(
+    'data_fixture,n_slices,n_coils',
+    [
+        ('mock_fastmri_brain_data', N_SLICES_BRAIN, N_COILS_BRAIN),
+        ('mock_fastmri_knee_data', N_SLICES_KNEE, N_COILS_KNEE),
+    ],
+)
+@pytest.mark.parametrize('coil_combine', [False, True])
+def test_fastmri_image_dataset(request, data_fixture, n_slices, n_coils, coil_combine):
+    """Test ImageDataset for both brain and knee data, with and without coil combination."""
+    data_path = request.getfixturevalue(data_fixture)
+    dataset = FastMRIImageDataset(data_path=data_path, coil_combine=coil_combine)
+    expected_coils = 1 if coil_combine else n_coils
+    assert len(dataset) == n_slices
+
+    img = dataset[n_slices // 2]
+    assert img.shape == (1, expected_coils, 1, 320, 320)
+    assert img.dtype == torch.complex64
+    assert not torch.isnan(img).any()
+
+
+@pytest.mark.parametrize(
+    'data_fixture,n_coils',
+    [
+        ('mock_fastmri_brain_data', N_COILS_BRAIN),
+        ('mock_fastmri_knee_data', N_COILS_KNEE),
+    ],
+)
+def test_fastmri_image_dataset_augment(request, data_fixture, n_coils):
+    """Test ImageDataset augmentation for both brain and knee data."""
+
+    def mock_augment(x, idx):
+        return x * 2.0  # Simple multiplication augmentation
+
+    data_path = request.getfixturevalue(data_fixture)
+    dataset = FastMRIImageDataset(
+        data_path=data_path,
+        coil_combine=False,  # Test augmentation with multi-coil data
+        augment=mock_augment,
+    )
+
+    img = dataset[0]
+    assert img.shape == (1, n_coils, 1, 320, 320)
+    img_no_aug = FastMRIImageDataset(data_path=data_path, coil_combine=False)[0]
+    assert torch.allclose(img, img_no_aug * 2.0)
+
+
+@pytest.mark.parametrize('data_fixture', ['mock_fastmri_brain_data', 'mock_fastmri_knee_data'])
+def test_fastmri_dataset_getitem_out_of_bounds(request, data_fixture):
     """Test that accessing invalid indices raises IndexError."""
-    dataset = FastMRIDataset(data_path=mock_fastmri_data)
+    data_path = request.getfixturevalue(data_fixture)
+    dataset = FastMRIImageDataset(data_path=data_path)
     with pytest.raises(IndexError):
         _ = dataset[100]
     with pytest.raises(IndexError):
