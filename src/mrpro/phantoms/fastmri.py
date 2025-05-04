@@ -1,6 +1,6 @@
 """FastMRI dataset."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from os import PathLike
 from pathlib import Path
 
@@ -10,71 +10,79 @@ import numpy as np
 import torch
 from einops import rearrange
 
-import mrpro
 from mrpro.algorithms.csm import walsh
+from mrpro.data.AcqInfo import AcqInfo
 from mrpro.data.KData import KData
+from mrpro.data.KHeader import KHeader
+from mrpro.data.traj_calculators.KTrajectoryCartesian import KTrajectoryCartesian
 from mrpro.utils.interpolate import apply_lowres
 from mrpro.utils.pad_or_crop import pad_or_crop
+from mrpro.utils.reshape import unsqueeze_left
 
 
 class FastMRIKDataDataset(torch.utils.data.Dataset):
     """FastMRI KData Dataset.
 
-    This dataset returns KData objects for single slices of the FastMRI brain or knee dataset.
+    This dataset returns KData objects for single slices or stacks of slices of the FastMRI brain or knee dataset.
     The data has to be downloaded beforehand. See https://fastmri.med.nyu.edu/ for more information.
     """
 
-    def __init__(self, data_path: PathLike | str):
+    def __init__(self, path: PathLike | str, single_slice: bool = True):
         """Initialize the dataset.
 
         Parameters
         ----------
-        data_path : PathLike
+        path : PathLike
             Path to the data directory.
+        single_slice : bool
+            Whether to return single slices or stacks of slices.
         """
-        self._filenames = list(Path(data_path).rglob('*.h5'))
-        slices = []
-        for fn in self._filenames:
-            with h5py.File(fn, 'r') as file:
-                acquisition: str = file.attrs['acquisition']
-                if acquisition.startswith('AX'):  # brain
-                    slices.append(file['kspace'].shape[1])
-                elif acquisition.endswith('FBK'):  # knee
-                    slices.append(file['kspace'].shape[0])
-                else:
-                    raise ValueError(f'Unknown acquisition: {acquisition}')
-        self._accum_slices = torch.tensor(slices).cumsum(dim=0)
+        self._filenames = list(Path(path).rglob('*.h5'))
+        if single_slice:
+            slices = []
+            for fn in self._filenames:
+                with h5py.File(fn, 'r') as file:
+                    n_slices = file['kspace'].shape[0]
+                    slices.append(n_slices)
+            self._accum_slices: torch.Tensor | None = torch.tensor(slices).cumsum(dim=0)
+        else:
+            self._accum_slices = None
 
     def __len__(self) -> int:
-        """Get length (number of slices) of the dataset."""
+        """Get length (number of slices or stacks of slices) of the dataset."""
+        if self._accum_slices is None:
+            return len(self._filenames)
         if len(self._accum_slices) == 0:
             return 0
         return int(self._accum_slices[-1])
 
     def __getitem__(self, idx: int) -> KData:
-        """Get a single slice."""
+        """Get a single slice or stack of slices."""
         if not -len(self) <= idx < len(self):
             raise IndexError(f'Index {idx} is out of bounds for the dataset of size {len(self)}')
         if idx < 0:
             idx += len(self)
-        file_idx = torch.searchsorted(self._accum_slices, idx + 1)
-        slice_idx = idx - self._accum_slices[file_idx]
+        if self._accum_slices is None:  # return stack
+            file_idx = idx
+            slice_idx: int | slice = slice(None)
+        else:
+            file_idx = int(torch.searchsorted(self._accum_slices, idx + 1))
+            slice_idx = idx - self._accum_slices[file_idx]
         with h5py.File(self._filenames[file_idx], 'r') as file:
-            acquisition: str = file.attrs['acquisition']
-            if acquisition.startswith('AX'):  # brain
-                data = torch.as_tensor(np.array(file['kspace'][:, slice_idx]))
-            elif acquisition.endswith('FBK'):  # knee
-                data = torch.as_tensor(np.array(file['kspace'][slice_idx]))
-            else:
-                raise ValueError(f'Unknown acquisition: {acquisition}')
-            data = rearrange(data, 'coil k0 k1 ->1 coil 1 k1 k0')
+            # data is sometimes zero-padded, we remove the padding
+            data = torch.as_tensor(np.array(file['kspace'][slice_idx]))
+            data = unsqueeze_left(data, 4 - data.ndim)
+            nonzero = data[0, 0, 0, :].abs() > 1e-12
+            first, last = nonzero.nonzero().flatten()[[0, -1]]
+            data = data[..., first : last + 1]
+            data = rearrange(data, 'slices coils k0 k1 -> slices coils 1 k1 k0')
             n_k1, n_k0 = data.shape[-2:]
-            info = mrpro.data.AcqInfo()
-            info.idx.k1 = torch.arange(n_k1)[None, None, None, :, None]
-            header = mrpro.data.KHeader.from_ismrmrd(
+            info = AcqInfo()
+            info.idx.k1 = torch.arange(first, last + 1)[None, None, None, :, None]
+            header = KHeader.from_ismrmrd(
                 ismrmrd.xsd.CreateFromDocument(file['ismrmrd_header'][()].decode('utf-8')), info
             )
-            traj = mrpro.data.traj_calculators.KTrajectoryCartesian()(
+            traj = KTrajectoryCartesian()(
                 n_k0=n_k0,
                 k0_center=n_k0 // 2,
                 k1_idx=info.idx.k1,
@@ -82,7 +90,7 @@ class FastMRIKDataDataset(torch.utils.data.Dataset):
                 k2_idx=torch.tensor(0),
                 k2_center=0,
             )
-            kdata = mrpro.data.KData(
+            kdata = KData(
                 data=data,
                 header=header,
                 traj=traj,
@@ -98,22 +106,23 @@ class FastMRIImageDataset(torch.utils.data.Dataset):
     of 320x320 before augmentations.
 
     The returned images are complex valued and will have shape ``(1, 1, 1, 320, 320)`` if coil combined or
-    ``(1, n_coils, 1, 320, 320)`` otherwise, with `n_coils` 15 for knee data and 16 for brain data.
+    ``(1, n_coils, 1, 320, 320)`` otherwise.
 
     The data has to be downloaded beforehand. See https://fastmri.med.nyu.edu/ for more information.
     """
 
     def __init__(
         self,
-        data_path: PathLike | str,
+        path: str | PathLike,
         coil_combine: bool = False,
         augment: Callable[[torch.Tensor, int], torch.Tensor] | None = None,
+        allowed_n_coils: Sequence[int] | None = (16, 15),
     ):
         """Initialize the dataset.
 
         Parameters
         ----------
-        data_path : PathLike
+        path : PathLike
             Path to the data directory.
         coil_combine : bool
             Whether to perform coil combination sensitivity maps obtained using the Walsh method.
@@ -122,32 +131,33 @@ class FastMRIImageDataset(torch.utils.data.Dataset):
         augment
             Augmentation function. Will be called with the image and the index of the slices.
             If `coil_combine` is `True`, the function will be called with the complex valued coil combined image
-            with shape (1, 320, 320)
-            otherwise with the complex valued coil images
-            with shape (n_coils, 320, 320).
+            with shape (1, 320, 320) otherwise with the complex valued coil images with shape (n_coils, 320, 320).
             `None` means no augmentation.
+        allowed_n_coils
+            List of allowed number of coils. If `None`, all coils are allowed.
+            The knee training set has 15 coils consistently, while the brain dataset has
+            roughly 1300 files with 16 coils, 1100 files with 20 coils and 800 files with 4 coils.
+            Only used if `coil_combine` is `False`.
         """
         slices = []
         self._filenames = []
-        for fn in Path(data_path).rglob('*.h5'):
+        for fn in Path(path).rglob('*.h5'):
             with h5py.File(fn, 'r') as file:
                 acquisition: str = file.attrs['acquisition']
-                shape = file['kspace'].shape
-                header = mrpro.data.KHeader.from_ismrmrd(
-                    ismrmrd.xsd.CreateFromDocument(file['ismrmrd_header'][()].decode('utf-8')), mrpro.data.AcqInfo()
+                n_slices, n_coils = file['kspace'].shape[:2]
+                header = KHeader.from_ismrmrd(
+                    ismrmrd.xsd.CreateFromDocument(file['ismrmrd_header'][()].decode('utf-8')), AcqInfo()
                 )
                 if acquisition.startswith('AX'):  # brain
-                    n_coils, n_slices = shape[:2]
                     if (
-                        (n_coils != 16 and not coil_combine)
+                        (not coil_combine and allowed_n_coils is not None and n_coils not in allowed_n_coils)
+                        or header.recon_matrix.x not in (320, 384)
                         or round(header.recon_fov.y, 2) != 0.22
-                        or header.recon_matrix.x not in [320, 384]
                     ):
                         continue
-                elif acquisition.endswith('FBK'):
-                    n_slices, n_coils = shape[:2]  # different order for knee
+                elif acquisition.endswith('FBK'):  # knee
                     if (
-                        (n_coils != 15 and not coil_combine)
+                        (not coil_combine and allowed_n_coils is not None and n_coils not in allowed_n_coils)
                         or header.recon_matrix.x != 320
                         or round(header.recon_fov.y, 2) != 0.14
                     ):
@@ -162,8 +172,6 @@ class FastMRIImageDataset(torch.utils.data.Dataset):
 
     def __len__(self) -> int:
         """Get length (number of slices) of the dataset."""
-        if len(self._accum_slices) == 0:
-            return 0
         return int(self._accum_slices[-1])
 
     def __getitem__(self, idx: int) -> torch.Tensor:
@@ -175,17 +183,11 @@ class FastMRIImageDataset(torch.utils.data.Dataset):
         file_idx = torch.searchsorted(self._accum_slices, idx + 1)
         slice_idx = idx - self._accum_slices[file_idx]
         with h5py.File(self._filenames[file_idx], 'r') as file:
-            acquisition: str = file.attrs['acquisition']
-            if acquisition.startswith('AX'):  # brain
-                data = torch.as_tensor(np.array(file['kspace'][:, slice_idx]))
-            elif acquisition.endswith('FBK'):  # knee
-                data = torch.as_tensor(np.array(file['kspace'][slice_idx]))
-            else:
-                raise ValueError(f'Unknown acquisition: {acquisition}')
-            header = mrpro.data.KHeader.from_ismrmrd(
-                ismrmrd.xsd.CreateFromDocument(file['ismrmrd_header'][()].decode('utf-8')), mrpro.data.AcqInfo()
+            data = torch.as_tensor(np.array(file['kspace'][slice_idx]))
+            header = KHeader.from_ismrmrd(
+                ismrmrd.xsd.CreateFromDocument(file['ismrmrd_header'][()].decode('utf-8')), AcqInfo()
             )
-            # recon matrix can be larger than 320, but FOV is always constant. So we crop in k-space.
+            # recon_matrix can be >320, but FOV is always constant. We crop in k-space to get the same resolution.
             data = pad_or_crop(
                 data,
                 (int(data.shape[-2] * 320 / header.recon_matrix.y), int(data.shape[-1] * 320 / header.recon_matrix.y)),
@@ -197,9 +199,10 @@ class FastMRIImageDataset(torch.utils.data.Dataset):
             img = pad_or_crop(img, (320, 320), dim=(-2, -1))
             if self._coil_combine:
                 csm = apply_lowres(
-                    lambda x: walsh(x.unsqueeze(1), smoothing_width=3).squeeze(1), (32, 32), dim=(-2, -1)
+                    lambda x: walsh(x.unsqueeze(1), smoothing_width=3).squeeze(1), (64, 64), dim=(-2, -1)
                 )(img)
+                csm /= (csm * csm.conj()).sum(0, keepdim=True).sqrt()
                 img = (img * csm.conj()).sum(dim=0, keepdim=True)
             if self.augment is not None:
                 img = self.augment(img, idx)
-            return rearrange(img, 'coils y x -> 1 coils 1 y x')
+            return rearrange(img, 'coils y x -> 1 coils 1 y x')  # , rearrange(csm, 'coils y x -> 1 coils 1 y x')

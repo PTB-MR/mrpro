@@ -56,7 +56,7 @@ def mock_fastmri_brain_data(tmp_path_factory):
     </ismrmrdHeader>
 """
     with h5py.File(test_dir / 'brain_file.h5', 'w') as f:
-        kspace_brain = rng.complex64_tensor((N_COILS_BRAIN, N_SLICES_BRAIN, N_K0, N_K1_BRAIN)).numpy()
+        kspace_brain = rng.complex64_tensor((N_SLICES_BRAIN, N_COILS_BRAIN, N_K0, N_K1_BRAIN)).numpy()
         f.create_dataset('kspace', data=kspace_brain)
         f.attrs['acquisition'] = 'AXT2_FLAIR'
         f.create_dataset('ismrmrd_header', data=header.encode('utf-8'))
@@ -119,10 +119,10 @@ def mock_fastmri_knee_data(tmp_path_factory):
         ('mock_fastmri_knee_data', N_SLICES_KNEE, N_COILS_KNEE, N_K1_KNEE),
     ],
 )
-def test_fastmri_kdata_dataset(request, data_fixture, n_slices, n_coils, n_k1):
+def test_fastmri_kdata_dataset_single_slice(request, data_fixture, n_slices, n_coils, n_k1):
     """Test KDataDataset for both brain and knee data."""
     data_path = request.getfixturevalue(data_fixture)
-    dataset = FastMRIKDataDataset(data_path=data_path)
+    dataset = FastMRIKDataDataset(path=data_path, single_slice=True)
     assert len(dataset) == n_slices
 
     kdata = dataset[n_slices // 2]
@@ -134,6 +134,24 @@ def test_fastmri_kdata_dataset(request, data_fixture, n_slices, n_coils, n_k1):
 
 
 @pytest.mark.parametrize(
+    ('data_fixture', 'n_slices', 'n_coils', 'n_k1'),
+    [
+        ('mock_fastmri_brain_data', N_SLICES_BRAIN, N_COILS_BRAIN, N_K1_BRAIN),
+        ('mock_fastmri_knee_data', N_SLICES_KNEE, N_COILS_KNEE, N_K1_KNEE),
+    ],
+)
+def test_fastmri_kdata_dataset_stack_of_slices(request, data_fixture, n_slices, n_coils, n_k1):
+    """Test KDataDataset for both brain and knee data."""
+    data_path = request.getfixturevalue(data_fixture)
+    dataset = FastMRIKDataDataset(path=data_path, single_slice=False)
+    assert len(dataset) == 1
+
+    kdata = dataset[0]
+    assert isinstance(kdata, KData)
+    assert kdata.shape == (n_slices, n_coils, 1, n_k1, N_K0)
+
+
+@pytest.mark.parametrize(
     ('data_fixture', 'n_slices', 'n_coils'),
     [
         ('mock_fastmri_brain_data', N_SLICES_BRAIN, N_COILS_BRAIN),
@@ -141,10 +159,10 @@ def test_fastmri_kdata_dataset(request, data_fixture, n_slices, n_coils, n_k1):
     ],
 )
 @pytest.mark.parametrize('coil_combine', [False, True])
-def test_fastmri_image_dataset(request, data_fixture, n_slices, n_coils, coil_combine):
+def test_fastmri_image_dataset(request, data_fixture, n_slices: int, n_coils: int, coil_combine: bool):
     """Test ImageDataset for both brain and knee data, with and without coil combination."""
     data_path = request.getfixturevalue(data_fixture)
-    dataset = FastMRIImageDataset(data_path=data_path, coil_combine=coil_combine)
+    dataset = FastMRIImageDataset(path=data_path, coil_combine=coil_combine)
     expected_coils = 1 if coil_combine else n_coils
     assert len(dataset) == n_slices
 
@@ -161,7 +179,7 @@ def test_fastmri_image_dataset(request, data_fixture, n_slices, n_coils, coil_co
         ('mock_fastmri_knee_data', N_COILS_KNEE),
     ],
 )
-def test_fastmri_image_dataset_augment(request, data_fixture, n_coils):
+def test_fastmri_image_dataset_augment(request, data_fixture, n_coils: int):
     """Test ImageDataset augmentation for both brain and knee data."""
 
     def mock_augment(x, idx):
@@ -169,22 +187,20 @@ def test_fastmri_image_dataset_augment(request, data_fixture, n_coils):
 
     data_path = request.getfixturevalue(data_fixture)
     dataset = FastMRIImageDataset(
-        data_path=data_path,
+        path=data_path,
         coil_combine=False,  # Test augmentation with multi-coil data
         augment=mock_augment,
     )
 
     img = dataset[0]
     assert img.shape == (1, n_coils, 1, 320, 320)
-    img_no_aug = FastMRIImageDataset(data_path=data_path, coil_combine=False)[0]
+    img_no_aug = FastMRIImageDataset(path=data_path, coil_combine=False)[0]
     assert torch.allclose(img, img_no_aug * 2.0)
 
 
-@pytest.mark.parametrize('data_fixture', ['mock_fastmri_brain_data', 'mock_fastmri_knee_data'])
-def test_fastmri_dataset_getitem_out_of_bounds(request, data_fixture):
+def test_fastmri_dataset_getitem_out_of_bounds(mock_fastmri_brain_data):
     """Test that accessing invalid indices raises IndexError."""
-    data_path = request.getfixturevalue(data_fixture)
-    dataset = FastMRIImageDataset(data_path=data_path)
+    dataset = FastMRIImageDataset(path=mock_fastmri_brain_data)
     with pytest.raises(IndexError):
         _ = dataset[100]
     with pytest.raises(IndexError):
