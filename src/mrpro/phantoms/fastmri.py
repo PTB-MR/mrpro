@@ -10,7 +10,7 @@ import numpy as np
 import torch
 from einops import rearrange
 
-from mrpro.algorithms.csm import walsh
+from mrpro.algorithms.csm.inati import inati
 from mrpro.data.AcqInfo import AcqInfo
 from mrpro.data.KData import KData
 from mrpro.data.KHeader import KHeader
@@ -125,7 +125,7 @@ class FastMRIImageDataset(torch.utils.data.Dataset):
         path : PathLike
             Path to the data directory.
         coil_combine : bool
-            Whether to perform coil combination sensitivity maps obtained using the Walsh method.
+            Whether to perform coil combination sensitivity maps obtained using the Inati method.
             Note that this is **not** comonly used as the target for FastMRI challenges. Instead,
             as target the RSS combination of the coil images is used.
         augment
@@ -199,7 +199,7 @@ class FastMRIImageDataset(torch.utils.data.Dataset):
             img = pad_or_crop(img, (320, 320), dim=(-2, -1))
             if self._coil_combine:
                 csm = apply_lowres(
-                    lambda x: walsh(x.unsqueeze(1), smoothing_width=3).squeeze(1), (64, 64), dim=(-2, -1)
+                    lambda x: inati(x.unsqueeze(1), smoothing_width=5).squeeze(1), (32, 32), dim=(-2, -1)
                 )(img)
                 csm /= (csm * csm.conj()).sum(0, keepdim=True).sqrt()
                 img = (img * csm.conj()).sum(dim=0, keepdim=True)
