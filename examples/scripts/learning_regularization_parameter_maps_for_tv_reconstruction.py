@@ -55,6 +55,7 @@
 # final softplus activation to ensure that the regularization parameter maps are strictly positive.
 # The network is defined in the following.
 
+# %%
 import torch
 
 
