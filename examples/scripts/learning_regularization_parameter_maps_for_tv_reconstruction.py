@@ -472,6 +472,8 @@ def show_images(
 # %% [markdown]
 # Let us have a look at one example of the BrainWeb images.
 
+# %%
+
 image_ = next(iter(dataloader_validation))[0]
 
 n_coils = 8
@@ -491,7 +493,8 @@ show_images(
     clim=(0, 0.5),
 )
 
-# %%[markdown]
+
+# %% [markdown]
 # We now define the unrolled PDHG network.
 
 # %%
@@ -528,6 +531,8 @@ with torch.no_grad():
 # on a GPU. If you have GPU and you need a break, start the training now, grab yourself a coffee and come back later
 # to see your network trained from scratch.
 # If you do not have a GPU, we provide a pre-trained model, which you can load and directly apply to the data.
+
+# %%
 from typing import cast
 
 cnn_block = cast(torch.nn.Module, adaptive_tv_network.lambda_map_network.cnn_block)
@@ -629,6 +634,8 @@ else:
 # %% [markdown]
 # Nice! We have now trained our network for estimating the regularization parameter maps. Let us check if the obtained
 # maps show interesting features by applying it to the previous image.
+
+# %%
 with torch.no_grad():
     regularization_parameter_map_trained = adaptive_tv_network.estimate_lambda_map(pseudo_inverse_solution_)
 
@@ -636,7 +643,6 @@ with torch.no_grad():
         pseudo_inverse_solution_, csm_, kdata_, traj_, regularization_parameter_map_trained
     )
 
-# %%
 show_images(
     regularization_parameter_map_init[0, 0].squeeze(),
     regularization_parameter_map_trained[0, 0].squeeze().cpu(),
@@ -654,9 +660,7 @@ show_images(
 # %% [markdown]
 ## Application to in-vivo data
 # Let us now download some real measured scanner data and apply our trained network. We will use the same dataset of the
-# Cartesian reconstruction example <project:cartesian_reconstruction.ipynb>. From the measured data, we select
-# a subset of the sampled k-space lines to create an undersampled k-space data and reconstruct it with the just
-# trained method.
+# Cartesian reconstruction example <project:cartesian_reconstruction.ipynb>.
 
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show download details"}
 # Get the raw data from zenodo
@@ -675,6 +679,11 @@ kdata_cartesian = mrpro.data.KData.from_file(
     data_folder_cart_data / 'cart_t1.mrd',
     mrpro.data.traj_calculators.KTrajectoryCartesian(),
 )
+
+# %% [markdown]
+# From the measured data, we select a subset of the sampled k-space lines to create an undersampled k-space
+# data. Then, we estimate the coil sensitivity maps using the Walsh method implemented in MRpro and obtain the initial
+# reconstruction by approximately solving the normal equations using conjugate gradient method.
 
 # %%
 nz, ny, nx = kdata_cartesian.data.shape[-3:]
@@ -699,12 +708,9 @@ fourier_operator_undersampled = mrpro.operators.FourierOp(
     encoding_matrix=kdata_cartesian.header.encoding_matrix,
 )
 (coil_images,) = fourier_operator_undersampled.H(kdata_undersampled)
-# %%
-# estimate coil sensitivity maps using the Walsh method in MRpro
+
 csm_undersampled = mrpro.algorithms.csm.walsh(coil_images.squeeze(0), smoothing_width=5).unsqueeze(0)
 
-
-# %%
 forward_operator = fourier_operator_undersampled @ mrpro.operators.SensitivityOp(csm_undersampled)
 (adjoint_recon_undersampled,) = forward_operator.H(kdata_undersampled)
 
@@ -722,8 +728,11 @@ if torch.cuda.is_available():
     ktraj_undersampled = ktraj_undersampled.cuda()
     kdata_undersampled = kdata_undersampled.cuda()
 
-# %%
+# %% [markdown]
+# Finally, let us apply the trained network to the undersampled data. We first estimate the regularization parameter map
+# from the pseudo-inverse solution and then apply the unrolled PDHG network to obtain the final reconstruction.
 
+# %%
 adaptive_tv_network.img_shape = kdata_cartesian.header.recon_matrix
 adaptive_tv_network.k_shape = kdata_cartesian.header.encoding_matrix
 
@@ -756,11 +765,14 @@ image_fully_sampled = iterative_sense_reconstruction(kdata_cartesian)
 
 
 # %% [markdown]
-# We also perform a quick line search to see what the best possible TV-reconstruction using a
+# Additionally, we also perform a quick line search to see what the best possible TV-reconstruction using a
 # scalar regularization parameter would be. Note that in practice, you would obviously not be able
 # to obtain this reconstruction since the target image is not available. However, the comparison
 # is useful to assess how much improvement one can expect to obtain when employing
 # spatially adaptive regularization parameter maps.
+
+
+# %%
 def line_search(
     regularization_parameters: torch.Tensor,
     initial_image: torch.Tensor,
@@ -809,6 +821,12 @@ ax.vlines(
 ax.legend()
 plt.show()
 
+# %% [markdown]
+# Finally, let us compare the different reconstructions. We show the adjoint reconstruction, the pseudo-inverse, the
+# PDHG reconstruction with the best scalar regularization parameter, the PDHG reconstruction with the spatially adaptive
+# regularization parameter map and the iterative SENSE reconstruction from the fully-sampled data.
+
+
 # %%
 show_images(
     adjoint_recon_undersampled.squeeze(),
@@ -829,6 +847,7 @@ show_images(
 )
 
 # %%
+
 show_images(
     regularization_parameter_map_undersampled_data[0, 0].squeeze(),
     titles=[
@@ -842,8 +861,9 @@ show_images(
 
 # %% [markdown]
 # Well done, we have successfully reconstructed an image with spatially varying regularization parameter
-# maps for TV.
-#
+# maps for TV. 🎉
+
+
 # ### Next steps
 # As previously mentioned, you can also change network architecture to something more sophisticated.
 # Do deeper/wider networks give more accurate results?
