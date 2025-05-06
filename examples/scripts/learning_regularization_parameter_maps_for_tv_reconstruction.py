@@ -56,10 +56,9 @@
 # The network is defined in the following.
 
 import torch
-import torch.nn as nn
 
 
-class ParameterMapNetwork2D(nn.Module):
+class ParameterMapNetwork2D(torch.nn.Module):
     r"""A simple network for estimating regularization parameter maps for TV-reconstruction."""
 
     def __init__(self, n_filters: int = 16) -> None:
@@ -73,7 +72,7 @@ class ParameterMapNetwork2D(nn.Module):
         """
         super().__init__()
 
-        self.cnn_block = nn.Sequential(
+        self.cnn_block = torch.nn.Sequential(
             *[
                 torch.nn.Conv2d(in_channels=1, out_channels=n_filters, kernel_size=3, stride=1, padding=1),
                 torch.nn.LeakyReLU(),
@@ -134,7 +133,7 @@ class ParameterMapNetwork2D(nn.Module):
 import mrpro
 
 
-class AdaptiveTVNetwork2D(nn.Module):
+class AdaptiveTVNetwork2D(torch.nn.Module):
     r"""Unrolled primal dual hybrid gradient with spatially adaptive regularization parameter maps for TV.
 
     Solves the minimization problem
@@ -624,7 +623,7 @@ if torch.cuda.is_available():
     time_end = time() - time_start
     print(f'training time: {datetime.timedelta(seconds=time_end)}')
 else:
-    adaptive_tv_network.load_state_dict(torch.load(data_folder_tv / 'tv_model.pt'))
+    adaptive_tv_network.load_state_dict(torch.load(data_folder_tv / 'tv_model.pt', map_location='cpu'))
 
 # %% [markdown]
 # Nice! We have now trained our network for estimating the regularization parameter maps. Let us check if the obtained
@@ -791,7 +790,7 @@ mse_values, pdhg_recon_best_scalar = line_search(
     csm_undersampled,
     kdata_undersampled,
     ktraj_undersampled,
-    (image_fully_sampled.data).cuda(),
+    (image_fully_sampled.data).cuda() if torch.cuda.is_available() else image_fully_sampled.data,
 )
 
 fig, ax = plt.subplots()
