@@ -153,7 +153,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         self._joint_dims_zyx.append(-4)  # -4 is always coil and always a joint dimension
 
         self._im_size = im_size
-        self._omega = omega
+        self._omega = omega.contiguous()
 
     def _separate_joint_dimensions(
         self, data_ndim: int
