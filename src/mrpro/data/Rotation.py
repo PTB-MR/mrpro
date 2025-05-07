@@ -59,6 +59,7 @@ from typing_extensions import Self, Unpack, overload
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils import reduce_repeat
 from mrpro.utils.indexing import Indexer
+from mrpro.utils.reshape import broadcasted_rearrange
 from mrpro.utils.typing import NestedSequence, TorchIndexerType
 from mrpro.utils.vmf import sample_vmf
 
@@ -1116,25 +1117,41 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         """Not implemented."""
         raise NotImplementedError
 
-    @classmethod
-    def concatenate(cls, rotations: Sequence[Rotation]) -> Self:
+    def concatenate(
+        self: Rotation | Sequence[Rotation], *rotations: Rotation | Sequence[Rotation], dim: int = 0
+    ) -> Rotation:
         """Concatenate a sequence of `Rotation` objects into a single object.
 
         Parameters
         ----------
         rotations
             The rotations to concatenate.
+        dim
+            The dimension to concatenate along.
 
         Returns
         -------
-        concatenated
             The concatenated rotations.
         """
-        if not all(isinstance(x, Rotation) for x in rotations):
+        # In scipy, this is a classmethod. We mimic this behavior, but also support calling it on an instance.
+        rotations_ = []
+        for el in rotations:
+            if isinstance(el, Rotation):
+                rotations_.append(el)
+            else:
+                rotations_.extend(el)
+        if isinstance(self, Rotation):
+            rotations_ = [self, *rotations_]
+            cls = type(self)
+        else:
+            rotations_ = [*self, *rotations_]
+            cls = type(self[0])
+
+        if not all(isinstance(x, Rotation) for x in rotations_):
             raise TypeError('input must contain Rotation objects only')
 
-        quats = torch.cat([torch.atleast_2d(x.as_quat(improper='ignore')) for x in rotations])
-        inversions = torch.cat([torch.atleast_1d(x._is_improper) for x in rotations])
+        quats = torch.cat([torch.atleast_2d(x.as_quat(improper='ignore')) for x in rotations_], dim=dim)
+        inversions = torch.cat([torch.atleast_1d(x._is_improper) for x in rotations_], dim=dim)
         return cls(quats, normalize=False, copy=False, inversion=inversions, reflection=False)
 
     @overload
@@ -1588,6 +1605,33 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         angles = (other @ self.inv()).magnitude()
         return (angles < atol) & (self._is_improper == other._is_improper)
 
+    def __eq__(self, other: object) -> bool:
+        """Check exact equality of two rotations.
+
+        Tests equality up to broadcasting
+
+        Parameters
+        ----------
+        other
+            The other rotation to compare to.
+
+        Returns
+        -------
+            True if the rotations are exactly equal
+        """
+        if not isinstance(other, type(self)):
+            return False
+        if self is other:
+            return True
+        try:
+            if not torch.equal(*torch.broadcast_tensors(self._quaternions, other._quaternions)):
+                return False
+            if not torch.equal(*torch.broadcast_tensors(self._is_improper, other._is_improper)):
+                return False
+        except RuntimeError:
+            return False
+        return True
+
     def __getitem__(self, indexer: TorchIndexerType) -> Self:
         """Extract rotation(s) at given index(es) from object.
 
@@ -1650,6 +1694,18 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         self._quaternions.data = reduce_repeat(self._quaternions, tol, quaternion_dim)
         self._is_improper.data = reduce_repeat(self._is_improper, tol, dim)
         return self
+
+    def _broadcasted_rearrange(
+        self, pattern: str, broadcasted_shape: Sequence[int], reduce_views: bool = True, **axes_lengths: int
+    ) -> Self:
+        quaternions = [
+            broadcasted_rearrange(q, pattern, broadcasted_shape, reduce_views=reduce_views, **axes_lengths)
+            for q in self._quaternions.unbind(-1)
+        ]
+        inversion = broadcasted_rearrange(
+            self._is_improper, pattern, broadcasted_shape=broadcasted_shape, reduce_views=reduce_views, **axes_lengths
+        )
+        return type(self)(torch.stack(quaternions, -1), False, False, inversion)
 
     @property
     def quaternion_x(self) -> torch.Tensor:
@@ -2102,7 +2158,7 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
 class RotationBackend(AbstractBackend):
     """Einops backend for Rotations."""
 
-    framework_name = 'mrpro'
+    framework_name = 'mrpro.data.Rotation'
 
     def is_appropriate_type(self, x) -> bool:  # noqa: ANN001
         """Check if the object is a Rotation."""
