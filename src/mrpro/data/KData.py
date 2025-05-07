@@ -1,9 +1,11 @@
 """MR raw data / k-space data class."""
 
 import copy
+import dataclasses
 import datetime
 import warnings
 from collections.abc import Callable, Mapping, Sequence
+from importlib.metadata import version
 from types import EllipsisType
 from typing import Literal, cast
 
@@ -15,9 +17,15 @@ from einops import rearrange
 from typing_extensions import Self, TypeVar
 
 from mrpro.data.acq_filters import has_n_coils, is_image_acquisition
-from mrpro.data.AcqInfo import AcqInfo, convert_time_stamp_osi2, convert_time_stamp_siemens
+from mrpro.data.AcqInfo import (
+    AcqInfo,
+    convert_time_stamp_from_osi2,
+    convert_time_stamp_from_siemens,
+    convert_time_stamp_to_osi2,
+    convert_time_stamp_to_siemens,
+)
 from mrpro.data.Dataclass import Dataclass
-from mrpro.data.EncodingLimits import EncodingLimits
+from mrpro.data.EncodingLimits import EncodingLimits, Limits
 from mrpro.data.enums import AcqFlags
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KTrajectory import KTrajectory
@@ -143,19 +151,19 @@ class KData(Dataclass):
         ):
             match ismrmrd_header.acquisitionSystemInformation.systemVendor.lower():
                 case 'siemens':
-                    convert_time_stamp = convert_time_stamp_siemens  # 2.5ms time steps
+                    convert_time_stamp = convert_time_stamp_from_siemens  # 2.5ms time steps
                 case 'osi2':
-                    convert_time_stamp = convert_time_stamp_osi2  # 1ms time steps
+                    convert_time_stamp = convert_time_stamp_from_osi2  # 1ms time steps
                 case str(vendor):
                     warnings.warn(
                         f'Unknown vendor {vendor}. '
                         'Assuming Siemens time stamp format. If this is wrong, consider opening an Issue.',
                         stacklevel=1,
                     )
-                    convert_time_stamp = convert_time_stamp_siemens  # 2.5ms time steps
+                    convert_time_stamp = convert_time_stamp_from_siemens  # 2.5ms time steps
         else:
             warnings.warn('No vendor information found. Assuming Siemens time stamp format.', stacklevel=1)
-            convert_time_stamp = convert_time_stamp_siemens
+            convert_time_stamp = convert_time_stamp_from_siemens
 
         acq_info, (k0_center, n_k0_tensor, discard_pre, discard_post) = AcqInfo.from_ismrmrd_acquisitions(
             acquisitions,
@@ -323,6 +331,84 @@ class KData(Dataclass):
         kz, ky, kx = (sort(t) for t in (self.traj.kz, self.traj.ky, self.traj.kx))
         traj = KTrajectory(kz, ky, kx, self.traj.grid_detection_tolerance, self.traj.repeat_detection_tolerance)
         return type(self)(header=header._reduce_repeats_(), data=data, traj=traj._reduce_repeats_())
+
+    def to_file(self, filename: FileOrPath) -> None:
+        """Save KData as ISMRMRD dataset to file.
+
+        Parameters
+        ----------
+        filename
+            path to the ISMRMRD file
+        """
+        # Open the dataset
+        dataset = ismrmrd.Dataset(filename, 'dataset', create_if_needed=True)
+
+        # Create ISMRMRD header
+        header = self.header.to_ismrmrd()
+        header.acquisitionSystemInformation.receiverChannels = self.data.shape[-4]
+
+        # Calculate the encoding limits as min/max of the acquisition indices
+        def limits_from_acq_idx(acq_idx_tensor: torch.Tensor) -> Limits:
+            return Limits(int(acq_idx_tensor.min().item()), int(acq_idx_tensor.max().item()), 0)
+
+        encoding_limits = EncodingLimits(
+            **{
+                field.name: limits_from_acq_idx(getattr(self.header.acq_info.idx, field.name))
+                for field in dataclasses.fields(self.header.acq_info.idx)
+            }
+        )
+
+        # For the k-space center of k1 and k2 we can only make an educated guess on where it is:
+        # k-space point closest to 0
+        trajectory = self.traj.as_tensor(-1)
+        kspace_center_idx = torch.argmin(trajectory.abs().sum(dim=-1))
+        encoding_limits.k1.center = int(
+            self.header.acq_info.idx.k1.broadcast_to(trajectory.shape[:-1]).flatten()[kspace_center_idx].item()
+        )
+        encoding_limits.k2.center = int(
+            self.header.acq_info.idx.k2.broadcast_to(trajectory.shape[:-1]).flatten()[kspace_center_idx].item()
+        )
+        header.encoding[0].encodingLimits = encoding_limits.to_ismrmrd_encoding_limits_type()
+
+        dataset.write_xml_header(header.toXML('utf-8'))
+
+        # Vendors use different units for time stamps
+        if self.header.vendor.lower() == 'osi2':
+            convert_time_stamp = convert_time_stamp_to_osi2  # 1ms time steps
+        else:
+            convert_time_stamp = convert_time_stamp_to_siemens  # 2.5ms time steps
+
+        # Go through data and save acquisitions
+        acq_shape = [self.data.shape[-1], self.data.shape[-4]]
+        acq = ismrmrd.Acquisition()
+        acq.resize(*acq_shape, trajectory_dimensions=3)
+
+        acq.available_channels = acq_shape[1]
+        acq.version = int(version('ismrmrd').split('.')[0])
+        acq.scan_counter = 0
+
+        for other in np.ndindex(self.data.shape[:-4]):
+            for k2 in range(self.data.shape[-3]):
+                for k1 in range(self.data.shape[-2]):
+                    # Select current readout for all coils
+                    single_acquisition = self[(*other, slice(None), k2, k1, slice(None))]  # type: ignore[index]
+                    single_acquisition.header.acq_info.write_single_acquisition_to_ismrmrd_acquisition(
+                        acq, convert_time_stamp
+                    )
+
+                    acq.traj[:] = torch.squeeze(single_acquisition.traj.as_tensor(-1)).numpy()[:, ::-1]  # zyx -> xyz
+                    acq.center_sample = np.argmin(np.abs(acq.traj[:, 0]))
+
+                    # Reversed readouts means that the k-space is traversed from positive to negative
+                    if acq.flags & AcqFlags.ACQ_IS_REVERSE.value:
+                        acq.center_sample += 1
+
+                    acq.data[:] = torch.squeeze(single_acquisition.data).numpy()
+                    dataset.append_acquisition(acq)
+
+                    acq.scan_counter += 1
+
+        dataset.close()
 
     def __repr__(self):
         """Representation method for KData class."""
