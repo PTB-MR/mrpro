@@ -27,7 +27,12 @@ from mrpro.data.traj_calculators.KTrajectoryRadial2D import KTrajectoryRadial2D
 CACHE_DIR_MDCNN = Path(platformdirs.user_cache_dir('mrpro')) / 'mdcnn'
 
 
-def download_mdcnn(output_directory: str | PathLike = CACHE_DIR_MDCNN, n_files: int = 108) -> None:
+def download_mdcnn(
+    output_directory: str | PathLike = CACHE_DIR_MDCNN,
+    n_files: int = 108,
+    workers: int = 4,
+    progress: bool = False,
+) -> None:
     """
     Download MD-CNN [MDCNN]_ dataset from Harvard Dataverse and save it as numpy files.
 
@@ -43,13 +48,14 @@ def download_mdcnn(output_directory: str | PathLike = CACHE_DIR_MDCNN, n_files: 
     n_files : int
         Number of files to download. Maximum is 108.
         If lower than 108, the first `n_files` based on the harvard dataverse id will be downloaded.
-
+    workers : int
+        Number of parallel downloads.
+    progress : bool
+        Show progress bar.
     """
-    progress = tqdm(total=n_files, desc='Downloading')
-    if n_files > 108:
-        raise ValueError('n_files must be less than 108')
-    if n_files < 0:
-        raise ValueError('n_files must be positive')
+    progressbar = tqdm(total=n_files, desc='Downloading') if progress else None
+    if not 0 < n_files <= 108:
+        raise ValueError('n_files must be positive and less than 108')
     try:
         output_directory_ = Path(output_directory)
         output_directory_.mkdir(parents=True, exist_ok=True)
@@ -57,10 +63,14 @@ def download_mdcnn(output_directory: str | PathLike = CACHE_DIR_MDCNN, n_files: 
         raise RuntimeError(f'Failed to create directory {output_directory}: {e}') from None
 
     def fetch(file_id: int) -> None:
+        nonlocal n_files
         url = f'https://dataverse.harvard.edu/api/access/datafile/{file_id}'
         with urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'mrpro'})) as resp:  # noqa: S310
             if (match := re.search('(P[0-9]+)_', resp.headers['Content-Disposition'])) is None:
                 return
+            if n_files < 1:
+                return
+            n_files -= 1
             subject = match.groups()[0]
             data = torch.as_tensor(scipy.io.loadmat(io.BytesIO(resp.read()))['data'], dtype=torch.float32)
             data = torch.view_as_complex(
@@ -74,9 +84,10 @@ def download_mdcnn(output_directory: str | PathLike = CACHE_DIR_MDCNN, n_files: 
             # we save as numpy, as loadmat is more than 10x slower than np.load
             filename = output_directory_ / f'{subject}.npy'
             np.save(filename, data)
-            progress.update(1)
+            if progressbar is not None:
+                progressbar.update(1)
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
         for file_id in range(4000844, 4000978):
             executor.submit(fetch, file_id)
 

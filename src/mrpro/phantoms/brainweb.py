@@ -252,6 +252,7 @@ def download_brainweb(
     workers: int = 4,
     progress: bool = False,
     compress: bool = False,
+    n_files: int = 20,
 ) -> None:
     """Download Brainweb data.
 
@@ -266,7 +267,12 @@ def download_brainweb(
     compress
         Use compression for HDF5 files. Saves disk space but might slow down (or speed up) access,
         depending on the system and access pattern.
+    n_files
+        Number of files to download. Can be used to download only a subset of the files.
+        Cannot be greater than 20.
     """
+    if n_files > 20:
+        raise ValueError('Cannot download more than 20 files.')
 
     def load_file(url: str, timeout: float = 60) -> bytes:
         """Load url content."""
@@ -318,7 +324,7 @@ def download_brainweb(
             f.attrs['version'] = VERSION
 
     page = requests.get(OVERVIEW_URL, timeout=5)
-    subjects = re.findall(r'option value=(\d*)>', page.text)
+    subjects = re.findall(r'option value=(\d*)>', page.text)[:n_files]
     output_directory = Path(output_directory)
     output_directory.mkdir(parents=True, exist_ok=True)
 
