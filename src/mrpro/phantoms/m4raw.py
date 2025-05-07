@@ -6,7 +6,6 @@ from collections.abc import Sequence
 from os import PathLike
 from pathlib import Path
 from warnings import warn
-from xml.etree import ElementTree as ET
 
 import h5py
 import numpy as np
@@ -20,7 +19,7 @@ from mrpro.data.KHeader import KHeader
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.data.traj_calculators.KTrajectoryCartesian import KTrajectoryCartesian
 from mrpro.utils.reshape import unsqueeze_left
-from mrpro.utils.unit_conversion import deg_to_rad, ms_to_s
+from mrpro.utils.unit_conversion import deg_to_rad, magnetic_field_to_lamor_frequency, ms_to_s
 
 
 class M4RawDataset(torch.utils.data.Dataset):
@@ -84,7 +83,7 @@ class M4RawDataset(torch.utils.data.Dataset):
             slice_idx = slice(None)
 
         with h5py.File(self._filenames[file_idx][0], 'r') as file:
-            xml_root = ET.fromstring(file['ismrmrd_header'][()].decode('utf-8'))  # noqa: S314
+            xml_root = ET.fromstring(file['ismrmrd_header'][()].decode('utf-8'))
 
         info = AcqInfo()
         info.idx.k1 = torch.arange(30, 225)[None, None, None, :, None]
@@ -128,6 +127,7 @@ class M4RawDataset(torch.utils.data.Dataset):
             measurement_id=measurement_id,
             trajectory_type=TrajectoryType.CARTESIAN,
             acq_info=info,
+            lamor_frequency_proton=int(magnetic_field_to_lamor_frequency(0.3)),
         )
 
         reps = []
