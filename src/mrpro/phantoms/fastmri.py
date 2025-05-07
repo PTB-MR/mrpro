@@ -126,7 +126,7 @@ class FastMRIImageDataset(torch.utils.data.Dataset):
         Parameters
         ----------
         path : PathLike
-            Either a path to a directory containing the FastMRI data as .h5 filesor a Sequence of paths of
+            Either a path to a directory containing the FastMRI data as .h5 files or a sequence of paths of
             individual files.
         coil_combine : bool
             Whether to perform coil combination sensitivity maps obtained using the Inati method.
