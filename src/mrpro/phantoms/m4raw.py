@@ -6,6 +6,7 @@ from collections.abc import Sequence
 from os import PathLike
 from pathlib import Path
 from warnings import warn
+from xml.etree import ElementTree as ET
 
 import h5py
 import numpy as np
@@ -26,15 +27,14 @@ class M4RawDataset(torch.utils.data.Dataset):
     """M4Raw KData Dataset.
 
     M4Raw [M4RAW]_ low-field (0.3T) brain dataset. The data can be downloaded from zenodo [M4RAW_DATA]_.
-    The data consists of Cartsian GRE, T1w, T2w, and FLAIR images with multiple repititions.
+    The data consists of Cartsian GRE, T1w, T2w, and FLAIR images with multiple repetitions.
     It will be returned as `mrpro.data.KData` objects of either a single slice or a stack of
     slices with multiple repetitions.
 
     References
     ----------
-    .. [M4RAW_DATA] Lyu, M., Mei, L., Huang, S., Liu, S., Li, Y., Yang, K., Liu, Y., Dong, Y., Dong, L., & Wu, E. X. (2023).
-       M4Raw: A multi-contrast, multi-repetition, multi-channel MRI k-space dataset for low-field MRI research [Data set]
-       https://doi.org/10.5281/zenodo.8056074
+    .. [M4RAW_DATA] Lyu, M., Mei, L., Huang, S., et al.(2023). M4Raw: A multi-contrast, multi-repetition,
+       multi-channel MRI k-space dataset for low-field MRI research [Data set] https://doi.org/10.5281/zenodo.8056074
     .. [M4RAW] Lyu, M., Mei, L., Huang, S. et al. M4Raw: A multi-contrast, multi-repetition, multi-channel MRI k-space
        dataset for low-field MRI research. Sci Data 10, 264 (2023). https://doi.org/10.1038/s41597-023-02181-4
     """
@@ -83,7 +83,7 @@ class M4RawDataset(torch.utils.data.Dataset):
             slice_idx = slice(None)
 
         with h5py.File(self._filenames[file_idx][0], 'r') as file:
-            xml_root = ET.fromstring(file['ismrmrd_header'][()].decode('utf-8'))
+            xml_root = ET.fromstring(file['ismrmrd_header'][()].decode('utf-8'))  # noqa: S314
 
         info = AcqInfo()
         info.idx.k1 = torch.arange(30, 225)[None, None, None, :, None]
@@ -92,7 +92,7 @@ class M4RawDataset(torch.utils.data.Dataset):
         recon_matrix = encoding_matrix = SpatialDimension(1, 256, 256)  # Fix for all files
         recon_fov = encoding_fov = SpatialDimension(0.005, 0.24, 0.24)  # Fix for all files
 
-        def get(name) -> list[str]:
+        def get(name: str) -> list[str]:
             return [
                 e.text for e in xml_root.findall(name, {'ns0': 'http://www.ismrm.org/ISMRMRD'}) if e.text is not None
             ]
