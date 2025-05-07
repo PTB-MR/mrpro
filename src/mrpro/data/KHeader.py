@@ -5,7 +5,6 @@ import datetime as dt
 import warnings
 from collections.abc import Mapping
 from dataclasses import field
-from typing import TYPE_CHECKING
 
 import ismrmrd.xsd.ismrmrdschema.ismrmrd as ismrmrdschema
 import torch
@@ -15,12 +14,7 @@ from mrpro.data import enums
 from mrpro.data.AcqInfo import AcqInfo
 from mrpro.data.Dataclass import Dataclass
 from mrpro.data.SpatialDimension import SpatialDimension
-from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 from mrpro.utils.unit_conversion import deg_to_rad, mm_to_m, ms_to_s
-
-if TYPE_CHECKING:
-    # avoid circular imports by importing only when type checking
-    from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 
 UNKNOWN = 'unknown'
 
@@ -48,9 +42,6 @@ class KHeader(Dataclass):
 
     acq_info: AcqInfo = field(default_factory=AcqInfo)
     """Information of the acquisitions (i.e. readout lines)."""
-
-    trajectory: KTrajectoryCalculator | None = None
-    """Function to calculate the k-space trajectory."""
 
     lamor_frequency_proton: float | None = None
     """Lamor frequency of hydrogen nuclei [Hz]."""
@@ -220,15 +211,17 @@ class KHeader(Dataclass):
 
         try:
             instance = cls(**parameters)
-        except TypeError:
+        except TypeError as e:
             missing = [
                 f.name
                 for f in dataclasses.fields(cls)
                 if f.name not in parameters
                 and (f.default == dataclasses.MISSING and f.default_factory == dataclasses.MISSING)
             ]
-            raise ValueError(
-                f'Could not create Header. Missing parameters: {missing}\n'
-                'Consider setting them via the defaults dictionary',
-            ) from None
+            if missing:
+                raise ValueError(
+                    f'Could not create Header. Missing parameters: {missing}\n'
+                    'Consider setting them via the defaults dictionary',
+                ) from None
+            raise e from None
         return instance
