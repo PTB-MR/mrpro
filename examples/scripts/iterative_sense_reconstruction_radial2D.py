@@ -22,11 +22,10 @@
 # which is a linear system $Hx = b$ that needs to be solved for $x$. This is done using the conjugate gradient method.
 #
 # ```{note}
-# In Pruessmann, K.P., et al. MRM 2001 (https://doi.org/10.1002/mrm.1241) the k-space density is used to reweight the
-# loss to achieve faster convergence. This increases reconstruction error, see Ong F., Uecker M., Lustig M. TMI 2020
-# (https://doi.org/10.1109/TMI.2019.2954121). We follow a recommendation by Fessler and Noll
-# (https://ece-classes.usc.edu/ee591/library/Fessler-Iterative%20Reconstruction.pdf) and use the DCF to obtain a good
-# starting point.
+# In [Pruessmann et al. 2001](https://doi.org/10.1002/mrm.1241) the k-space density is used to reweight the
+# loss to achieve faster convergence. This increases reconstruction error, see [Ong F., Uecker M., Lustig M. 2020](https://doi.org/10.1109/TMI.2019.2954121).
+# We follow a recommendation by [Fessler and Noll](https://ece-classes.usc.edu/ee591/library/Fessler-Iterative%20Reconstruction.pdf)
+# and use the DCF to obtain a good starting point.
 # ```
 
 # %% [markdown]
