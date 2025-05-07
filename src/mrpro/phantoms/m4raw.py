@@ -101,7 +101,9 @@ class M4RawDataset(torch.utils.data.Dataset):
         ti = [ms_to_s(float(e)) for e in get('ns0:sequenceParameters/ns0:TI')]
         fa = [deg_to_rad(float(e)) for e in get('ns0:sequenceParameters/ns0:flipAngle_deg')]
         tr = [ms_to_s(float(e)) for e in get('ns0:sequenceParameters/ns0:TR')]
-        echo_spacing = [ms_to_s(float(e)) for e in get('ns0:sequenceParameters/ns0:echo_spacing') if e != 'N/A']
+        echo_spacing = [
+            ms_to_s(float(e.replace('ms', ''))) for e in get('ns0:sequenceParameters/ns0:echo_spacing') if e != 'N/A'
+        ]
         echo_train_length = int(get('ns0:encoding/ns0:echoTrainLength')[0])
         sequence_type = get('ns0:sequenceParameters/ns0:sequence_type')[0]
         model = get('ns0:acquisitionSystemInformation/ns0:systemModel')[0]
