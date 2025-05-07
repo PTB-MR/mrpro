@@ -32,7 +32,8 @@ URL_TEMPLATE = (
 # includes background
 ALL_CLASSES = ('bck', 'skl', 'gry', 'wht', 'csf', 'mrw', 'dura', 'fat', 'fat2', 'mus', 'm-s', 'ves')  # noqa: typos
 VERSION = 1
-CACHE_DIR = platformdirs.user_cache_dir('mrpro')  #  ~/.cache/mrpro on Linux, %AppData%\Local\mrpro on Windows
+# ~/.cache/mrpro/brainweb on Linux, %AppData%\Local\mrpro\brainweb on Windows
+CACHE_DIR_BRAINWEB = Path(platformdirs.user_cache_dir('mrpro')) / 'brainweb'
 K = TypeVar('K')
 TClassNames = Literal['skl', 'gry', 'wht', 'csf', 'mrw', 'dura', 'fat', 'fat2', 'mus', 'm-s', 'ves']  # noqa: typos
 BRAINWEBSHAPE = (362, 434, 362)
@@ -247,7 +248,7 @@ DEFAULT_VALUES = {'r1': 0.0, 'm0': 0.0, 'r2': 0.0, 'mask': 0, 'tissueclass': -1}
 
 
 def download_brainweb(
-    output_directory: str | PathLike = CACHE_DIR / 'brainweb',
+    output_directory: str | PathLike = CACHE_DIR_BRAINWEB,
     workers: int = 4,
     progress: bool = False,
     compress: bool = False,
@@ -355,7 +356,10 @@ class BrainwebVolumes(torch.utils.data.Dataset):
 
     @staticmethod
     def download(
-        output_directory: str | PathLike = CACHE_DIR, workers: int = 4, progress: bool = False, compress: bool = False
+        output_directory: str | PathLike = CACHE_DIR_BRAINWEB,
+        workers: int = 4,
+        progress: bool = False,
+        compress: bool = False,
     ) -> None:
         """Download Brainweb data.
 
@@ -376,7 +380,7 @@ class BrainwebVolumes(torch.utils.data.Dataset):
 
     def __init__(
         self,
-        folder: str | Path = CACHE_DIR,
+        folder: str | Path = CACHE_DIR_BRAINWEB,
         what: Sequence[Literal['r1', 'r2', 'm0', 't1', 't2', 'mask', 'tissueclass'] | TClassNames] = ('m0', 'r1', 'r2'),
         parameters: Mapping[TClassNames, BrainwebTissue] = VALUES_3T_RANDOMIZED,
         mask_values: Mapping[str, float | None] = DEFAULT_VALUES,
@@ -504,7 +508,10 @@ class BrainwebSlices(torch.utils.data.Dataset):
 
     @staticmethod
     def download(
-        output_directory: str | PathLike = CACHE_DIR, workers: int = 4, progress: bool = False, compress: bool = False
+        output_directory: str | PathLike = CACHE_DIR_BRAINWEB,
+        workers: int = 4,
+        progress: bool = False,
+        compress: bool = False,
     ) -> None:
         """Download Brainweb data.
 
@@ -525,7 +532,7 @@ class BrainwebSlices(torch.utils.data.Dataset):
 
     def __init__(
         self,
-        folder: str | Path = CACHE_DIR,
+        folder: str | Path = CACHE_DIR_BRAINWEB,
         what: Sequence[Literal['r1', 'r2', 'm0', 't1', 't2', 'mask', 'tissueclass'] | TClassNames] = ('m0', 'r1', 'r2'),
         parameters: Mapping[TClassNames, BrainwebTissue] = VALUES_3T_RANDOMIZED,
         orientation: Literal['axial', 'coronal', 'sagittal'] = 'axial',

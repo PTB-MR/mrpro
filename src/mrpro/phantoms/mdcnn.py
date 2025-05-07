@@ -1,7 +1,10 @@
+"""MD-CNN radial cardiac cine dataset."""
+
 import concurrent.futures
 import io
 import re
 import urllib.request
+from collections.abc import Sequence
 from os import PathLike
 from pathlib import Path
 
@@ -20,12 +23,13 @@ from mrpro.data.KHeader import KHeader
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.data.traj_calculators.KTrajectoryRadial2D import KTrajectoryRadial2D
 
-CACHE_DIR = platformdirs.user_cache_dir('mrpro')  #  ~/.cache/mrpro on Linux, %AppData%\Local\mrpro on Windows
+# ~/.cache/mrpro/mdcnn on Linux, %AppData%\Local\mrpro\mdcnn on Windows
+CACHE_DIR_MDCNN = Path(platformdirs.user_cache_dir('mrpro')) / 'mdcnn'
 
 
-def download_mdcnn(output_directory: str | PathLike = CACHE_DIR / 'mdcnn', n_files: int = 108) -> None:
+def download_mdcnn(output_directory: str | PathLike = CACHE_DIR_MDCNN, n_files: int = 108) -> None:
     """
-    Download MD-CNN [MDCNN]_ dataset from Harvard Dataverse.
+    Download MD-CNN [MDCNN]_ dataset from Harvard Dataverse and save it as numpy files.
 
     References
     ----------
@@ -67,6 +71,7 @@ def download_mdcnn(output_directory: str | PathLike = CACHE_DIR / 'mdcnn', n_fil
             else:
                 first = 296
             data = data[..., first:624]
+            # we save as numpy, as loadmat is more than 10x slower than np.load
             filename = output_directory_ / f'{subject}.npy'
             np.save(filename, data)
             progress.update(1)
@@ -89,44 +94,46 @@ class MDCNNDataset(Dataset):
     .. [MDCNN] El-Rewaidy H., Replication Data for: Multi-Domain Convolutional Neural Network (MD-CNN) For Radial
        Reconstruction of Dynamic Cardiac MRI. Harvard Dataverse, 2020. https://doi.org/10.7910/DVN/CI3WB6.
     .. [REWAIDY] El-Rewaidy H, Fahmy AS, Pashakhanloo F, et al. Multi-domain convolutional neural network (MD-CNN) for
-       radial reconstruction of dynamic cardiac MRI. Magn Reson Med. 2020; 85: 1195–1208. https://doi.org/10.1002/mrm.28485
+       radial reconstruction of dynamic cardiac MRI. Magn Reson Med. 2020; 85: 1195-1208. https://doi.org/10.1002/mrm.28485
     """
 
-    def __init__(self, path: str | PathLike):
+    def __init__(self, path: str | PathLike | Sequence[str | PathLike] = CACHE_DIR_MDCNN):
         """Initialize the MD-CNN dataset.
 
         Parameters
         ----------
         path : str | PathLike
-            Path to the directory containing the MD-CNN dataset converted to numpy format.
+            Path to the directory containing the MD-CNN dataset converted to numpy format or sequence of npy files.
         """
-        files = list(Path(path).glob('**/*.npy'))
+        files = list(Path(path).rglob('P*.npy')) if isinstance(path, str | PathLike) else [Path(p) for p in path]
         self.files = sorted(files, key=lambda x: int(x.stem[1:]))
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Get the number of CINES in the dataset."""
         return len(self.files)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> KData:
         """Get one CINE from the dataset."""
         filename = self.files[idx]
         data = torch.as_tensor(np.load(filename))
-        n_k0 = data.shape[-1]
-        if n_k0 == 416:
+        n_phases, *_, n_k1, n_k0 = data.shape
+
+        if n_k0 == 416:  # different partial fourier settings
             k0_center = 417 - 208
         else:
             k0_center = 417 - 296
-        n_k1 = data.shape[-2]
-        k1_idx = torch.arange(n_k1)[None, None, None, :, None] + n_k1 // 2
+
+        info = AcqInfo()
+        info.idx.k1 = torch.arange(n_k1)[None, None, None, :, None] + n_k1 // 2
+        info.idx.phase = torch.arange(n_phases)[:, None, None, None, None]
         traj = KTrajectoryRadial2D(torch.pi / n_k1)(
             n_k0=n_k0,
             k0_center=k0_center,
-            k1_idx=k1_idx,
+            k1_idx=info.idx.k1,
         )
-        info = AcqInfo()
-        info.idx.k1 = k1_idx
+
         header = KHeader(
-            encoding_matrix=SpatialDimension(1, 623, 623),
+            encoding_matrix=SpatialDimension(1, 624, 624),
             recon_matrix=SpatialDimension(1, 208, 208),
             acq_info=info,
             recon_fov=SpatialDimension(1, 0.38, 0.38),
