@@ -247,7 +247,10 @@ DEFAULT_VALUES = {'r1': 0.0, 'm0': 0.0, 'r2': 0.0, 'mask': 0, 'tissueclass': -1}
 
 
 def download_brainweb(
-    output_directory: str | PathLike = CACHE_DIR, workers: int = 4, progress: bool = False, compress: bool = False
+    output_directory: str | PathLike = CACHE_DIR / 'brainweb',
+    workers: int = 4,
+    progress: bool = False,
+    compress: bool = False,
 ) -> None:
     """Download Brainweb data.
 
