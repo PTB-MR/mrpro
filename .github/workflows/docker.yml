@@ -40,7 +40,7 @@ jobs:
         run: |
           # docker_tasks is a list of pairs (dictionaries) with keys 'filepath' and 'image_name' like:
           # [{"filepath": "docker/Dockerfile_x1", "image_name": "ghcr.io/ptb-mr/mrpro_x1"}, ...]
-          docker_tasks=$(find docker -type f -name 'Dockerfile*' | jq -R -s -c 'split("\n")[:-1]' | \
+          docker_tasks=$(find docker -type f -name 'Dockerfile_*' | jq -R -s -c 'split("\n")[:-1]' | \
           jq -r -c 'map({filepath: ., image_name:  . | sub("docker/Dockerfile"; "ghcr.io\/ptb-mr\/mrpro")})')
           echo "docker_tasks: $docker_tasks"
           echo "docker_tasks=$docker_tasks" >> $GITHUB_OUTPUT
