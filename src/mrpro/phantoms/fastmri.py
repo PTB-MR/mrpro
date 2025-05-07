@@ -3,6 +3,7 @@
 from collections.abc import Callable, Sequence
 from os import PathLike
 from pathlib import Path
+from warnings import warn
 
 import h5py
 import ismrmrd.xsd
@@ -27,26 +28,28 @@ class FastMRIKDataDataset(torch.utils.data.Dataset):
     The data has to be downloaded beforehand. See https://fastmri.med.nyu.edu/ for more information.
     """
 
-    def __init__(self, path: PathLike | str, single_slice: bool = True):
+    def __init__(self, path: PathLike | str | Sequence[PathLike | str], single_slice: bool = True):
         """Initialize the dataset.
 
         Parameters
         ----------
         path : PathLike
-            Path to the data directory.
+            Either a path to a directory containing the FastMRI data as .h5 files or a sequence of paths of
+            individual files.
         single_slice : bool
             Whether to return single slices or stacks of slices.
         """
-        self._filenames = list(Path(path).rglob('*.h5'))
-        if single_slice:
-            slices = []
-            for fn in self._filenames:
+        self._filenames = []
+        slices = []
+        for fn in Path(path).rglob('*.h5') if isinstance(path, str | Path | PathLike) else path:
+            try:
                 with h5py.File(fn, 'r') as file:
                     n_slices = file['kspace'].shape[0]
                     slices.append(n_slices)
-            self._accum_slices: torch.Tensor | None = torch.tensor(slices).cumsum(dim=0)
-        else:
-            self._accum_slices = None
+                    self._filenames.append(fn)
+            except (KeyError, FileNotFoundError, OSError):
+                warn(f'Invalid file: {fn}. Skipping.', stacklevel=2)
+        self._accum_slices = torch.tensor(slices).cumsum(dim=0) if single_slice else None
 
     def __len__(self) -> int:
         """Get length (number of slices or stacks of slices) of the dataset."""
@@ -113,7 +116,7 @@ class FastMRIImageDataset(torch.utils.data.Dataset):
 
     def __init__(
         self,
-        path: str | PathLike,
+        path: str | PathLike | Sequence[str | PathLike],
         coil_combine: bool = False,
         augment: Callable[[torch.Tensor, int], torch.Tensor] | None = None,
         allowed_n_coils: Sequence[int] | None = (16, 15),
@@ -123,7 +126,8 @@ class FastMRIImageDataset(torch.utils.data.Dataset):
         Parameters
         ----------
         path : PathLike
-            Path to the data directory.
+            Either a path to a directory containing the FastMRI data as .h5 filesor a Sequence of paths of
+            individual files.
         coil_combine : bool
             Whether to perform coil combination sensitivity maps obtained using the Inati method.
             Note that this is **not** comonly used as the target for FastMRI challenges. Instead,
@@ -141,31 +145,34 @@ class FastMRIImageDataset(torch.utils.data.Dataset):
         """
         slices = []
         self._filenames = []
-        for fn in Path(path).rglob('*.h5'):
-            with h5py.File(fn, 'r') as file:
-                acquisition: str = file.attrs['acquisition']
-                n_slices, n_coils = file['kspace'].shape[:2]
-                header = KHeader.from_ismrmrd(
-                    ismrmrd.xsd.CreateFromDocument(file['ismrmrd_header'][()].decode('utf-8')), AcqInfo()
-                )
-                if acquisition.startswith('AX'):  # brain
-                    if (
-                        (not coil_combine and allowed_n_coils is not None and n_coils not in allowed_n_coils)
-                        or header.recon_matrix.x not in (320, 384)
-                        or round(header.recon_fov.y, 2) != 0.22
-                    ):
-                        continue
-                elif acquisition.endswith('FBK'):  # knee
-                    if (
-                        (not coil_combine and allowed_n_coils is not None and n_coils not in allowed_n_coils)
-                        or header.recon_matrix.x != 320
-                        or round(header.recon_fov.y, 2) != 0.14
-                    ):
-                        continue
-                else:
-                    raise ValueError(f'Unknown acquisition: {acquisition}')
-                slices.append(n_slices)
-                self._filenames.append(fn)
+        for fn in Path(path).rglob('*.h5') if isinstance(path, str | Path | PathLike) else path:
+            try:
+                with h5py.File(fn, 'r') as file:
+                    acquisition: str = file.attrs['acquisition']
+                    n_slices, n_coils = file['kspace'].shape[:2]
+                    header = KHeader.from_ismrmrd(
+                        ismrmrd.xsd.CreateFromDocument(file['ismrmrd_header'][()].decode('utf-8')), AcqInfo()
+                    )
+                    if acquisition.startswith('AX'):  # brain
+                        if (
+                            (not coil_combine and allowed_n_coils is not None and n_coils not in allowed_n_coils)
+                            or header.recon_matrix.x not in (320, 384)
+                            or round(header.recon_fov.y, 2) != 0.22
+                        ):
+                            continue
+                    elif acquisition.endswith('FBK'):  # knee
+                        if (
+                            (not coil_combine and allowed_n_coils is not None and n_coils not in allowed_n_coils)
+                            or header.recon_matrix.x != 320
+                            or round(header.recon_fov.y, 2) != 0.14
+                        ):
+                            continue
+                    else:
+                        raise ValueError(f'Unknown acquisition: {acquisition}')
+                    slices.append(n_slices)
+                    self._filenames.append(fn)
+            except (KeyError, FileNotFoundError, OSError):
+                warn(f'Invalid file: {fn}. Skipping.', stacklevel=2)
         self._accum_slices = torch.tensor(slices).cumsum(dim=0)
         self._coil_combine = coil_combine
         self.augment = augment
