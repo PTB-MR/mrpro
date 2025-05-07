@@ -52,9 +52,9 @@ def mock_requests(monkeypatch):
                 (),
                 {
                     'headers': {'Content-Disposition': f'attachment; filename=P{file_id}_data.mat'},
-                    'read': lambda self: create_mat_data(file_id),
+                    'read': lambda _: create_mat_data(file_id),
                     '__enter__': lambda self: self,
-                    '__exit__': lambda *args: None,
+                    '__exit__': lambda *_: None,
                 },
             )()
             return mock_resp
