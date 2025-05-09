@@ -255,6 +255,9 @@ class GridSamplingOp(LinearOperator):
     ) -> Self:
         """Create a GridSamplingOp from a displacement.
 
+        The displacement is expected to describe a forward transformation in vixel units. This means that each entry
+        in the displacement :math:`d` describes where a voxel :math:`v` is moved to, i.e. :math:`d: v(x) -> v(x+d)`.
+
         Parameters
         ----------
         displacement_z
