@@ -135,6 +135,8 @@ class CsmData(QData):
             chunk_size=chunk_size_otherdim,
         )
         csm_tensor = csm_fun(idata.data.flatten(end_dim=-5)).reshape(idata.data.shape)
+        # upsampled csm requires normalization
+        csm_tensor /= csm_tensor.abs().square().sum(dim=-4, keepdim=True).sqrt() + 1e-9
         csm = cls(header=QHeader.from_iheader(idata.header), data=csm_tensor)
         return csm
 
@@ -221,6 +223,8 @@ class CsmData(QData):
             chunk_size=chunk_size_otherdim,
         )
         csm_tensor = csm_fun(idata.data.flatten(end_dim=-5)).reshape(idata.data.shape)
+        # upsampled csm requires normalization
+        csm_tensor /= csm_tensor.abs().square().sum(dim=-4, keepdim=True).sqrt() + 1e-9
         csm = cls(header=QHeader.from_iheader(idata.header), data=csm_tensor)
         return csm
 
