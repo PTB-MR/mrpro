@@ -95,6 +95,7 @@ docs = [
     "sphinx-autodoc-typehints>=3, <3.1",
     "sphinx-copybutton>=0.5, <0.6",
     "sphinx-last-updated-by-git>=0.3, <0.4",
+    "snowballstemmer>=2.2, <3.0",
 ]
 notebooks = [
     "zenodo_get",
