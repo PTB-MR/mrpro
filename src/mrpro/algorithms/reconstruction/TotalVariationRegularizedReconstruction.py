@@ -34,6 +34,9 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
     max_iterations: int
     """Maximum number of PDHG iterations."""
 
+    tolerance: float
+    """Tolerance of PDHG for relative change of the primal solution."""
+
     regularization_weights: torch.Tensor
     """Strengths of the regularization along different dimensions :math:`l_i`."""
 
@@ -45,7 +48,8 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
         noise: KNoise | None = None,
         dcf: DcfData | None = None,
         *,
-        max_iterations: int = 32,
+        max_iterations: int = 100,
+        tolerance: float = 0,
         regularization_weights: Sequence[float] | Sequence[torch.Tensor],
     ) -> None:
         """Initialize TotalVariationRegularizedReconstruction.
@@ -70,6 +74,8 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
             starting estimate for PDHG.
         max_iterations
             Maximum number of PDHG iterations
+        tolerance
+            Tolerance of PDHG for relative change of the primal solution; if zero, `max_iterations` of PDHG are run.
         regularization_weights
             Strengths of the regularization (:math:`l_i`). Each entry is the regularization weight along a dimension of
             the reconstructed image starting at the back. E.g. (1,) will apply TV with l=1 along dimension (-1,).
@@ -82,6 +88,7 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
         """
         super().__init__(kdata, fourier_op, csm, noise, dcf)
         self.max_iterations = max_iterations
+        self.tolerance = tolerance
         self.regularization_weights = torch.as_tensor(regularization_weights)
 
     def forward(self, kdata: KData) -> IData:
@@ -124,7 +131,12 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
         )[0]
 
         (img_tensor,) = pdhg(
-            f=f, g=g, operator=operator, initial_values=(initial_value,), max_iterations=self.max_iterations
+            f=f,
+            g=g,
+            operator=operator,
+            initial_values=(initial_value,),
+            max_iterations=self.max_iterations,
+            tolerance=self.tolerance,
         )
         img = IData.from_tensor_and_kheader(img_tensor, kdata.header)
         return img
