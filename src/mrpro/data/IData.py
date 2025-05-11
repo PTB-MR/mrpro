@@ -6,14 +6,17 @@ from pathlib import Path
 import numpy as np
 import torch
 from einops import repeat
+import pydicom
 from pydicom import dcmread
 from pydicom.dataset import Dataset
 from typing_extensions import Self
+from einops import rearrange
+from copy import deepcopy
 
 from mrpro.data.Dataclass import Dataclass
 from mrpro.data.IHeader import IHeader
 from mrpro.data.KHeader import KHeader
-
+from mrpro.utils.unit_conversion import s_to_ms, rad_to_deg, m_to_mm
 
 def _dcm_pixelarray_to_tensor(dataset: Dataset) -> torch.Tensor:
     """Transform pixel array in dicom file to tensor.
@@ -154,3 +157,135 @@ class IData(Dataclass):
 
         # Pass on sorted file list as order of dicom files is often the same as the required order
         return cls.from_dicom_files(filenames=sorted(file_paths))
+
+
+    def to_dicom_folder(self, foldername: str | Path) -> None:
+        """Write the image data to DICOM files in a folder.
+
+        The data is always saved in a multi-frame DICOM files.
+
+        Parameters
+        ----------
+        foldername
+            path to folder for DICOM files.
+        """
+        if not isinstance(foldername, Path):
+            foldername = Path(foldername)
+        foldername.mkdir(parents=True, exist_ok=False)
+
+        mr_acquisition_type = '3D' if self.data.shape[-3] > 1 else '2D'
+        if mr_acquisition_type == '3D':
+            frame_dimension = -3
+        #else:
+        #    frame_dimension = next(i for i in range(-4, -len(self.data.shape)) if self.data.shape[i] > 1)
+        frame_dimension = -3
+        number_of_frames = self.data.shape[frame_dimension]
+
+        # Metadata
+        file_meta = pydicom.dataset.FileMetaDataset()
+        file_meta.MediaStorageSOPClassUID = pydicom.uid.MRImageStorage
+        file_meta.MediaStorageSOPInstanceUID = pydicom.uid.generate_uid()
+        file_meta.TransferSyntaxUID = pydicom.uid.ExplicitVRLittleEndian
+
+        # Dataset
+        dataset = pydicom.Dataset()
+        dataset.file_meta = file_meta
+
+        dataset.PatientName = 'Unknown'
+        dataset.PatientID = 'Unknown'
+        dataset.PatientSex = 'O'
+        dataset.Modality = 'MR'
+        dataset.StudyDescription = 'MRpro'
+        import datetime
+        dataset.SeriesDate = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%d')
+        dataset.SeriesTime = datetime.datetime.now(datetime.timezone.utc).strftime('%H%M%S.%f')
+        dataset.SeriesDescription = 'MRpro'
+        dataset.SeriesInstanceUID = pydicom.uid.generate_uid()
+
+        # When accessing the data using dataset.pixel_array pydicom will return an image with dimensions (rows columns).
+        # According to the dicom standard rows corresponds to the vertical dimension (i.e. y) and columns corresponds
+        # to the horizontal dimension (i.e. x)
+        dataset.Rows = self.data.shape[-2]
+        dataset.Columns = self.data.shape[-1]
+
+        dataset.BitsAllocated = 16
+        dataset.PixelRepresentation = 0  # uint
+        dataset.SamplesPerPixel = 1
+        dataset.PhotometricInterpretation = 'MONOCHROME2'
+        dataset.BitsStored = 16
+
+        dataset.PatientPosition = 'HFS'
+
+        for other in np.ndindex(self.data.shape[:frame_dimension]):
+            dcm_file_idata = self[(*other, slice(None), slice(None), slice(None))] # type: ignore[index]
+
+            dataset.MRAcquisitionType = mr_acquisition_type
+            dataset.NumberOfFrames = number_of_frames
+            dataset.PerFrameFunctionalGroupsSequence = pydicom.Sequence()
+
+            plane_position_sequence = pydicom.Sequence()
+            plane_position_sequence.append(Dataset())
+            plane_orientation_sequence = pydicom.Sequence()
+            plane_orientation_sequence.append(Dataset())
+            mr_echo_sequence = pydicom.Sequence()
+            mr_echo_sequence.append(Dataset())
+            pixel_measure_sequence = pydicom.Sequence()
+            pixel_measure_sequence.append(Dataset())
+            mr_timing_parameters_sequence = pydicom.Sequence()
+            mr_timing_parameters_sequence.append(Dataset())
+
+            for frame in range(number_of_frames):
+                dcm_frame_idata = dcm_file_idata[frame,...]
+                if np.prod(dcm_frame_idata.header.shape) != 1:
+                    raise ValueError('Only single image can be saved as a frame.')
+                directions = dcm_frame_idata.header.orientation[0].as_directions()
+                readout_direction = np.squeeze(np.asarray(directions[2].zyx[::-1]))
+                phase_direction = np.squeeze(np.asarray(directions[1].zyx[::-1]))
+                slice_direction = np.squeeze(np.asarray(directions[0].zyx[::-1]))
+                position = np.squeeze(np.asarray(dcm_frame_idata.header.position.zyx[::-1]))
+
+                if dataset.PatientPosition == 'HFS':
+                    readout_direction[1] = -readout_direction[1]
+                    phase_direction[1] = -phase_direction[1]
+                    slice_direction[1] = -slice_direction[1]
+                    position[1] = -position[1]
+
+                    readout_direction[2] = -readout_direction[2]
+                    phase_direction[2] = -phase_direction[2]
+                    slice_direction[2] = -slice_direction[2]
+                    position[2] = -position[2]
+
+                dataset.PerFrameFunctionalGroupsSequence.append(Dataset())
+
+                plane_position_sequence[0].ImagePositionPatient = m_to_mm(position -readout_direction * dcm_frame_idata.header.resolution.x * dcm_frame_idata.data.shape[-1] / 2 - phase_direction * dcm_frame_idata.header.resolution.y * dcm_frame_idata.data.shape[-2] / 2).tolist()
+
+                dataset.PerFrameFunctionalGroupsSequence[-1].PlanePositionSequence = deepcopy(plane_position_sequence)
+
+                plane_orientation_sequence[0].ImageOrientationPatient = [*readout_direction, *phase_direction]
+                dataset.PerFrameFunctionalGroupsSequence[-1].PlaneOrientationSequence = deepcopy(
+                    plane_orientation_sequence
+                )
+
+                mr_echo_sequence[0].EffectiveEchoTime = s_to_ms(dcm_frame_idata.header.te)
+                dataset.PerFrameFunctionalGroupsSequence[-1].MREchoSequence = deepcopy(mr_echo_sequence)
+
+                pixel_measure_sequence[0].SliceThickness = m_to_mm(dcm_frame_idata.header.resolution[0].z)
+                pixel_measure_sequence[0].PixelSpacing = m_to_mm([dcm_frame_idata.header.resolution[0].x, dcm_frame_idata.header.resolution[0].y])
+                dataset.PerFrameFunctionalGroupsSequence[-1].PixelMeasuresSequence = deepcopy(pixel_measure_sequence)
+
+                mr_timing_parameters_sequence[0].FlipAngle = rad_to_deg(dcm_frame_idata.header.fa)
+                mr_timing_parameters_sequence[0].RepetitionTime = s_to_ms(dcm_frame_idata.header.tr)
+                dataset.PerFrameFunctionalGroupsSequence[-1].MRTimingAndRelatedParametersSequence = deepcopy(
+                    mr_timing_parameters_sequence
+                )
+
+            pixel_data = dcm_file_idata.data.abs()
+            pixel_data /= pixel_data.max()
+            dataset.PixelData = (
+                rearrange(pixel_data * 2**16, '... frames y x -> ... frames y x').numpy().astype(np.uint16).tobytes()
+            )
+            dataset["PixelData"].VR = "OB"
+
+            # Save
+            dataset.save_as(foldername / f'im_mrpro_{np.prod(other)}.dcm', enforce_file_format=True)
+
