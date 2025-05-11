@@ -24,7 +24,7 @@ from mrpro.utils import unsqueeze_right
 class TotalVariationRegularizedReconstruction(DirectReconstruction):
     r"""TV-regularized reconstruction.
 
-    This algorithm solves the problem :math:`min_x \frac{1}{2}||(Ax - y)||_2^2 + \sum_i l_i ||\nabla_i x||_1`
+    This algorithm solves the problem :math:`min_x \frac{1}{2}||Ax - y||_2^2 + \sum_i l_i ||\nabla_i x||_1`
     by using the PDHG-algorithm. :math:`A` is the acquisition model (coil sensitivity maps, Fourier operator,
     k-space sampling), :math:`y` is the acquired k-space data, :math:`l_i` are the strengths of the regularization
     along the different dimensions and :math:`\nabla_i` is the finite difference operator applied to :math:`x` along
@@ -99,13 +99,12 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
         if self.noise is not None:
             kdata = prewhiten_kspace(kdata, self.noise)
 
-        # Create the acquisition model A = F S if the CSM S is defined otherwise A = F with the Fourier operator F
         acquisition_operator = self.fourier_op @ self.csm.as_operator() if self.csm is not None else self.fourier_op
 
-        # L2-norm for the data consistency term
+        # data consistency term
         l2 = 0.5 * L2NormSquared(target=kdata.data)
 
-        # Finite difference operator and corresponding L1-norm
+        # TV regularization
         finite_difference_dim = [
             dim - len(self.regularization_weights)
             for dim, weight in enumerate(self.regularization_weights)
@@ -120,7 +119,6 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
         g = ZeroFunctional()
         operator = LinearOperatorMatrix(((acquisition_operator,), (nabla_operator,)))
 
-        # Initial value
         initial_value = acquisition_operator.H(
             self.dcf.as_operator()(kdata.data)[0] if self.dcf is not None else kdata.data
         )[0]
