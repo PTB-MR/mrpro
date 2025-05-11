@@ -6,7 +6,7 @@ import pytest
 import torch
 from einops import rearrange
 from mrpro.data import KTrajectory, SpatialDimension
-from mrpro.operators import CartesianSamplingOp
+from mrpro.operators import CartesianMaskingOp, CartesianSamplingOp
 from mrpro.utils import RandomGenerator
 from typing_extensions import Unpack
 
@@ -154,20 +154,7 @@ def test_cart_sampling_op_forward_mode_autodiff(sampling: str) -> None:
     forward_mode_autodiff_of_linear_operator_test(*create_cart_sampling_op_and_range_domain(sampling))
 
 
-@pytest.mark.parametrize(
-    'sampling',
-    [
-        'random',
-        'partial_echo',
-        'partial_fourier',
-        'regular_undersampling',
-        'random_undersampling',
-        'different_random_undersampling',
-        'cartesian_and_non_cartesian',
-        'kx_ky_along_k0',
-        'kx_ky_along_k0_undersampling',
-    ],
-)
+@SAMPLING_PARAMETERS
 def test_cart_sampling_op_gram(sampling: str) -> None:
     """Test adjoint gram of Cartesian sampling operator."""
     sampling_op, u, _ = create_cart_sampling_op_and_range_domain(sampling)
@@ -251,22 +238,66 @@ def test_cart_sampling_op_cuda() -> None:
 
     # Create on CPU, transfer to GPU and run on GPU
     sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
-    sampling_op.cuda()
-    (sampling_output,) = sampling_op(input_data.cuda())
-    assert sampling_output.is_cuda
+    operator = sampling_op.H @ sampling_op
+    operator.cuda()
+    (result,) = operator(input_data.cuda())
+    assert result.is_cuda
 
     # Create on CPU and run on CPU
     sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
-    (sampling_output,) = sampling_op(input_data)
-    assert sampling_output.is_cpu
+    operator = sampling_op.H @ sampling_op
+    (result,) = operator(input_data)
+    assert result.is_cpu
 
     # Create on GPU and run on GPU
     sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory.cuda())
-    (sampling_output,) = sampling_op(input_data.cuda())
-    assert sampling_output.is_cuda
+    operator = sampling_op.H @ sampling_op
+    (result,) = operator(input_data.cuda())
+    assert result.is_cuda
 
     # Create on GPU, transfer to CPU and run on CPU
     sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory.cuda())
-    sampling_op.cpu()
-    (sampling_output,) = sampling_op(input_data)
-    assert sampling_output.is_cpu
+    operator = sampling_op.H @ sampling_op
+    operator.cpu()
+    (result,) = operator(input_data)
+    assert result.is_cpu
+
+
+def test_cart_masking_op_from_mask():
+    """Test the CartesianMaskingOp from a mask."""
+    rng = RandomGenerator(seed=0)
+    mask = rng.bool_tensor(size=(1, 1, 1, 40, 60))
+    masking_op = CartesianMaskingOp(mask)
+    data = rng.complex64_tensor(size=(1, 1, 1, 40, 60))
+    (actual,) = masking_op(data)
+    assert torch.allclose(actual, data * mask)
+
+
+def test_cart_masking_op_adjointness():
+    """Test the adjointness of the CartesianMaskingOp."""
+    rng = RandomGenerator(seed=0)
+    mask = rng.bool_tensor(size=(1, 1, 1, 40, 60))
+    masking_op = CartesianMaskingOp(mask)
+    u = rng.complex64_tensor(size=(1, 1, 1, 40, 60))
+    v = rng.complex64_tensor(size=(1, 1, 1, 40, 60))
+    dotproduct_adjointness_test(masking_op, u, v)
+
+
+@SAMPLING_PARAMETERS
+def test_cart_masking_op_from_trajectory(sampling: str) -> None:
+    """Test the CartesianMaskingOp creation from a trajectory."""
+    type_kx = 'uniform'
+    type_ky = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
+    type_kz = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
+    k_shape = (2, 5, 20, 40, 60)
+    nkx = (2, 1, 1, 1, 60)
+    nky = (2, 1, 1, 40, 1)
+    nkz = (2, 1, 20, 1, 1)
+    trajectory = create_traj(nkx, nky, nkz, type_kx, type_ky, type_kz)
+    trajectory = subsample_traj(trajectory, sampling, k_shape)
+    encoding_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
+    sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
+    masking_op = CartesianMaskingOp.from_trajectory(trajectory, encoding_matrix)
+    rng = RandomGenerator(seed=0)
+    u = rng.complex64_tensor(size=k_shape)
+    torch.testing.assert_close(masking_op(u), (sampling_op.H @ sampling_op)(u))

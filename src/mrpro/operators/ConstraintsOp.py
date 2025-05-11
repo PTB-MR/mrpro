@@ -3,9 +3,28 @@
 from collections.abc import Sequence
 
 import torch
-import torch.nn.functional as F  # noqa: N812
 
 from mrpro.operators.EndomorphOperator import EndomorphOperator, endomorph
+
+
+def sigmoid(x: torch.Tensor, beta: float = 1.0) -> torch.Tensor:
+    """Beta scaled sigmoid function."""
+    return torch.nn.functional.sigmoid(beta * x)
+
+
+def sigmoid_inverse(x: torch.Tensor, beta: float = 1.0) -> torch.Tensor:
+    """Inverse of `sigmoid`."""
+    return torch.logit(x) / beta
+
+
+def softplus(x: torch.Tensor, beta: float = 1.0) -> torch.Tensor:
+    """Beta scaled softplus function."""
+    return -(1 / beta) * torch.nn.functional.logsigmoid(-beta * x)
+
+
+def softplus_inverse(x: torch.Tensor, beta: float = 1.0) -> torch.Tensor:
+    """Inverse of `softplus`."""
+    return x + torch.log(-torch.expm1(-beta * x)) / beta
 
 
 class ConstraintsOp(EndomorphOperator):
@@ -26,6 +45,10 @@ class ConstraintsOp(EndomorphOperator):
         If an input tensor is bounded from below AND above, a sigmoid transformation is applied.
         If an input tensor is bounded from below OR above, a softplus transformation is applied.
 
+        If an input is complex valued, the bounds are to the real and imaginary parts separately,
+        i.e., for bounds (a,b), the complex number is constrained to a rectangle in the complex plane
+        with corners a+ai, a+bi, b+ai, b+bi.
+
         Parameters
         ----------
         bounds
@@ -39,6 +62,15 @@ class ConstraintsOp(EndomorphOperator):
         beta_softplus
             parameter for the softplus transformation (used if an input is either bounded from below or above).
             A higher value leads to a steeper softplus.
+
+        Raises
+        ------
+        ValueError
+            If the lower bound is greater than the upper bound.
+        ValueError
+            If the a bound is nan.
+        ValueError
+            If the parameter beta_sigmoid and beta_softplus are not greater than zero.
         """
         super().__init__()
 
@@ -50,39 +82,60 @@ class ConstraintsOp(EndomorphOperator):
         self.beta_sigmoid = beta_sigmoid
         self.beta_softplus = beta_softplus
 
-        self.lower_bounds = [bound[0] for bound in bounds]
-        self.upper_bounds = [bound[1] for bound in bounds]
+        self.lower_bounds = tuple(torch.as_tensor(-torch.inf if lb is None else lb) for (lb, ub) in bounds)
+        self.upper_bounds = tuple(torch.as_tensor(torch.inf if ub is None else ub) for (lb, ub) in bounds)
 
-        for lb, ub in bounds:
-            if lb is not None and ub is not None:
-                if torch.isnan(torch.tensor(lb)) or torch.isnan(torch.tensor(ub)):
-                    raise ValueError(f' "nan" is not a valid lower or upper bound;\nbound tuple {lb, ub} is invalid')
+        for lb, ub in zip(self.lower_bounds, self.upper_bounds, strict=True):
+            if lb.isnan():
+                raise ValueError('nan is invalid as lower bound.')
+            if ub.isnan():
+                raise ValueError('nan is invalid as upper bound.')
+            if lb >= ub:
+                raise ValueError(
+                    'bounds should be ( (a1,b1), (a2,b2), ...) with ai < bi if neither ai or bi is None;'
+                    f'\nbound tuple {lb, ub} is invalid as the lower bound is higher than the upper bound',
+                )
 
-                if lb >= ub:
-                    raise ValueError(
-                        'bounds should be ( (a1,b1), (a2,b2), ...) with ai < bi if neither ai or bi is None;'
-                        f'\nbound tuple {lb, ub} is invalid',
-                    )
+    def _apply_forward(self, item: torch.Tensor, lb: torch.Tensor, ub: torch.Tensor) -> torch.Tensor:
+        """Apply the forward transformation to the input tensor."""
+        if item.dtype.is_complex:
+            real = self._apply_forward(item.real, lb, ub)
+            imag = self._apply_forward(item.imag, lb, ub)
+            return torch.complex(real, imag)
 
-    @staticmethod
-    def sigmoid(x: torch.Tensor, beta: float = 1.0) -> torch.Tensor:
-        """Constraint x to be in the range given by 'bounds'."""
-        return F.sigmoid(beta * x)
+        if not lb.isneginf() and not ub.isposinf():
+            # bounds are (lb,ub)
+            return lb + (ub - lb) * sigmoid(item, beta=self.beta_sigmoid)
 
-    @staticmethod
-    def sigmoid_inverse(x: torch.Tensor, beta: float = 1.0) -> torch.Tensor:
-        """Constraint x to be in the range given by 'bounds'."""
-        return torch.logit(x) / beta
+        if not lb.isneginf():
+            # bounds are (lb,inf)
+            return lb + softplus(item, beta=self.beta_softplus)
 
-    @staticmethod
-    def softplus(x: torch.Tensor, beta: float = 1.0) -> torch.Tensor:
-        """Constrain x to be in (bound,infty)."""
-        return -(1 / beta) * torch.nn.functional.logsigmoid(-beta * x)
+        if not ub.isposinf():
+            # bounds are (-inf,ub)
+            return ub - softplus(-item, beta=self.beta_softplus)
 
-    @staticmethod
-    def softplus_inverse(x: torch.Tensor, beta: float = 1.0) -> torch.Tensor:
-        """Inverse of `softplus_transformation`."""
-        return x + torch.log(-torch.expm1(-beta * x)) / beta
+        return item  # unconstrained case
+
+    def _apply_inverse(self, item: torch.Tensor, lb: torch.Tensor, ub: torch.Tensor) -> torch.Tensor:
+        if item.dtype.is_complex:
+            real = self._apply_inverse(item.real, lb, ub)
+            imag = self._apply_inverse(item.imag, lb, ub)
+            return torch.complex(real, imag)
+
+        if not lb.isneginf() and not ub.isposinf():
+            # bounds are (lb,ub)
+            return sigmoid_inverse((item - lb) / (ub - lb), beta=self.beta_sigmoid)
+
+        if not lb.isneginf():
+            # bounds are (lb,inf)
+            return softplus_inverse(item - lb, beta=self.beta_softplus)
+
+        if not ub.isposinf():
+            # bounds are (-inf,ub)
+            return -softplus_inverse(-(item - ub), beta=self.beta_softplus)
+
+        return item  # unconstrained case
 
     @endomorph
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
@@ -97,31 +150,16 @@ class ConstraintsOp(EndomorphOperator):
         -------
             tensors transformed to the range defined by the chosen bounds
         """
-        x_constrained = []
-        for item, lb, ub in zip(x, self.lower_bounds, self.upper_bounds, strict=False):
-            # distinguish cases
-            if (lb is not None and not torch.isneginf(torch.tensor(lb))) and (
-                ub is not None and not torch.isposinf(torch.tensor(ub))
-            ):
-                # case (a,b) with a<b and a,b \in R
-                x_constrained.append(lb + (ub - lb) * self.sigmoid(item, beta=self.beta_sigmoid))
-
-            elif lb is not None and (ub is None or torch.isposinf(torch.tensor(ub))):
-                # case (a,None); corresponds to (a, \infty)
-                x_constrained.append(lb + self.softplus(item, beta=self.beta_softplus))
-
-            elif (lb is None or torch.isneginf(torch.tensor(lb))) and ub is not None:
-                # case (None,b); corresponds to (-\infty, b)
-                x_constrained.append(ub - self.softplus(-item, beta=self.beta_softplus))
-            elif (lb is None or torch.isneginf(torch.tensor(lb))) and (ub is None or torch.isposinf(torch.tensor(ub))):
-                # case (None,None); corresponds to (-\infty, \infty), i.e. no transformation
-                x_constrained.append(item)
-
+        x_constrained = [
+            self._apply_forward(item, lb, ub)
+            for item, lb, ub in zip(x, self.lower_bounds, self.upper_bounds, strict=False)
+        ]
         # if there are more inputs than bounds, pass on the remaining inputs without transformation
         x_constrained.extend(x[len(x_constrained) :])
         return tuple(x_constrained)
 
-    def inverse(self, *x_constrained: torch.Tensor) -> tuple[torch.Tensor, ...]:
+    @endomorph
+    def invert(self, *x_constrained: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Reverses the variable transformation.
 
         Parameters
@@ -133,28 +171,46 @@ class ConstraintsOp(EndomorphOperator):
         -------
             tensors in the domain with no bounds
         """
-        # iterate over the tensors and constrain them if necessary according to the
-        # chosen bounds
-        x = []
-        for item, lb, ub in zip(x_constrained, self.lower_bounds, self.upper_bounds, strict=False):
-            # distinguish cases
-            if (lb is not None and not torch.isneginf(torch.tensor(lb))) and (
-                ub is not None and not torch.isposinf(torch.tensor(ub))
-            ):
-                # case (a,b) with a<b and a,b \in R
-                x.append(self.sigmoid_inverse((item - lb) / (ub - lb), beta=self.beta_sigmoid))
-
-            elif lb is not None and (ub is None or torch.isposinf(torch.tensor(ub))):
-                # case (a,None); corresponds to (a, \infty)
-                x.append(self.softplus_inverse(item - lb, beta=self.beta_softplus))
-
-            elif (lb is None or torch.isneginf(torch.tensor(lb))) and ub is not None:
-                # case (None,b); corresponds to (-\infty, b)
-                x.append(-self.softplus_inverse(-(item - ub), beta=self.beta_softplus))
-            elif (lb is None or torch.isneginf(torch.tensor(lb))) and (ub is None or torch.isposinf(torch.tensor(ub))):
-                # case (None,None); corresponds to (-\infty, \infty), i.e. no transformation
-                x.append(item)
-
+        x = [
+            self._apply_inverse(item, lb, ub)
+            for item, lb, ub in zip(x_constrained, self.lower_bounds, self.upper_bounds, strict=False)
+        ]
         # if there are more inputs than bounds, pass on the remaining inputs without transformation
         x.extend(x_constrained[len(x) :])
+
         return tuple(x)
+
+    @property
+    def inverse(self) -> 'InverseConstraintOp':
+        """Return the inverse of the constraint operator."""
+        return InverseConstraintOp(self)
+
+
+class InverseConstraintOp(EndomorphOperator):
+    """Inverse of a constraint operator."""
+
+    def __init__(self, constraints_op: ConstraintsOp) -> None:
+        """Initialize the inverse constraint operator.
+
+        Parameters
+        ----------
+        constraints_op
+            The constraint operator to invert.
+        """
+        super().__init__()
+        self.constraints_op = constraints_op
+
+    @endomorph
+    def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        """Apply the inverse of the constraint operator."""
+        return self.constraints_op.invert(*x)
+
+    @endomorph
+    def invert(self, *x_constrained: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        """Apply constraint operator."""
+        return self.constraints_op.forward(*x_constrained)
+
+    @property
+    def inverse(self) -> 'ConstraintsOp':
+        """Return the constraint operator."""
+        return self.constraints_op
