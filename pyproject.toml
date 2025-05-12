@@ -81,7 +81,7 @@ tests = [
     "codecov",
     "pre-commit",
     "pytest",
-    "pytest-cov<6.1",
+    "pytest-cov",
     "pytest-xdist",
 ]
 docs = [
@@ -102,10 +102,9 @@ notebooks = [
     "ipywidgets",
     "jupytext",
     "matplotlib",
+    "cmap",
 ]
-dev = [
-    "mrpro[tests, docs]"
-]
+dev = ["mrpro[tests, docs]"]
 
 [project.urls]
 "Documentation" = "https://ptb-mr.github.io/mrpro/"
@@ -145,6 +144,7 @@ module = [
     "pywt.*",
     "torchvision.*",
     "platformdirs",
+    "cmap",
 ]
 ignore_missing_imports = true
 
