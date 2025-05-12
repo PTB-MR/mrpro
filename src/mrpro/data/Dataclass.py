@@ -701,12 +701,12 @@ class Dataclass:
     def rearrange(self, pattern: str, **axes_lengths: int) -> Self:
         """Rearrange the data according to the specified pattern.
 
-        Similar to einops.rearrange, allowing flexible rearrangement of data dimensions.
+        Similar to `einops.rearrange`, allowing flexible rearrangement of data dimensions.
 
         Examples
         --------
         >>> # Split the phase encode lines into 8 cardiac phases
-        >>> data.rearrange('batch coils k2 (phase k1) k0 -> batch phase coils k0 k1 k2', phase=8)
+        >>> data.rearrange('batch coils k2 (phase k1) k0 -> batch phase coils k2 k1 k0', phase=8)
         >>> # Split the k-space samples into 64 k1 and 64 k2 lines
         >>> data.rearrange('... 1 1 (k2 k1 k0) -> ... k2 k1 k0', k2=64, k1=64, k0=128)
 
@@ -720,7 +720,6 @@ class Dataclass:
 
         Returns
         -------
-        Self
             The rearranged data with the same type as the input.
 
         """
@@ -770,7 +769,7 @@ class Dataclass:
 
         Returns
         -------
-            a tuple of the splits.
+            A tuple of the splits.
         """
         shape = self.shape
         if not -len(shape) <= dim < len(shape):
@@ -790,7 +789,7 @@ class Dataclass:
     def concatenate(self, *others: Self, dim: int) -> Self:
         """Concatenate other instances to the current instance.
 
-        Only tensor like fields will be concatenated in the specified dimension.
+        Only tensor-like fields will be concatenated in the specified dimension.
         List fields will be concatenated as a list.
         Other fields will be ignored.
 
