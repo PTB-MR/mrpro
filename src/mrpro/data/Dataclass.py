@@ -83,10 +83,11 @@ T = TypeVar('T')
 class Dataclass:
     """A supercharged dataclass with additional functionality.
 
-    This class extends the functionality of the standard `dataclasses.dataclass` by adding
+    This class extends the functionality of the standard `dataclasses.dataclass` by adding:
+
     - a `apply` method to apply a function to all fields
     - a `~Dataclass.clone` method to create a deep copy of the object
-    - `~Dataclass.to`, `~Dataclass.cpu`, `~Dataclass.cuda` methods to move all tensor fields to a device
+    - `~Dataclass.to`, `~Dataclass.cpu`, `~Dataclass.cuda` methods to move all tensor fields to a device.
 
     It is intended to be used as a base class for all dataclasses in the `mrpro` package.
     """
@@ -277,7 +278,8 @@ class Dataclass:
         The dtype-type, i.e. float or complex will always be preserved,
         but the precision of floating point dtypes might be changed.
 
-        Example:
+        Examples
+        --------
         If called with ``dtype=torch.float32`` OR ``dtype=torch.complex64``:
 
         - A ``complex128`` tensor will be converted to ``complex64``
@@ -761,6 +763,7 @@ class Dataclass:
         Examples
         --------
         If the dimension has 6 elements:
+
         - split with size 2, overlap 0, dilation 1 -> elements (0,1), (2,3), and (4,5)
         - split with size 2, overlap 1, dilation 1 -> elements (0,1), (1,2), (2,3), (3,4), (4,5), and (5,6)
         - split with size 2, overlap 0, dilation 2 -> elements (0,2), and (3,5)
