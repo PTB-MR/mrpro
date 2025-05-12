@@ -1,173 +1,176 @@
-from abc import ABC
-from collections.abc import Sequence
-from functools import partial
+"""Helper functions to get the correct N-dimensional module."""
 
 import torch
-from einops import rearrange
-from torch.nn import Identity, Linear, Module, Parameter, ReLU, Sequential, Sigmoid, SiLU
-
-from mrpro.utils.reshape import unsqueeze_tensors_right
 
 
-class NDModule(Module, ABC):
-    def __call__(self, x: torch.Tensor) -> torch.Tensor:
-        """Apply the module to the input tensor."""
-        return super().__call__(x)
-
-    def __forward__(self, x: torch.Tensor) -> torch.Tensor:
-        return self.module(x)
-
-
-class ConvND(NDModule):
-    """N-dimensional convolution.
+def ConvND(dim: int) -> type[torch.nn.Conv1d] | type[torch.nn.Conv2d] | type[torch.nn.Conv3d]:  # noqa: N802
+    """Get the `dim`-dimensional convolution class.
 
     Parameters
     ----------
     dim
         The dimension of the convolution.
+
+    Returns
+    -------
+        The convolution class.
     """
+    match dim:
+        case 1:
+            return torch.nn.Conv1d
+        case 2:
+            return torch.nn.Conv2d
+        case 3:
+            return torch.nn.Conv3d
+        case _:
+            raise NotImplementedError(f'ConvND for dim {dim} not implemented. Raise an issue if you need this.')
 
-    def __init__(
-        self,
-        dim: int,
-        in_channels: int,
-        out_channels: int,
-        kernel_size: Sequence[int] | int,
-        stride: Sequence[int] | int = 1,
-        padding: str | Sequence[int] | int = 'same',
-        dilation: Sequence[int] | int = 1,
-        groups: int = 1,
-        bias: bool = True,
-        padding_mode: str = 'zeros',
-    ) -> None:
-        if not isinstance(kernel_size, int) and len(kernel_size) != dim:
-            raise ValueError(f'kernel_size must be an int or a sequence of length {dim}')
-        if stride is not None and not isinstance(stride, int) and len(stride) != dim:
-            raise ValueError(f'stride must be None, an int, or a sequence of length {dim}')
-        if padding != 'same' and not isinstance(padding, int) and len(padding) != dim:
-            raise ValueError(f'padding must be an int or a sequence of length {dim}')
-        try:
-            self.module = {1: torch.nn.Conv1d, 2: torch.nn.Conv2d, 3: torch.nn.Conv3d}[dim](
-                in_channels, out_channels, kernel_size, stride, padding, dilation, groups, bias, padding_mode
+
+def ConvTransposeND(  # noqa: N802
+    dim: int,
+) -> type[torch.nn.ConvTranspose1d] | type[torch.nn.ConvTranspose2d] | type[torch.nn.ConvTranspose3d]:
+    """Get the `dim`-dimensional transposed convolution class.
+
+    Parameters
+    ----------
+    dim
+        The dimension of the transposed convolution.
+
+    Returns
+    -------
+        The transposed convolution class.
+    """
+    match dim:
+        case 1:
+            return torch.nn.ConvTranspose1d
+        case 2:
+            return torch.nn.ConvTranspose2d
+        case 3:
+            return torch.nn.ConvTranspose3d
+        case _:
+            raise NotImplementedError(
+                f'ConvTransposeND for dim {dim} not implemented. Raise an issue if you need this.'
             )
-        except KeyError:
-            raise NotImplementedError(f'ConvND for dim {dim} not implemented.') from None
-
-    def __call__(self, x: torch.Tensor) -> torch.Tensor:
-        return super().__call__(x)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self._inner(x)
 
 
-class MaxPoolND(NDModule):
-    def __init__(self, dim: int) -> None:
-        super().__init__()
-        try:
-            self.module = {1: torch.nn.MaxPool1d, 2: torch.nn.MaxPool2d, 3: torch.nn.MaxPool3d}[dim]
-        except KeyError:
-            raise NotImplementedError(f'MaxPoolNd for dim {dim} not implemented.')
+def MaxPoolND(dim: int) -> type[torch.nn.MaxPool1d] | type[torch.nn.MaxPool2d] | type[torch.nn.MaxPool3d]:  # noqa: N802
+    """Get the `dim`-dimensional max pooling class.
+
+    Parameters
+    ----------
+    dim
+        The dimension of the max pooling.
+
+    Returns
+    -------
+        The max pooling class.
+    """
+    match dim:
+        case 1:
+            return torch.nn.MaxPool1d
+        case 2:
+            return torch.nn.MaxPool2d
+        case 3:
+            return torch.nn.MaxPool3d
+        case _:
+            raise NotImplementedError(f'MaxPoolNd for dim {dim} not implemented. Raise an issue if you need this.')
 
 
-class AvgPoolND(NDModule):
-    """N-dimensional average pooling."""
+def AvgPoolND(dim: int) -> type[torch.nn.AvgPool1d] | type[torch.nn.AvgPool2d] | type[torch.nn.AvgPool3d]:  # noqa: N802
+    """Get the `dim`-dimensional average pooling class.
 
-    def __init__(
-        self,
-        dim: int,
-        kernel_size: int | Sequence[int],
-        stride: int | Sequence[int] | None = None,
-        padding: int | Sequence[int] = 0,
-        ceil_mode: bool = False,
-        count_include_pad: bool = False,
-        divisor_override: int | None = None,
-    ) -> None:
-        """Parameters for AvgPoolNd.
+    Parameters
+    ----------
+    dim
+        The dimension of the average pooling.
 
-        Parameters
-        ----------
-        dim
-            The dimension of the input tensor.
-        kernel_size
-            The size of the kernel.
-        stride
-            The stride of the kernel.
-        padding
-            The padding of the kernel.
-        ceil_mode
-            Whether to use ceil instead of floor to compute the output shape.
-        count_include_pad
-            Whether to include the padding in the divisor.
-        divisor_override
-            Overwrite the default divisor of the number of elements in the pooling region.
-        """
-        super().__init__()
-        if not isinstance(kernel_size, int) and len(kernel_size) != dim:
-            raise ValueError(f'kernel_size must be an int or a sequence of length {dim}')
-        if stride is not None and not isinstance(stride, int) and len(stride) != dim:
-            raise ValueError(f'stride must be None, an int, or a sequence of length {dim}')
-        if padding != 'same' and not isinstance(padding, int) and len(padding) != dim:
-            raise ValueError(f'padding must be an int or a sequence of length {dim}')
-        try:
-            module = {1: torch.nn.AvgPool1d, 2: torch.nn.AvgPool2d, 3: torch.nn.AvgPool3d()}[dim]
-        except KeyError:
-            raise NotImplementedError(f'AvgPoolNd for dim {dim} not implemented.') from None
-        self.module = module(kernel_size, stride, padding, ceil_mode, count_include_pad, divisor_override)
+    Returns
+    -------
+        The average pooling class.
+    """
+    match dim:
+        case 1:
+            return torch.nn.AvgPool1d
+        case 2:
+            return torch.nn.AvgPool2d
+        case 3:
+            return torch.nn.AvgPool3d
+        case _:
+            raise NotImplementedError(f'AvgPoolNd for dim {dim} not implemented. Raise an issue if you need this.')
 
 
-class AdaptiveAvgPoolND(NDModule):
-    """N-dimensional adaptive average pooling."""
+def AdaptiveAvgPoolND(  # noqa: N802
+    dim: int,
+) -> type[torch.nn.AdaptiveAvgPool1d] | type[torch.nn.AdaptiveAvgPool2d] | type[torch.nn.AdaptiveAvgPool3d]:
+    """Get the `dim`-dimensional adaptive average pooling class.
 
-    def __init__(self, dim: int, output_size: int | None | Sequence[int] = None):
-        super().__init__()
-        if not isinstance(output_size, int) and len(output_size) != dim:
-            raise ValueError(f'output_size must be an int or a sequence of length {dim}')
-        try:
-            self.module = (torch.nn.AdaptiveAvgPool1d, torch.nn.AdaptiveAvgPool2d, torch.nn.AdaptiveAvgPool3d)[dim - 1](
-                output_size
+    Parameters
+    ----------
+    dim
+        The dimension of the adaptive average pooling.
+
+    Returns
+    -------
+        The adaptive average pooling class.
+    """
+    match dim:
+        case 1:
+            return torch.nn.AdaptiveAvgPool1d
+        case 2:
+            return torch.nn.AdaptiveAvgPool2d
+        case 3:
+            return torch.nn.AdaptiveAvgPool3d
+        case _:
+            raise NotImplementedError(
+                f'AdaptiveAvgPoolNd for dim {dim} not implemented. Raise an issue if you need this.'
             )
-        except KeyError:
-            raise NotImplementedError(f'AdaptiveAvgPoolnD for dim {dim} not implemented.') from None
 
 
-class MaxPoolND(NDModule):
-    """N-dimensional max pooling."""
+def InstanceNormND(  # noqa: N802
+    dim: int,
+) -> type[torch.nn.InstanceNorm1d] | type[torch.nn.InstanceNorm2d] | type[torch.nn.InstanceNorm3d]:
+    """Get the `dim`-dimensional instance normalization class.
 
-    def __init__(
-        self,
-        dim: int,
-        kernel_size: int | Sequence[int],
-        stride: int | Sequence[int] | None = None,
-        padding: int | Sequence[int] = 0,
-        dilation: int | Sequence[int] = 1,
-        ceil_mode: bool = False,
-    ) -> None:
-        """Initialize MaxPoolNd.
+    Parameters
+    ----------
+    dim
+        The dimension of the instance normalization.
 
-        Parameters
-        ----------
-        dim
-            The dimension of the input tensor.
-        kernel_size
-            The size of the kernel.
-        stride
-            The stride of the kernel.
-        padding
-            The padding of the kernel.
-        dilation
-            The dilation of the kernel.
-        ceil_mode
-            Whether to use ceil instead of floor to compute the output shape.
-        """
-        if not isinstance(kernel_size, int) and len(kernel_size) != dim:
-            raise ValueError(f'kernel_size must be an int or a sequence of length {dim}')
-        if stride is not None and not isinstance(stride, int) and len(stride) != dim:
-            raise ValueError(f'stride must be None, an int, or a sequence of length {dim}')
-        if not isinstance(padding, int) and len(padding) != dim:
-            raise ValueError(f'padding must be an int or a sequence of length {dim}')
-        if not isinstance(dilation, int) and len(dilation) != dim:
-            raise ValueError(f'dilation must be an int or a sequence of length {dim}')
-        super().__init__()
-        self.module = {1: torch.nn.MaxPool1d, 2: torch.nn.MaxPool2d, 3: torch.nn.MaxPool3d}[dim](
-            kernel_size, stride, padding, dilation, ceil_mode
-        )
+    Returns
+    -------
+        The instance normalization class.
+    """
+    match dim:
+        case 1:
+            return torch.nn.InstanceNorm1d
+        case 2:
+            return torch.nn.InstanceNorm2d
+        case 3:
+            return torch.nn.InstanceNorm3d
+        case _:
+            raise NotImplementedError(f'InstanceNormNd for dim {dim} not implemented. Raise an issue if you need this.')
+
+
+def BatchNormND(  # noqa: N802
+    dim: int,
+) -> type[torch.nn.BatchNorm1d] | type[torch.nn.BatchNorm2d] | type[torch.nn.BatchNorm3d]:
+    """Get the `dim`-dimensional batch normalization class.
+
+    Parameters
+    ----------
+    dim
+        The dimension of the batch normalization.
+
+    Returns
+    -------
+        The batch normalization class.
+    """
+    match dim:
+        case 1:
+            return torch.nn.BatchNorm1d
+        case 2:
+            return torch.nn.BatchNorm2d
+        case 3:
+            return torch.nn.BatchNorm3d
+        case _:
+            raise NotImplementedError(f'BatchNormNd for dim {dim} not implemented. Raise an issue if you need this.')

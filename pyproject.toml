@@ -225,6 +225,7 @@ iy = "iy"
 arange = "arange" # torch.arange
 Ba = "Ba"
 wht = "wht"       # Brainweb tissue class
+ND = "ND"         # Short for N-dimensional
 
 [tool.typos.files]
 extend-exclude = [
