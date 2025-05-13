@@ -7,7 +7,7 @@ from mrpro.nn.EmbMixin import EmbMixin
 from mrpro.utils.reshape import unsqueeze_tensors_right
 
 
-class FiLM(Module, EmbMixin):
+class FiLM(EmbMixin, Module):
     """Feature-wise Linear Modulation.
 
     Feature-wise Linear Modulation from [FiLM]_

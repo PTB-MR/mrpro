@@ -5,7 +5,7 @@ from torch.nn import Module
 
 
 def call_with_emb(module: Module, x: torch.Tensor, emb: torch.Tensor | None) -> torch.Tensor:
-    if isinstance(module, EmbMixin):
+    if isinstance(EmbMixin, Module):
         return module(x, emb)
     return module(x)
 

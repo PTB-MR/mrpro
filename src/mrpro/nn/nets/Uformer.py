@@ -1,12 +1,6 @@
 import torch
-from torch.nn import Module, GELU, Linear, Sequential, Conv2d, ConvTranspose2d
-from mrpro.nn.NDModules import ConvND
-from mrpro.utils.sliding_window import sliding_window
+from torch.nn import GELU, Module, Sequential
 
-import torch
-from mrpro.utils.sliding_window import sliding_window
-from torch.nn import Module
-from einops import rearrange
 from mrpro.nn.NDModules import ConvND
 
 

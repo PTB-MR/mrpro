@@ -1,4 +1,3 @@
-import math
 from collections.abc import Sequence
 from functools import cache, reduce
 from typing import TypeVar

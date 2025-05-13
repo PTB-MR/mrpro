@@ -6,7 +6,7 @@ from torch.nn import Module, ReLU, Sequential, Sigmoid
 from mrpro.nn.NDModules import ConvND
 
 
-class AttenionGate(Module):
+class AttentionGate(Module):
     """Attention gate from Attention UNet.
 
     The attention mechanism from the attention UNet [OKT18]_.

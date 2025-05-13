@@ -3,13 +3,13 @@
 import torch
 from torch.nn import Identity, Module, Sequential, SiLU
 
-from mrpro.nn.NDModules import ConvND
 from mrpro.nn.EmbMixin import EmbMixin
-from mrpro.nn.GroupNorm32 import GroupNorm32
 from mrpro.nn.FiLM import FiLM
+from mrpro.nn.GroupNorm32 import GroupNorm32
+from mrpro.nn.NDModules import ConvND
 
 
-class ResBlock(Module, EmbMixin):
+class ResBlock(EmbMixin, Module):
     """Residual convolution block with two convolutions."""
 
     def __init__(self, dim: int, channels_in: int, channels_out: int, channels_emb: int) -> None:

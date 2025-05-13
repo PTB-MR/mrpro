@@ -1,8 +1,7 @@
 import torch
 
-from mrpro.operators import Operator
 from mrpro.nn.EmbMixin import EmbMixin
-from torch.nn import Module
+from mrpro.operators import Operator
 
 
 class Sequential(torch.nn.Sequential):
@@ -27,7 +26,7 @@ class Sequential(torch.nn.Sequential):
     def forward(self, x: torch.Tensor, emb: torch.Tensor | None = None) -> torch.Tensor:
         """Apply all modules in series to the input."""
         for module in self:
-            if isinstance(module, EmbMixin):
+            if isinstance(EmbMixin, Module):
                 x = module(x, emb)
             elif isinstance(module, Operator):
                 (x,) = module(x)

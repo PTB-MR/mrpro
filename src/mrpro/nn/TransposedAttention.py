@@ -2,11 +2,9 @@
 
 import torch
 from einops import rearrange
-from torch.nn import Identity, Linear, Module, Parameter, ReLU, Sequential, Sigmoid, SiLU
+from torch.nn import Module, Parameter
 
-from mrpro.nn.NDModules import AdaptiveAvgPoolND, ConvND, InstanceNormND
-from mrpro.utils.reshape import unsqueeze_tensors_right
-from mrpro.operators import Operator
+from mrpro.nn.NDModules import ConvND
 
 
 class TransposedAttention(Module):

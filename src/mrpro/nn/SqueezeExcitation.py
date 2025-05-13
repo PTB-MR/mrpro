@@ -1,10 +1,10 @@
 """Squeeze-and-Excitation block."""
 
+import torch
 from torch.nn import Module, ReLU, Sigmoid
 
 from mrpro.nn.NDModules import AdaptiveAvgPoolND, ConvND
 from mrpro.nn.Sequential import Sequential
-import torch
 
 
 class SqueezeExcitation(Module):

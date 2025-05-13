@@ -3,7 +3,7 @@ from functools import partial
 import torch
 from torch.nn import Module, ModuleList
 
-from mrpro.nn.EmbMixin import call_with_emb, EmbMixin
+from mrpro.nn.EmbMixin import call_with_emb
 
 
 class UNetBase(Module):
