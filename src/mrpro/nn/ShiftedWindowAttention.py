@@ -5,6 +5,7 @@ from einops import rearrange
 from torch.nn import Module
 
 from mrpro.nn.NDModules import ConvND
+from mrpro.utils.reshape import ravel_multi_index
 from mrpro.utils.sliding_window import sliding_window
 
 
@@ -12,7 +13,7 @@ class ShiftedWindowAttention(Module):
     """Shifted Window Attention.
 
     (Shifted) Window Attention calculates attention over windows of the input.
-    It was introduced in Swin Transformer [Swin] and is used in Uformer.
+    It was introduced in Swin Transformer [SWIN]_ and is used in Uformer.
 
     References
     ----------
@@ -36,12 +37,23 @@ class ShiftedWindowAttention(Module):
             Whether to shift the window.
         """
         super().__init__()
+        if channels % n_heads:
+            raise ValueError('channels must be divisible by n_heads.')
         self.channels = channels
         self.n_heads = n_heads
         self.window_size = window_size
         self.shifted = shifted
         self.to_qkv = ConvND(dim)(channels, 3 * channels, 1)
         self.dim = dim
+        coords_1d = torch.arange(window_size)
+        coords_nd = torch.stack(torch.meshgrid(*([coords_1d] * dim), indexing='ij'), 0).flatten(1)
+        rel_coords = coords_nd[:, :, None] - coords_nd[:, None, :]  # (dim, window_size**dim, window_size**dim)
+        rel_coords += window_size - 1  # shift to >=0
+        rel_position_index = ravel_multi_index(rel_coords, (2 * window_size - 1,) * dim)
+        self.register_buffer('rel_position_index', rel_position_index)
+
+        self.relative_position_bias_table = torch.nn.Parameter(torch.empty((2 * window_size - 1) ** dim, n_heads))
+        torch.nn.init.trunc_normal_(self.relative_position_bias_table, std=0.02, a=-0.04, b=0.04)
 
     def __call__(self, x: torch.Tensor) -> torch.Tensor:
         """Apply the ShiftedWindowAttention.
@@ -70,7 +82,8 @@ class ShiftedWindowAttention(Module):
             heads=self.n_heads,
             qkv=3,
         )
-        result = torch.nn.functional.scaled_dot_product_attention(q, k, v, attn_mask=None)
+        bias = rearrange(self.relative_position_bias_table[self.rel_position_index], 'wd1 wd2 heads -> 1 heads wd1 wd2')
+        result = torch.nn.functional.scaled_dot_product_attention(q, k, v, attn_mask=bias)
         result = rearrange(result, 'spatial batch head window channels->batch (head channels) spatial window')
         result = result.unflatten(-2, windowed.shape[: self.dim]).unflatten(-1, (self.window_size,) * self.dim)
         # permute (in 3d) batch channels z y x wz wy wx -> batch channels wz z wy y wx x
