@@ -136,7 +136,7 @@ class CsmData(QData):
         )
         csm_tensor = csm_fun(idata.data.flatten(end_dim=-5)).reshape(idata.data.shape)
         # upsampled csm requires normalization
-        csm_tensor /= csm_tensor.abs().square().sum(dim=-4, keepdim=True).sqrt() + 1e-9
+        csm_tensor = torch.nn.functional.normalize(csm_tensor, p=2, dim=-4, eps=1e-9)
         csm = cls(header=QHeader.from_iheader(idata.header), data=csm_tensor)
         return csm
 
@@ -224,7 +224,7 @@ class CsmData(QData):
         )
         csm_tensor = csm_fun(idata.data.flatten(end_dim=-5)).reshape(idata.data.shape)
         # upsampled csm requires normalization
-        csm_tensor /= csm_tensor.abs().square().sum(dim=-4, keepdim=True).sqrt() + 1e-9
+        csm_tensor = torch.nn.functional.normalize(csm_tensor, p=2, dim=-4, eps=1e-9)
         csm = cls(header=QHeader.from_iheader(idata.header), data=csm_tensor)
         return csm
 
