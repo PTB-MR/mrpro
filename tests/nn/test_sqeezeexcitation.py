@@ -1,8 +1,8 @@
 """Tests for SqueezeExcitation module."""
 
 import pytest
-from mrpro.nn.SqueezeExcitation import SqueezeExcitation
-from mrpro.utils.RandomGenerator import RandomGenerator
+from mrpro.nn import SqueezeExcitation
+from mrpro.utils import RandomGenerator
 
 
 @pytest.mark.parametrize(

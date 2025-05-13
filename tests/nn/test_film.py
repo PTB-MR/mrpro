@@ -2,9 +2,16 @@
 
 import pytest
 from mrpro.nn.FiLM import FiLM
-from mrpro.utils.RandomGenerator import RandomGenerator
+from mrpro.utils import RandomGenerator
 
 
+@pytest.mark.parametrize(
+    'device',
+    [
+        pytest.param('cpu', id='cpu'),
+        pytest.param('cuda', id='cuda', marks=pytest.mark.cuda),
+    ],
+)
 @pytest.mark.parametrize(
     ('channels', 'channels_emb', 'input_shape', 'emb_shape'),
     [
@@ -12,12 +19,12 @@ from mrpro.utils.RandomGenerator import RandomGenerator
         (32, 16, (2, 32, 16, 16), (2, 16)),
     ],
 )
-def test_film(channels, channels_emb, input_shape, emb_shape):
+def test_film(channels, channels_emb, input_shape, emb_shape, device):
     """Test FiLM output shape and backpropagation."""
     rng = RandomGenerator(seed=42)
-    x = rng.float32_tensor(input_shape).requires_grad_(True)
-    emb = rng.float32_tensor(emb_shape).requires_grad_(True)
-    film = FiLM(channels=channels, channels_emb=channels_emb)
+    x = rng.float32_tensor(input_shape).to(device).requires_grad_(True)
+    emb = rng.float32_tensor(emb_shape).to(device).requires_grad_(True)
+    film = FiLM(channels=channels, channels_emb=channels_emb).to(device)
     output = film(x, emb)
     assert output.shape == x.shape, f'Output shape {output.shape} != input shape {x.shape}'
     output.sum().backward()

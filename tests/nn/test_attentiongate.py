@@ -2,9 +2,16 @@
 
 import pytest
 from mrpro.nn.AttentionGate import AttentionGate
-from mrpro.utils.RandomGenerator import RandomGenerator
+from mrpro.utils import RandomGenerator
 
 
+@pytest.mark.parametrize(
+    'device',
+    [
+        pytest.param('cpu', id='cpu'),
+        pytest.param('cuda', id='cuda', marks=pytest.mark.cuda),
+    ],
+)
 @pytest.mark.parametrize(
     ('dim', 'channels_gate', 'channels_in', 'channels_hidden', 'input_shape', 'gate_shape'),
     [
@@ -12,12 +19,14 @@ from mrpro.utils.RandomGenerator import RandomGenerator
         (3, 32, 4, 8, (2, 4, 16, 16, 16), (2, 32, 16, 16, 16)),
     ],
 )
-def test_attention_gate(dim, channels_gate, channels_in, channels_hidden, input_shape, gate_shape):
+def test_attention_gate(dim, channels_gate, channels_in, channels_hidden, input_shape, gate_shape, device):
     """Test AttentionGate output shape and backpropagation."""
     rng = RandomGenerator(seed=42)
-    x = rng.float32_tensor(input_shape).requires_grad_(True)
-    gate = rng.float32_tensor(gate_shape).requires_grad_(True)
-    attn = AttentionGate(dim=dim, channels_gate=channels_gate, channels_in=channels_in, channels_hidden=channels_hidden)
+    x = rng.float32_tensor(input_shape).to(device).requires_grad_(True)
+    gate = rng.float32_tensor(gate_shape).to(device).requires_grad_(True)
+    attn = AttentionGate(
+        dim=dim, channels_gate=channels_gate, channels_in=channels_in, channels_hidden=channels_hidden
+    ).to(device)
     output = attn(x, gate)
     assert output.shape == x.shape, f'Output shape {output.shape} != input shape {x.shape}'
     output.sum().backward()

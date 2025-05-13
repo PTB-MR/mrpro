@@ -1,6 +1,6 @@
 import pytest
 from mrpro.nn import ShiftedWindowAttention
-from mrpro.utils.RandomGenerator import RandomGenerator
+from mrpro.utils import RandomGenerator
 
 
 @pytest.mark.parametrize(
