@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import overload
 
 import torch
 
@@ -14,13 +15,33 @@ from mrpro.operators.functionals import L1NormViewAsReal, L2NormSquared, ZeroFun
 from mrpro.operators.IdentityOp import IdentityOp
 
 
+@overload
 def total_variation_denoising(
     idata: IData,
     regularization_weights: Sequence[float] | Sequence[torch.Tensor],
     initial_image: torch.Tensor | None = None,
     max_iterations: int = 100,
     tolerance: float = 0,
-) -> IData:
+) -> IData: ...
+
+
+@overload
+def total_variation_denoising(
+    idata: torch.Tensor,
+    regularization_weights: Sequence[float] | Sequence[torch.Tensor],
+    initial_image: torch.Tensor | None = None,
+    max_iterations: int = 100,
+    tolerance: float = 0,
+) -> torch.Tensor: ...
+
+
+def total_variation_denoising(
+    idata: IData | torch.Tensor,
+    regularization_weights: Sequence[float] | Sequence[torch.Tensor],
+    initial_image: torch.Tensor | None = None,
+    max_iterations: int = 100,
+    tolerance: float = 0,
+) -> IData | torch.Tensor:
     r"""Apply total variation denoising.
 
     This algorithm solves the problem :math:`min_x \frac{1}{2}||x - y||_2^2 + \\sum_i l_i ||\nabla_i x||_1`
@@ -47,8 +68,10 @@ def total_variation_denoising(
     -------
         the denoised image.
     """
+    img_tensor = idata if isinstance(idata, torch.Tensor) else idata.data
+
     # L2-norm for the data consistency term
-    l2 = 0.5 * L2NormSquared(target=idata.data, divide_by_n=False)
+    l2 = 0.5 * L2NormSquared(target=img_tensor, divide_by_n=False)
 
     # Finite difference operator and corresponding L1-norm
     nabla_operator = [
@@ -62,7 +85,7 @@ def total_variation_denoising(
     g = ZeroFunctional()
     operator = LinearOperatorMatrix(((IdentityOp(),), *nabla_operator))
 
-    initial_image = initial_image if initial_image is not None else idata.data
+    initial_image = initial_image if initial_image is not None else img_tensor
 
     (img_tensor,) = pdhg(
         f=f,
@@ -72,4 +95,4 @@ def total_variation_denoising(
         max_iterations=max_iterations,
         tolerance=tolerance,
     )
-    return IData(img_tensor, idata.header)
+    return img_tensor if isinstance(idata, torch.Tensor) else IData(img_tensor, idata.header)
