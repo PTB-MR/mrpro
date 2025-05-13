@@ -16,6 +16,6 @@ class EmbMixin(Module):
     Used to determine if a module uses an embedding within a Sequential container.
     """
 
-    def __call__(self, x: torch.Tensor, emb: torch.Tensor | None = None, **kwargs) -> torch.Tensor:
+    def __call__(self, x: torch.Tensor, emb: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the module to the input."""
-        return super().__call__(x, emb, **kwargs)
+        return super().__call__(x, emb)

@@ -48,6 +48,9 @@ class FiLM(EmbMixin, Module):
 
     def forward(self, x: torch.Tensor, emb: torch.Tensor) -> torch.Tensor:
         """Apply FiLM."""
+        if emb is None:
+            return x
+
         emb = self.project(emb)
         scale, shift = emb.chunk(2, dim=1)
         scale, shift = unsqueeze_tensors_right(scale, shift, ndim=x.ndim)

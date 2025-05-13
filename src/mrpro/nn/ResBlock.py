@@ -46,7 +46,7 @@ class ResBlock(EmbMixin, Module):
         else:
             self.skip_connection = ConvND(dim)(channels_in, channels_out, kernel_size=1)
 
-    def __call__(self, x: torch.Tensor, emb: torch.Tensor | None) -> torch.Tensor:
+    def __call__(self, x: torch.Tensor, emb: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the ResBlock.
 
         Parameters
@@ -62,7 +62,7 @@ class ResBlock(EmbMixin, Module):
         """
         return super().__call__(x, emb)
 
-    def forward(self, x: torch.Tensor, emb: torch.Tensor | None) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, emb: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the ResBlock."""
         h = self.block(x, emb)
         x = self.skip_connection(x) + h

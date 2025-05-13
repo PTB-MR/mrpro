@@ -58,7 +58,9 @@ class AttentionGate(Module):
 
     def forward(self, x: torch.Tensor, gate: torch.Tensor) -> torch.Tensor:
         """Apply the attention gate."""
-        gate = self.project_gate(gate)
-        x = self.project_x(x)
-        alpha = self.psi(gate + x)
+        projected_gate = self.project_gate(gate)
+        projected_x = self.project_x(x)
+        if gate.shape[2:] != x.shape[2:]:
+            projected_gate = torch.nn.functional.interpolate(projected_gate, size=x.shape[2:], mode='nearest')
+        alpha = self.psi(projected_gate + projected_x)
         return x * alpha

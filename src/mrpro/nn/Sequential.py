@@ -1,4 +1,5 @@
 import torch
+from torch.nn import Module
 
 from mrpro.nn.EmbMixin import EmbMixin
 from mrpro.operators import Operator

@@ -20,6 +20,8 @@ class ShiftedWindowAttention(Module):
     .. [SWIN] Liu, Ze, et al. "Swin transformer: Hierarchical vision transformer using shifted windows." ICCV 2021.
     """
 
+    rel_position_index: torch.Tensor
+
     def __init__(self, dim: int, channels: int, n_heads: int, window_size: int = 7, shifted: bool = True):
         """Initialize the ShiftedWindowAttention module.
 
@@ -49,7 +51,7 @@ class ShiftedWindowAttention(Module):
         coords_nd = torch.stack(torch.meshgrid(*([coords_1d] * dim), indexing='ij'), 0).flatten(1)
         rel_coords = coords_nd[:, :, None] - coords_nd[:, None, :]  # (dim, window_size**dim, window_size**dim)
         rel_coords += window_size - 1  # shift to >=0
-        rel_position_index = ravel_multi_index(rel_coords, (2 * window_size - 1,) * dim)
+        rel_position_index = ravel_multi_index(tuple(rel_coords), (2 * window_size - 1,) * dim)
         self.register_buffer('rel_position_index', rel_position_index)
 
         self.relative_position_bias_table = torch.nn.Parameter(torch.empty((2 * window_size - 1) ** dim, n_heads))
