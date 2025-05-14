@@ -6,7 +6,7 @@ from sympy import Identity
 from torch.nn import GELU, LeakyReLU, Module, Sequential
 
 from mrpro.nn.NDModules import ConvND, ConvTransposeND, InstanceNormND
-from mrpro.nn.nets import UNet
+from mrpro.nn.nets.UNet import UNetBase
 from mrpro.nn.ShiftedWindowAttention import ShiftedWindowAttention
 
 
@@ -84,7 +84,7 @@ class LeWinTransformerBlock(Module):
         return x + x_ff
 
 
-class Uformer(UNet):
+class Uformer(UNetBase):
     def __init__(
         self,
         dim: int,
