@@ -162,6 +162,9 @@ class KData(Dataclass):
             additional_fields=('center_sample', 'number_of_samples', 'discard_pre', 'discard_post'),
             convert_time_stamp=convert_time_stamp,
         )
+        # discard_pre and discard_post is of shape (N_readouts,1,1,1,1) and we only need it as (N_readouts,)
+        discard_pre = discard_pre[:, 0, 0, 0, 0]
+        discard_post = discard_post[:, 0, 0, 0, 0]
 
         if len(torch.unique(acq_info.idx.user5)) > 1:
             warnings.warn(
