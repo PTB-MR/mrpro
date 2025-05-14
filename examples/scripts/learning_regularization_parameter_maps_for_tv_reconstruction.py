@@ -7,19 +7,20 @@
 # [[Kofler et al, SIIMS 2023](https://epubs.siam.org/doi/abs/10.1137/23M1552486)] can be implemented for
 # 2D MR reconstruction problems using MRpro. The method consists of two main blocks.
 # 1) The first block is a neural network architecture that estimates spatially adaptive regularization
-# parameter maps, which are then used in 2).
+# parameter maps from an input image, which are then used in 2).
 # 2) The second block corresponds to an unrolled unrolled Primal-Dual Hybrid Gradient (PDHG) algorithm
 # [[Chambolle \& Pock, JMIV 2011](https://doi.org/10.1007%2Fs10851-010-0251-1)] that
-# reconstruct the image from the undersampled k-space data measurements assuming the regularization
+# reconstructs the image from the undersampled k-space data measurements assuming the regularization
 # parameter maps to be fixed.
 #
-# The entire network can be trained end-to-end using the MRpro framework, allowing to learn to
+# The entire network can be trained end-to-end using MRpro, allowing to learn to
 # estimate spatially adaptive regularization parameter maps from an input image.
 
 # %% [markdown]
-# ### The method
+# ## The method
 # In the TV-example, (see <project:tv_minimization_reconstruction_pdhg.ipynb>), you can see how to employ the primal
-# dual hybrid gradient (PDHG) method [[Chambolle \& Pock, JMIV 2011](https://doi.org/10.1007%2Fs10851-010-0251-1)]
+# dual hybrid gradient (PDHG - `mrpro.algorithms.optimizers.pdhg`) method
+# [[Chambolle \& Pock, JMIV 2011](https://doi.org/10.1007%2Fs10851-010-0251-1)]
 # to solve the TV-minimization problem. There, for data acquired according to the usual model
 #
 # $ y = Ax_{\mathrm{true}} + n, $
@@ -38,17 +39,18 @@
 # $\Lambda_{\theta}:=u_{\theta}(x_0)$
 #
 # with a convolutional neural network $u_{\theta}$ with trainable parameters $\theta$ from an input image $x_0$,
-# and then to consider the problem
+# and then to consider the weighted TV-minimization problem
 #
 # $\mathcal{F}_{\Lambda_{\theta}}(x) = \frac{1}{2}||Ax - y||_2^2 +  \| \Lambda_{\theta} \nabla x \|_1, \quad \quad (2)$
 #
-# where $\Lambda_{\theta}$ is voxel-wise strictly positive and locally regularizes the TV-minimization problem.
+# where $\Lambda_{\theta}$ is voxel-wise strictly positive and locally regularizes the problem by
+# differently weighting the gradient of the image.
 
 
 # %% [markdown]
-# ### The neural network for estimating the regularization parameter maps
-# In this simple example, we use a simple convolutional neural network to estimate the regularization parameter maps.
-# Obviously, more complex architectures can be employed as well. For example, in the work in
+# ## The neural network for estimating the regularization parameter maps
+# In this example, we use a simple convolutional neural network to estimate the regularization parameter maps.
+# Obviously, more complex and sophisticated architectures can be employed as well. For example, in the work in
 # [[Kofler et al, SIIMS 2023](https://epubs.siam.org/doi/abs/10.1137/23M1552486)],
 # a U-Net [[Ronneberger et al, MICCAI 2015](https://link.springer.com/chapter/10.1007/978-3-319-24574-4_28)] was used.
 # The network used here corresponds to a simple block of convolutional layers with leaky ReLU activations and a
@@ -68,13 +70,14 @@ class ParameterMapNetwork2D(torch.nn.Module):
         Parameters
         ----------
         n_filters
-            number of filters to be applied in the convolutional layers of the network.
+            Number of filters to be applied in the convolutional layers of the network.
 
         """
         super().__init__()
-
-        self.cnn_block = torch.nn.Sequential(
+        self.beta_softplus = 10.0
+        self.cnn_block: torch.nn.Module = torch.nn.Sequential(
             *[
+                torch.nn.InstanceNorm2d(1, affine=False, track_running_stats=False),
                 torch.nn.Conv2d(in_channels=1, out_channels=n_filters, kernel_size=3, stride=1, padding=1),
                 torch.nn.LeakyReLU(),
                 torch.nn.Conv2d(in_channels=n_filters, out_channels=n_filters, kernel_size=3, stride=1, padding=1),
@@ -82,12 +85,11 @@ class ParameterMapNetwork2D(torch.nn.Module):
                 torch.nn.Conv2d(in_channels=n_filters, out_channels=n_filters, kernel_size=3, stride=1, padding=1),
                 torch.nn.LeakyReLU(),
                 torch.nn.Conv2d(in_channels=n_filters, out_channels=1, kernel_size=3, stride=1, padding=1),
+                torch.nn.Softplus(beta=self.beta_softplus),
             ]
         )
-        # raw parameter t, softplus is used to "activate" it and make it positive
-        self.t = torch.nn.Parameter(torch.tensor([-5.0], requires_grad=True))
-
-        self.beta_softplus = 1.0
+        # raw parameter t; softplus is used to "activate" it and make it strictly positive
+        self.t = torch.nn.Parameter(torch.tensor([0.0], requires_grad=True))
 
     def forward(self, image: torch.Tensor) -> torch.Tensor:
         r"""Apply the network to estimate regularization parameter maps.
@@ -96,42 +98,35 @@ class ParameterMapNetwork2D(torch.nn.Module):
         ----------
         image
             the image from which the regularization parameter maps should be estimated.
-
         """
-        dims = tuple(dim for dim in range(1, image.ndim))
-        image = (image - image.mean(dim=dims, keepdim=True)) / image.std(dim=dims, keepdim=True)
         regularization_parameter_map = self.cnn_block(image)
-
-        # stack the parameter map channel dimension to share the regularization
-        # between the x- and y-direction of the image gradients
-        regularization_parameter_map = torch.concat(2 * [regularization_parameter_map], dim=1)
-
-        # apply softplus to enforce strict positvity and scale by hand-crafted parameter
-        regularization_parameter_map = torch.nn.functional.softplus(
-            self.t, beta=self.beta_softplus
-        ) * torch.nn.functional.softplus(regularization_parameter_map, beta=self.beta_softplus)
+        regularization_parameter_map = (
+            torch.nn.functional.softplus(self.t, beta=self.beta_softplus) * regularization_parameter_map
+        )
         return regularization_parameter_map
 
 
 # %% [markdown]
-# ### The unrolled PDHG algorithm network
-# We now construct the second block, i.e. network that solves the TV-minimization problem with spatially
-# adaptive regularization parameter maps given in (2) by unrolling a finite number of iteration of PDHG.
+# ## The unrolled PDHG algorithm network
+# We now construct the second block, i.e. network that (approximately) solves the TV-minimization problem with spatially
+# adaptive regularization parameter maps given in (2) by unrolling a finite number of iterations of PDHG.
 
 # %% [markdown]
 # ```{note}
-# To fully understand the mechanism of the network, we recommend to have a look at the TV-example in
-# <project:tv_minimization_reconstruction_pdhg.ipynb>.
+# To fully understand the mechanism of the network, we recommend to first have a look at the TV-example in
+# <project:tv_minimization_reconstruction_pdhg.ipynb>, especially if you are not familiar with the PDHG algorithm
+# or how to use it to solve the TV-minimization problem.
 # ```
 
 # %% [markdown]
 # Put in simple words, the network takes the initial image, estimates the regularization
-# parameter maps, and then sets up the TV-problem presented in (2) within the "forward" of the network.
+# parameter maps, and then sets up the TV-problem described in (2) within the "forward" of the network.
 # The network then approximately solves the TV-problem using the PDHG algorithm
 # and returns the reconstructed image.
 
 # %%
 import mrpro
+from einops import rearrange
 
 
 class AdaptiveTVNetwork2D(torch.nn.Module):
@@ -152,18 +147,18 @@ class AdaptiveTVNetwork2D(torch.nn.Module):
 
     def __init__(
         self,
-        img_shape: mrpro.data.SpatialDimension[int],
-        k_shape: mrpro.data.SpatialDimension[int],
-        lambda_map_network: torch.nn.Module,
+        recon_matrix: mrpro.data.SpatialDimension[int],
+        encoding_matrix: mrpro.data.SpatialDimension[int],
+        lambda_map_network: ParameterMapNetwork2D,
         n_iterations: int = 128,
     ):
         r"""Initialize Adaptive TV Network.
 
         Parameters
         ----------
-        img_shape
+        recon_matrix
             image shape, i.e. the shape of the domain of the fourier operator.
-        k_shape
+        encoding_matrix
            k-space shape, i.e. the shape of the domain of the fourier operator
         lambda_map_network
             a network that predicts a regularization parameter map from the input image.
@@ -173,8 +168,8 @@ class AdaptiveTVNetwork2D(torch.nn.Module):
         """
         super().__init__()
 
-        self.img_shape = img_shape
-        self.k_shape = k_shape
+        self.recon_matrix = recon_matrix
+        self.encoding_matrix = encoding_matrix
 
         self.lambda_map_network = lambda_map_network
         self.n_iterations = n_iterations
@@ -188,24 +183,22 @@ class AdaptiveTVNetwork2D(torch.nn.Module):
         self.g = mrpro.operators.functionals.ZeroFunctional()
 
         # operator norm of the stacked operator K=[A, \nabla]^T
-        self.stacked_operator_norm = 3.0  # analytically calculated
+        stacked_operator_norm = 3.0  # analytically calculated
+        self.primal_stepsize = self.dual_stepsize = 0.95 * (1.0 / stacked_operator_norm)
 
     def estimate_lambda_map(self, image: torch.Tensor) -> torch.Tensor:
         """Estimate regularization parameter map from image."""
-        # squeeze the dimensions that are one. In particular, the initial image
-        # is a coil-combined image (i.e. coils=1) and because, we only consider 2D problems here,
-        # z can be assumed to be always 1.
-        # (other*, coils, z, y, x) -> (other*, y, x)
-        input_image = image.abs().squeeze(-3)
+        # The initial image is a coil-combined image. Since we only consider 2D problems
+        # here, z can be assumed to be always 1.
+        input_image = rearrange(image.abs(), '... 1 1 y x -> ... 1 y x')
         regularization_parameter_map = self.lambda_map_network(input_image).unsqueeze(-3).unsqueeze(-3)
         return regularization_parameter_map
 
     def forward(
         self,
         initial_image: torch.Tensor,
-        csm: torch.Tensor,
         kdata: torch.Tensor,
-        traj: mrpro.data.KTrajectory,
+        forward_operator: mrpro.operators.LinearOperator,
         regularization_parameter: torch.Tensor | None = None,
     ) -> torch.Tensor:
         """Reconstruct image using an unrolled PDHG algorithm.
@@ -214,12 +207,10 @@ class AdaptiveTVNetwork2D(torch.nn.Module):
         ----------
         initial_image
             initial guess of the solution of the TV problem.
-        csm
-            coil sensitivity map tensor of the considered problem.
         kdata
             k-space data tensor of the considered problem.
-        traj
-            k-space trajectory tensor of the Fourier considered operator.
+        forward_operator
+            forward operator that maps the image to the k-space data.
         regularization_parameter
             regularization parameter to be used in the TV-functional. If set to None,
             it is estimated by the lambda_map_network.
@@ -227,26 +218,17 @@ class AdaptiveTVNetwork2D(torch.nn.Module):
 
         Returns
         -------
-            Image reconstructed by the TV-minimization algorithm.
+            Image reconstructed by the PDGH algorithm to solve the weighted TV problem.
         """
         # if no regularization parameter map is provided, compute it with the network
         if regularization_parameter is None:
             regularization_parameter = self.estimate_lambda_map(initial_image)
 
-        f_1 = 0.5 * mrpro.operators.functionals.L2NormSquared(target=kdata, divide_by_n=False)
-        f_2 = mrpro.operators.functionals.L1NormViewAsReal(weight=regularization_parameter, divide_by_n=False)
-        f = mrpro.operators.ProximableFunctionalSeparableSum(f_1, f_2)
+        f1 = 0.5 * mrpro.operators.functionals.L2NormSquared(target=kdata)
+        f2 = mrpro.operators.functionals.L1NormViewAsReal(weight=regularization_parameter)
+        f = mrpro.operators.ProximableFunctionalSeparableSum(f1, f2)
 
-        fourier_operator = mrpro.operators.FourierOp(
-            recon_matrix=self.img_shape,
-            encoding_matrix=self.k_shape,
-            traj=traj,
-        )
-        csm_operator = mrpro.operators.SensitivityOp(csm)
-        forward_operator = fourier_operator @ csm_operator
         stacked_operator = mrpro.operators.LinearOperatorMatrix(((forward_operator,), (self.gradient_operator,)))
-
-        primal_stepsize = dual_stepsize = 0.95 * 1.0 / self.stacked_operator_norm
 
         (solution,) = mrpro.algorithms.optimizers.pdhg(
             f=f,
@@ -254,15 +236,15 @@ class AdaptiveTVNetwork2D(torch.nn.Module):
             operator=stacked_operator,
             initial_values=(initial_image,),
             max_iterations=self.n_iterations,
-            primal_stepsize=primal_stepsize,
-            dual_stepsize=dual_stepsize,
+            primal_stepsize=self.primal_stepsize,
+            dual_stepsize=self.dual_stepsize,
             tolerance=0.0,
         )
         return solution
 
 
 # %% [markdown]
-# ### Creating the training data
+# ## Creating the training data
 # In the following, we create some training data for the network. We use some images borrowed from the
 # BrainWeb dataset [[Aubert-Broche et al, IEEE TMI 2006](https://ieeexplore.ieee.org/abstract/document/1717639)],
 # which is a simulated MRI dataset and for which MRpro provides a simple interface to load the data.
@@ -285,24 +267,15 @@ def add_gaussian_noise(kdata: torch.Tensor, noise_variance: float, seed: int) ->
 
 
 def normalize_kspace_data_and_image(
-    kdata: torch.Tensor, target_image: torch.Tensor | None, factor: float = 100
-) -> tuple[torch.Tensor, torch.Tensor] | torch.Tensor:
-    """
-    Normalize k-space data and (possibly) target image.
-
-    Divide by std multiply by (an empirically set) factor.
-    """
-    kdata_norm = torch.linalg.norm(kdata)
-
-    kdata /= kdata_norm
+    kdata: torch.Tensor,
+    target_image: torch.Tensor | None,
+) -> tuple[torch.Tensor, torch.Tensor | None]:
+    """Normalize k-space data and (possibly) target image."""
+    factor = 1 / kdata.abs().max()
     kdata *= factor
     if target_image is not None:
-        target_image /= kdata_norm
         target_image *= factor
-
-        return kdata, target_image
-    else:
-        return kdata
+    return kdata, target_image
 
 
 # %% [markdown]
@@ -323,71 +296,6 @@ class Cartesian2D(torch.utils.data.Dataset):
         """
         self.images = images
 
-    def prepare_data(
-        self, image: torch.Tensor, n_coils: int, acceleration_factor: int, noise_variance: float, seed: int = 0
-    ) -> tuple[torch.Tensor, torch.Tensor, mrpro.data.KTrajectory, torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Prepare data for training by simulating k-space data.
-
-        Parameters
-        ----------
-        image : torch.Tensor
-            Input image to be used for simulation.
-        n_coils : int
-            Number of coils for the simulation.
-        acceleration_factor : float
-            Acceleration factor for undersampling.
-        noise_variance : float
-            Variance of the Gaussian noise to be added.
-        seed : float
-            seed of the random number generator.
-
-        Returns
-        -------
-        tuple
-            A tuple containing k-space data, coil sensitivity maps, k-space trajectories adjoint reconstruction,
-            pseudo-inverse solution and the image.
-        """
-        # randomly choose trajectories to define the fourier operator
-        ny, nx = image.shape[-2:]
-        img_shape = mrpro.data.SpatialDimension(z=1, y=ny, x=nx)
-        k_shape = mrpro.data.SpatialDimension(z=1, y=ny, x=nx)
-
-        traj = mrpro.data.traj_calculators.KTrajectoryCartesian().gaussian_variable_density(
-            encoding_matrix=k_shape, acceleration=acceleration_factor, n_center=10, fwhm_ratio=0.6, seed=seed
-        )
-
-        fourier_operator = mrpro.operators.FourierOp(
-            traj=traj,
-            recon_matrix=img_shape,
-            encoding_matrix=k_shape,
-        )
-
-        # generate simualated coil sensitivity maps
-        from mrpro.phantoms.coils import birdcage_2d
-
-        with torch.no_grad():
-            csm = birdcage_2d(n_coils, img_shape, relative_radius=0.8)
-            csm_operator = mrpro.operators.SensitivityOp(csm)
-
-            forward_operator = fourier_operator @ csm_operator
-
-            (kdata,) = forward_operator(image)
-            kdata = add_gaussian_noise(kdata, noise_variance=noise_variance, seed=seed)
-
-            assert image is not None
-            kdata, image = normalize_kspace_data_and_image(kdata, image)
-
-            (adjoint_recon,) = forward_operator.H(kdata)
-
-            # compute an approximation of the pseudo-inverse solution
-            # Note that this in general only makes sense if the forward operator can be injective,
-            # i.e. we have multiple coils with acceleration factor < n_coils
-            (pseudo_inverse_solution,) = mrpro.algorithms.optimizers.cg(
-                forward_operator.gram, right_hand_side=adjoint_recon, initial_value=adjoint_recon, max_iterations=16
-            )
-
-        return kdata, csm, traj, adjoint_recon, pseudo_inverse_solution, image
-
     def __len__(self) -> int:
         """Return the number of images in the dataset."""
         return len(self.images)
@@ -400,15 +308,94 @@ class Cartesian2D(torch.utils.data.Dataset):
 
 
 # %% [markdown]
-# Download the data from Zenodo and create the datasets and dataloaders.
+# We also define a function that prepares the data for training. It simulates the k-space data by applying the
+# forward operator to the image and adds Gaussian noise. The function also computes the adjoint reconstruction
+# and the pseudo-inverse solution, which can be used as input image to estimate the regularization parameter maps.
 
-# %%
+
+# %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show data preparation details"}
+
+
+def prepare_data(
+    target_image: torch.Tensor, n_coils: int, acceleration_factor: float, noise_variance: float, seed: int = 0
+) -> tuple[torch.Tensor, mrpro.operators.LinearOperator, torch.Tensor, torch.Tensor | None, torch.Tensor]:
+    """Prepare data for training by simulating k-space data.
+
+    Parameters
+    ----------
+    target_image : torch.Tensor
+        Target image to be used for simulation.
+    n_coils : int
+        Number of coils for the simulation.
+    acceleration_factor : float
+        Acceleration factor for undersampling.
+    noise_variance : float
+        Variance of the Gaussian noise to be added.
+    seed : float
+        seed of the random number generator.
+
+    Returns
+    -------
+    tuple
+        A tuple containing k-space data, forward operator adjoint reconstruction,
+        possibly the pseudo-inverse solution (if n_coils>1) and the target image.
+    """
+    # randomly choose trajectories to define the fourier operator
+    ny, nx = target_image.shape[-2:]
+    recon_matrix = mrpro.data.SpatialDimension(z=1, y=ny, x=nx)
+    encoding_matrix = mrpro.data.SpatialDimension(z=1, y=ny, x=nx)
+
+    traj = mrpro.data.traj_calculators.KTrajectoryCartesian().gaussian_variable_density(
+        encoding_matrix=encoding_matrix, acceleration=acceleration_factor, fwhm_ratio=0.6, seed=seed
+    )
+
+    fourier_operator = mrpro.operators.FourierOp(
+        traj=traj,
+        recon_matrix=recon_matrix,
+        encoding_matrix=encoding_matrix,
+    )
+
+    # generate simualated coil sensitivity maps
+    from mrpro.phantoms.coils import birdcage_2d
+
+    if n_coils > 1:
+        csm = birdcage_2d(n_coils, recon_matrix, relative_radius=0.8)
+        csm_operator = mrpro.operators.SensitivityOp(csm)
+        forward_operator = fourier_operator @ csm_operator
+    else:
+        forward_operator = fourier_operator
+
+    (kdata,) = forward_operator(target_image)
+    kdata = add_gaussian_noise(kdata, noise_variance=noise_variance, seed=seed)
+
+    kdata, target_image = normalize_kspace_data_and_image(kdata, target_image)  # type: ignore[assignment]
+
+    (adjoint_recon,) = forward_operator.H(kdata)
+
+    if n_coils > 1:
+        # compute an approximation of the pseudo-inverse solution
+        # Note that this in general only makes sense if the forward operator can be injective,
+        # i.e. we have multiple coils with acceleration factor < n_coils
+        (pseudo_inverse_solution,) = mrpro.algorithms.optimizers.cg(
+            forward_operator.gram, right_hand_side=adjoint_recon, initial_value=adjoint_recon, max_iterations=16
+        )
+        return kdata, forward_operator, adjoint_recon, pseudo_inverse_solution, target_image
+    else:
+        pseudo_inverse_solution = None
+    return kdata, forward_operator, adjoint_recon, pseudo_inverse_solution, target_image
+
+
+# %% [markdown]
+# Download the data from Zenodo, create the datasets and dataloaders and define
+# some auxiliary functions for displaying the images.
+
+# %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show download and dataloading details"}
 import tempfile
 from pathlib import Path
 
 import zenodo_get
 
-dataset = '15348116'
+dataset = '15407890'
 
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder_tv = Path(tmp.name)
@@ -417,18 +404,15 @@ zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder_tv])  # r: retries
 n_images = 28
 images = torch.load(data_folder_tv / 'brainweb_data.pt')[:n_images, ...]
 images = images.unsqueeze(-3).unsqueeze(-3)
-
 dataset_train = Cartesian2D(images[:20, ...])
 dataset_validation = Cartesian2D(images[20:, ...])
+
 dataloader_train = torch.utils.data.DataLoader(dataset_train, shuffle=True, batch_size=1)
 dataloader_validation = torch.utils.data.DataLoader(dataset_validation, shuffle=False, batch_size=1)
-
 
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show plotting details"}
 # Define some functions for plotting images.
 import matplotlib.pyplot as plt
-
-plt.ioff()
 import torch
 
 
@@ -438,6 +422,7 @@ def show_images(
     cmap: str = 'grey',
     clim: tuple[float, float] | None = None,
     rotate: bool = True,
+    rotatation_k: int = -2,
     colorbar: bool = False,
     show_mse: bool = False,
 ) -> None:
@@ -449,11 +434,11 @@ def show_images(
 
     image_reference = images[-1].cpu() if images[-1].is_cuda else images[-1]
     if rotate:
-        image_reference = image_reference.rot90(k=-1, dims=(-2, -1))
+        image_reference = image_reference.rot90(k=rotatation_k, dims=(-2, -1))
     for i in range(n_images):
         image = images[i].cpu() if images[i].is_cuda else images[i]
         if rotate:
-            image = image.rot90(k=-1, dims=(-2, -1))
+            image = image.rot90(k=rotatation_k, dims=(-2, -1))
         im = axes[0, i].imshow(image.abs(), cmap=cmap, clim=clim)
         if titles:
             axes[0, i].set_title(titles[i])
@@ -477,20 +462,24 @@ def show_images(
 image_ = next(iter(dataloader_validation))[0]
 
 n_coils = 8
+acceleration_factor = 4.0
 noise_variance = 0.05
-acceleration_factor = 4
-kdata_, csm_, traj_, adjoint_recon_, pseudo_inverse_solution_, image_ = dataset_validation.prepare_data(
+
+kdata_, forward_operator_, adjoint_recon_, pseudo_inverse_solution_, image_ = prepare_data(
     image_, n_coils=n_coils, acceleration_factor=acceleration_factor, noise_variance=noise_variance
 )
-
+if n_coils > 1:
+    assert pseudo_inverse_solution_ is not None
+    images_list = [adjoint_recon_.squeeze(), pseudo_inverse_solution_.squeeze(), image_.squeeze()]
+    titles = ['Adjoint', 'Pseudo-Inverse', 'Target']
+else:
+    images_list = [adjoint_recon_.squeeze(), image_.squeeze()]
+    titles = ['Adjoint', 'Target']
 show_images(
-    adjoint_recon_.squeeze(),
-    pseudo_inverse_solution_.squeeze(),
-    image_.squeeze(),
-    titles=['Adjoint', 'Pseudo-Inverse', 'Target'],
-    rotate=False,
+    *images_list,
+    titles=titles,
     show_mse=True,
-    clim=(0, 0.5),
+    clim=(0, 0.8 * image_.abs().max().item()),
 )
 
 # %% [markdown]
@@ -504,25 +493,30 @@ torch.manual_seed(2025)
 lambda_map_network = ParameterMapNetwork2D(n_filters=32)
 n_iterations = 128
 
-img_shape = mrpro.data.SpatialDimension(z=1, y=images.shape[-2], x=images.shape[-1])
-k_shape = mrpro.data.SpatialDimension(z=1, y=images.shape[-2], x=images.shape[-1])
+recon_matrix = mrpro.data.SpatialDimension(z=1, y=images.shape[-2], x=images.shape[-1])
+encoding_matrix = mrpro.data.SpatialDimension(z=1, y=images.shape[-2], x=images.shape[-1])
 
 adaptive_tv_network = AdaptiveTVNetwork2D(
-    img_shape=img_shape,
-    k_shape=k_shape,
+    recon_matrix=recon_matrix,
+    encoding_matrix=encoding_matrix,
     lambda_map_network=lambda_map_network,
     n_iterations=n_iterations,
 )
 
+if n_coils > 1:
+    assert pseudo_inverse_solution_ is not None
+    input_image_ = pseudo_inverse_solution_
+else:
+    input_image_ = adjoint_recon_
+
 if torch.cuda.is_available():
     adaptive_tv_network = adaptive_tv_network.cuda()
-    pseudo_inverse_solution_ = pseudo_inverse_solution_.cuda()
-    csm_ = csm_.cuda()
+    input_image_ = input_image_.cuda()
     kdata_ = kdata_.cuda()
-    traj_ = traj_.cuda()
+    forward_operator_ = forward_operator_.cuda()
 
 with torch.no_grad():
-    regularization_parameter_map_init = adaptive_tv_network.estimate_lambda_map(pseudo_inverse_solution_)
+    regularization_parameter_map_init = adaptive_tv_network.estimate_lambda_map(input_image_)
 
 
 # %% [markdown]
@@ -535,16 +529,17 @@ with torch.no_grad():
 # If you do not have a GPU, we provide a pre-trained model, which you can load and directly apply to the data.
 
 # %%
-from typing import cast
-
-cnn_block = cast(torch.nn.Module, adaptive_tv_network.lambda_map_network.cnn_block)
+# cnn_block = cast(torch.nn.Module, adaptive_tv_network.lambda_map_network.cnn_block)
+# cnn_block =
 optimizer = torch.optim.Adam(
     [
-        {'params': cnn_block.parameters(), 'lr': 1e-4},
-        {'params': [adaptive_tv_network.lambda_map_network.t], 'lr': 1e-1},
+        {'params': adaptive_tv_network.lambda_map_network.cnn_block.parameters(), 'lr': 1e-4},
+        {'params': [adaptive_tv_network.lambda_map_network.t], 'lr': 1e-2},
     ],
-    weight_decay=1e-5,
+    weight_decay=1e-8,
 )
+
+lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
 
 import copy
 import datetime
@@ -555,17 +550,18 @@ from tqdm import tqdm
 n_epochs = 10
 validation_loss_values = []
 best_model = None
-noise_variance = 0.05
-acceleration_factor = 4
 
-time_start = time()
-
-if torch.cuda.is_available():
-    for epoch in tqdm(range(n_epochs), desc='epochs', disable=False):
+if not torch.cuda.is_available():
+    # without a gpu, skip training. instead, load the pre-trained model downloaded from zenodo
+    adaptive_tv_network.load_state_dict(torch.load(data_folder_tv / 'tv_model.pt', map_location='cpu'))
+else:
+    time_start = time()
+    outer_bar = tqdm(range(n_epochs), desc='Epochs', disable=False)
+    for epoch in outer_bar:
         for sample_num, image_ in enumerate(dataloader_train):
             optimizer.zero_grad()
 
-            kdata, csm, traj, adjoint_recon, pseudo_inverse_solution, image = dataset_train.prepare_data(
+            kdata, forward_operator_undersampled, adjoint_recon, pseudo_inverse_solution, image = prepare_data(
                 image_,
                 n_coils=n_coils,
                 acceleration_factor=acceleration_factor,
@@ -573,23 +569,25 @@ if torch.cuda.is_available():
                 seed=sample_num * epoch,
             )
 
+            initial_image = adjoint_recon if pseudo_inverse_solution is None else pseudo_inverse_solution
+
             if torch.cuda.is_available():
                 kdata = kdata.cuda()
-                traj = traj.cuda()
-                csm = csm.cuda()
-                pseudo_inverse_solution = pseudo_inverse_solution.cuda()
+                initial_image = initial_image.cuda()
+                forward_operator_undersampled = forward_operator_undersampled.cuda()
                 image = image.cuda()
 
-            pdhg_recon = adaptive_tv_network(pseudo_inverse_solution, csm, kdata, traj)
+            pdhg_recon = adaptive_tv_network(initial_image, kdata, forward_operator_undersampled)
 
             loss = torch.nn.functional.mse_loss(torch.view_as_real(pdhg_recon), torch.view_as_real(image))
 
             loss.backward()
             optimizer.step()
 
+        lr_scheduler.step()
         running_loss = 0.0
         for sample_num, image_ in enumerate(dataloader_validation):
-            kdata, csm, traj, adjoint_recon, pseudo_inverse_solution, image = dataset_validation.prepare_data(
+            kdata, forward_operator_undersampled, adjoint_recon, pseudo_inverse_solution, image = prepare_data(
                 image_,
                 n_coils=n_coils,
                 acceleration_factor=acceleration_factor,
@@ -597,26 +595,31 @@ if torch.cuda.is_available():
                 seed=sample_num,
             )
 
+            initial_image = adjoint_recon if pseudo_inverse_solution is None else pseudo_inverse_solution
+
             if torch.cuda.is_available():
                 kdata = kdata.cuda()
-                traj = traj.cuda()
-                csm = csm.cuda()
-                pseudo_inverse_solution = pseudo_inverse_solution.cuda()
+                initial_image = initial_image.cuda()
+                forward_operator_undersampled = forward_operator_undersampled.cuda()
                 image = image.cuda()
 
             with torch.no_grad():
-                pdhg_recon = adaptive_tv_network(pseudo_inverse_solution, csm, kdata, traj)
+                # pdhg_recon = adaptive_tv_network(pseudo_inverse_solution, csm, kdata, traj)
+                pdhg_recon = adaptive_tv_network(initial_image, kdata, forward_operator_undersampled)
                 loss = torch.nn.functional.mse_loss(torch.view_as_real(pdhg_recon), torch.view_as_real(image))
 
             running_loss += loss.item()
         loss_validation = running_loss / len(dataset_validation)
         validation_loss_values.append(loss_validation)
-        print(validation_loss_values[-1])
+        outer_bar.set_postfix(val_loss=f'{loss_validation:.8f}')
         if validation_loss_values[-1] <= min(validation_loss_values):
             # store the weights if the validation loss is the smallest; this is
             # to avoid possible overfitting here, since we are only using very few
             # images
             best_model = copy.deepcopy(adaptive_tv_network.state_dict())
+
+    time_end = time() - time_start
+    print(f'training time: {datetime.timedelta(seconds=time_end)}')
 
     assert best_model is not None
     adaptive_tv_network.load_state_dict(best_model)
@@ -627,10 +630,6 @@ if torch.cuda.is_available():
     ax.set_ylabel('Mean Squared Error')
     ax.legend()
 
-    time_end = time() - time_start
-    print(f'training time: {datetime.timedelta(seconds=time_end)}')
-else:
-    adaptive_tv_network.load_state_dict(torch.load(data_folder_tv / 'tv_model.pt', map_location='cpu'))
 
 # %% [markdown]
 # Nice! We have now trained our network for estimating the regularization parameter maps. Let us check if the obtained
@@ -638,10 +637,10 @@ else:
 
 # %%
 with torch.no_grad():
-    regularization_parameter_map_trained = adaptive_tv_network.estimate_lambda_map(pseudo_inverse_solution_)
+    regularization_parameter_map_trained = adaptive_tv_network.estimate_lambda_map(input_image_)
 
     pdhg_recon_regularization_parameter_trained_ = adaptive_tv_network(
-        pseudo_inverse_solution_, csm_, kdata_, traj_, regularization_parameter_map_trained
+        input_image_, kdata_, forward_operator_, regularization_parameter_map_trained
     )
 
 show_images(
@@ -653,7 +652,6 @@ show_images(
     ],
     cmap='inferno',
     clim=(0.0, regularization_parameter_map_trained.abs().max().item()),
-    rotate=False,
     colorbar=True,
 )
 
@@ -664,7 +662,7 @@ show_images(
 # Cartesian reconstruction example <project:cartesian_reconstruction.ipynb>.
 
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show download details"}
-# Get the raw data from zenodo
+# Get the raw Carestian MR data from zenodo
 import tempfile
 from pathlib import Path
 
@@ -688,35 +686,37 @@ kdata_cartesian = mrpro.data.KData.from_file(
 
 # %%
 nz, ny, nx = kdata_cartesian.data.shape[-3:]
-k_shape_cartesian = mrpro.data.SpatialDimension(z=nz, y=ny, x=nx)
+encoding_matrix_cartesian = mrpro.data.SpatialDimension(z=nz, y=ny, x=nx)
 n_k1 = kdata_cartesian.data.shape[-2]
 k1_center = n_k1 // 2
 
 ktraj_undersampled = mrpro.data.traj_calculators.KTrajectoryCartesian().gaussian_variable_density(
-    encoding_matrix=k_shape_cartesian, acceleration=acceleration_factor, n_center=10, fwhm_ratio=0.6, seed=2024
+    encoding_matrix=encoding_matrix_cartesian, acceleration=acceleration_factor, fwhm_ratio=0.6, seed=2025
 )
 
 k1_idx = ktraj_undersampled.ky.squeeze() + k1_center
 kdata_undersampled = kdata_cartesian.data[..., k1_idx.to(torch.int), :]
-
-kdata_undersampled_ = normalize_kspace_data_and_image(kdata_undersampled, None)
-assert isinstance(kdata_undersampled_, torch.Tensor)
-kdata_undersampled = kdata_undersampled_
 
 fourier_operator_undersampled = mrpro.operators.FourierOp(
     traj=ktraj_undersampled,
     recon_matrix=kdata_cartesian.header.recon_matrix,
     encoding_matrix=kdata_cartesian.header.encoding_matrix,
 )
+
+kdata_undersampled_, _ = normalize_kspace_data_and_image(kdata_undersampled, None)
+assert isinstance(kdata_undersampled_, torch.Tensor)
+kdata_undersampled = kdata_undersampled_
+
+
 (coil_images,) = fourier_operator_undersampled.H(kdata_undersampled)
 
 csm_undersampled = mrpro.algorithms.csm.walsh(coil_images.squeeze(0), smoothing_width=5).unsqueeze(0)
 
-forward_operator = fourier_operator_undersampled @ mrpro.operators.SensitivityOp(csm_undersampled)
-(adjoint_recon_undersampled,) = forward_operator.H(kdata_undersampled)
+forward_operator_undersampled = fourier_operator_undersampled @ mrpro.operators.SensitivityOp(csm_undersampled)
+(adjoint_recon_undersampled,) = forward_operator_undersampled.H(kdata_undersampled)
 
 (pseudo_inverse_solution_undersampled,) = mrpro.algorithms.optimizers.cg(
-    forward_operator.gram,
+    forward_operator_undersampled.gram,
     right_hand_side=adjoint_recon_undersampled,
     initial_value=adjoint_recon_undersampled,
     max_iterations=16,
@@ -724,9 +724,7 @@ forward_operator = fourier_operator_undersampled @ mrpro.operators.SensitivityOp
 
 if torch.cuda.is_available():
     pseudo_inverse_solution_undersampled = pseudo_inverse_solution_undersampled.cuda()
-    adjoint_recon_undersampled = adjoint_recon_undersampled.cuda()
-    csm_undersampled = csm_undersampled.cuda()
-    ktraj_undersampled = ktraj_undersampled.cuda()
+    forward_operator_undersampled = forward_operator_undersampled.cuda()
     kdata_undersampled = kdata_undersampled.cuda()
 
 # %% [markdown]
@@ -734,8 +732,8 @@ if torch.cuda.is_available():
 # from the pseudo-inverse solution and then apply the unrolled PDHG network to obtain the final reconstruction.
 
 # %%
-adaptive_tv_network.img_shape = kdata_cartesian.header.recon_matrix
-adaptive_tv_network.k_shape = kdata_cartesian.header.encoding_matrix
+adaptive_tv_network.recon_matrix = kdata_cartesian.header.recon_matrix
+adaptive_tv_network.encoding_matrix = kdata_cartesian.header.encoding_matrix
 
 with torch.no_grad():
     regularization_parameter_map_undersampled_data = adaptive_tv_network.estimate_lambda_map(
@@ -744,9 +742,8 @@ with torch.no_grad():
 
     pdhg_recon_regularization_parameter_trained_ = adaptive_tv_network(
         pseudo_inverse_solution_undersampled,
-        csm_undersampled,
         kdata_undersampled,
-        ktraj_undersampled,
+        forward_operator_undersampled,
         regularization_parameter_map_undersampled_data,
     )
 
@@ -757,8 +754,15 @@ with torch.no_grad():
 
 # %%
 # Create DirectReconstruction object from KData object. Also, scale the k-space data to better match the
-# intensities of the undersampled k-space data
-kdata_cartesian_data_normalized = normalize_kspace_data_and_image(kdata_cartesian.data, None)
+# intensities of the undersampled k-space data.
+
+fourier_operator_full = mrpro.operators.FourierOp(
+    traj=kdata_cartesian.traj,
+    recon_matrix=kdata_cartesian.header.recon_matrix,
+    encoding_matrix=kdata_cartesian.header.encoding_matrix,
+)
+
+kdata_cartesian_data_normalized, _ = normalize_kspace_data_and_image(kdata_cartesian.data, None)
 assert isinstance(kdata_cartesian_data_normalized, torch.Tensor)
 kdata_cartesian.data = kdata_cartesian_data_normalized
 iterative_sense_reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction(kdata_cartesian)
@@ -777,14 +781,13 @@ image_fully_sampled = iterative_sense_reconstruction(kdata_cartesian)
 def line_search(
     regularization_parameters: torch.Tensor,
     initial_image: torch.Tensor,
-    csm: torch.Tensor,
     kdata: torch.Tensor,
-    traj: mrpro.data.KTrajectory,
+    forward_operator: mrpro.operators.LinearOperator,
     target: torch.Tensor,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Perform a line search to pick the best regularization parameter for TV."""
     reconstructions_list = [
-        adaptive_tv_network(initial_image, csm, kdata, traj, regularization_parameter)
+        adaptive_tv_network(initial_image, kdata, forward_operator, regularization_parameter)
         for regularization_parameter in regularization_parameters
     ]
     mse_values = torch.tensor(
@@ -797,20 +800,21 @@ def line_search(
     return mse_values, reconstructions_list[torch.argmin(torch.tensor(mse_values))]
 
 
-regularization_parameters = torch.linspace(0.014, 0.022, 10)
+regularization_parameters = torch.linspace(0.0005, 0.0025, 10)
 mse_values, pdhg_recon_best_scalar = line_search(
     regularization_parameters,
     pseudo_inverse_solution_undersampled,
-    csm_undersampled,
     kdata_undersampled,
-    ktraj_undersampled,
+    forward_operator_undersampled,
     (image_fully_sampled.data).cuda() if torch.cuda.is_available() else image_fully_sampled.data,
 )
+
+from matplotlib.ticker import FormatStrFormatter
 
 fig, ax = plt.subplots()
 ax.plot(regularization_parameters, mse_values.cpu())
 ax.set_xlabel(r'Scalar Regularization Parameter Value $\lambda$', fontsize=12)
-ax.set_ylabel(r'MSE(TV($\lambda$),Target)', fontsize=12)
+ax.set_ylabel(r'MSE (TV($\lambda$),Target)', fontsize=12)
 ax.vlines(
     x=regularization_parameters[torch.argmin(mse_values)].item(),
     ymin=mse_values.min().item(),
@@ -819,7 +823,10 @@ ax.vlines(
     ls=':',
     label=r'Best scalar $\lambda>0$',
 )
+
 ax.legend()
+ax.tick_params(axis='x', rotation=45)
+ax.xaxis.set_major_formatter(FormatStrFormatter('%.4f'))
 plt.show()
 
 # %% [markdown]
@@ -842,9 +849,8 @@ show_images(
         r'PDHG (Trained $\Lambda_{\theta}$-Map)',
         'Iterative SENSE \n (Fully-Sampled)',
     ],
-    rotate=False,
     show_mse=True,
-    clim=(0.0, 1.0),
+    clim=(0.0, 0.4 * image_fully_sampled.data.abs().max().item()),
 )
 
 # %%
@@ -856,7 +862,6 @@ show_images(
     ],
     cmap='inferno',
     clim=(0.0, regularization_parameter_map_trained.abs().max().item()),
-    rotate=False,
     colorbar=True,
 )
 
@@ -871,6 +876,6 @@ show_images(
 # Further, you can play around with the number of iterations used for unrolling PDHG at training time. How does this
 # number of iterations influence the obtained lambda maps and the final reconstruction?
 # Further, since PDHG is a convergent method, you can also let the number of iterations of PDHG go to
-# infinity, at test time.
+# infinity at test time.
 
 # %%
