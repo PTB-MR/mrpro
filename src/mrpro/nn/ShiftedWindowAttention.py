@@ -22,15 +22,15 @@ class ShiftedWindowAttention(Module):
 
     rel_position_index: torch.Tensor
 
-    def __init__(self, dim: int, channels: int, n_heads: int, window_size: int = 7, shifted: bool = True):
+    def __init__(self, dim: int, n_channels_per_head: int, n_heads: int, window_size: int = 7, shifted: bool = True):
         """Initialize the ShiftedWindowAttention module.
 
         Parameters
         ----------
         dim : int
             The dimension of the input.
-        channels : int
-            The number of channels in the input.
+        n_channels_per_head : int
+            The number of channels per head.
         n_heads : int
             The number of attention heads. The number if channels per head is ``channels // n_heads``.
         window_size : int
@@ -39,13 +39,10 @@ class ShiftedWindowAttention(Module):
             Whether to shift the window.
         """
         super().__init__()
-        if channels % n_heads:
-            raise ValueError('channels must be divisible by n_heads.')
-        self.channels = channels
         self.n_heads = n_heads
         self.window_size = window_size
         self.shifted = shifted
-        self.to_qkv = ConvND(dim)(channels, 3 * channels, 1)
+        self.to_qkv = ConvND(dim)(n_channels_per_head * n_heads, 3 * n_channels_per_head * n_heads, 1)
         self.dim = dim
         coords_1d = torch.arange(window_size)
         coords_nd = torch.stack(torch.meshgrid(*([coords_1d] * dim), indexing='ij'), 0).flatten(1)
