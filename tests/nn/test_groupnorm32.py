@@ -1,7 +1,6 @@
 """Tests for GroupNorm32 module."""
 
 import pytest
-
 from mrpro.nn import GroupNorm32
 from mrpro.utils import RandomGenerator
 

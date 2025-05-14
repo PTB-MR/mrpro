@@ -34,7 +34,7 @@ class FiLM(EmbMixin, Module):
             Linear(channels_emb, 2 * channels),
         )
 
-    def __call__(self, x: torch.Tensor, emb: torch.Tensor) -> torch.Tensor:
+    def __call__(self, x: torch.Tensor, emb: torch.Tensor | None = None) -> torch.Tensor:
         """Apply FiLM.
 
         Parameters
@@ -46,7 +46,7 @@ class FiLM(EmbMixin, Module):
         """
         return super().__call__(x, emb)
 
-    def forward(self, x: torch.Tensor, emb: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, emb: torch.Tensor | None = None) -> torch.Tensor:
         """Apply FiLM."""
         if emb is None:
             return x

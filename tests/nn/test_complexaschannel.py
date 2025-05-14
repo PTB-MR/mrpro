@@ -1,9 +1,9 @@
 """Tests for ComplexAsChannel module."""
 
+import pytest
 from mrpro.nn.ComplexAsChannel import ComplexAsChannel
 from mrpro.utils import RandomGenerator
 from torch.nn import Linear
-import pytest
 
 
 @pytest.mark.parametrize(
@@ -22,7 +22,7 @@ def test_complexaschannel(device):
     output = module(x)
     assert output.shape == x.shape, f'Output shape {output.shape} != input shape {x.shape}'
     assert output.is_complex(), 'Output is not complex'
-    output.sum().backward()
+    output.sum().abs().backward()
     assert x.grad is not None, 'No gradient computed for input'
     assert not x.isnan().any(), 'NaN values in input'
     assert not x.grad.isnan().any(), 'NaN values in input gradients'

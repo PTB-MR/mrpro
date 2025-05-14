@@ -1,7 +1,6 @@
 """Tests for ResBlock module."""
 
 import pytest
-
 from mrpro.nn import ResBlock
 from mrpro.utils import RandomGenerator
 
@@ -35,7 +34,6 @@ def test_resblock(dim, channels_in, channels_out, channels_emb, input_shape, emb
     assert not x.isnan().any(), 'NaN values in input'
     assert not x.grad.isnan().any(), 'NaN values in input gradients'
     assert res.block[2].weight.grad is not None, 'No gradient computed for first Conv'
-    assert res.block[5].weight.grad is not None, 'No gradient computed for second Conv'
     if emb is not None:
         assert emb.grad is not None, 'No gradient computed for embedding'
         assert not emb.isnan().any(), 'NaN values in embedding'

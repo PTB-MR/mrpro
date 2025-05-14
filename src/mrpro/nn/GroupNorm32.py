@@ -44,4 +44,4 @@ class GroupNorm32(torch.nn.GroupNorm):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Apply GroupNorm32."""
-        return super().__call__(x.float()).type(x.dtype)
+        return super().forward(x.float()).type(x.dtype)

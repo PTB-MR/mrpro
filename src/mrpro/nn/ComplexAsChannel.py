@@ -47,6 +47,6 @@ class ComplexAsChannel(EmbMixin, Module):
         y = self.module(x_real)
 
         if x.is_complex():
-            y = rearrange(y, 'b (c x y) ... complex -> batch channel ... complex', complex=2).contiguous()
+            y = rearrange(y, 'b (channel complex) ... -> b channel ... complex', complex=2).contiguous()
             y = torch.view_as_complex(y)
         return y

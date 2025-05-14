@@ -4,20 +4,29 @@ from mrpro.utils import RandomGenerator
 
 
 @pytest.mark.parametrize(
+    'device',
+    [
+        pytest.param('cpu', id='cpu'),
+        pytest.param('cuda', id='cuda', marks=pytest.mark.cuda),
+    ],
+)
+@pytest.mark.parametrize(
     ('dim', 'window_size', 'shifted'),
     [
         (2, 8, False),
         (4, 4, True),
     ],
 )
-def test_shifted_window_attentio(dim: int, window_size: int, shifted) -> None:
+def test_shifted_window_attentio(dim: int, window_size: int, shifted: bool, device: str) -> None:
     batch = 2
     channels = 8
     n_heads = 2
     spatial_shape = (window_size * 4,) * dim
     rng = RandomGenerator(13)
-    x = rng.float32_tensor((batch, channels, *spatial_shape)).requires_grad_(True)
-    swin = ShiftedWindowAttention(dim=dim, channels=channels, n_heads=n_heads, window_size=window_size, shifted=shifted)
+    x = rng.float32_tensor((batch, channels, *spatial_shape)).to(device).requires_grad_(True)
+    swin = ShiftedWindowAttention(
+        dim=dim, channels=channels, n_heads=n_heads, window_size=window_size, shifted=shifted
+    ).to(device)
     out = swin(x)
     assert out.shape == x.shape, f'Output shape {out.shape} != input shape {x.shape}'
     assert not out.isnan().any(), 'NaN values in output'

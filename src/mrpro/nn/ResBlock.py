@@ -1,12 +1,13 @@
 """Residual convolution block with two convolutions."""
 
 import torch
-from torch.nn import Identity, Module, Sequential, SiLU
+from torch.nn import Identity, Module, SiLU
 
 from mrpro.nn.EmbMixin import EmbMixin
 from mrpro.nn.FiLM import FiLM
 from mrpro.nn.GroupNorm32 import GroupNorm32
 from mrpro.nn.NDModules import ConvND
+from mrpro.nn.Sequential import Sequential
 
 
 class ResBlock(EmbMixin, Module):
@@ -33,10 +34,10 @@ class ResBlock(EmbMixin, Module):
         self.block = Sequential(
             GroupNorm32(channels_in),
             SiLU(),
-            ConvND(dim)(channels_in, channels_out, kernel_size=3),
+            ConvND(dim)(channels_in, channels_out, kernel_size=3, padding=1),
             GroupNorm32(channels_out),
             SiLU(),
-            ConvND(dim)(channels_out, channels_out, kernel_size=3),
+            ConvND(dim)(channels_out, channels_out, kernel_size=3, padding=1),
         )
         if channels_emb > 0:
             self.block.insert(-3, FiLM(channels_out, channels_emb))
