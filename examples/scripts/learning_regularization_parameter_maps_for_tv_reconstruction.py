@@ -346,7 +346,7 @@ def prepare_data(
     encoding_matrix = mrpro.data.SpatialDimension(z=1, y=ny, x=nx)
 
     traj = mrpro.data.traj_calculators.KTrajectoryCartesian().gaussian_variable_density(
-        encoding_matrix=encoding_matrix, acceleration=acceleration_factor, fwhm_ratio=0.6, seed=seed
+        encoding_matrix=encoding_matrix, acceleration=acceleration_factor, fwhm_ratio=0.2, seed=seed
     )
 
     fourier_operator = mrpro.operators.FourierOp(
@@ -691,7 +691,7 @@ n_k1 = kdata_cartesian.data.shape[-2]
 k1_center = n_k1 // 2
 
 ktraj_undersampled = mrpro.data.traj_calculators.KTrajectoryCartesian().gaussian_variable_density(
-    encoding_matrix=encoding_matrix_cartesian, acceleration=acceleration_factor, fwhm_ratio=0.6, seed=2025
+    encoding_matrix=encoding_matrix_cartesian, acceleration=acceleration_factor, fwhm_ratio=0.2, seed=2025
 )
 
 k1_idx = ktraj_undersampled.ky.squeeze() + k1_center
@@ -785,7 +785,7 @@ def line_search(
     forward_operator: mrpro.operators.LinearOperator,
     target: torch.Tensor,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Perform a line search to pick the best regularization parameter for TV."""
+    """Perform a line search to pick the best scalar regularization parameter for TV."""
     reconstructions_list = [
         adaptive_tv_network(initial_image, kdata, forward_operator, regularization_parameter)
         for regularization_parameter in regularization_parameters
@@ -800,7 +800,7 @@ def line_search(
     return mse_values, reconstructions_list[torch.argmin(torch.tensor(mse_values))]
 
 
-regularization_parameters = torch.linspace(0.0005, 0.0025, 10)
+regularization_parameters = torch.linspace(0.0002, 0.00075, 10)
 mse_values, pdhg_recon_best_scalar = line_search(
     regularization_parameters,
     pseudo_inverse_solution_undersampled,
@@ -870,7 +870,7 @@ show_images(
 # maps for TV. 🎉
 
 
-# ### Next steps
+# ## Next steps
 # As previously mentioned, you can also change network architecture to something more sophisticated.
 # Do deeper/wider networks give more accurate results?
 # Further, you can play around with the number of iterations used for unrolling PDHG at training time. How does this
