@@ -19,7 +19,7 @@ from mrpro.nn.Sequential import Sequential
 from mrpro.nn.ShiftedWindowAttention import ShiftedWindowAttention
 from mrpro.nn.SqueezeExcitation import SqueezeExcitation
 from mrpro.nn.TransposedAttention import TransposedAttention
-
+from mrpro.nn.DropPath import DropPath
 __all__ = [
     "AdaptiveAvgPoolND",
     "AttentionGate",
@@ -27,6 +27,7 @@ __all__ = [
     "BatchNormND",
     "ConvND",
     "ConvTransposeND",
+    "DropPath",
     "EmbMixin",
     "FiLM",
     "GroupNorm32",
