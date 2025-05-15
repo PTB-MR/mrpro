@@ -83,6 +83,24 @@ def rad_to_deg(rad: T) -> T:
     return rad * 180.0 / np.pi
 
 
+def volt_to_sqrt_kwatt(volt: T) -> T:
+    """Convert Volt to kilo Watt for 50 Ohm."""
+    if isinstance(volt, list):
+        return [volt_to_sqrt_kwatt(x) for x in volt]
+    if isinstance(volt, tuple):
+        return tuple([volt_to_sqrt_kwatt(x) for x in volt])
+    return volt / 50e3 ** (0.5)
+
+
+def sqrt_kwatt_to_volt(sqrt_kwatt: T) -> T:
+    """Convert kilo Watt to Volt for 50 Ohm."""
+    if isinstance(sqrt_kwatt, list):
+        return [sqrt_kwatt_to_volt(x) for x in kwatt]
+    if isinstance(sqrt_kwatt, tuple):
+        return tuple([sqrt_kwatt_to_volt(x) for x in sqrt_kwatt])
+    return sqrt_kwatt * 50e3 ** (0.5)
+
+
 def lamor_frequency_to_magnetic_field(lamor_frequency: T, gyromagnetic_ratio: float = GYROMAGNETIC_RATIO_PROTON) -> T:
     """Convert the Lamor frequency [Hz] to the magntic field strength [T].
 
