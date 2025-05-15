@@ -1,7 +1,7 @@
 """Feature-wise Linear Modulation."""
 
 import torch
-from torch.nn import Linear, Module, Sequential, SiLU
+from torch.nn import Identity, Linear, Module, Sequential, SiLU
 
 from mrpro.nn.EmbMixin import EmbMixin
 from mrpro.utils.reshape import unsqueeze_tensors_right
@@ -29,10 +29,13 @@ class FiLM(EmbMixin, Module):
             The number of channels in the embedding tensor.
         """
         super().__init__()
-        self.project = Sequential(
-            SiLU(),
-            Linear(channels_emb, 2 * channels),
-        )
+        if channels_emb > 0:
+            self.project = Sequential(
+                SiLU(),
+                Linear(channels_emb, 2 * channels),
+            )
+        else:
+            self.project = Identity()
 
     def __call__(self, x: torch.Tensor, emb: torch.Tensor | None = None) -> torch.Tensor:
         """Apply FiLM.

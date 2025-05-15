@@ -6,7 +6,8 @@ from torch.nn import Module, PixelUnshuffle, PixelShuffle
 from mrpro.nn.TransposedAttention import TransposedAttention
 from mrpro.nn.NDModules import ConvNd, InstanceNormNd
 from mrpro.nn.FiLM import FiLM
-
+from mrpro.nn.nets.UNetBase import UNetBase
+from mrpro.nn.Sequential import Sequential
 
 class GDFN(Module):
     """Gated depthwise feed forward network.
@@ -38,37 +39,21 @@ class GDFN(Module):
 class RestormerBlock(Module):
     """Transformer block with transposed attention and gated depthwise feed forward network."""
 
-    def __init__(self, dim: int, channels: int, num_heads: int, mlp_ratio: float):
+    def __init__(self, dim: int, channels: int, num_heads: int, mlp_ratio: float, emb_dim: int = 0):
         super().__init__()
-        self.norm1 = InstanceNormNd(dim)(channels)
+        self.norm1 = Sequential(InstanceNormNd(dim)(channels))
         self.attn = TransposedAttention(dim, channels, num_heads)
-        self.norm2 = InstanceNormNd(dim)(channels)
+        self.norm2 = Sequential(InstanceNormNd(dim)(channels))
         self.ffn = GDFN(dim, channels, mlp_ratio)
+        if emb_dim > 0:
+            self.norm1.append(FiLM(channels=channels, channels_emb=emb_dim))
+            self.norm2.append(FiLM(channels=channels, channels_emb=emb_dim))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = x + self.attn(self.norm1(x))
         x = x + self.ffn(self.norm2(x))
         return x
 
-
-class Downsample(nn.Module):
-    def __init__(self, n_feat):
-        super(Downsample, self).__init__()
-
-        self.body =
-
-    def forward(self, x):
-        return self.body(x)
-
-
-class Upsample(nn.Module):
-    def __init__(self, n_feat):
-        super(Upsample, self).__init__()
-
-        self.body =
-
-    def forward(self, x):
-        return self.body(x)
 
 
 class Restormer(UNetBase):

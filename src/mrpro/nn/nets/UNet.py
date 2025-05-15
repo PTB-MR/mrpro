@@ -1,30 +1,42 @@
 from functools import partial
 
 import torch
-from torch.nn import Module, ModuleList
+from torch.nn import Identity, Module, ModuleList
 
 from mrpro.nn.EmbMixin import call_with_emb
 
 
 class UNetBase(Module):
-    def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        channels_emb: int,
-        dim: int,
-        num_blocks: int,
-    ) -> None: ...
+    """Base class for U-shaped networks."""
 
-    input_blocks: ModuleList
-    down_blocks: ModuleList
-    skip_blocks: ModuleList
-    middle_block: Module
-    output_blocks: ModuleList
-    up_blocks: ModuleList
-    concat_blocks: ModuleList
-    last: Module
-    first: Module
+    def __init__(self) -> None:
+        super().__init__()
+        self.input_blocks = ModuleList()
+        """The encoder blocks. Order is highest resolution to lowest resolution."""
+
+        self.down_blocks = ModuleList()
+        """The downsampling blocks"""
+
+        self.skip_blocks = ModuleList()
+        """Modifications to the skip connections"""
+
+        self.middle_block = Module()
+        """Also called bottleneck block"""
+
+        self.output_blocks = ModuleList()
+        """Also called decoder blocks. Order is lowest resolution to highest resolution."""
+
+        self.up_blocks = ModuleList()
+        """The upsampling blocks"""
+
+        self.concat_blocks = ModuleList()
+        """Joins the skip connections with the upsampled features from a lower resolution level"""
+
+        self.last = Identity()
+        """The last block"""
+
+        self.first = Identity()
+        """The first block"""
 
     def forward(self, x: torch.Tensor, emb: torch.Tensor) -> torch.Tensor:
         """Apply to Network."""
@@ -57,3 +69,34 @@ class UNetBase(Module):
             The output tensor.
         """
         return self(x, emb)
+
+
+class UNet(UNetBase):
+    """UNet.
+
+    U-shaped convolutional network [UNET]_ with optional patch attention.
+    Inspired by the OpenAi DDPM UNet/Latent Diffusion UNet [LDM]_.
+
+    References
+    ----------
+    .. [UNET] Ronneberger, Olaf, Philipp Fischer, and Thomas Brox. "U-net: Convolutional networks for biomedical image
+       segmentation MICCAI 2015. https://arxiv.org/abs/1505.04597
+    .. [LDM] https://github.com/CompVis/stable-diffusion/blob/main/ldm/modules/diffusionmodules/openaimodel.py
+    """
+
+    def __init__(
+        self,
+        dim:int,
+        
+        in_channels: int,
+        out_channels: int,
+        n_features: Sequence[int],
+        n_heads:Sequence[int]
+        n_blocks:int|Sequence[int]
+        channels_emb: int,
+        dim: int,
+        num_blocks: int,
+        attention_gate:
+        padding_modes:str|Sequence[str]
+        
+    ) -> None: ...

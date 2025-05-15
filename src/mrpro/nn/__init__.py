@@ -20,6 +20,7 @@ from mrpro.nn.ShiftedWindowAttention import ShiftedWindowAttention
 from mrpro.nn.SqueezeExcitation import SqueezeExcitation
 from mrpro.nn.TransposedAttention import TransposedAttention
 from mrpro.nn.DropPath import DropPath
+import mrpro.nn.nets
 __all__ = [
     "AdaptiveAvgPoolND",
     "AttentionGate",
