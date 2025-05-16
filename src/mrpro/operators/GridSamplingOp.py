@@ -255,8 +255,11 @@ class GridSamplingOp(LinearOperator):
     ) -> Self:
         """Create a GridSamplingOp from a displacement.
 
-        The displacement is expected to describe a forward transformation in vixel units. This means that each entry
-        in the displacement :math:`d` describes where a voxel :math:`v` is moved to, i.e. :math:`d: v(x) -> v(x+d)`.
+        The displacement is expected to describe a pull operation in voxel units. Let's assume we have an input image
+        :math:`i(x,y)` and a displacement :math:`d_x(x,y)` and :math:`d_y(x,y)` then the output image :math:`o(x,y)`
+        will be calculated as:
+        .. math::
+            o(x,y) = i(x + d_x(x,y), y + d_y(x,y))
 
         Parameters
         ----------
