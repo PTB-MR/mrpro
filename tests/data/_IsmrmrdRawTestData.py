@@ -26,33 +26,6 @@ class IsmrmrdRawTestData:
 
     This is based on
     https://github.com/ismrmrd/ismrmrd-python-tools/blob/master/generate_cartesian_shepp_logan_dataset.py
-
-    Parameters
-    ----------
-    filename
-        full path and filename
-    matrix_size
-        size of image matrix
-    n_coils
-        number of coils
-    oversampling
-        oversampling along readout (k0) direction
-    repetitions
-        number of repetitions,
-    flag_invalid_reps
-        flag to indicate that number of phase encoding steps are different for repetitions
-    acceleration
-        undersampling along phase encoding (k1)
-    noise_level
-        scaling factor for noise level
-    trajectory_type
-        cartesian
-    sampling_order
-        order how phase encoding points (k1) are obtained
-    phantom
-        phantom with different ellipses
-    n_separate_calibration_lines
-        number of additional calibration lines, linear Cartesian sampled
     """
 
     def __init__(
@@ -70,7 +43,42 @@ class IsmrmrdRawTestData:
         phantom: EllipsePhantom | None = None,
         add_bodycoil_acquisitions: bool = False,
         n_separate_calibration_lines: int = 0,
+        discard_pre: int = 0,
+        discard_post: int = 0,
     ):
+        """Initialize IsmrmrdRawTestData.
+
+        Parameters
+        ----------
+        filename
+            full path and filename
+        matrix_size
+            size of image matrix
+        n_coils
+            number of coils
+        oversampling
+            oversampling along readout (k0) direction
+        repetitions
+            number of repetitions,
+        flag_invalid_reps
+            flag to indicate that number of phase encoding steps are different for repetitions
+        acceleration
+            undersampling along phase encoding (k1)
+        noise_level
+            scaling factor for noise level
+        trajectory_type
+            cartesian
+        sampling_order
+            order how phase encoding points (k1) are obtained
+        phantom
+            phantom with different ellipses
+        n_separate_calibration_lines
+            number of additional calibration lines, linear Cartesian sampled
+        discard_pre
+            data points to discard at the beginning of the first five readouts
+        discard_post
+            data points to discard at the end of the first five readouts
+        """
         if not phantom:
             phantom = EllipsePhantom()
 
@@ -89,10 +97,6 @@ class IsmrmrdRawTestData:
         self.n_noise_samples = 4
 
         rng = RandomGenerator(0)
-
-        # Elements to discard at the beginning and end of the readout for some lines
-        discard_pre = 20
-        discard_post = 10
 
         # The number of points in image space (x,y) and kspace (fe,pe)
         n_x = self.matrix_size
