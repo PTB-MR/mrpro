@@ -109,7 +109,7 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
             kdata = prewhiten_kspace(kdata, self.noise)
 
         acquisition_operator = self.fourier_op @ self.csm.as_operator() if self.csm is not None else self.fourier_op
-        data_consistency = 0.5 * L2NormSquared(target=kdata.data)
+        data_consistency = L2NormSquared(target=kdata.data)
 
         # TV regularization
         finite_difference_dim = [

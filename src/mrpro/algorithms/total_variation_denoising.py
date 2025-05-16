@@ -73,7 +73,7 @@ def total_variation_denoising(
     regularization_weights_ = torch.as_tensor(regularization_weights)
     img_tensor = idata if isinstance(idata, torch.Tensor) else idata.data
 
-    data_consistency = 0.5 * L2NormSquared(target=img_tensor)
+    data_consistency = L2NormSquared(target=img_tensor)
 
     # TV regularization
     finite_difference_dim = [
