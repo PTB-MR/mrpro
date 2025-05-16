@@ -8,6 +8,19 @@ class PixelUnshuffle(Module):
     """ND-version of PixelUnshuffle downscaling."""
 
     def __init__(self, downscale_factor: int):
+        """Initialize PixelUnshuffle.
+
+        Reduces spatial dimensions and increases the channel number by reshaping.
+        The first dimension is considered a batch dimension, the second dimension
+        the channel dimension, and the remaining dimensions the spatial dimensions that are downscaled.
+
+        See `mrpro.nn.PixelShuffle` for the inverse operation.
+
+        Parameters
+        ----------
+        downscale_factor : int
+            The factor by which to downscale the input tensor.
+        """
         super().__init__()
         self.downscale_factor = downscale_factor
 
@@ -33,10 +46,24 @@ class PixelShuffle(Module):
     """ND-version of PixelShuffle upscaling."""
 
     def __init__(self, upscale_factor: int):
+        """Initialize PixelShuffle.
+
+        Upscales spatial dimensions and decreases the channel number by reshaping.
+        The first dimension is considered a batch dimension, the second dimension
+        the channel dimension, and the remaining dimensions the spatial dimensions that are upscaled.
+
+        See `mrpro.nn.PixelUnshuffle` for the inverse operation.
+
+        Parameters
+        ----------
+        upscale_factor : int
+            The factor by which to upscale the spatial dimensions.
+        """
         super().__init__()
         self.upscale_factor = upscale_factor
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Upscale the input."""
         dim = x.ndim - 2
         if dim == 2:  # fast path for 2D
             return torch.nn.functional.pixel_shuffle(x, self.upscale_factor)
