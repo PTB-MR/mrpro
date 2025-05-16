@@ -90,6 +90,10 @@ class IsmrmrdRawTestData:
 
         rng = RandomGenerator(0)
 
+        # Elements to discard at the beginning and end of the readout for some lines
+        discard_pre = 20
+        discard_post = 10
+
         # The number of points in image space (x,y) and kspace (fe,pe)
         n_x = self.matrix_size
         n_y = self.matrix_size
@@ -320,13 +324,31 @@ class IsmrmrdRawTestData:
                         acq.setFlag(ismrmrd.ACQ_LAST_IN_SLICE)
                         acq.setFlag(ismrmrd.ACQ_LAST_IN_REPETITION)
 
-                    # Set trajectory.
-                    acq.traj[:] = (
-                        torch.stack((traj_kx[rep][:, pe_idx], traj_ky[rep][:, pe_idx]), dim=1).numpy().astype(float)
-                    )
-
-                    # Set the data and append
-                    acq.data[:] = kspace_with_noise[:, :, pe_idx].numpy()
+                    # Set trajectory and data
+                    traj = torch.stack((traj_kx[rep][:, pe_idx], traj_ky[rep][:, pe_idx]), dim=1)
+                    if pe_idx < 5:  # add readouts with elements to be discarded
+                        acq.resize(n_freq_encoding + discard_pre + discard_post, self.n_coils, trajectory_dimensions=2)
+                        acq.traj[:] = (
+                            torch.cat((torch.zeros((discard_pre, 2)), traj, torch.zeros((discard_post, 2))))
+                            .numpy()
+                            .astype(float)
+                        )
+                        acq.data[:] = torch.cat(
+                            (
+                                torch.zeros((self.n_coils, discard_pre)),
+                                kspace_with_noise[:, :, pe_idx],
+                                torch.zeros((self.n_coils, discard_post)),
+                            ),
+                            dim=1,
+                        ).numpy()
+                        acq.discard_pre = discard_pre
+                        acq.discard_post = discard_post
+                    else:
+                        acq.resize(n_freq_encoding, self.n_coils, trajectory_dimensions=2)
+                        acq.traj[:] = traj.numpy().astype(float)
+                        acq.data[:] = kspace_with_noise[:, :, pe_idx].numpy()
+                        acq.discard_pre = 0
+                        acq.discard_post = 0
                     dataset.append_acquisition(acq)
                     scan_counter += 1
 
