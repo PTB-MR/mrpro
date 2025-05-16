@@ -10,10 +10,9 @@ from mrpro.phantoms.fastmri import FastMRIKDataDataset, FastMRIImageDataset
 __all__ = [
     "EllipseParameters",
     "EllipsePhantom",
-    "M4RawDataset",
-    "brainweb",
     "FastMRIImageDataset",
     "FastMRIKDataDataset",
+    "M4RawDataset",
     "brainweb",
     "mdcnn"
 ]
