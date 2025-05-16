@@ -1,29 +1,28 @@
 """Tests for total variation denoising."""
 
-import torch
+import pytest
 from mrpro.algorithms.total_variation_denoising import total_variation_denoising
 from mrpro.data import IData, SpatialDimension
 from mrpro.utils import RandomGenerator
 from tests.helper import relative_image_difference
 
 
-def idata_single_coil(ph_ellipse, random_kheader):
+@pytest.fixture
+def idata_single_coil(ellipse_phantom, random_kheader) -> IData:
     """Create single-coil image."""
-    image_dimensions = SpatialDimension(z=1, y=ph_ellipse.n_y, x=ph_ellipse.n_x)
-    img = ph_ellipse.phantom.image_space(image_dimensions)
+    image_dimensions = SpatialDimension(z=1, y=ellipse_phantom.n_y, x=ellipse_phantom.n_x)
+    img = ellipse_phantom.phantom.image_space(image_dimensions)
     return IData.from_tensor_and_kheader(data=img, header=random_kheader)
 
 
-def test_denoising(ellipse_phantom, random_kheader):
-    """Test total variation denoising."""
-    idata = idata_single_coil(ellipse_phantom, random_kheader)
+@pytest.mark.parametrize('tensor_input', [True, False], ids=['tensor', 'idata'])
+def test_denoising(idata_single_coil: IData, tensor_input: bool) -> None:
     rng = RandomGenerator(seed=0)
-    noisy_idata = IData(idata.data + rng.complex64_tensor(idata.data.shape), idata.header)
-    # denoising of IData
-    denoised_idata = total_variation_denoising(noisy_idata, regularization_weights=[1.0, 1.0])
-    # denoising of tensor
-    denoised_tensor = total_variation_denoising(noisy_idata.data, regularization_weights=[1.0, 1.0])
-    assert relative_image_difference(idata.data, denoised_idata.data) < relative_image_difference(
-        idata.data, noisy_idata.data
+    noisy = IData(idata_single_coil.data + rng.rand_like(idata_single_coil.data), idata_single_coil.header)
+    if tensor_input:
+        denoised = total_variation_denoising(noisy.data, regularization_weights=[1.0, 1.0])
+    else:
+        denoised = total_variation_denoising(noisy, regularization_weights=[1.0, 1.0]).data
+    assert relative_image_difference(denoised, idata_single_coil.data) < relative_image_difference(
+        noisy.data, idata_single_coil.data
     )
-    torch.testing.assert_close(denoised_idata.data, denoised_tensor, atol=1e-3, rtol=1e-3)

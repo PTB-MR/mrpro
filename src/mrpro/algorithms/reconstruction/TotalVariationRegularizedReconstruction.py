@@ -16,7 +16,7 @@ from mrpro.data.KData import KData
 from mrpro.data.KNoise import KNoise
 from mrpro.operators import LinearOperatorMatrix, ProximableFunctionalSeparableSum
 from mrpro.operators.FiniteDifferenceOp import FiniteDifferenceOp
-from mrpro.operators.functionals import L1NormViewAsReal, L2NormSquared, ZeroFunctional
+from mrpro.operators.functionals import L1NormViewAsReal, L2NormSquared
 from mrpro.operators.LinearOperator import LinearOperator
 from mrpro.utils import unsqueeze_right
 
@@ -50,28 +50,29 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
         *,
         max_iterations: int = 100,
         tolerance: float = 0,
-        regularization_weights: Sequence[float] | Sequence[torch.Tensor],
+        regularization_weights: float | Sequence[float] | Sequence[torch.Tensor],
     ) -> None:
         """Initialize TotalVariationRegularizedReconstruction.
 
         Parameters
         ----------
         kdata
-            KData. If kdata is provided and fourier_op or dcf are None, then fourier_op and dcf are estimated based on
-            kdata. Otherwise fourier_op and dcf are used as provided.
+            KData. If `kdata` is provided and `fourier_op` or `dcf` are `None`, then `fourier_op` and `dcf` are
+            estimated based on `kdata`. Otherwise `fourier_op` and `dcf` are used as provided.
         fourier_op
-            Instance of the FourierOperator used for reconstruction. If None, set up based on kdata.
+            Instance of the `~mrpro.operators.FourierOp` used for reconstruction. If `None`, set up based on `kdata`.
         csm
-            Sensitivity maps for coil combination. If None, no coil combination is carried out, i.e. images for each
-            coil are returned. If a callable is provided, coil images are reconstructed using the adjoint of the
-            FourierOperator (including density compensation) and then sensitivity maps are calculated using the
-            callable. For this, kdata needs also to be provided. For examples have a look at the CsmData class
-            e.g. from_idata_walsh or from_idata_inati.
+            Sensitivity maps for coil combination. If `None`, no coil combination is carried out, i.e. images for each
+            coil are returned. If a `Callable` is provided, coil images are reconstructed using the adjoint of the
+            `~mrpro.operators.FourierOp` (including density compensation) and then sensitivity maps are calculated
+            using the `Callable`. For this, `kdata` needs also to be provided.
+            For examples have a look at the `mrpro.data.CsmData` class e.g. `~mrpro.data.CsmData.from_idata_walsh`
+            or `~mrpro.data.CsmData.from_idata_inati`.
         noise
-            KNoise used for prewhitening. If None, no prewhitening is performed
+            KNoise used for prewhitening. If `None`, no prewhitening is performed
         dcf
-            K-space sampling density compensation. If None, set up based on kdata. The dcf is only used to calculate a
-            starting estimate for PDHG.
+            K-space sampling density compensation. If `None`, set up based on `kdata`. The `dcf` is only used to
+            calculate a starting estimate for PDHG.
         max_iterations
             Maximum number of PDHG iterations
         tolerance
@@ -79,12 +80,13 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
         regularization_weights
             Strengths of the regularization (:math:`l_i`). Each entry is the regularization weight along a dimension of
             the reconstructed image starting at the back. E.g. (1,) will apply TV with l=1 along dimension (-1,).
-            (3,0,2) will apply TV with l=2 along dimension (-1) and TV with l=3 along (-3).
+            (3,0,2) will apply TV with l=2 along dimension (-1) and TV with l=3 along (-3). Single float will be applied
+            along dimension -1.
 
         Raises
         ------
         ValueError
-            If the kdata and fourier_op are None or if csm is a Callable but kdata is None.
+            If the `kdata` and `fourier_op` are `None` or if `csm` is a `Callable` but `kdata` is `None`.
         """
         super().__init__(kdata, fourier_op, csm, noise, dcf)
         self.max_iterations = max_iterations
@@ -107,9 +109,7 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
             kdata = prewhiten_kspace(kdata, self.noise)
 
         acquisition_operator = self.fourier_op @ self.csm.as_operator() if self.csm is not None else self.fourier_op
-
-        # data consistency term
-        l2 = 0.5 * L2NormSquared(target=kdata.data)
+        data_consistency = 0.5 * L2NormSquared(target=kdata.data)
 
         # TV regularization
         finite_difference_dim = [
@@ -118,12 +118,9 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
             if weight != 0
         ]
         nabla_operator = FiniteDifferenceOp(dim=finite_difference_dim, mode='forward')
-        l1 = L1NormViewAsReal(
+        total_variation = L1NormViewAsReal(
             weight=unsqueeze_right(self.regularization_weights[finite_difference_dim], kdata.data.ndim)
         )
-
-        f = ProximableFunctionalSeparableSum(l2, l1)
-        g = ZeroFunctional()
         operator = LinearOperatorMatrix(((acquisition_operator,), (nabla_operator,)))
 
         initial_value = acquisition_operator.H(
@@ -131,8 +128,8 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
         )[0]
 
         (img_tensor,) = pdhg(
-            f=f,
-            g=g,
+            f=ProximableFunctionalSeparableSum(data_consistency, total_variation),
+            g=None,
             operator=operator,
             initial_values=(initial_value,),
             max_iterations=self.max_iterations,

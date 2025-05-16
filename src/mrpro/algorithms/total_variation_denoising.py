@@ -58,7 +58,7 @@ def total_variation_denoising(
         the reconstructed image starting at the back. E.g. (1,) will apply TV with l=1 along dimension (-1.).
         (3,0,2) will apply TV with l=2 along dimension (-1) and TV with l=3 along (-3).
     initial_image
-        Initial image. If None then the target image :math:`y` will be used.
+        Initial image. If `None` then the target image :math:`y` will be used.
     max_iterations
         Maximum number of PDHG iterations.
     tolerance
@@ -70,8 +70,7 @@ def total_variation_denoising(
     """
     img_tensor = idata if isinstance(idata, torch.Tensor) else idata.data
 
-    # L2-norm for the data consistency term
-    l2 = 0.5 * L2NormSquared(target=img_tensor, divide_by_n=False)
+    data_consistency = 0.5 * L2NormSquared(target=img_tensor)
 
     # Finite difference operator and corresponding L1-norm
     nabla_operator = [
@@ -79,17 +78,15 @@ def total_variation_denoising(
         for dim, weight in enumerate(regularization_weights)
         if weight != 0
     ]
-    l1 = [weight * L1NormViewAsReal(divide_by_n=False) for weight in regularization_weights if weight != 0]
+    total_variation = [weight * L1NormViewAsReal() for weight in regularization_weights if weight != 0]
 
-    f = ProximableFunctionalSeparableSum(l2, *l1)
-    g = ZeroFunctional()
     operator = LinearOperatorMatrix(((IdentityOp(),), *nabla_operator))
 
     initial_image = initial_image if initial_image is not None else img_tensor
 
     (img_tensor,) = pdhg(
-        f=f,
-        g=g,
+        f=ProximableFunctionalSeparableSum(data_consistency, *total_variation),
+        g=ZeroFunctional(),
         operator=operator,
         initial_values=(initial_image,),
         max_iterations=max_iterations,
