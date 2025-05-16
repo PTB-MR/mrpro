@@ -126,7 +126,7 @@ acquisition_operator = fourier_operator @ csm_operator
 
 # %%
 regularization_lambda = 1e-5
-f_1 = 0.5 * mrpro.operators.functionals.L2NormSquared(target=kdata_24spokes.data)
+f_1 = mrpro.operators.functionals.L2NormSquared(target=kdata_24spokes.data)
 f_2 = regularization_lambda * mrpro.operators.functionals.L1NormViewAsReal()
 f = mrpro.operators.ProximableFunctionalSeparableSum(f_1, f_2)
 
