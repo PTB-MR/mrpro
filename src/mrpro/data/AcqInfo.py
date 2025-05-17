@@ -13,7 +13,7 @@ from mrpro.data.Dataclass import Dataclass
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.reshape import unsqueeze_at, unsqueeze_right
-from mrpro.utils.unit_conversion import mm_to_m
+from mrpro.utils.unit_conversion import m_to_mm, mm_to_m
 
 _convert_time_stamp_type: TypeAlias = Callable[
     [
@@ -26,7 +26,7 @@ _convert_time_stamp_type: TypeAlias = Callable[
 ]
 
 
-def convert_time_stamp_siemens(
+def convert_time_stamp_from_siemens(
     timestamp: torch.Tensor,
     _: str,
 ) -> torch.Tensor:
@@ -34,12 +34,26 @@ def convert_time_stamp_siemens(
     return timestamp.double() * 2.5e-3
 
 
-def convert_time_stamp_osi2(
+def convert_time_stamp_to_siemens(
+    timestamp: float,
+) -> int:
+    """Convert time stamp in seconds to Siemens time steps (2.5ms)."""
+    return int(timestamp / 2.5e-3)
+
+
+def convert_time_stamp_from_osi2(
     timestamp: torch.Tensor,
     _: str,
 ) -> torch.Tensor:
     """Convert OSI2 time stamp to seconds."""
     return timestamp.double() * 1e-3
+
+
+def convert_time_stamp_to_osi2(
+    timestamp: float,
+) -> int:
+    """Convert time stamp in seconds to OSI2 time steps (1ms)."""
+    return int(timestamp * 1e3)
 
 
 def _int_factory() -> torch.Tensor:
@@ -189,7 +203,7 @@ class AcqInfo(Dataclass):
         acquisitions: Sequence[ismrmrd.acquisition.Acquisition],
         *,
         additional_fields: None,
-        convert_time_stamp: _convert_time_stamp_type = convert_time_stamp_siemens,
+        convert_time_stamp: _convert_time_stamp_type = convert_time_stamp_from_siemens,
     ) -> Self: ...
 
     @overload
@@ -199,7 +213,7 @@ class AcqInfo(Dataclass):
         acquisitions: Sequence[ismrmrd.acquisition.Acquisition],
         *,
         additional_fields: Sequence[str],
-        convert_time_stamp: _convert_time_stamp_type = convert_time_stamp_siemens,
+        convert_time_stamp: _convert_time_stamp_type = convert_time_stamp_from_siemens,
     ) -> tuple[Self, tuple[torch.Tensor, ...]]: ...
 
     @classmethod
@@ -208,7 +222,7 @@ class AcqInfo(Dataclass):
         acquisitions: Sequence[ismrmrd.acquisition.Acquisition],
         *,
         additional_fields: Sequence[str] | None = None,
-        convert_time_stamp: _convert_time_stamp_type = convert_time_stamp_siemens,
+        convert_time_stamp: _convert_time_stamp_type = convert_time_stamp_from_siemens,
     ) -> Self | tuple[Self, tuple[torch.Tensor, ...]]:
         """Read the header of a list of acquisition and store information.
 
@@ -327,3 +341,67 @@ class AcqInfo(Dataclass):
         else:
             additional_values = tuple(tensor_5d(headers[field]) for field in additional_fields)
             return acq_info, additional_values
+
+    def write_single_acquisition_to_ismrmrd_acquisition(
+        self,
+        acquisition: ismrmrd.Acquisition,
+        convert_time_stamp: Callable[[float], int] = convert_time_stamp_to_siemens,
+    ) -> ismrmrd.Acquisition:
+        """Overwrite ISMRMRD acquisition information for single acquisition."""
+        if np.prod(self.shape) != 1:
+            raise ValueError('Only single acquisition (single readout for all coils) can be written.')
+        acquisition.flags = self.flags
+        acquisition.idx.kspace_encode_step_1 = self.idx.k1
+        acquisition.idx.kspace_encode_step_2 = self.idx.k2
+        acquisition.idx.average = self.idx.average
+        acquisition.idx.slice = self.idx.slice
+        acquisition.idx.contrast = self.idx.contrast
+        acquisition.idx.phase = self.idx.phase
+        acquisition.idx.repetition = self.idx.repetition
+        acquisition.idx.set = self.idx.set
+        acquisition.idx.segment = self.idx.segment
+        acquisition.idx.user = (
+            self.idx.user0,
+            self.idx.user1,
+            self.idx.user2,
+            self.idx.user3,
+            self.idx.user4,
+            self.idx.user5,
+            self.idx.user6,
+            self.idx.user7,
+        )
+        # active_channesl, number_of_samples and trajectory_dimensions are read-only and cannot be set
+        acquisition.patient_table_position = self.patient_table_position[0].apply(m_to_mm).zyx[::-1]  # zyx -> xyz
+        directions = self.orientation[0].as_directions()
+        acquisition.slice_dir = directions[0].zyx[::-1]  # zyx -> xyz
+        acquisition.phase_dir = directions[1].zyx[::-1]
+        acquisition.read_dir = directions[2].zyx[::-1]
+        acquisition.position = self.position[0].apply(m_to_mm).zyx[::-1]
+        acquisition.sample_time_us = self.sample_time_us
+        acquisition.user_float = (
+            self.user.float0,
+            self.user.float1,
+            self.user.float2,
+            self.user.float3,
+            self.user.float4,
+            self.user.float5,
+            self.user.float6,
+            self.user.float7,
+        )
+        acquisition.user_int = (
+            self.user.int0,
+            self.user.int1,
+            self.user.int2,
+            self.user.int3,
+            self.user.int4,
+            self.user.int5,
+            self.user.int6,
+            self.user.int7,
+        )
+        acquisition.acquisition_time_stamp = convert_time_stamp(self.acquisition_time_stamp.item())
+        acquisition.physiology_time_stamp = (
+            convert_time_stamp(self.physiology_time_stamps.timestamp0.item()),
+            convert_time_stamp(self.physiology_time_stamps.timestamp1.item()),
+            convert_time_stamp(self.physiology_time_stamps.timestamp2.item()),
+        )
+        return acquisition
