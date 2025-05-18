@@ -174,11 +174,15 @@ class IData(Dataclass):
             foldername = Path(foldername)
         foldername.mkdir(parents=True, exist_ok=False)
 
+        # We try to save 3D image data in each dicom file. This can either be a full 3D volume, multiple slices (M2D) or
+        # a combination of y and x image dimensions an one other dimension, e.g. multiple cardiac phases of a 2D image.
         mr_acquisition_type = '3D' if self.data.shape[-3] > 1 else '2D'
         frame_dimension = next((i for i in range(-3, -len(self.data.shape) - 1, -1) if self.data.shape[i] > 1), -3)
-        file_dimensions = [i for i in range(-3, -len(self.data.shape) - 1, -1) if i != frame_dimension]
-        file_dimensions_shape = [self.shape[i] for i in file_dimensions]
         number_of_frames = self.data.shape[frame_dimension]
+        pattern_in = ['d'+str(i) for i in range(self.data.ndim)]
+        pattern_out = pattern_in.copy()
+        pattern_out[frame_dimension], pattern_out[-3] = pattern_out[-3], pattern_out[frame_dimension]
+        dcm_idata = self.rearrange(' '.join(pattern_in)+'->'+' '.join(pattern_out))
 
         # Metadata
         file_meta = pydicom.dataset.FileMetaDataset()
@@ -217,8 +221,8 @@ class IData(Dataclass):
 
         dataset.PatientPosition = 'HFS'
 
-        for file_index, other in enumerate(np.ndindex(tuple(file_dimensions_shape))):
-            dcm_file_idata = self[(*other, slice(None), slice(None), slice(None))]  # type: ignore[index]
+        for file_index, other in enumerate(np.ndindex(dcm_idata.shape[:-3])):
+            dcm_file_idata = dcm_idata[(*other, slice(None), slice(None), slice(None))]  # type: ignore[index]
 
             dataset.MRAcquisitionType = mr_acquisition_type
             dataset.NumberOfFrames = number_of_frames
