@@ -1,9 +1,9 @@
 """Neural network modules and utilities."""
 
 from mrpro.nn.AttentionGate import AttentionGate
-from mrpro.nn.EmbMixin import EmbMixin
+from mrpro.nn.CondMixin import CondMixin
 from mrpro.nn.FiLM import FiLM
-from mrpro.nn.GroupNorm32 import GroupNorm32
+from mrpro.nn.GroupNorm import GroupNorm
 from mrpro.nn.NDModules import (
     AdaptiveAvgPoolND,
     AvgPoolND,
@@ -26,12 +26,12 @@ __all__ = [
     "AttentionGate",
     "AvgPoolND",
     "BatchNormND",
+    "CondMixin",
     "ConvND",
     "ConvTransposeND",
     "DropPath",
-    "EmbMixin",
     "FiLM",
-    "GroupNorm32",
+    "GroupNorm",
     "InstanceNormND",
     "MaxPoolND",
     "NeighborhoodSelfAttention",
@@ -39,5 +39,6 @@ __all__ = [
     "Sequential",
     "ShiftedWindowAttention",
     "SqueezeExcitation",
-    "TransposedAttention"
+    "TransposedAttention",
+    "nets"
 ]

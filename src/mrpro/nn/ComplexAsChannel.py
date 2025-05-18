@@ -2,10 +2,10 @@ import torch
 from einops import rearrange
 from torch.nn import Module
 
-from mrpro.nn.EmbMixin import EmbMixin
+from mrpro.nn.CondMixin import CondMixin, call_with_cond
 
 
-class ComplexAsChannel(EmbMixin, Module):
+class ComplexAsChannel(CondMixin, Module):
     """Wrap module to treat complex numbers as a channel dimension."""
 
     def __init__(self, module: Module):
@@ -24,19 +24,19 @@ class ComplexAsChannel(EmbMixin, Module):
         super().__init__()
         self.module = module
 
-    def __call__(self, x: torch.Tensor, emb: torch.Tensor | None = None) -> torch.Tensor:
+    def __call__(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the module.
 
         Parameters
         ----------
         x : torch.Tensor
             The input tensor.
-        emb : torch.Tensor | None
-            The embedding tensor.
+        cond : torch.Tensor | None
+            The conditioning tensor (if used by the wrapped module)
         """
-        return super().__call__(x, emb)
+        return super().__call__(x, cond)
 
-    def forward(self, x: torch.Tensor, emb: torch.Tensor | None = None) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the module."""
         if x.is_complex():
             x_real = torch.view_as_real(x)
@@ -44,7 +44,7 @@ class ComplexAsChannel(EmbMixin, Module):
         else:
             x_real = x
 
-        y = self.module(x_real)
+        y = call_with_cond(self.module, x_real, cond)
 
         if x.is_complex():
             y = rearrange(y, 'b (channel complex) ... -> b channel ... complex', complex=2).contiguous()

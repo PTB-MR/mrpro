@@ -31,10 +31,15 @@ class MultiHeadAttention(Module):
             Number of output channels.
         num_heads
             number of attention heads
+        features_last
+            Whether the features dimension is the last dimension, as common in transformer models,
+            or the second dimension, as common in image models.
+        p_dropout
+            Dropout probability.
         """
         super().__init__()
         self.mha = torch.nn.MultiheadAttention(
-            embed_dim=channels_in, num_heads=num_heads, batch_first=True, dropout=p_dropout
+            conded_dim=channels_in, num_heads=num_heads, batch_first=True, dropout=p_dropout
         )
         self.features_last = features_last
         self.to_out = Linear(channels_in, channels_out)

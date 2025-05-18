@@ -3,58 +3,59 @@
 import torch
 from torch.nn import Identity, Linear, Module, Sequential, SiLU
 
-from mrpro.nn.EmbMixin import EmbMixin
+from mrpro.nn.CondMixin import CondMixin
 from mrpro.utils.reshape import unsqueeze_tensors_right
 
 
-class FiLM(EmbMixin, Module):
+class FiLM(CondMixin, Module):
     """Feature-wise Linear Modulation.
 
-    Feature-wise Linear Modulation from [FiLM]_
+    Feature-wise Linear Modulation from [FiLM]_ to condition a network on a conditioning tensor.
+
 
     References
     ----------
-    ..[FiLM] Perez, L., Strub, F., de Vries, H., Dumoulin, V., & Courville, A. "Film: Visual reasoning with a general conditioning layer." AAAI (2018).
-      https://arxiv.org/abs/1709.07871
+    ..[FiLM] Perez, L., Strub, F., de Vries, H., Dumoulin, V., & Courville, A. "FiLM: Visual reasoning with a general
+      conditioning layer." AAAI (2018). https://arxiv.org/abs/1709.07871
     """
 
-    def __init__(self, channels: int, channels_emb: int) -> None:
+    def __init__(self, channels: int, cond_dim: int) -> None:
         """Initialize FiLM.
 
         Parameters
         ----------
         channels
             The number of channels in the input tensor.
-        channels_emb
-            The number of channels in the embedding tensor.
+        cond_dim
+            The dimension of the conditioning tensor.
         """
         super().__init__()
-        if channels_emb > 0:
+        if cond_dim > 0:
             self.project = Sequential(
                 SiLU(),
-                Linear(channels_emb, 2 * channels),
+                Linear(cond_dim, 2 * channels),
             )
         else:
             self.project = Identity()
 
-    def __call__(self, x: torch.Tensor, emb: torch.Tensor | None = None) -> torch.Tensor:
+    def __call__(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply FiLM.
 
         Parameters
         ----------
         x
             The input tensor.
-        emb
-            The embedding tensor.
+        cond
+            The conditioning tensor.
         """
-        return super().__call__(x, emb)
+        return super().__call__(x, cond)
 
-    def forward(self, x: torch.Tensor, emb: torch.Tensor | None = None) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply FiLM."""
-        if emb is None:
+        if cond is None:
             return x
 
-        emb = self.project(emb)
-        scale, shift = emb.chunk(2, dim=1)
+        cond = self.project(cond)
+        scale, shift = cond.chunk(2, dim=1)
         scale, shift = unsqueeze_tensors_right(scale, shift, ndim=x.ndim)
         return x * (1 + scale) + shift

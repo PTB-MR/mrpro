@@ -13,7 +13,7 @@ class AttentionGate(Module):
 
     References
     ----------
-    ..[OKT18] Oktay, Ozan, et al. "Attention u-net: Learning where to look for the pancreas." MIDL (2018).
+    ..[OKT18] Oktay, Ozan, et al. "Attention U-net: Learning where to look for the pancreas." MIDL (2018).
       https://arxiv.org/abs/1804.03999
     """
 

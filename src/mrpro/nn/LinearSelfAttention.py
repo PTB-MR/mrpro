@@ -1,3 +1,5 @@
+"""Linear self-attention"""
+
 import torch
 from einops import rearrange
 from torch import Tensor
@@ -10,7 +12,8 @@ class LinearSelfAttention(Module):
     Uses a ReLU kernel to compute attention in O(N) [KAT20]_ time and space.
 
 
-    Refereces
+    References
+    ----------
     .. [KAT20] Katharopoulos, Angelos, et al. Transformers are rnns: Fast autoregressive transformers with linear
        attention. ICML 2020. https://arxiv.org/abs/2006.16236
 
@@ -34,6 +37,22 @@ class LinearSelfAttention(Module):
         eps: float = 1e-6,
         channel_last: bool = False,
     ):
+        """Initialize linear self-attention layer.
+
+        Parameters
+        ----------
+        channels_in
+            Input channel dimension.
+        channels_out
+            Output channel dimension.
+        n_heads
+            Number of attention heads.
+        eps
+            Small epsilon for numerical stability in normalization.
+        channel_last
+            Whether the channel dimension is the last dimension, as common in transformer models,
+            or the second dimension, as common in image models.
+        """
         super().__init__()
         self.channel_last = channel_last
         self.eps = eps
@@ -79,8 +98,8 @@ class LinearSelfAttention(Module):
 
         value_key = value @ key.transpose(-1, -2)
         value_key_query = value_key @ query
-        normalisation = value_key_query[..., -1:, :] + self.eps
-        attn = value_key_query[..., :-1, :] / normalisation
+        normalization = value_key_query[..., -1:, :] + self.eps
+        attn = value_key_query[..., :-1, :] / normalization
         out = self.to_out(attn)
         out = out.to(orig_dtype)
         out.unflatten(-2, spatial_shape)

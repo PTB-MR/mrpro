@@ -26,7 +26,22 @@ class PixelUnshuffle(Module):
         super().__init__()
         self.downscale_factor = downscale_factor
 
+    def __call__(self, x: torch.Tensor) -> torch.Tensor:
+        """Downscale the input.
+
+        Parameters
+        ----------
+        x
+            Tensor of shape `batch, channels, *spatial_dims`
+
+        Returns
+        -------
+        Tensor of shape `batch, channels * downscale_factor**dim, *spatial_dims/downscale_factor`
+        """
+        return super().__call__(x)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Downscale the input."""
         dim = x.ndim - 2
         if dim == 2:  # fast path for 2D
             return torch.nn.functional.pixel_unshuffle(x, self.downscale_factor)
@@ -178,6 +193,20 @@ class PixelShuffle(Module):
         """
         super().__init__()
         self.upscale_factor = upscale_factor
+
+    def __call__(self, x: torch.Tensor) -> torch.Tensor:
+        """Upscale the input.
+
+        Parameters
+        ----------
+        x
+            Tensor of shape `batch, channels, *spatial_dims`
+
+        Returns
+        -------
+        Tensor of shape `batch, channels / upscale_factor**dim, *spatial_dims * upscale_factor`
+        """
+        return super().__call__(x)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Upscale the input."""

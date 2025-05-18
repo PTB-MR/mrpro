@@ -136,7 +136,7 @@ class Uformer(UNetBase):
         n_channels_per_head: int = 32,
         n_heads: Sequence[int] = (1, 2, 4, 8),
         n_blocks: int = 2,
-        emb_dim: int = 0,
+        cond_dim: int = 0,
         window_size: int = 8,
         mlp_ratio: float = 4.0,
         max_droppath_rate: float = 0.1,
@@ -158,8 +158,8 @@ class Uformer(UNetBase):
             Number of attention heads at each resolution level.
         n_blocks : int, optional
             Number of transformer blocks at each resolution level in the input and output path
-        emb_dim : int, optional
-            Dimension of the embedding. If `0`, no FiLM layers are added.
+        cond_dim : int, optional
+            Dimension of a conditioning tensor. If `0`, no FiLM layers are added.
         window_size : int, optional
             Size of the attention windows in the (shifted) window attention layers.
         mlp_ratio : float, optional
@@ -187,8 +187,8 @@ class Uformer(UNetBase):
                 )
             )
 
-            if emb_dim > 0 and n_blocks > 1:
-                layers.insert(1, FiLM(channels=n_channels_per_head * n_heads, channels_emb=emb_dim))
+            if cond_dim > 0 and n_blocks > 1:
+                layers.insert(1, FiLM(channels=n_channels_per_head * n_heads, cond_dim=cond_dim))
             return layers
 
         drop_path_rates = torch.linspace(0, max_droppath_rate, len(n_heads)).tolist()

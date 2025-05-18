@@ -107,7 +107,8 @@ class NeighborhoodSelfAttention(Module):
     Neighborhood attention is a type of attention where each query attends to a neighborhood of the key and value.
     It is a more efficient alternative to regular attention, especially for large input sizes [NAT]_.
 
-    This implementation uses `~torch.nn.attention.flex_attention`. For a more efficient implementation, see also [NATTEN]_.
+    This implementation uses `~torch.nn.attention.flex_attention`. For a more efficient implementation,
+    see also [NATTEN]_.
 
 
     References

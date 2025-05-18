@@ -3,7 +3,7 @@
 import torch
 
 
-class GroupNorm32(torch.nn.GroupNorm):
+class GroupNorm(torch.nn.GroupNorm):
     """A 32-bit GroupNorm.
 
     Casts to float32 before calling the parent class to avoid instabilities in mixed precision training.

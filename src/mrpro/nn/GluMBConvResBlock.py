@@ -3,13 +3,13 @@
 import torch
 from torch.nn import Identity, Module, Sequential, SiLU
 
-from mrpro.nn.EmbMixin import EmbMixin
+from mrpro.nn.CondMixin import CondMixin
 from mrpro.nn.FiLM import FiLM
 from mrpro.nn.NDModules import ConvND
 from mrpro.nn.RMSNorm import RMSNorm
 
 
-class GluMBConvResBlock(EmbMixin, Module):
+class GluMBConvResBlock(CondMixin, Module):
     """Gated MBConv residual block.
 
     Gated variant [DCAE]_ of the MBConv block [EffNet]_ with a residual connection.
@@ -30,7 +30,7 @@ class GluMBConvResBlock(EmbMixin, Module):
         expand_ratio: int = 6,
         stride: int = 1,
         kernel_size: int = 3,
-        emb_dim: int = 0,
+        cond_dim: int = 0,
     ):
         """Initialize MBConv block.
 
@@ -48,8 +48,8 @@ class GluMBConvResBlock(EmbMixin, Module):
             Stride of the depthwise convolution.
         kernel_size
             Kernel size of the depthwise convolution.
-        emb_dim
-            Size of the FiLM embedding. If 0, no embedding is used.
+        cond_dim
+            Dimension of the conditioning tensor used in a FiLM. If 0, no FiLM is used.
         """
         super().__init__()
         channels_mid = channels_in * expand_ratio
@@ -85,18 +85,18 @@ class GluMBConvResBlock(EmbMixin, Module):
             RMSNorm(channels_out),
             SiLU(),
         )
-        if emb_dim > 0:
-            self.film: FiLM | None = FiLM(channels_mid, emb_dim)
+        if cond_dim > 0:
+            self.film: FiLM | None = FiLM(channels_mid, cond_dim)
         else:
             self.film = None
 
-    def forward(self, x: torch.Tensor, emb: torch.Tensor | None = None) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply MBConv block."""
         h = self.inverted_conv(x)
         h = self.depth_conv(h)
         h, gate = torch.chunk(h, 2, dim=1)
         h = h * torch.nn.functional.silu(gate)
         if self.film is not None:
-            h = self.film(h, emb)
+            h = self.film(h, cond)
         h = self.point_conv(h)
         return self.skip(x) + h

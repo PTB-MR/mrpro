@@ -1,9 +1,10 @@
+from collections.abc import Sequence
 from functools import partial
 
 import torch
 from torch.nn import Identity, Module, ModuleList
 
-from mrpro.nn.EmbMixin import call_with_emb
+from mrpro.nn.CondMixin import call_with_cond
 
 
 class UNetBase(Module):
@@ -38,9 +39,9 @@ class UNetBase(Module):
         self.first = Identity()
         """The first block"""
 
-    def forward(self, x: torch.Tensor, emb: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, cond: torch.Tensor) -> torch.Tensor:
         """Apply to Network."""
-        call = partial(call_with_emb, emb=emb)
+        call = partial(call_with_cond, cond=cond)
         x = call(self.first, x)
         xs = []
         for block, down, skip in zip(self.input_blocks, self.down_blocks, self.skip_blocks, strict=True):
@@ -54,21 +55,21 @@ class UNetBase(Module):
             x = call(block, x)
         return call(self.last, x)
 
-    def __call__(self, x: torch.Tensor, emb: torch.Tensor | None) -> torch.Tensor:
+    def __call__(self, x: torch.Tensor, cond: torch.Tensor | None) -> torch.Tensor:
         """Apply to Network.
 
         Parameters
         ----------
         x
             The input tensor.
-        emb
-            The embedding tensor.
+        cond
+            The conditioning tensor.
 
         Returns
         -------
             The output tensor.
         """
-        return self(x, emb)
+        return self(x, cond)
 
 
 class AttentionUNet(UNet):
@@ -80,6 +81,7 @@ class AttentionUNet(UNet):
       https://arxiv.org/abs/1804.03999
     """
 
+
 class SeparableUNet(UNetBase):
     """UNet where blocks apply separable convolutions in different dimensions
 
@@ -89,9 +91,11 @@ class SeparableUNet(UNetBase):
     ----------
     .. [QUI] Qiu, Z., Yao, T., & Mei, T. Learning spatio-temporal representation with pseudo-3d residual networks.
        ICCV 2017. https://arxiv.org/abs/1711.10305
-    .. [ZIM] Zimmermann, F. F., & Kofler, A. (2023, October). NoSENSE: Learned unrolled cardiac MRI reconstruction without explicit sensitivity maps.
-       STACOM MICCAI 2023. https://arxiv.org/abs/2309.15608
+    .. [ZIM] Zimmermann, F. F., & Kofler, A. (2023, October). NoSENSE: Learned unrolled cardiac MRI reconstruction
+       without explicit sensitivity maps. STACOM MICCAI 2023. https://arxiv.org/abs/2309.15608
     """
+
+
 class UNet(UNetBase):
     """UNet.
 
@@ -107,16 +111,13 @@ class UNet(UNetBase):
 
     def __init__(
         self,
-        dim:int,
-
+        dim: int,
         in_channels: int,
         out_channels: int,
         n_features: Sequence[int],
-        n_heads:Sequence[int]
-        n_blocks:int|Sequence[int]
-        channels_emb: int,
-        dim: int,
+        n_heads: Sequence[int],
+        n_blocks: int | Sequence[int],
+        cond_dim: int,
         num_blocks: int,
-        padding_modes:str|Sequence[str]
-
+        padding_modes: str | Sequence[str],
     ) -> None: ...

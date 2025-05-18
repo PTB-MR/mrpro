@@ -29,7 +29,7 @@ def test_sequential(input_shape, emb_shape, device):
     seq = Sequential(
         Linear(input_shape[1], 64),
         FastFourierOp(),
-        FiLM(channels=64, channels_emb=16),
+        FiLM(channels=64, cond_dim=16),
     ).to(device)
     output = seq(x, emb)
     assert output.shape == (input_shape[0], 32), f'Output shape {output.shape} != expected {(input_shape[0], 32)}'

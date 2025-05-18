@@ -3,17 +3,17 @@
 import torch
 from torch.nn import Identity, Module, SiLU
 
-from mrpro.nn.EmbMixin import EmbMixin
+from mrpro.nn.CondMixin import CondMixin
 from mrpro.nn.FiLM import FiLM
-from mrpro.nn.GroupNorm32 import GroupNorm32
+from mrpro.nn.GroupNorm import GroupNorm
 from mrpro.nn.NDModules import ConvND
 from mrpro.nn.Sequential import Sequential
 
 
-class ResBlock(EmbMixin, Module):
+class ResBlock(CondMixin, Module):
     """Residual convolution block with two convolutions."""
 
-    def __init__(self, dim: int, channels_in: int, channels_out: int, channels_emb: int) -> None:
+    def __init__(self, dim: int, channels_in: int, channels_out: int, cond_dim: int) -> None:
         """Initialize the ResBlock.
 
         Parameters
@@ -24,47 +24,47 @@ class ResBlock(EmbMixin, Module):
             The number of channels in the input tensor.
         channels_out
             The number of channels in the output tensor.
-        channels_emb
-            The number of channels in the embedding tensor used in a FiLM embedding.
-            If set to 0 no FiLM embedding is used.
+        cond_dim
+            The number of features in the conditioning tensor used in a FiLM.
+            If set to 0 no FiLM is used.
 
         """
         super().__init__()
         self.rezero = torch.nn.Parameter(torch.tensor(1e-6))
         self.block = Sequential(
-            GroupNorm32(channels_in),
+            GroupNorm(channels_in),
             SiLU(),
             ConvND(dim)(channels_in, channels_out, kernel_size=3, padding=1),
-            GroupNorm32(channels_out),
+            GroupNorm(channels_out),
             SiLU(),
             ConvND(dim)(channels_out, channels_out, kernel_size=3, padding=1),
         )
-        if channels_emb > 0:
-            self.block.insert(-3, FiLM(channels_out, channels_emb))
+        if cond_dim > 0:
+            self.block.insert(-3, FiLM(channels_out, cond_dim))
 
         if channels_out == channels_in:
             self.skip_connection: Module = Identity()
         else:
             self.skip_connection = ConvND(dim)(channels_in, channels_out, kernel_size=1)
 
-    def __call__(self, x: torch.Tensor, emb: torch.Tensor | None = None) -> torch.Tensor:
+    def __call__(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the ResBlock.
 
         Parameters
         ----------
         x
             The input tensor.
-        emb
-            An embedding tensor to be used for FiLM.
+        cond
+            A conditioning tensor to be used for FiLM.
 
         Returns
         -------
             The output tensor.
         """
-        return super().__call__(x, emb)
+        return super().__call__(x, cond)
 
-    def forward(self, x: torch.Tensor, emb: torch.Tensor | None = None) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the ResBlock."""
-        h = self.block(x, emb)
+        h = self.block(x, cond)
         x = self.skip_connection(x) + h
         return x

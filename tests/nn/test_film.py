@@ -24,7 +24,7 @@ def test_film(channels, channels_emb, input_shape, emb_shape, device):
     rng = RandomGenerator(seed=42)
     x = rng.float32_tensor(input_shape).to(device).requires_grad_(True)
     emb = rng.float32_tensor(emb_shape).to(device).requires_grad_(True)
-    film = FiLM(channels=channels, channels_emb=channels_emb).to(device)
+    film = FiLM(channels=channels, cond_dim=channels_emb).to(device)
     output = film(x, emb)
     assert output.shape == x.shape, f'Output shape {output.shape} != input shape {x.shape}'
     output.sum().backward()
