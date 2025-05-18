@@ -3,6 +3,8 @@
 import torch
 from torch.nn import Module
 
+from mrpro.nn.NDModules import ConvND
+
 
 class PixelUnshuffle(Module):
     """ND-version of PixelUnshuffle downscaling."""
@@ -40,6 +42,121 @@ class PixelUnshuffle(Module):
         x = x.moveaxis(source_positions, tuple(range(-dim, 0)))
         x = x.flatten(1, -dim - 1)
         return x
+
+
+class PixelUnshuffleDownsample(Module):
+    """PixelUnshuffle Downsampling.
+
+    PixelUnshuffle followed by a convolution. Optionally uses a residual connection [DCAE]_
+
+    References
+    ----------
+    .. [DCAE] Chen et al. Deep Compression Autoencoder for Efficient High-Resolution Diffusion Models. ICLR 2025
+       https://arxiv.org/abs/2410.10733
+    """
+
+    def __init__(
+        self, dim: int, channels_in: int, channels_out: int, downscale_factor: int = 2, residual: bool = False
+    ):
+        """Initialize a PixelUnshuffleDownsample layer.
+
+        Parameters
+        ----------
+        dim : int
+            Dimension of the input tensor.
+        channels_in : int
+            Number of channels in the input tensor.
+        channels_out : int
+            Number of channels in the output tensor.
+        downscale_factor : int, optional
+            Factor by which to downscale the input tensor.
+        residual : bool, optional
+            Whether to use a residual connection as proposed in [DCAE]_.
+        """
+        super().__init__()
+        self.pixel_unshuffle = PixelUnshuffle(downscale_factor)
+        out_ratio = downscale_factor**dim
+        if channels_out % out_ratio != 0:
+            raise ValueError(f'channels_out must be divisible by downscale_factor**{dim}.')
+        self.conv = ConvND(dim)(channels_in, channels_out // out_ratio, kernel_size=3, padding='same')
+        self.residual = residual
+
+    def __call__(self, x: torch.Tensor) -> torch.Tensor:
+        """Apply downsampling.
+
+        Parameters
+        ----------
+        x
+            Tensor of shape `batch, channels_in, *spatial_dims`
+
+        Returns
+        -------
+            Tensor of shape `batch, channels_out, *spatial_dims/downscale_factor`
+        """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Apply downsampling."""
+        x = self.pixel_unshuffle(x)
+        h = self.conv(x)
+        if self.residual:
+            h = h + x.unflatten(1, (h.shape[1], -1)).mean(2)
+        return h
+
+
+class PixelShuffleUpsample(Module):
+    """PixelShuffle Upsampling.
+
+    Convolution followed by PixelShuffle. Optionally uses a residual connection [DCAE]_
+
+    References
+    ----------
+    .. [DCAE] Chen et al. Deep Compression Autoencoder for Efficient High-Resolution Diffusion Models. ICLR 2025
+       https://arxiv.org/abs/2410.10733
+    """
+
+    def __init__(self, dim: int, channels_in: int, channels_out: int, upscale_factor: int = 2, residual: bool = False):
+        """Initialize a PixelShuffleUpsample layer.
+
+        Parameters
+        ----------
+        dim : int
+            Dimension of the input tensor.
+        channels_in : int
+            Number of channels in the input tensor.
+        channels_out : int
+            Number of channels in the output tensor.
+        upscale_factor : int, optional
+            Factor by which to upscale the input tensor.
+        residual : bool, optional
+            Whether to use a residual connection as proposed in [DCAE]_.
+        """
+        super().__init__()
+        self.conv = ConvND(dim)(channels_in, channels_out * upscale_factor**dim, kernel_size=3, padding='same')
+        self.pixel_shuffle = PixelShuffle(upscale_factor)
+        self.residual = residual
+
+    def __call__(self, x: torch.Tensor) -> torch.Tensor:
+        """Apply upsampling.
+
+        Parameters
+        ----------
+        x
+            Tensor of shape `batch, channels_in, *spatial_dims`
+
+        Returns
+        -------
+        Tensor of shape `batch, channels_out, *spatial_dims * upscale_factor`
+        """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Apply upsampling."""
+        h = self.conv(x)
+        if self.residual:
+            h = h + x.repeat_interleave(h.shape[1] // x.shape[1], dim=1)
+        out = self.pixel_shuffle(h)
+        return out
 
 
 class PixelShuffle(Module):

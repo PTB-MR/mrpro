@@ -15,7 +15,7 @@ from mrpro.utils.summarize import summarize_object, summarize_values
 from mrpro.utils.TensorAttributeMixin import TensorAttributeMixin
 from mrpro.utils.interpolate import interpolate, apply_lowres
 from mrpro.utils.RandomGenerator import RandomGenerator
-
+from mrpro.utils.to_tuple import to_tuple
 __all__ = [
     "Indexer",
     "RandomGenerator",
@@ -35,6 +35,7 @@ __all__ = [
     "split_idx",
     "summarize_object",
     "summarize_values",
+    "to_tuple",
     "typing",
     "unit_conversion",
     "unsqueeze_at",
@@ -42,5 +43,5 @@ __all__ = [
     "unsqueeze_right",
     "unsqueeze_tensors_at",
     "unsqueeze_tensors_left",
-    "unsqueeze_tensors_right",
+    "unsqueeze_tensors_right"
 ]

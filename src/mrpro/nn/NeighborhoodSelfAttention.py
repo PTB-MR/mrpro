@@ -1,3 +1,5 @@
+"""Neighborhood Self Attention."""
+
 from collections.abc import Sequence
 from functools import cache, reduce
 from typing import TypeVar
@@ -7,37 +9,9 @@ from einops import rearrange
 from torch.nn import Linear, Module
 from torch.nn.attention.flex_attention import BlockMask, create_block_mask, flex_attention
 
+from mrpro.utils.to_tuple import to_tuple
+
 T = TypeVar('T')
-
-
-def check_arg(length: int, arg: Sequence[T] | T) -> tuple[T, ...]:
-    """Standardize an argument to a fixed-length tuple.
-
-    If the argument is a sequence, it checks if its length matches the
-    specified dimension. If it's a single value, it replicates it `dim` times.
-
-    Parameters
-    ----------
-    length
-        The expected length of the sequence.
-    arg
-        The argument to check. Can be a single value of type T or a
-        sequence of T.
-
-    Returns
-    -------
-        A tuple of length `dim` containing elements of type T.
-
-    Raises
-    ------
-    ValueError
-        If `arg` is a sequence and its length does not match `length`.
-    """
-    if isinstance(arg, Sequence):
-        if not len(arg) == length:
-            raise ValueError(f'The arguments must be either single values or have length {length}. Got {arg}.')
-        return tuple(arg)
-    return (arg,) * length
 
 
 @cache
@@ -75,7 +49,7 @@ def neighborhood_mask(
         allowed attention connections.
     """
     kernel_size_tuple, dilation_tuple, circular_tuple = (
-        check_arg(len(input_size), x) for x in (kernel_size, dilation, circular)
+        to_tuple(len(input_size), x) for x in (kernel_size, dilation, circular)
     )
 
     def unravel_index(idx: torch.Tensor) -> tuple[torch.Tensor, ...]:
@@ -144,8 +118,9 @@ class NeighborhoodSelfAttention(Module):
 
     def __init__(
         self,
-        channels: int,
-        n_head: int,
+        channels_in: int,
+        channels_out: int,
+        n_heads: int,
         kernel_size: int | Sequence[int],
         dilation: int | Sequence[int] = 1,
         circular: bool | Sequence[bool] = False,
@@ -169,16 +144,18 @@ class NeighborhoodSelfAttention(Module):
         circular
             Whether the neighborhood wraps around the edges (circular padding)
         channel_last
-            Whether the channels are in the last dimension of the tensor, as common in transformers.
+            Whether the channels are in the last dimension of the tensor, as common in visíon transformers.
+            Otherwise, assume the channels are in the second dimension, as common in CNN models.
         """
         super().__init__()
-        self.n_head = n_head
+        self.n_head = n_heads
         self.kernel_size = kernel_size
         self.dilation = dilation
         self.circular = circular
         self.channel_last = channel_last
-        self.to_qkv = Linear(channels, 3 * channels * n_head)
-        self.to_out = Linear(channels * n_head, channels)
+        channels_per_head = channels_in // n_heads
+        self.to_qkv = Linear(channels_in, 3 * channels_per_head * n_heads)
+        self.to_out = Linear(channels_per_head * n_heads, channels_out)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Apply neighborhood attention to the input tensor.
@@ -196,7 +173,9 @@ class NeighborhoodSelfAttention(Module):
             x = x.moveaxis(1, -1)
         spatial_shape = x.shape[2:-1]
         qkv = self.to_qkv(x)
-        query, key, value = rearrange(qkv, 'batch ... (qkv head channels) -> qkv batch head (...) channel')
+        query, key, value = rearrange(
+            qkv, 'batch ... (qkv head channels) -> qkv batch head (...) channel', qkv=3, head=self.n_head
+        )
         # the mask depends on the input size. To be more flexible if used within CNNs, we compute it here.
         # The computation is cached..
         mask = neighborhood_mask(

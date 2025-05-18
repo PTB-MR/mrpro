@@ -71,6 +71,27 @@ class UNetBase(Module):
         return self(x, emb)
 
 
+class AttentionUNet(UNet):
+    """UNet with attention gates.
+
+    References
+    ----------
+    .. [OKT18] Oktay, Ozan, et al. "Attention U-net: Learning where to look for the pancreas." MIDL (2018).
+      https://arxiv.org/abs/1804.03999
+    """
+
+class SeparableUNet(UNetBase):
+    """UNet where blocks apply separable convolutions in different dimensions
+
+    Based on the pseudo-3D residual network of [QUI]_ and the residual blocks of [ZIM]_.
+
+    References
+    ----------
+    .. [QUI] Qiu, Z., Yao, T., & Mei, T. Learning spatio-temporal representation with pseudo-3d residual networks.
+       ICCV 2017. https://arxiv.org/abs/1711.10305
+    .. [ZIM] Zimmermann, F. F., & Kofler, A. (2023, October). NoSENSE: Learned unrolled cardiac MRI reconstruction without explicit sensitivity maps.
+       STACOM MICCAI 2023. https://arxiv.org/abs/2309.15608
+    """
 class UNet(UNetBase):
     """UNet.
 
@@ -87,7 +108,7 @@ class UNet(UNetBase):
     def __init__(
         self,
         dim:int,
-        
+
         in_channels: int,
         out_channels: int,
         n_features: Sequence[int],
@@ -96,7 +117,6 @@ class UNet(UNetBase):
         channels_emb: int,
         dim: int,
         num_blocks: int,
-        attention_gate:
         padding_modes:str|Sequence[str]
-        
+
     ) -> None: ...

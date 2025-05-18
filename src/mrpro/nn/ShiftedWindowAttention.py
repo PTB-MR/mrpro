@@ -22,15 +22,19 @@ class ShiftedWindowAttention(Module):
 
     rel_position_index: torch.Tensor
 
-    def __init__(self, dim: int, n_channels_per_head: int, n_heads: int, window_size: int = 7, shifted: bool = True):
+    def __init__(
+        self, dim: int, channels_in: int, channels_out: int, n_heads: int, window_size: int = 7, shifted: bool = True
+    ):
         """Initialize the ShiftedWindowAttention module.
 
         Parameters
         ----------
         dim : int
             The dimension of the input.
-        n_channels_per_head : int
-            The number of channels per head.
+        channels_in : int
+            The number of channels in the input tensor.
+        channels_out : int
+            The number of channels in the output tensor.
         n_heads : int
             The number of attention heads. The number if channels per head is ``channels // n_heads``.
         window_size : int
@@ -42,7 +46,9 @@ class ShiftedWindowAttention(Module):
         self.n_heads = n_heads
         self.window_size = window_size
         self.shifted = shifted
-        self.to_qkv = ConvND(dim)(n_channels_per_head * n_heads, 3 * n_channels_per_head * n_heads, 1)
+        channels_per_head = channels_in // n_heads
+        self.to_qkv = ConvND(dim)(channels_per_head * n_heads, 3 * channels_per_head * n_heads, 1)
+        self.to_out = ConvND(dim)(channels_per_head * n_heads, channels_out, 1)
         self.dim = dim
         coords_1d = torch.arange(window_size)
         coords_nd = torch.stack(torch.meshgrid(*([coords_1d] * dim), indexing='ij'), 0).flatten(1)
@@ -82,15 +88,16 @@ class ShiftedWindowAttention(Module):
             qkv=3,
         )
         bias = rearrange(self.relative_position_bias_table[self.rel_position_index], 'wd1 wd2 heads -> 1 heads wd1 wd2')
-        result = torch.nn.functional.scaled_dot_product_attention(q, k, v, attn_mask=bias)
-        result = rearrange(result, 'spatial batch head window channels->batch (head channels) spatial window')
-        result = result.unflatten(-2, windowed.shape[: self.dim]).unflatten(-1, (self.window_size,) * self.dim)
+        attention = torch.nn.functional.scaled_dot_product_attention(q, k, v, attn_mask=bias)
+        attention = rearrange(attention, 'spatial batch head window channels->batch (head channels) spatial window')
+        attention = attention.unflatten(-2, windowed.shape[: self.dim]).unflatten(-1, (self.window_size,) * self.dim)
         # permute (in 3d) batch channels z y x wz wy wx -> batch channels wz z wy y wx x
-        result = result.moveaxis(list(range(-self.dim, 0)), list(range(3, 3 + 2 * self.dim, 2)))
-        result = result.reshape(x.shape)
+        attention = attention.moveaxis(list(range(-self.dim, 0)), list(range(3, 3 + 2 * self.dim, 2)))
+        attention = attention.reshape(x.shape)
         if self.shifted:
-            result = torch.roll(result, (self.window_size // 2,) * self.dim, dims=tuple(range(-self.dim, 0)))
-        return result
+            attention = torch.roll(attention, (self.window_size // 2,) * self.dim, dims=tuple(range(-self.dim, 0)))
+        out = self.to_out(attention)
+        return out
 
 
 ''
