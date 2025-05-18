@@ -1,22 +1,22 @@
 """MR image data (IData) class."""
 
 from collections.abc import Generator, Sequence
+from copy import deepcopy
 from pathlib import Path
 
 import numpy as np
+import pydicom
 import torch
 from einops import repeat
-import pydicom
 from pydicom import dcmread
 from pydicom.dataset import Dataset
 from typing_extensions import Self
-from einops import rearrange
-from copy import deepcopy
 
 from mrpro.data.Dataclass import Dataclass
 from mrpro.data.IHeader import IHeader
 from mrpro.data.KHeader import KHeader
-from mrpro.utils.unit_conversion import s_to_ms, rad_to_deg, m_to_mm
+from mrpro.utils.unit_conversion import m_to_mm, rad_to_deg, s_to_ms
+
 
 def _dcm_pixelarray_to_tensor(dataset: Dataset) -> torch.Tensor:
     """Transform pixel array in dicom file to tensor.
@@ -158,8 +158,7 @@ class IData(Dataclass):
         # Pass on sorted file list as order of dicom files is often the same as the required order
         return cls.from_dicom_files(filenames=sorted(file_paths))
 
-
-    def to_dicom_folder(self, foldername: str | Path) -> None:
+    def to_dicom_folder(self, foldername: str | Path, series_description: str | None = None) -> None:
         """Write the image data to DICOM files in a folder.
 
         The data is always saved in a multi-frame DICOM files.
@@ -167,18 +166,18 @@ class IData(Dataclass):
         Parameters
         ----------
         foldername
-            path to folder for DICOM files.
+            Path to folder for DICOM files.
+        series_description
+            String to be saved as the series description in the DICOM files.
         """
         if not isinstance(foldername, Path):
             foldername = Path(foldername)
         foldername.mkdir(parents=True, exist_ok=False)
 
         mr_acquisition_type = '3D' if self.data.shape[-3] > 1 else '2D'
-        if mr_acquisition_type == '3D':
-            frame_dimension = -3
-        #else:
-        #    frame_dimension = next(i for i in range(-4, -len(self.data.shape)) if self.data.shape[i] > 1)
-        frame_dimension = -3
+        frame_dimension = next((i for i in range(-3, -len(self.data.shape) - 1, -1) if self.data.shape[i] > 1), -3)
+        file_dimensions = [i for i in range(-3, -len(self.data.shape) - 1, -1) if i != frame_dimension]
+        file_dimensions_shape = [self.shape[i] for i in file_dimensions]
         number_of_frames = self.data.shape[frame_dimension]
 
         # Metadata
@@ -197,9 +196,11 @@ class IData(Dataclass):
         dataset.Modality = 'MR'
         dataset.StudyDescription = 'MRpro'
         import datetime
+
         dataset.SeriesDate = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%d')
         dataset.SeriesTime = datetime.datetime.now(datetime.timezone.utc).strftime('%H%M%S.%f')
-        dataset.SeriesDescription = 'MRpro'
+        if series_description:
+            dataset.SeriesDescription = series_description
         dataset.SeriesInstanceUID = pydicom.uid.generate_uid()
 
         # When accessing the data using dataset.pixel_array pydicom will return an image with dimensions (rows columns).
@@ -216,8 +217,8 @@ class IData(Dataclass):
 
         dataset.PatientPosition = 'HFS'
 
-        for other in np.ndindex(self.data.shape[:frame_dimension]):
-            dcm_file_idata = self[(*other, slice(None), slice(None), slice(None))] # type: ignore[index]
+        for file_index, other in enumerate(np.ndindex(tuple(file_dimensions_shape))):
+            dcm_file_idata = self[(*other, slice(None), slice(None), slice(None))]  # type: ignore[index]
 
             dataset.MRAcquisitionType = mr_acquisition_type
             dataset.NumberOfFrames = number_of_frames
@@ -235,7 +236,7 @@ class IData(Dataclass):
             mr_timing_parameters_sequence.append(Dataset())
 
             for frame in range(number_of_frames):
-                dcm_frame_idata = dcm_file_idata[frame,...]
+                dcm_frame_idata = dcm_file_idata[..., frame, :, :]
                 if np.prod(dcm_frame_idata.header.shape) != 1:
                     raise ValueError('Only single image can be saved as a frame.')
                 directions = dcm_frame_idata.header.orientation[0].as_directions()
@@ -244,23 +245,23 @@ class IData(Dataclass):
                 slice_direction = np.squeeze(np.asarray(directions[0].zyx[::-1]))
                 position = np.squeeze(np.asarray(dcm_frame_idata.header.position.zyx[::-1]))
 
-                if dataset.PatientPosition == 'HFS':
-                    readout_direction[1] = -readout_direction[1]
-                    phase_direction[1] = -phase_direction[1]
-                    slice_direction[1] = -slice_direction[1]
-                    position[1] = -position[1]
-
-                    readout_direction[2] = -readout_direction[2]
-                    phase_direction[2] = -phase_direction[2]
-                    slice_direction[2] = -slice_direction[2]
-                    position[2] = -position[2]
-
                 dataset.PerFrameFunctionalGroupsSequence.append(Dataset())
 
-                plane_position_sequence[0].ImagePositionPatient = m_to_mm(position -readout_direction * dcm_frame_idata.header.resolution.x * dcm_frame_idata.data.shape[-1] / 2 - phase_direction * dcm_frame_idata.header.resolution.y * dcm_frame_idata.data.shape[-2] / 2).tolist()
+                image_position_patient = (
+                    position
+                    - readout_direction * dcm_frame_idata.header.resolution.x * dcm_frame_idata.data.shape[-1] / 2
+                    - phase_direction * dcm_frame_idata.header.resolution.y * dcm_frame_idata.data.shape[-2] / 2
+                )
+                if mr_acquisition_type == '3D':
+                    image_position_patient = (
+                        image_position_patient
+                        + slice_direction * dcm_frame_idata.header.resolution.z * (-number_of_frames / 2 + frame)
+                    )
 
+                plane_position_sequence[0].ImagePositionPatient = m_to_mm(image_position_patient.tolist())
                 dataset.PerFrameFunctionalGroupsSequence[-1].PlanePositionSequence = deepcopy(plane_position_sequence)
 
+                # The direction cosines of the first row (y) and the first column (x) with respect to the patient
                 plane_orientation_sequence[0].ImageOrientationPatient = [*readout_direction, *phase_direction]
                 dataset.PerFrameFunctionalGroupsSequence[-1].PlaneOrientationSequence = deepcopy(
                     plane_orientation_sequence
@@ -270,7 +271,9 @@ class IData(Dataclass):
                 dataset.PerFrameFunctionalGroupsSequence[-1].MREchoSequence = deepcopy(mr_echo_sequence)
 
                 pixel_measure_sequence[0].SliceThickness = m_to_mm(dcm_frame_idata.header.resolution[0].z)
-                pixel_measure_sequence[0].PixelSpacing = m_to_mm([dcm_frame_idata.header.resolution[0].x, dcm_frame_idata.header.resolution[0].y])
+                pixel_measure_sequence[0].PixelSpacing = m_to_mm(
+                    [dcm_frame_idata.header.resolution[0].x, dcm_frame_idata.header.resolution[0].y]
+                )
                 dataset.PerFrameFunctionalGroupsSequence[-1].PixelMeasuresSequence = deepcopy(pixel_measure_sequence)
 
                 mr_timing_parameters_sequence[0].FlipAngle = rad_to_deg(dcm_frame_idata.header.fa)
@@ -281,11 +284,9 @@ class IData(Dataclass):
 
             pixel_data = dcm_file_idata.data.abs()
             pixel_data /= pixel_data.max()
-            dataset.PixelData = (
-                rearrange(pixel_data * 2**16, '... frames y x -> ... frames y x').numpy().astype(np.uint16).tobytes()
-            )
-            dataset["PixelData"].VR = "OB"
+            dataset.PixelData = (pixel_data * 2**16).numpy().astype(np.uint16).tobytes()
+
+            dataset['PixelData'].VR = 'OB'
 
             # Save
-            dataset.save_as(foldername / f'im_mrpro_{np.prod(other)}.dcm', enforce_file_format=True)
-
+            dataset.save_as(foldername / f'im_mrpro_{np.prod(file_index)}.dcm', enforce_file_format=True)
