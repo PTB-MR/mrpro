@@ -15,7 +15,7 @@ class FiLM(CondMixin, Module):
 
     References
     ----------
-    ..[FiLM] Perez, L., Strub, F., de Vries, H., Dumoulin, V., & Courville, A. "FiLM: Visual reasoning with a general
+    ..[FiLM] Perez, L., Strub, F., de Vries, H., Dumoulin, V., & Courville, A. "FiLM : Visual reasoning with a general
       conditioning layer." AAAI (2018). https://arxiv.org/abs/1709.07871
     """
 
@@ -31,7 +31,7 @@ class FiLM(CondMixin, Module):
         """
         super().__init__()
         if cond_dim > 0:
-            self.project = Sequential(
+            self.project: Module = Sequential(
                 SiLU(),
                 Linear(cond_dim, 2 * channels),
             )
@@ -54,8 +54,6 @@ class FiLM(CondMixin, Module):
         """Apply FiLM."""
         if cond is None:
             return x
-
-        cond = self.project(cond)
-        scale, shift = cond.chunk(2, dim=1)
+        scale, shift = self.project(cond).chunk(2, dim=1)
         scale, shift = unsqueeze_tensors_right(scale, shift, ndim=x.ndim)
         return x * (1 + scale) + shift

@@ -1,3 +1,5 @@
+"""Encoding modules for neural networks."""
+
 from itertools import combinations
 from math import ceil
 
@@ -8,18 +10,69 @@ from mrpro.utils.reshape import unsqueeze_right
 
 
 class FourierFeatures(Module):
+    """Fourier feature encoding layer.
+
+    Projects input features into a higher dimensional space using random Fourier features.
+    This is useful for encoding positional information in neural networks.
+    """
+
+    weight: torch.Tensor
+
     def __init__(self, in_features: int, out_features: int, std: float = 1.0):
+        """Initialize Fourier feature encoding layer.
+
+        Parameters
+        ----------
+        in_features : int
+            Number of input features
+        out_features : int
+            Number of output features (must be even)
+        std : float, optional
+            Standard deviation for random initialization, by default 1.0
+        """
         super().__init__()
         assert out_features % 2 == 0
         self.register_buffer('weight', torch.randn([out_features // 2, in_features]) * std)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Apply Fourier feature encoding.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Input tensor of shape (..., in_features)
+
+        Returns
+        -------
+        torch.Tensor
+            Encoded features of shape (..., out_features)
+        """
         f = 2 * torch.pi * x @ self.weight.T
         return torch.cat([f.cos(), f.sin()], dim=-1)
 
 
 class AbsolutePositionEncoding(Module):
+    """Absolute position encoding layer.
+
+    Encodes absolute positions in a grid using learned embeddings.
+    """
+
+    encoding: torch.Tensor
+
     def __init__(self, dim: int, features: int, include_radii: bool = True, base_resolution: int = 128):
+        """Initialize absolute position encoding layer.
+
+        Parameters
+        ----------
+        dim : int
+            Dimension of the input space (1, 2, or 3)
+        features : int
+            Number of output features
+        include_radii : bool, optional
+            Whether to include radius features, by default True
+        base_resolution : int, optional
+            Base resolution for position encoding, by default 128
+        """
         super().__init__()
 
         coords = [unsqueeze_right(torch.linspace(-1, 1, base_resolution), i) for i in range(dim)]

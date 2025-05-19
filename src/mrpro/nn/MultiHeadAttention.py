@@ -15,7 +15,7 @@ class MultiHeadAttention(Module):
         self,
         channels_in: int,
         channels_out: int,
-        num_heads: int,
+        n_heads: int,
         features_last: bool = False,
         p_dropout: float = 0.0,
     ):
@@ -29,7 +29,7 @@ class MultiHeadAttention(Module):
             Number of input channels.
         channels_out
             Number of output channels.
-        num_heads
+        n_heads
             number of attention heads
         features_last
             Whether the features dimension is the last dimension, as common in transformer models,
@@ -39,7 +39,7 @@ class MultiHeadAttention(Module):
         """
         super().__init__()
         self.mha = torch.nn.MultiheadAttention(
-            conded_dim=channels_in, num_heads=num_heads, batch_first=True, dropout=p_dropout
+            embed_dim=channels_in, n_heads=n_heads, batch_first=True, dropout=p_dropout
         )
         self.features_last = features_last
         self.to_out = Linear(channels_in, channels_out)

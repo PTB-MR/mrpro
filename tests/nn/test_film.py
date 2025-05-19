@@ -34,4 +34,4 @@ def test_film(channels, channels_emb, input_shape, emb_shape, device):
     assert not emb.isnan().any(), 'NaN values in embedding'
     assert not x.grad.isnan().any(), 'NaN values in input gradients'
     assert not emb.grad.isnan().any(), 'NaN values in embedding gradients'
-    assert film.project[1].weight.grad is not None, 'No gradient computed for Linear layer'
+    assert next(film.project.parameters()).grad is not None, 'No gradient computed for Linear layer'

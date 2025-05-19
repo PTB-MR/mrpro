@@ -1,9 +1,9 @@
 from collections.abc import Sequence
 
 import torch
-from torch.nn import Module
+from torch.nn import Module, Sequential
 
-from mrpro.nn import Sequential, SiLU
+from mrpro.nn import SiLU
 from mrpro.nn.GluMBConvResBlock import GluMBConvResBlock
 from mrpro.nn.LinearSelfAttention import LinearSelfAttention
 from mrpro.nn.MultiHeadAttention import MultiHeadAttention
@@ -106,9 +106,9 @@ class Decoder(Module):
         #  "decoder.block_type=[ResBlock,ResBlock,ResBlock,EViT_GLU,EViT_GLU,EViT_GLU] "
         #     "decoder.width_list=[128,256,512,512,1024,1024] decoder.depth_list=[0,5,10,2,2,2] "
         #     "decoder.norm=[bn2d,bn2d,bn2d,trms2d,trms2d,trms2d] decoder.act=[relu,relu,relu,silu,silu,silu]"
-        self.append(PixelShuffleUpsampe(dim, channels_in, widths[0], upscale_factor=1, residual=True))
+        self.append(PixelShuffleUpsample(dim, channels_in, widths[0], upscale_factor=1, residual=True))
 
-        self.stages: list[OpSequential] = []
+        self.stages: list[Sequential] = []
         for block_type, width, depth in zip(block_types, widths, depths, strict=False):
             match block_type:
                 case 'ResBlock':
@@ -125,29 +125,29 @@ class Decoder(Module):
             if len(self) < len(widths):
                 self.append(PixelShuffleUpsample(dim, width, width, upscale_factor=2, residual=True))
 
-            stage.extend(
-                build_stage_main(
-                    width=width,
-                    depth=depth,
-                    block_type=block_type,
-                    norm=norm,
-                    act=act,
-                    input_width=(
-                        width if cfg.upsample_match_channel else cfg.width_list[min(stage_id + 1, num_stages - 1)]
-                    ),
-                )
-            )
-            self.stages.insert(0, OpSequential(stage))
-        self.stages = nn.ModuleList(self.stages)
+        #     stage.extend(
+        #         build_stage_main(
+        #             width=width,
+        #             depth=depth,
+        #             block_type=block_type,
+        #             norm=norm,
+        #             act=act,
+        #             input_width=(
+        #                 width if cfg.upsample_match_channel else cfg.width_list[min(stage_id + 1, num_stages - 1)]
+        #             ),
+        #         )
+        #     )
+        #     self.stages.insert(0, OpSequential(stage))
+        # self.stages = nn.ModuleList(self.stages)
 
-        self.project_out = build_decoder_project_out_block(
-            in_channels=cfg.width_list[0] if cfg.depth_list[0] > 0 else cfg.width_list[1],
-            out_channels=cfg.in_channels,
-            factor=1 if cfg.depth_list[0] > 0 else 2,
-            upsample_block_type=cfg.upsample_block_type,
-            norm=cfg.out_norm,
-            act=cfg.out_act,
-        )
+        # self.project_out = build_decoder_project_out_block(
+        #     in_channels=cfg.width_list[0] if cfg.depth_list[0] > 0 else cfg.width_list[1],
+        #     out_channels=cfg.in_channels,
+        #     factor=1 if cfg.depth_list[0] > 0 else 2,
+        #     upsample_block_type=cfg.upsample_block_type,
+        #     norm=cfg.out_norm,
+        #     act=cfg.out_act,
+        # )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.project_in(x)

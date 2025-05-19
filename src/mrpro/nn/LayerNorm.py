@@ -1,6 +1,7 @@
-from torch.nn import Module, Parameter
 import torch
-from mrpro.nn.utils import unsqueeze_right
+from torch.nn import Module, Parameter
+
+from mrpro.utils.reshape import unsqueeze_right
 
 
 class LayerNorm(Module):
@@ -21,8 +22,8 @@ class LayerNorm(Module):
         """
         super().__init__()
         if channels is not None:
-            self.weight = Parameter(torch.ones(channels))
-            self.bias = Parameter(torch.zeros(channels)) if bias else None
+            self.weight: Parameter | None = Parameter(torch.ones(channels))
+            self.bias: Parameter | None = Parameter(torch.zeros(channels)) if bias else None
         else:
             self.weight = None
             self.bias = None

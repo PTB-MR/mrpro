@@ -1,3 +1,5 @@
+"""Variational Autoencoder with a Gaussian latent space."""
+
 import torch
 from torch.nn import Module
 
@@ -9,7 +11,8 @@ class VAE(Module):
     into the original space. The encoder should return twice the number of channels as the decoder needs to reconstruct
     the input: half of the channels are the mean and the other half the log variance of the latent space.
     The reparameterization trick is used to sample from the latent space.
-    The forward pass returns the reconstructed image and the KL divergence between the latent space and the standard normal distribution.
+    The forward pass returns the reconstructed image and the KL divergence between the latent space and the standard normal
+    distribution.
     """
 
     def __init__(self, encoder: Module, decoder: Module):

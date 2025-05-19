@@ -21,7 +21,7 @@ class LinearSelfAttention(Module):
     ----------
     channels
         Input and output channel dimension.
-    num_heads
+    n_heads
         Number of attention heads.
     bias
         Whether to use bias in the QKV projection.

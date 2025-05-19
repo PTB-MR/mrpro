@@ -1,77 +1,139 @@
-from math import log
+"""Rotary Position Embeddings (RoPE) implementation."""
 
 import torch
+from torch.nn import Module
+
+from mrpro.nn.NDModules import ConvND
 
 
-# Rotary position embeddings
 @torch.compile
-def apply_rotary_emb_(x: torch.Tensor, theta: torch.Tensor, conjugated: bool):
-    """Adds the rotary embedding to the input tensor (inplace).
+def apply_rotary_emb_(x: torch.Tensor, theta: torch.Tensor, conjugated: bool) -> None:
+    """Add rotary embedding to the input tensor (inplace).
 
     This is a helper function for the `AxialRoPE` class.
+
+    Parameters
+    ----------
+    x : torch.Tensor
+        Input tensor to modify
+    theta : torch.Tensor
+        Rotation angles
+    conjugated : bool
+        Whether to use conjugated rotation
     """
     n_emb = theta.shape[-1] * 2
     if n_emb > x.shape[-1]:
-        raise ValueError('More theta values then channels//2 in the input tensor.')
+        raise ValueError(f'Embedding dimension {n_emb} is larger than input dimension {x.shape[-1]}')
     x1, x2 = x[..., :n_emb].chunk(2, dim=-1)
-    dtype = torch.promote_type(torch.result_type(x, theta), torch.float32)
-    x1_, x2_, theta = x1.to(dtype), x2.to(dtype), theta.to(dtype)
-    cos, sin = torch.cos(theta), torch.sin(theta)
-    sin = -sin if conjugated else sin
-    y1 = x1_ * cos - x2_ * sin
-    y2 = x2_ * cos + x1_ * sin
-    x1.copy_(y1)
-    x2.copy_(y2)
+    if conjugated:
+        x1, x2 = x2, x1
+    x[..., :n_emb] = torch.cat([x1 * theta.cos() - x2 * theta.sin(), x2 * theta.cos() + x1 * theta.sin()], dim=-1)
 
 
 class RotaryEmbedding_(torch.autograd.Function):
-    """Adds the rotary embedding to the input tensor (inplace).
-
-    This is a autograd helper class for the `AxialRoPE` class.
-    """
+    """Custom autograd function for rotary embeddings."""
 
     @staticmethod
-    def forward(x: torch.Tensor, theta: torch.Tensor, conjugated: bool) -> torch.Tensor:
-        apply_rotary_emb_(x, theta, conj=conj)
+    def forward(
+        ctx: torch.autograd.function.FunctionCtx, x: torch.Tensor, theta: torch.Tensor, conjugated: bool
+    ) -> torch.Tensor:
+        """Apply rotary embedding in forward pass."""
+        apply_rotary_emb_(x, theta, conjugated)
         return x
 
     @staticmethod
-    def setup_context(ctx, inputs: tuple[torch.Tensor, torch.Tensor, bool], output: torch.Tensor):
+    def setup_context(
+        ctx: torch.autograd.function.FunctionCtx, inputs: tuple[torch.Tensor, torch.Tensor, bool], output: torch.Tensor
+    ) -> None:
+        """Save tensors for backward pass."""
         _, theta, conjugated = inputs
         ctx.save_for_backward(theta)
         ctx.conjugated = conjugated
 
     @staticmethod
-    def backward(ctx, grad_output: torch.Tensor) -> tuple[torch.Tensor, None, None]:
+    def backward(
+        ctx: torch.autograd.function.FunctionCtx, grad_output: torch.Tensor
+    ) -> tuple[torch.Tensor, None, None]:
+        """Apply backward pass."""
         (theta,) = ctx.saved_tensors
-        apply_rotary_emb_(grad_output, theta, conjugated=not ctx.conjugated)
+        apply_rotary_emb_(grad_output, theta, ctx.conjugated)
         return grad_output, None, None
 
 
 class AxialRoPE(Module):
+    """Axial Rotary Position Embedding.
+
+    Applies rotary position embeddings along each axis independently.
+    """
+
     def __init__(self, dim: int, d_head: int, n_heads: int, headpos: int = -2, non_embed_fraction: float = 0.5):
+        """Initialize AxialRoPE.
+
+        Parameters
+        ----------
+        dim : int
+            Dimension of the input space
+        d_head : int
+            Dimension of each attention head
+        n_heads : int
+            Number of attention heads
+        headpos : int, optional
+            Position of the head dimension, by default -2
+        non_embed_fraction : float, optional
+            Fraction of dimensions to not embed, by default 0.5
+        """
         super().__init__()
-        log_min = log(torch.pi)
-        log_max = log(100 ** (1 / dim) * torch.pi)
-        d_per_head = int(d_head / dim * (1 - non_embed_fraction))
-        freqs = torch.linspace(log_min, log_max, n_heads * d_per_head).exp()
-        freqs = freqs.view(-1, n_heads).T
-        freqs = freqs.unsqueeze(-2).repeat(1, dim, 1).contiguous()
-        self.freqs = torch.nn.Parameter(freqs)
+        log_min = torch.log(torch.tensor(torch.pi))
+        log_max = torch.log(torch.tensor(10000.0))
+        freqs = torch.exp(torch.linspace(log_min, log_max, d_head // 2))
+        self.register_buffer('freqs', freqs)
         self.headpos = headpos
 
-    def get_theta(self, pos):
+    def get_theta(self, pos: torch.Tensor) -> torch.Tensor:
+        """Get rotation angles for given positions.
+
+        Parameters
+        ----------
+        pos : torch.Tensor
+            Position tensor
+
+        Returns
+        -------
+        torch.Tensor
+            Rotation angles
+        """
         return (self.freqs * pos[..., None, :, None]).flatten(start_dim=-2).movedim(-2, self.headpos)
 
-    def forward(self, pos, *tensors):
+    def forward(self, pos: torch.Tensor, *tensors: torch.Tensor) -> None:
+        """Apply rotary embeddings to input tensors.
+
+        Parameters
+        ----------
+        pos : torch.Tensor
+            Position tensor
+        *tensors : torch.Tensor
+            Tensors to apply rotary embeddings to
+        """
         theta = self.get_theta(pos)
         tuple(RotaryEmbedding_.apply(x, theta, False) for x in tensors)
 
     @staticmethod
-    def make_axial_positions(*shape):
-        shape = torch.as_tensor(shape)
-        m = shape.max()
+    def make_axial_positions(*shape: int) -> torch.Tensor:
+        """Create axial position tensors.
+
+        Parameters
+        ----------
+        *shape : int
+            Shape of the position tensor
+
+        Returns
+        -------
+        torch.Tensor
+            Position tensor
+        """
+        m = torch.as_tensor(shape).max()
         pos = torch.stack(
-            torch.meshgrid([torch.linspace(-1 + 1 / s, 1 - 1 / s, s) * (s / m) for s in shape], indexing='ij'), -1
+            [torch.arange(s, device=m.device) - s // 2 for s in shape],
+            dim=-1,
         )
         return pos

@@ -1,9 +1,10 @@
+"""Uformer: U-Net with window attention."""
+
 from collections.abc import Sequence
 from itertools import pairwise
 
 import torch
-from sympy import Identity
-from torch.nn import GELU, LeakyReLU, Module, Sequential
+from torch.nn import GELU, Identity, LeakyReLU, Module
 
 from mrpro.nn.DropPath import DropPath
 from mrpro.nn.FiLM import FiLM
@@ -49,7 +50,22 @@ class LeFF(Module):
             ConvND(dim)(hidden_dim, channels_out, 1),
         )
 
+    def __call__(self, x: torch.Tensor) -> torch.Tensor:
+        """Apply the LeFF module.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            The input tensor.
+
+        Returns
+        -------
+            The output tensor.
+        """
+        return super().__call__(x)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Apply the LeFF module."""
         return self.block(x)
 
 

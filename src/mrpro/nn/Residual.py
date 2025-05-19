@@ -1,7 +1,7 @@
-from mrpro.nn.CondMixin import CondMixin, call_with_cond
-
 import torch
-from torch.nn import Module, Identity
+from torch.nn import Identity, Module
+
+from mrpro.nn.CondMixin import CondMixin, call_with_cond
 
 
 class Residual(CondMixin, Module):

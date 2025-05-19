@@ -23,7 +23,7 @@ def test_transposed_attention(dim, channels, num_heads, input_shape, device):
     """Test TransposedAttention output shape and backpropagation."""
     rng = RandomGenerator(seed=42)
     x = rng.float32_tensor(input_shape).to(device).requires_grad_(True)
-    attn = TransposedAttention(dim=dim, channels=channels, num_heads=num_heads).to(device)
+    attn = TransposedAttention(dim=dim, channels_in=channels, channels_out=channels, n_heads=num_heads).to(device)
     output = attn(x)
     assert output.shape == x.shape, f'Output shape {output.shape} != input shape {x.shape}'
     output.sum().backward()
