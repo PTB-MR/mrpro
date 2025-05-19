@@ -1,3 +1,5 @@
+"""RMSNorm module for root mean square normalization."""
+
 import torch
 from torch.nn import Module, Parameter
 

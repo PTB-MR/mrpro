@@ -1,9 +1,7 @@
-"""Rotary Position Embeddings (RoPE) implementation."""
+"""Rotary Position Embedding (RoPE)."""
 
 import torch
 from torch.nn import Module
-
-from mrpro.nn.NDModules import ConvND
 
 
 @torch.compile
@@ -30,12 +28,14 @@ def apply_rotary_emb_(x: torch.Tensor, theta: torch.Tensor, conjugated: bool) ->
     x[..., :n_emb] = torch.cat([x1 * theta.cos() - x2 * theta.sin(), x2 * theta.cos() + x1 * theta.sin()], dim=-1)
 
 
-class RotaryEmbedding_(torch.autograd.Function):
+class RotaryEmbedding(torch.autograd.Function):
     """Custom autograd function for rotary embeddings."""
 
     @staticmethod
     def forward(
-        ctx: torch.autograd.function.FunctionCtx, x: torch.Tensor, theta: torch.Tensor, conjugated: bool
+        x: torch.Tensor,
+        theta: torch.Tensor,
+        conjugated: bool,
     ) -> torch.Tensor:
         """Apply rotary embedding in forward pass."""
         apply_rotary_emb_(x, theta, conjugated)
@@ -43,12 +43,12 @@ class RotaryEmbedding_(torch.autograd.Function):
 
     @staticmethod
     def setup_context(
-        ctx: torch.autograd.function.FunctionCtx, inputs: tuple[torch.Tensor, torch.Tensor, bool], output: torch.Tensor
+        ctx: torch.autograd.function.FunctionCtx, inputs: tuple[torch.Tensor, torch.Tensor, bool], _output: torch.Tensor
     ) -> None:
         """Save tensors for backward pass."""
         _, theta, conjugated = inputs
         ctx.save_for_backward(theta)
-        ctx.conjugated = conjugated
+        ctx.conjugated = conjugated  # type: ignore[attr-defined]
 
     @staticmethod
     def backward(
@@ -115,7 +115,7 @@ class AxialRoPE(Module):
             Tensors to apply rotary embeddings to
         """
         theta = self.get_theta(pos)
-        tuple(RotaryEmbedding_.apply(x, theta, False) for x in tensors)
+        tuple(RotaryEmbedding.apply(x, theta, False) for x in tensors)
 
     @staticmethod
     def make_axial_positions(*shape: int) -> torch.Tensor:

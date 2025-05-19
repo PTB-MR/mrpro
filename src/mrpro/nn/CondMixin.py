@@ -5,7 +5,8 @@ from torch.nn import Module
 
 
 def call_with_cond(module: Module, x: torch.Tensor, cond: torch.Tensor | None) -> torch.Tensor:
-    if isinstance(CondMixin, Module):
+    """Call a module with conditioning if it is a CondMixin."""
+    if isinstance(module, CondMixin):
         return module(x, cond)
     return module(x)
 

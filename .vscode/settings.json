@@ -14,7 +14,7 @@
     },
     "python.testing.pytestArgs": [
         "tests",
-      //  "-m not cuda"
+        "-m not cuda"
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,

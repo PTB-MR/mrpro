@@ -1,3 +1,5 @@
+"""ComplexAsChannel: handling complex-valued tensors as channels."""
+
 import torch
 from einops import rearrange
 from torch.nn import Module

@@ -1,17 +1,16 @@
 """Restormer implementation."""
 
 from collections.abc import Sequence
+from itertools import pairwise
 
 import torch
-from torch.nn import Module, Identity
+from torch.nn import Identity, Module
 
 from mrpro.nn.FiLM import FiLM
 from mrpro.nn.NDModules import ConvND, InstanceNormND
 from mrpro.nn.nets.UNet import UNetBase
-from mrpro.nn.PixelShuffle import PixelShuffle, PixelUnshuffle
 from mrpro.nn.Sequential import Sequential
 from mrpro.nn.TransposedAttention import TransposedAttention
-from mrpro.utils import pairwise
 
 
 class GDFN(Module):
@@ -87,7 +86,7 @@ class RestormerBlock(Module):
         """
         super().__init__()
         self.norm1 = Sequential(InstanceNormND(dim)(channels))
-        self.attn = TransposedAttention(dim, channels, n_heads)
+        self.attn = TransposedAttention(dim, channels, channels, n_heads)
         self.norm2 = Sequential(InstanceNormND(dim)(channels))
         self.ffn = GDFN(dim, channels, mlp_ratio)
         if cond_dim > 0:
@@ -171,18 +170,18 @@ class Restormer(UNetBase):
                 layers.insert(1, FiLM(channels=n_channels_per_head * n_heads, cond_dim=cond_dim))
             return layers
 
-        for n_block, n_heads in zip(n_blocks, n_heads, strict=False):
-            self.input_blocks.append(blocks(n_heads, n_block))
-            self.output_blocks.append(blocks(n_heads, n_block))
+        for block, head in zip(n_blocks, n_heads, strict=False):
+            self.input_blocks.append(blocks(head, block))
+            self.output_blocks.append(blocks(head, block))
             self.skip_blocks.append(Identity())
 
         self.output_blocks = self.output_blocks[::-1]
-        for n_head_current, n_head_next in pairwise(n_heads):
+        for head_current, head_next in pairwise(n_heads):
             self.down_blocks.append(
                 Sequential(
                     ConvND(dim)(
-                        n_channels_per_head * n_head_current,
-                        n_channels_per_head * n_head_next,
+                        n_channels_per_head * head_current,
+                        n_channels_per_head * head_next,
                         kernel_size=3,
                         stride=2,
                         padding=1,
@@ -192,8 +191,8 @@ class Restormer(UNetBase):
             self.up_blocks.append(
                 Sequential(
                     ConvND(dim)(
-                        n_channels_per_head * n_head_next,
-                        n_channels_per_head * n_head_current,
+                        n_channels_per_head * head_next,
+                        n_channels_per_head * head_current,
                         kernel_size=3,
                         stride=1,
                         padding=1,

@@ -39,7 +39,7 @@ class MultiHeadAttention(Module):
         """
         super().__init__()
         self.mha = torch.nn.MultiheadAttention(
-            embed_dim=channels_in, n_heads=n_heads, batch_first=True, dropout=p_dropout
+            embed_dim=channels_in, num_heads=n_heads, batch_first=True, dropout=p_dropout
         )
         self.features_last = features_last
         self.to_out = Linear(channels_in, channels_out)

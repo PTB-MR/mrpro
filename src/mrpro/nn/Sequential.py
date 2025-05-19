@@ -1,3 +1,5 @@
+"""Sequential container with support for conditioning and Operators."""
+
 import torch
 
 from mrpro.nn.CondMixin import CondMixin

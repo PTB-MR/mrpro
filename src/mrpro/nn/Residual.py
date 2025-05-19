@@ -1,3 +1,5 @@
+"""Residual connection."""
+
 import torch
 from torch.nn import Identity, Module
 

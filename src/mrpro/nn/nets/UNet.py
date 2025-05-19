@@ -1,3 +1,5 @@
+"""UNet variants."""
+
 from collections.abc import Sequence
 from functools import partial
 
@@ -21,7 +23,7 @@ class UNetBase(Module):
         self.skip_blocks = ModuleList()
         """Modifications to the skip connections"""
 
-        self.middle_block = Module()
+        self.middle_block: Module = Identity()
         """Also called bottleneck block"""
 
         self.output_blocks = ModuleList()
@@ -33,11 +35,11 @@ class UNetBase(Module):
         self.concat_blocks = ModuleList()
         """Joins the skip connections with the upsampled features from a lower resolution level"""
 
-        self.last = Identity()
-        """The last block"""
+        self.last: Module = Identity()
+        """The last block. Should reduce to the number of output channels."""
 
-        self.first = Identity()
-        """The first block"""
+        self.first: Module = Identity()
+        """The first block. Should expand from the number of input channels."""
 
     def forward(self, x: torch.Tensor, cond: torch.Tensor) -> torch.Tensor:
         """Apply to Network."""
@@ -98,6 +100,8 @@ class UNet(UNetBase):
         padding_modes: str | Sequence[str],
     ) -> None: ...
 
+    """Initialize the UNet."""
+
 
 class AttentionUNet(UNet):
     """UNet with attention gates.
@@ -112,10 +116,12 @@ class AttentionUNet(UNet):
 class SeparableUNet(UNetBase):
     """UNet where blocks apply separable convolutions in different dimensions.
 
-    Based on the pseudo-3D residual network of [QUI]_ and the residual blocks of [ZIM]_.
+    Based on the pseudo-3D residual network of [QUI]_, [TRAN]_ and the residual blocks of [ZIM]_.
 
     References
     ----------
+    .. [TRAN] Tran, D., Wang, H., Torresani, L., Ray, J., LeCun, Y., & Paluri, M. A closer look at spatiotemporal convolutions for action recognition.
+       CVPR 2018. https://arxiv.org/abs/1711.11248
     .. [QUI] Qiu, Z., Yao, T., & Mei, T. Learning spatio-temporal representation with pseudo-3d residual networks.
        ICCV 2017. https://arxiv.org/abs/1711.10305
     .. [ZIM] Zimmermann, F. F., & Kofler, A. (2023, October). NoSENSE: Learned unrolled cardiac MRI reconstruction

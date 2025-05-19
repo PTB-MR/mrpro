@@ -1,7 +1,9 @@
+"""Simple Convolutional Neural Network."""
+
 from collections.abc import Sequence
 from itertools import pairwise
 
-from torch.nn import SiLU
+from torch.nn import ReLU
 
 from mrpro.nn.FiLM import FiLM
 from mrpro.nn.GroupNorm import GroupNorm
@@ -45,7 +47,7 @@ class CNN(Sequential):
         super().__init__()
         channels = [channels_in, *features]
         for i, (channels_current, channels_next) in enumerate(pairwise(channels)):
-            block = Sequential(ConvND(dim)(channels_current, channels_next, 3, padding=1), SiLU(True))
+            block = Sequential(ConvND(dim)(channels_current, channels_next, 3, padding=1), ReLU(True))
             if norm:
                 block.append(GroupNorm(1))
             if cond_dim > 0 and i % 2 == 0:

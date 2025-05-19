@@ -1,36 +1,51 @@
+"""Deep Compression Autoencoder."""
+
 from collections.abc import Sequence
 
 import torch
-from torch.nn import Module, Sequential
+from torch.nn import Module, Sequential, SiLU
 
-from mrpro.nn import SiLU
 from mrpro.nn.GluMBConvResBlock import GluMBConvResBlock
 from mrpro.nn.LinearSelfAttention import LinearSelfAttention
 from mrpro.nn.MultiHeadAttention import MultiHeadAttention
 from mrpro.nn.NDModules import ConvND
 from mrpro.nn.PixelShuffle import PixelShuffleUpsample, PixelUnshuffleDownsample
+from mrpro.nn.Residual import Residual
 from mrpro.nn.RMSNorm import RMSNorm
 
 
-class ResBlock(Module):
+class ResBlock(Residual):
+    """Residual block with two convolutions and normalization."""
+
     def __init__(
         self,
         dim: int,
         channels: int,
     ):
-        super().__init__()
-        self.inner = Sequential(
-            ConvND(dim)(channels, channels, kernel_size=3, padding=1),
-            SiLU(),
-            ConvND(dim)(channels, channels, kernel_size=3, padding=1, bias=False),
-            RMSNorm(channels),
-        )
+        """Initialize the ResBlock.
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.inner(x) + x
+        Parameters
+        ----------
+        dim : int
+            The spatial dimension of the input tensor.
+        channels : int
+            The number of channels in the input tensor.
+        """
+        super().__init__(
+            Residual(
+                Sequential(
+                    ConvND(dim)(channels, channels, kernel_size=3, padding=1),
+                    SiLU(),
+                    ConvND(dim)(channels, channels, kernel_size=3, padding=1, bias=False),
+                    RMSNorm(channels),
+                )
+            )
+        )
 
 
 class EfficientViTBlock(Module):
+    """Efficient Vision Transformer block with optional linear attention."""
+
     def __init__(
         self,
         dim: int,
@@ -44,7 +59,7 @@ class EfficientViTBlock(Module):
             attention = LinearSelfAttention(channels, channels, n_heads)  # TODO: check heads and head dim
         else:
             attention = MultiHeadAttention(channels, channels, n_heads, features_last=False)
-        self.context_module = Sequential(attention, RMSNorm(channels))
+        self.context_module = Residual(Sequential(attention, RMSNorm(channels)))
         self.local_module = GluMBConvResBlock(
             dim=dim,
             channels_in=channels,
@@ -53,12 +68,15 @@ class EfficientViTBlock(Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.context_module(x) + x
-        x = self.local_module(x)  # is already residual
+        """Forward pass for EfficientViTBlock."""
+        x = self.context_module(x)
+        x = self.local_module(x)
         return x
 
 
 class Encoder(Sequential):
+    """Encoder for DCAE."""
+
     def __init__(
         self,
         dim: int = 2,
@@ -84,13 +102,15 @@ class Encoder(Sequential):
                     stage = [EfficientViTBlock(dim, width, n_heads=1, linear_attn=False) for _ in range(depth)]
                 case _:
                     raise ValueError(f'Block type {block_type} not supported')
-            self.append(Sequential(stage))
+            self.append(Sequential(*stage))
             if len(self) < len(widths):
                 self.append(PixelUnshuffleDownsample(dim, width, width, downscale_factor=2, residual=True))
         self.append(PixelUnshuffleDownsample(dim, widths[-1], channels_out, downscale_factor=1, residual=True))
 
 
 class Decoder(Module):
+    """Decoder for DCAE."""
+
     def __init__(
         self,
         dim: int = 2,
@@ -121,7 +141,8 @@ class Decoder(Module):
                     stage = [EfficientViTBlock(dim, width, n_heads=1, linear_attn=False) for _ in range(depth)]
                 case _:
                     raise ValueError(f'Block type {block_type} not supported')
-            self.append(Sequential(stage))
+
+            self.stages.append(Sequential(*stage))
             if len(self) < len(widths):
                 self.append(PixelShuffleUpsample(dim, width, width, upscale_factor=2, residual=True))
 
@@ -149,11 +170,12 @@ class Decoder(Module):
         #     act=cfg.out_act,
         # )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.project_in(x)
-        for stage in reversed(self.stages):
-            if len(stage.op_list) == 0:
-                continue
-            x = stage(x)
-        x = self.project_out(x)
-        return x
+        self.project_out = PixelShuffleUpsample(dim, widths[-1], channels_out, upscale_factor=1, residual=True)
+
+    # def forward(self, x: torch.Tensor) -> torch.Tensor:
+    #     """Forward pass for Decoder."""
+    #     x = self.project_in(x)
+    #     for stage in reversed(self.stages):
+    #         x = stage(x)
+    #     x = self.project_out(x)
+    #     return x

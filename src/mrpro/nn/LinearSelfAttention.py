@@ -1,4 +1,4 @@
-"""Linear self-attention"""
+"""Linear self-attention."""
 
 import torch
 from einops import rearrange

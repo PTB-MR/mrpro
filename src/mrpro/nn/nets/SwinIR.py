@@ -1,8 +1,9 @@
 """SwinIR implementation."""
 
 import torch
-from torch.nn import Module
+from torch.nn import GELU, Module
 
+from mrpro.nn.DropPath import DropPath
 from mrpro.nn.FiLM import FiLM
 from mrpro.nn.NDModules import ConvND, InstanceNormND
 from mrpro.nn.Sequential import Sequential
@@ -23,6 +24,7 @@ class SwinTransformerLayer(Module):
         window_size: int,
         mlp_ratio: int = 4,
         emb_dim: int = 0,
+        p_droppath: float = 0.0,
     ):
         """Initialize SwinTransformerLayer.
 
@@ -36,17 +38,25 @@ class SwinTransformerLayer(Module):
             Number of attention heads
         window_size : int
             Size of the attention window
-        mlp_ratio : int, optional
-            Ratio for hidden dimension expansion, by default 4
-        emb_dim : int, optional
-            Dimension of conditioning input, by default 0
+        mlp_ratio : int
+            Ratio for hidden dimension expansion in MLP
+        emb_dim : int
+            Dimension of conditioning input. If 0, no FiLM conditioning is used.
+        p_droppath : float
+            Droppath probability for MLP
         """
         super().__init__()
-        self.norm1 = Sequential(InstanceNormND(dim)(channels))
+        self.norm1 = InstanceNormND(dim)(channels)
         self.attn = ShiftedWindowAttention(dim, channels, n_heads, window_size)
         self.norm2 = Sequential(InstanceNormND(dim)(channels))
         if emb_dim > 0:
             self.norm2.append(FiLM(channels=channels, cond_dim=emb_dim))
+        self.mlp = Sequential(
+            ConvND(dim)(channels, channels * mlp_ratio, 1),
+            GELU(True),
+            ConvND(dim)(channels * mlp_ratio, channels, 1),
+            DropPath(p_droppath),
+        )
 
     def __call__(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the Swin Transformer layer.
@@ -68,14 +78,15 @@ class SwinTransformerLayer(Module):
     def forward(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the Swin Transformer layer."""
         x = x + self.attn(self.norm1(x))
-        x = x + self.norm2(x)
+        x = x + self.mlp(self.norm2(x, cond))
         return x
 
 
 class ResidualSwinTransformerBlock(Module):
-    """Residual Swin Transformer block.
+    """Residual Swin Transformer block (RSTB).
 
-    Combines a Swin Transformer layer with a residual connection.
+    Combines a Swin Transformer layer with a residual connection,
+    as used in the SwinIR architecture.
     """
 
     def __init__(
@@ -86,6 +97,8 @@ class ResidualSwinTransformerBlock(Module):
         window_size: int,
         depth: int,
         emb_dim: int = 0,
+        p_droppath: float = 0.0,
+        mlp_ratio: int = 4,
     ):
         """Initialize ResidualSwinTransformerBlock.
 
@@ -102,11 +115,20 @@ class ResidualSwinTransformerBlock(Module):
         depth : int
             Number of Swin Transformer layers
         emb_dim : int, optional
-            Dimension of conditioning input, by default 0
+            Dimension of conditioning input. If 0, no FiLM conditioning is used.
+        p_droppath : float, optional
+            Droppath probability for MLP.
+        mlp_ratio : int, optional
+            Ratio for hidden dimension expansion in MLP
         """
         super().__init__()
         self.layers = Sequential(
-            *(SwinTransformerLayer(dim, channels, n_heads, window_size, emb_dim=emb_dim) for _ in range(depth))
+            *(
+                SwinTransformerLayer(
+                    dim, channels, n_heads, window_size, emb_dim=emb_dim, p_droppath=p_droppath, mlp_ratio=mlp_ratio
+                )
+                for _ in range(depth)
+            )
         )
         self.conv = ConvND(dim)(channels, channels, 3, padding=1)
 
@@ -118,7 +140,7 @@ class ResidualSwinTransformerBlock(Module):
         x : torch.Tensor
             Input tensor
         cond : torch.Tensor | None, optional
-            Conditioning input, by default None
+            Conditioning input. If None, no FiLM conditioning is used.
 
         Returns
         -------
@@ -155,6 +177,8 @@ class SwinIR(Module):
         n_blocks: int = 6,
         n_attn_per_block: int = 6,
         emb_dim: int = 0,
+        p_droppath: float = 0.0,
+        mlp_ratio: int = 4,
     ):
         """Initialize SwinIR.
 
@@ -167,17 +191,21 @@ class SwinIR(Module):
         channels_out : int
             Number of output channels
         channels_per_head : int, optional
-            Number of channels per attention head, by default 16
+            Number of channels per attention head
         n_heads : int, optional
-            Number of attention heads, by default 6
-        window_size : int, optional
-            Size of the attention window, by default 64
-        n_blocks : int, optional
-            Number of residual blocks, by default 6
-        n_attn_per_block : int, optional
-            Number of attention layers per block, by default 6
+            Number of attention heads
+        window_size : int
+            Size of the attention window. Inputs sizes must be divisible by this value.
+        n_blocks : int
+            Number of residual blocks
+        n_attn_per_block : int
+            Number of attention layers per block
         emb_dim : int, optional
-            Dimension of conditioning input, by default 0
+            Dimension of conditioning input. If 0, no FiLM conditioning is used.
+        p_droppath : float, optional
+            Droppath probability for MLP.
+        mlp_ratio : int, optional
+            Ratio for hidden dimension expansion in MLP.
         """
         super().__init__()
         self.first = ConvND(dim)(channels_in, channels_per_head * n_heads, kernel_size=3, padding=1)
@@ -190,6 +218,8 @@ class SwinIR(Module):
                     window_size,
                     n_attn_per_block,
                     emb_dim,
+                    p_droppath,
+                    mlp_ratio,
                 )
                 for _ in range(n_blocks)
             )
@@ -204,7 +234,7 @@ class SwinIR(Module):
         x : torch.Tensor
             Input tensor
         cond : torch.Tensor | None, optional
-            Conditioning input, by default None
+            Conditioning input. If None, no FiLM conditioning is used.
 
         Returns
         -------

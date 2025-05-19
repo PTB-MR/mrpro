@@ -1,3 +1,5 @@
+"""Gated linear unit activation function."""
+
 import torch
 from torch.nn import Linear, Module
 

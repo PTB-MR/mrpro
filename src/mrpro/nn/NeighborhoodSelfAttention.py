@@ -134,9 +134,11 @@ class NeighborhoodSelfAttention(Module):
 
         Parameters
         ----------
-        channels
+        channels_in
             The number of channels in the input tensor.
-        n_head
+        channels_out
+            The number of channels in the output tensor.
+        n_heads
             The number of attention heads.
         kernel_size
             The size of the attention neighborhood window.

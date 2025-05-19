@@ -30,8 +30,9 @@ class FourierFeatures(Module):
         std : float, optional
             Standard deviation for random initialization, by default 1.0
         """
+        if out_features % 2 != 0:
+            raise ValueError('out_features must be even.')
         super().__init__()
-        assert out_features % 2 == 0
         self.register_buffer('weight', torch.randn([out_features // 2, in_features]) * std)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -89,7 +90,8 @@ class AbsolutePositionEncoding(Module):
         self.register_buffer('encoding', torch.cat(encoding, dim=1)[:, :features])
         self.interpolation_mode = ['linear', 'bilinear', 'trilinear'][dim - 1]
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass for encoding."""
         features = self.encoding.shape[1]
         if features > x.shape[1]:
             raise ValueError(f'x has {x.shape[1]} features, but {features} are required')
