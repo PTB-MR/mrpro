@@ -51,12 +51,12 @@ class RotaryEmbedding(torch.autograd.Function):
         ctx.conjugated = conjugated  # type: ignore[attr-defined]
 
     @staticmethod
-    def backward(
+    def backward(  # type: ignore[override]
         ctx: torch.autograd.function.FunctionCtx, grad_output: torch.Tensor
     ) -> tuple[torch.Tensor, None, None]:
         """Apply backward pass."""
-        (theta,) = ctx.saved_tensors
-        apply_rotary_emb_(grad_output, theta, ctx.conjugated)
+        (theta,) = ctx.saved_tensors  # type: ignore[attr-defined]
+        apply_rotary_emb_(grad_output, theta, ctx.conjugated)  # type: ignore[attr-defined]
         return grad_output, None, None
 
 
@@ -65,6 +65,8 @@ class AxialRoPE(Module):
 
     Applies rotary position embeddings along each axis independently.
     """
+
+    freqs: torch.Tensor
 
     def __init__(self, dim: int, d_head: int, n_heads: int, headpos: int = -2, non_embed_fraction: float = 0.5):
         """Initialize AxialRoPE.

@@ -14,15 +14,15 @@ from mrpro.nn.Residual import Residual
 from mrpro.nn.RMSNorm import RMSNorm
 
 
-class ResBlock(Residual):
-    """Residual block with two convolutions and normalization."""
+class CNNBlock(Residual):
+    """Block with two convolutions and normalization."""
 
     def __init__(
         self,
         dim: int,
         channels: int,
     ):
-        """Initialize the ResBlock.
+        """Initialize the CNNBlock.
 
         Parameters
         ----------
@@ -51,12 +51,12 @@ class EfficientViTBlock(Module):
         dim: int,
         channels: int,
         n_heads: int,
-        expand_ratio: float = 4,
+        expand_ratio: int = 4,
         linear_attn: bool = False,
     ):
         super().__init__()
         if linear_attn:
-            attention = LinearSelfAttention(channels, channels, n_heads)  # TODO: check heads and head dim
+            attention: Module = LinearSelfAttention(channels, channels, n_heads)  # TODO: check heads and head dim
         else:
             attention = MultiHeadAttention(channels, channels, n_heads, features_last=False)
         self.context_module = Residual(Sequential(attention, RMSNorm(channels)))
@@ -82,7 +82,7 @@ class Encoder(Sequential):
         dim: int = 2,
         channels_in: int = 3,
         channels_out: int = 32,
-        block_types: Sequence[str] = ('ResBlock', 'ResBlock', 'LinearViT', 'LinearViT', 'ViT'),
+        block_types: Sequence[str] = ('CNN', 'CNN', 'LinearViT', 'LinearViT', 'ViT'),
         widths: Sequence[int] = (256, 512, 512, 1024, 1024),
         depths: Sequence[int] = (4, 6, 2, 2, 2),
     ):
@@ -92,8 +92,8 @@ class Encoder(Sequential):
             raise ValueError('block_types, widths, and depths must have the same length')
         for block_type, width, depth in zip(block_types, widths, depths, strict=False):
             match block_type:
-                case 'ResBlock':
-                    stage = [ResBlock(dim, width) for _ in range(depth)]
+                case 'CNN':
+                    stage: list[Module] = [CNNBlock(dim, width) for _ in range(depth)]
                 case 'LinearViT':
                     stage = [
                         EfficientViTBlock(dim, width, n_heads=1, linear_attn=True) for _ in range(depth)
@@ -108,7 +108,7 @@ class Encoder(Sequential):
         self.append(PixelUnshuffleDownsample(dim, widths[-1], channels_out, downscale_factor=1, residual=True))
 
 
-class Decoder(Module):
+class Decoder(Sequential):
     """Decoder for DCAE."""
 
     def __init__(
@@ -116,7 +116,7 @@ class Decoder(Module):
         dim: int = 2,
         channels_in: int = 32,
         channels_out: int = 3,
-        block_types: Sequence[str] = ('ViT', 'LinearViT', 'LinearViT', 'ResBlock', 'ResBlock'),
+        block_types: Sequence[str] = ('ViT', 'LinearViT', 'LinearViT', 'CNN', 'CNN'),
         widths: Sequence[int] = (1024, 1024, 512, 512, 256),
         depths: Sequence[int] = (2, 2, 2, 6, 4),
     ):
@@ -132,7 +132,7 @@ class Decoder(Module):
         for block_type, width, depth in zip(block_types, widths, depths, strict=False):
             match block_type:
                 case 'ResBlock':
-                    stage = [ResBlock(dim, width) for _ in range(depth)]
+                    stage: list[Module] = [CNNBlock(dim, width) for _ in range(depth)]
                 case 'LinearViT':
                     stage = [
                         EfficientViTBlock(dim, width, n_heads=1, linear_attn=True) for _ in range(depth)

@@ -80,7 +80,7 @@ class AbsolutePositionEncoding(Module):
         if include_radii:
             for n in range(2, dim + 1):
                 for combination in combinations(coords, n):
-                    coords.append(2**0.5 * torch.sqrt(sum([c**2 for c in combination])) - 1)
+                    coords.append((2 * sum([c**2 for c in combination])) ** 0.5 - 1)
         n_freqs = ceil(features / len(coords) / 2)
         freqs = unsqueeze_right((base_resolution) ** torch.linspace(0, 1, n_freqs), dim)
         encoding = []

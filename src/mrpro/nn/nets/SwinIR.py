@@ -53,7 +53,7 @@ class SwinTransformerLayer(Module):
             self.norm2.append(FiLM(channels=channels, cond_dim=emb_dim))
         self.mlp = Sequential(
             ConvND(dim)(channels, channels * mlp_ratio, 1),
-            GELU(True),
+            GELU('tanh'),
             ConvND(dim)(channels * mlp_ratio, channels, 1),
             DropPath(p_droppath),
         )

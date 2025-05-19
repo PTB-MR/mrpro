@@ -32,5 +32,5 @@ def test_transposed_attention(dim, channels, num_heads, input_shape, device):
     assert not x.grad.isnan().any(), 'NaN values in input gradients'
     assert attn.to_qkv.weight.grad is not None, 'No gradient computed for qkv'
     assert attn.qkv_dwconv.weight.grad is not None, 'No gradient computed for qkv_dwconv'
-    assert attn.project_out.weight.grad is not None, 'No gradient computed for project_out'
+    assert attn.to_out.weight.grad is not None, 'No gradient computed for project_out'
     assert attn.temperature.grad is not None, 'No gradient computed for temperature'

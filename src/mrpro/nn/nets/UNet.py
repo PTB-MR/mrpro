@@ -120,8 +120,8 @@ class SeparableUNet(UNetBase):
 
     References
     ----------
-    .. [TRAN] Tran, D., Wang, H., Torresani, L., Ray, J., LeCun, Y., & Paluri, M. A closer look at spatiotemporal convolutions for action recognition.
-       CVPR 2018. https://arxiv.org/abs/1711.11248
+    .. [TRAN] Tran, D., Wang, H., Torresani, L., Ray, J., LeCun, Y., & Paluri, M. A closer look at spatiotemporal
+       convolutions for action recognition. CVPR 2018. https://arxiv.org/abs/1711.11248
     .. [QUI] Qiu, Z., Yao, T., & Mei, T. Learning spatio-temporal representation with pseudo-3d residual networks.
        ICCV 2017. https://arxiv.org/abs/1711.10305
     .. [ZIM] Zimmermann, F. F., & Kofler, A. (2023, October). NoSENSE: Learned unrolled cardiac MRI reconstruction
