@@ -23,6 +23,7 @@ from mrpro.data.AcqInfo import (
     convert_time_stamp_from_siemens,
     convert_time_stamp_to_osi2,
     convert_time_stamp_to_siemens,
+    write_acqinfo_to_ismrmrd_acquisition_,
 )
 from mrpro.data.Dataclass import Dataclass
 from mrpro.data.EncodingLimits import EncodingLimits, Limits
@@ -83,7 +84,7 @@ class KData(Dataclass):
     """K-space data. Shape `(*other coils k2 k1 k0)`"""
 
     traj: KTrajectory
-    """K-space trajectory along kz, ky and kx. Shape `(*other k2 k1 k0)`"""
+    """K-space trajectory along kz, ky and kx. Shape `(*other 1 k2 k1 k0)`"""
 
     @classmethod
     def from_file(
@@ -345,10 +346,7 @@ class KData(Dataclass):
         filename
             path to the ISMRMRD file
         """
-        # Open the dataset
-        dataset = ismrmrd.Dataset(filename, 'dataset', create_if_needed=True)
-
-        # Create ISMRMRD header
+        ismrmrd_version = int(version('ismrmrd').split('.')[0])
         header = self.header.to_ismrmrd()
         header.acquisitionSystemInformation.receiverChannels = self.data.shape[-4]
 
@@ -365,17 +363,10 @@ class KData(Dataclass):
 
         # For the k-space center of k1 and k2 we can only make an educated guess on where it is:
         # k-space point closest to 0
-        trajectory = self.traj.as_tensor(-1)
-        kspace_center_idx = torch.argmin(trajectory.abs().sum(dim=-1))
-        encoding_limits.k1.center = int(
-            self.header.acq_info.idx.k1.broadcast_to(trajectory.shape[:-1]).flatten()[kspace_center_idx].item()
-        )
-        encoding_limits.k2.center = int(
-            self.header.acq_info.idx.k2.broadcast_to(trajectory.shape[:-1]).flatten()[kspace_center_idx].item()
-        )
+        center_idx = self.traj.as_tensor(-1).abs().sum(dim=-1).argmin()
+        encoding_limits.k1.center = int(self.header.acq_info.idx.k1.broadcast_to(self.traj.shape).flatten()[center_idx])
+        encoding_limits.k2.center = int(self.header.acq_info.idx.k2.broadcast_to(self.traj.shape).flatten()[center_idx])
         header.encoding[0].encodingLimits = encoding_limits.to_ismrmrd_encoding_limits_type()
-
-        dataset.write_xml_header(header.toXML('utf-8'))
 
         # Vendors use different units for time stamps
         if self.header.vendor.lower() == 'osi2':
@@ -383,37 +374,32 @@ class KData(Dataclass):
         else:
             convert_time_stamp = convert_time_stamp_to_siemens  # 2.5ms time steps
 
-        # Go through data and save acquisitions
-        acq_shape = [self.data.shape[-1], self.data.shape[-4]]
-        acq = ismrmrd.Acquisition()
-        acq.resize(*acq_shape, trajectory_dimensions=3)
+        with ismrmrd.Dataset(filename, 'dataset', create_if_needed=True) as dataset:
+            dataset.write_xml_header(header.toXML('utf-8'))
 
-        acq.available_channels = acq_shape[1]
-        acq.version = int(version('ismrmrd').split('.')[0])
-        acq.scan_counter = 0
+            flattened = self.rearrange('... coils k2 k1 k0 -> (... k2 k1) coils 1 1 k0')
+            for scan_counter, acq in enumerate(flattened):
+                ismrmrd_acq = ismrmrd.Acquisition()
+                ismrmrd_acq.resize(
+                    number_of_samples=acq.shape[-1], active_channels=acq.shape[-4], trajectory_dimensions=3
+                )
+                ismrmrd_acq.available_channels = acq.shape[-4]
+                ismrmrd_acq.version = ismrmrd_version
+                ismrmrd_acq.scan_counter = 0
+                write_acqinfo_to_ismrmrd_acquisition_(acq.header.acq_info, ismrmrd_acq, convert_time_stamp)
+                ismrmrd_acq.traj[:] = acq.traj.as_tensor(-1).squeeze().cpu().numpy()[:, ::-1]  # zyx -> xyz
+                ismrmrd_acq.center_sample = np.argmin(np.abs(ismrmrd_acq.traj[:, 0]))
 
-        for other in np.ndindex(self.data.shape[:-4]):
-            for k2 in range(self.data.shape[-3]):
-                for k1 in range(self.data.shape[-2]):
-                    # Select current readout for all coils
-                    single_acquisition = self[(*other, slice(None), k2, k1, slice(None))]  # type: ignore[index]
-                    single_acquisition.header.acq_info.write_single_acquisition_to_ismrmrd_acquisition(
-                        acq, convert_time_stamp
-                    )
+                # TODO :Why do we need this? This looks wrong, i.e. only correct without partial readout?
+                # Thould it be something like centersample=length - center_sample if it "counts from the other end"?
+                # @christoph
 
-                    acq.traj[:] = torch.squeeze(single_acquisition.traj.as_tensor(-1)).numpy()[:, ::-1]  # zyx -> xyz
-                    acq.center_sample = np.argmin(np.abs(acq.traj[:, 0]))
+                if ismrmrd_acq.flags & AcqFlags.ACQ_IS_REVERSE.value:
+                    ismrmrd_acq.center_sample += 1
 
-                    # Reversed readouts means that the k-space is traversed from positive to negative
-                    if acq.flags & AcqFlags.ACQ_IS_REVERSE.value:
-                        acq.center_sample += 1
-
-                    acq.data[:] = torch.squeeze(single_acquisition.data).numpy()
-                    dataset.append_acquisition(acq)
-
-                    acq.scan_counter += 1
-
-        dataset.close()
+                ismrmrd_acq.data[:] = acq.data.squeeze().cpu().numpy()
+                ismrmrd_acq.scan_counter = scan_counter
+                dataset.append_acquisition(ismrmrd_acq)
 
     def __repr__(self):
         """Representation method for KData class."""
