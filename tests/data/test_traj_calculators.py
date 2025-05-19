@@ -98,8 +98,8 @@ def test_KTrajectorySunflowerGoldenRpe() -> None:
     n_k0 = 100
     n_k1 = 20
     n_k2 = 10
-    k2_idx = torch.arange(n_k2)[:, None]
-    k1_idx = torch.arange(n_k1)
+    k2_idx = torch.arange(n_k2)[:, None, None]
+    k1_idx = torch.arange(n_k1)[:, None]
 
     trajectory_calculator = KTrajectorySunflowerGoldenRpe()
     trajectory = trajectory_calculator(
