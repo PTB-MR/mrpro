@@ -166,7 +166,7 @@ class Indexer:
                         f'Index {idx} out of bounds for axis {shape_position} '
                         f'with shape {broadcast_shape[shape_position]}'
                     )
-                normal_index.append(slice(idx, idx + 1))
+                normal_index.append(slice(idx, None if idx == -1 else idx + 1))
                 fancy_index.append(slice(None))
                 shape_position += 1
 
