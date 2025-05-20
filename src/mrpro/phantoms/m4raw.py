@@ -45,7 +45,7 @@ class M4RawDataset(torch.utils.data.Dataset):
         Parameters
         ----------
         path : PathLike
-            Either a path to a directory containing the FastMRI data as .h5 files or a sequence of paths of
+            Either a path to a directory containing the M4Raw data as .h5 files or a sequence of paths of
             individual files.
         single_slice : bool
             Whether to return single slices or stacks of slices.
