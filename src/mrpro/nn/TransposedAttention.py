@@ -46,7 +46,7 @@ class TransposedAttention(Module):
             padding=1,
             bias=False,
         )
-        self.to_out = ConvND(dim)(channels_per_head * n_heads * 3, channels_out, kernel_size=1)
+        self.to_out = ConvND(dim)(channels_per_head * n_heads, channels_out, kernel_size=1)
 
     def __call__(self, x: torch.Tensor) -> torch.Tensor:
         """Apply transposed attention.

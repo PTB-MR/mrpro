@@ -41,7 +41,7 @@ class UNetBase(Module):
         self.first: Module = Identity()
         """The first block. Should expand from the number of input channels."""
 
-    def forward(self, x: torch.Tensor, cond: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply to Network."""
         call = partial(call_with_cond, cond=cond)
         x = call(self.first, x)
@@ -57,7 +57,7 @@ class UNetBase(Module):
             x = call(block, x)
         return call(self.last, x)
 
-    def __call__(self, x: torch.Tensor, cond: torch.Tensor | None) -> torch.Tensor:
+    def __call__(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply to Network.
 
         Parameters
@@ -71,7 +71,7 @@ class UNetBase(Module):
         -------
             The output tensor.
         """
-        return self(x, cond)
+        return super().__call__(x, cond)
 
 
 class UNet(UNetBase):

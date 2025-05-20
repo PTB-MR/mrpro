@@ -163,7 +163,7 @@ class Restormer(UNetBase):
 
         def blocks(n_heads: int, n_blocks: int):
             layers = Sequential(
-                *(RestormerBlock(dim, n_channels_per_head, n_heads, mlp_ratio) for _ in range(n_blocks))
+                *(RestormerBlock(dim, n_channels_per_head * n_heads, n_heads, mlp_ratio) for _ in range(n_blocks))
             )
 
             if cond_dim > 0 and n_blocks > 1:
