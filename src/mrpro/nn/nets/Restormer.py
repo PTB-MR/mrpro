@@ -82,7 +82,7 @@ class RestormerBlock(Module):
         mlp_ratio : float
             Ratio for hidden dimension expansion
         cond_dim : int, optional
-            Dimension of conditioning input, by default 0
+            Dimension of conditioning input
         """
         super().__init__()
         self.norm1 = Sequential(InstanceNormND(dim)(channels))
@@ -145,17 +145,17 @@ class Restormer(UNetBase):
         channels_out : int
             Number of output channels
         n_blocks : Sequence[int], optional
-            Number of blocks in each stage, by default (4, 6, 6, 8)
+            Number of blocks in each stage
         n_refinement_blocks : int, optional
-            Number of refinement blocks, by default 4
+            Number of refinement blocks
         n_heads : Sequence[int], optional
-            Number of attention heads in each stage, by default (1, 2, 4, 8)
+            Number of attention heads in each stage
         n_channels_per_head : int, optional
-            Number of channels per attention head, by default 48
+            Number of channels per attention head
         mlp_ratio : float, optional
-            Ratio for hidden dimension expansion, by default 2.66
+            Ratio for hidden dimension expansion
         cond_dim : int, optional
-            Dimension of conditioning input, by default 0
+            Dimension of conditioning input
         """
         super().__init__()
 

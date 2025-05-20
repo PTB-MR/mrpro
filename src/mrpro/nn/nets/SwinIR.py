@@ -66,7 +66,7 @@ class SwinTransformerLayer(Module):
         x : torch.Tensor
             Input tensor
         cond : torch.Tensor | None, optional
-            Conditioning input, by default None
+            Conditioning input
 
         Returns
         -------

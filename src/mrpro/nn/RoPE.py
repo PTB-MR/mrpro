@@ -80,9 +80,9 @@ class AxialRoPE(Module):
         n_heads : int
             Number of attention heads
         headpos : int, optional
-            Position of the head dimension, by default -2
+            Position of the head dimension
         non_embed_fraction : float, optional
-            Fraction of dimensions to not embed, by default 0.5
+            Fraction of dimensions to not embed
         """
         super().__init__()
         log_min = torch.log(torch.tensor(torch.pi))
