@@ -112,9 +112,11 @@ class PixelUnshuffleDownsample(Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Apply downsampling."""
-        x = self.pixel_unshuffle(x)
         h = self.conv(x)
+        h = self.pixel_unshuffle(h)
+
         if self.residual:
+            x = self.pixel_unshuffle(x)
             h = h + x.unflatten(1, (h.shape[1], -1)).mean(2)
         return h
 

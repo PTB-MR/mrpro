@@ -1,5 +1,7 @@
 """Sequential container with support for conditioning and Operators."""
 
+from collections import OrderedDict
+
 import torch
 
 from mrpro.nn.CondMixin import CondMixin
@@ -35,3 +37,13 @@ class Sequential(torch.nn.Sequential):
             else:
                 x = module(x)
         return x
+
+    def __getitem__(self, idx: slice | int) -> 'Sequential':
+        """Get a slice or item from the Sequential container.
+
+        Subclasses will decompose to `Sequential` on indexing.
+        """
+        if isinstance(idx, slice):
+            return Sequential(OrderedDict(list(self._modules.items())[idx]))
+        else:
+            return self._get_item_by_idx(self._modules.values(), idx)

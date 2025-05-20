@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from typing import Literal
 
 import torch
-from torch.nn import Module, Sequential, SiLU
+from torch.nn import Module, ReLU, SiLU
 
 from mrpro.nn.GluMBConvResBlock import GluMBConvResBlock
 from mrpro.nn.LinearSelfAttention import LinearSelfAttention
@@ -14,6 +14,7 @@ from mrpro.nn.nets.VAE import VAE
 from mrpro.nn.PixelShuffle import PixelShuffleUpsample, PixelUnshuffleDownsample
 from mrpro.nn.Residual import Residual
 from mrpro.nn.RMSNorm import RMSNorm
+from mrpro.nn.Sequential import Sequential
 
 
 class CNNBlock(Residual):
@@ -42,13 +43,11 @@ class CNNBlock(Residual):
             The number of channels in the input tensor.
         """
         super().__init__(
-            Residual(
-                Sequential(
-                    ConvND(dim)(channels, channels, kernel_size=3, padding=1),
-                    SiLU(),
-                    ConvND(dim)(channels, channels, kernel_size=3, padding=1, bias=False),
-                    RMSNorm(channels),
-                )
+            Sequential(
+                ConvND(dim)(channels, channels, kernel_size=3, padding=1),
+                SiLU(True),
+                ConvND(dim)(channels, channels, kernel_size=3, padding=1, bias=False),
+                RMSNorm(channels),
             )
         )
 
@@ -151,7 +150,7 @@ class Encoder(Sequential):
         self.append(PixelUnshuffleDownsample(dim, channels_in, widths[0], downscale_factor=2, residual=False))
         if len(block_types) != len(widths) or len(block_types) != len(depths):
             raise ValueError('block_types, widths, and depths must have the same length')
-        for block_type, width, depth in zip(block_types, widths, depths, strict=False):
+        for block_type, width, next_width, depth in zip(block_types, widths, (*widths[1:], None), depths, strict=False):
             match block_type:
                 case 'CNN':
                     stage: list[Module] = [CNNBlock(dim, width) for _ in range(depth)]
@@ -164,8 +163,9 @@ class Encoder(Sequential):
                 case _:
                     raise ValueError(f'Block type {block_type} not supported')
             self.append(Sequential(*stage))
-            if len(self) < len(widths):
-                self.append(PixelUnshuffleDownsample(dim, width, width, downscale_factor=2, residual=True))
+            if next_width:
+                self.append(PixelUnshuffleDownsample(dim, width, next_width, downscale_factor=2, residual=True))
+        # Norm # relu
         self.append(PixelUnshuffleDownsample(dim, widths[-1], channels_out, downscale_factor=1, residual=True))
 
 
@@ -214,8 +214,7 @@ class Decoder(Sequential):
             raise ValueError('block_types, widths, and depths must have the same length')
         self.append(PixelShuffleUpsample(dim, channels_in, widths[0], upscale_factor=1, residual=True))
 
-        self.stages: list[Sequential] = []
-        for block_type, width, depth in zip(block_types, widths, depths, strict=False):
+        for block_type, width, next_width, depth in zip(block_types, widths, (*widths[1:], None), depths, strict=False):
             match block_type:
                 case 'CNN':
                     stage: list[Module] = [CNNBlock(dim, width) for _ in range(depth)]
@@ -227,12 +226,17 @@ class Decoder(Sequential):
                     stage = [EfficientViTBlock(dim, width, n_heads=1, linear_attn=False) for _ in range(depth)]
                 case _:
                     raise ValueError(f'Block type {block_type} not supported')
+            self.append(Sequential(*stage))
+            if next_width:
+                self.append(PixelShuffleUpsample(dim, width, next_width, upscale_factor=2, residual=True))
 
-            self.stages.append(Sequential(*stage))
-            if len(self) < len(widths):
-                self.append(PixelShuffleUpsample(dim, width, width, upscale_factor=2, residual=True))
-
-        self.append(PixelShuffleUpsample(dim, widths[-1], channels_out, upscale_factor=1, residual=True))
+        self.append(
+            Sequential(
+                RMSNorm(widths[-1]),
+                ReLU(),
+                PixelShuffleUpsample(dim, widths[-1], channels_out, upscale_factor=2),
+            )
+        )
 
 
 class DCVAE(VAE):

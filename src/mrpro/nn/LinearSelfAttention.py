@@ -83,11 +83,11 @@ class LinearSelfAttention(Module):
             x = x.float()
         if not self.channel_last:
             x = x.moveaxis(1, -1)
-        spatial_shape = x.shape[2:-1]
+        spatial_shape = x.shape[1:-1]
 
         qkv = self.to_qkv(x)
         query, key, value = rearrange(
-            qkv, 'batch ... (qkv head channels) -> qkv batch head (...) channel', qkv=3, head=self.n_heads
+            qkv, 'batch ... (qkv head channels) -> qkv batch head (...) channels', qkv=3, head=self.n_heads
         )
 
         query = self.kernel_function(query)
@@ -102,7 +102,8 @@ class LinearSelfAttention(Module):
         attn = value_key_query[..., :-1, :] / normalization
         out = self.to_out(attn)
         out = out.to(orig_dtype)
-        out.unflatten(-2, spatial_shape)
+        out = out.moveaxis(1, -1).flatten(-2)  # join heads and channels
+        out = out.unflatten(-2, spatial_shape)
         if not self.channel_last:
             out = out.moveaxis(-1, 1)
         return out

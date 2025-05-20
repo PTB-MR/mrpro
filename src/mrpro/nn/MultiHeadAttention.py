@@ -63,17 +63,17 @@ class MultiHeadAttention(Module):
     def _reshape(self, x: torch.Tensor) -> torch.Tensor:
         if not self.features_last:
             x = x.moveaxis(1, -1)
-        return x.flatten(2, -2)
+        return x.flatten(1, -2)
 
     def forward(self, x: torch.Tensor, cross_attention: torch.Tensor | None = None) -> torch.Tensor:
         """Apply multi-head attention."""
         reshaped_x = self._reshape(x)
         reshaped_cross_attention = self._reshape(cross_attention) if cross_attention is not None else reshaped_x
 
-        y = self.mha(reshaped_cross_attention, reshaped_cross_attention, reshaped_x)
-        out = self.to_out(y)
+        y = self.mha(reshaped_cross_attention, reshaped_cross_attention, reshaped_x, need_weights=False)[0]
+        out: torch.Tensor = self.to_out(y)
 
         if not self.features_last:
-            out = out.moveaxes(-1, 1)
+            out = out.moveaxis(-1, 1)
 
         return out.reshape(x.shape)
