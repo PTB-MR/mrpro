@@ -4,7 +4,7 @@ import torch
 from einops import rearrange
 from torch.nn import Module
 
-from mrpro.nn.NDModules import ConvND
+from mrpro.nn.ndmodules import ConvND
 from mrpro.utils.reshape import ravel_multi_index
 from mrpro.utils.sliding_window import sliding_window
 

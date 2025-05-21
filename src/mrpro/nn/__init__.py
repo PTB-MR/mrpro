@@ -4,7 +4,7 @@ from mrpro.nn.AttentionGate import AttentionGate
 from mrpro.nn.CondMixin import CondMixin
 from mrpro.nn.FiLM import FiLM
 from mrpro.nn.GroupNorm import GroupNorm
-from mrpro.nn.NDModules import (
+from mrpro.nn.ndmodules import (
     AdaptiveAvgPoolND,
     AvgPoolND,
     BatchNormND,

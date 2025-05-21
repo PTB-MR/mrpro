@@ -6,7 +6,7 @@ from torch.nn import Identity, Module, SiLU
 from mrpro.nn.CondMixin import CondMixin
 from mrpro.nn.FiLM import FiLM
 from mrpro.nn.GroupNorm import GroupNorm
-from mrpro.nn.NDModules import ConvND
+from mrpro.nn.ndmodules import ConvND
 from mrpro.nn.Sequential import Sequential
 
 

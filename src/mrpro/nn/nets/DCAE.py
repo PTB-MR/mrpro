@@ -9,7 +9,7 @@ from torch.nn import Module, ReLU, SiLU
 from mrpro.nn.GluMBConvResBlock import GluMBConvResBlock
 from mrpro.nn.LinearSelfAttention import LinearSelfAttention
 from mrpro.nn.MultiHeadAttention import MultiHeadAttention
-from mrpro.nn.NDModules import ConvND
+from mrpro.nn.ndmodules import ConvND
 from mrpro.nn.nets.VAE import VAE
 from mrpro.nn.PixelShuffle import PixelShuffleUpsample, PixelUnshuffleDownsample
 from mrpro.nn.Residual import Residual

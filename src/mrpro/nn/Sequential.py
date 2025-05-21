@@ -9,9 +9,13 @@ from mrpro.operators import Operator
 
 
 class Sequential(torch.nn.Sequential):
-    """Sequential container with support for conditioning and Operators."""
+    """Sequential container with support for conditioning and Operators
 
-    def __call__(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
+    Allows multiple input tensors and a single output tensor of the sequential block.
+
+    """
+
+    def __call__(self, *x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply all modules in series to the input.
 
         Parameters
@@ -25,18 +29,24 @@ class Sequential(torch.nn.Sequential):
         -------
             The output tensor.
         """
-        return super().__call__(x, cond)
+        return super().__call__(*x, cond=cond)
 
-    def forward(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
+    def forward(self, *x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply all modules in series to the input."""
         for module in self:
-            if isinstance(module, CondMixin):
-                x = module(x, cond)
-            elif isinstance(module, Operator):
-                (x,) = module(x)
+            if isinstance(module, Operator):
+                x = module(*x)
             else:
-                x = module(x)
-        return x
+                ret: torch.Tensor | tuple[torch.Tensor, ...]
+                if isinstance(module, CondMixin):
+                    ret = module(*x, cond=cond)
+                else:
+                    ret = module(*x)
+                if isinstance(ret, tuple):
+                    x = ret
+                else:
+                    x = (ret,)
+        return x[0]
 
     def __getitem__(self, idx: slice | int) -> 'Sequential':
         """Get a slice or item from the Sequential container.

@@ -3,7 +3,7 @@
 import torch
 from torch.nn import Module, ReLU, Sigmoid
 
-from mrpro.nn.NDModules import AdaptiveAvgPoolND, ConvND
+from mrpro.nn.ndmodules import AdaptiveAvgPoolND, ConvND
 from mrpro.nn.Sequential import Sequential
 
 

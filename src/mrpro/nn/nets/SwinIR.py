@@ -5,7 +5,7 @@ from torch.nn import GELU, Module
 
 from mrpro.nn.DropPath import DropPath
 from mrpro.nn.FiLM import FiLM
-from mrpro.nn.NDModules import ConvND, InstanceNormND
+from mrpro.nn.ndmodules import ConvND, InstanceNormND
 from mrpro.nn.Sequential import Sequential
 from mrpro.nn.ShiftedWindowAttention import ShiftedWindowAttention
 
@@ -78,7 +78,7 @@ class SwinTransformerLayer(Module):
     def forward(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the Swin Transformer layer."""
         x = x + self.attn(self.norm1(x))
-        x = x + self.mlp(self.norm2(x, cond))
+        x = x + self.mlp(self.norm2(x, cond=cond))
         return x
 
 
@@ -151,7 +151,7 @@ class ResidualSwinTransformerBlock(Module):
 
     def forward(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the residual Swin Transformer block."""
-        return x + self.conv(self.layers(x, cond))
+        return x + self.conv(self.layers(x, cond=cond))
 
 
 class SwinIR(Module):
@@ -242,6 +242,6 @@ class SwinIR(Module):
             Output tensor
         """
         x = self.first(x)
-        x = self.blocks(x, cond)
+        x = self.blocks(x, cond=cond)
         x = self.last(x)
         return x

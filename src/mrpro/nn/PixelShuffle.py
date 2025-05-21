@@ -3,7 +3,7 @@
 import torch
 from torch.nn import Module
 
-from mrpro.nn.NDModules import ConvND
+from mrpro.nn.ndmodules import ConvND
 
 
 class PixelUnshuffle(Module):

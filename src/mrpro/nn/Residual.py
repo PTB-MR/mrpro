@@ -23,7 +23,7 @@ class Residual(CondMixin, Module):
         self.module = module
         self.skip = Identity() if skip is None else skip
 
-    def __call__(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
+    def __call__(self, *x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the module.
 
         Parameters
@@ -38,8 +38,8 @@ class Residual(CondMixin, Module):
         -------
             The output tensor.
         """
-        return super().__call__(x, cond)
+        return super().__call__(*x, cond=cond)
 
-    def forward(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
+    def forward(self, *x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the module."""
-        return call_with_cond(self.module, x, cond) + call_with_cond(self.skip, x, cond)
+        return call_with_cond(self.module, *x, cond=cond) + call_with_cond(self.skip, *x, cond=cond)

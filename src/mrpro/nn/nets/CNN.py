@@ -7,7 +7,7 @@ from torch.nn import ReLU
 
 from mrpro.nn.FiLM import FiLM
 from mrpro.nn.GroupNorm import GroupNorm
-from mrpro.nn.NDModules import ConvND
+from mrpro.nn.ndmodules import ConvND
 from mrpro.nn.Residual import Residual
 from mrpro.nn.Sequential import Sequential
 

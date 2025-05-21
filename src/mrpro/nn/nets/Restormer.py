@@ -7,8 +7,10 @@ import torch
 from torch.nn import Identity, Module
 
 from mrpro.nn.FiLM import FiLM
-from mrpro.nn.NDModules import ConvND, InstanceNormND
+from mrpro.nn.join import Concat
+from mrpro.nn.ndmodules import ConvND, InstanceNormND
 from mrpro.nn.nets.UNet import UNetBase
+from mrpro.nn.PixelShuffle import PixelShuffleUpsample, PixelUnshuffleDownsample
 from mrpro.nn.Sequential import Sequential
 from mrpro.nn.TransposedAttention import TransposedAttention
 
@@ -170,36 +172,27 @@ class Restormer(UNetBase):
                 layers.insert(1, FiLM(channels=n_channels_per_head * n_heads, cond_dim=cond_dim))
             return layers
 
-        for block, head in zip(n_blocks, n_heads, strict=False):
+        for block, head in zip(n_blocks[:-1], n_heads[:-1], strict=True):
             self.input_blocks.append(blocks(head, block))
             self.output_blocks.append(blocks(head, block))
-            self.skip_blocks.append(Identity())
 
+            self.skip_blocks.append(Identity())
+            self.concat_blocks.append(Concat())
+
+        self.middle_block = blocks(n_heads[-1], n_blocks[-1])
         self.output_blocks = self.output_blocks[::-1]
         for head_current, head_next in pairwise(n_heads):
             self.down_blocks.append(
-                Sequential(
-                    ConvND(dim)(
-                        n_channels_per_head * head_current,
-                        n_channels_per_head * head_next,
-                        kernel_size=3,
-                        stride=2,
-                        padding=1,
-                    )
-                )
-            )
-            self.up_blocks.append(
-                Sequential(
-                    ConvND(dim)(
-                        n_channels_per_head * head_next,
-                        n_channels_per_head * head_current,
-                        kernel_size=3,
-                        stride=1,
-                        padding=1,
-                    )
-                )
+                PixelUnshuffleDownsample(dim, n_channels_per_head * head_current, n_channels_per_head * head_next)
             )
 
+            self.up_blocks.append(
+                PixelShuffleUpsample(dim, n_channels_per_head * head_next, n_channels_per_head * head_current)
+            )
+
+        self.output_blocks = self.input_blocks[::-1]
+        self.up_blocks = self.up_blocks[::-1]
+        self.concat_blocks = self.concat_blocks[::-1]
         self.refinement_blocks = Sequential(
             *(RestormerBlock(dim, n_channels_per_head, n_heads[0], mlp_ratio) for _ in range(n_refinement_blocks))
         )

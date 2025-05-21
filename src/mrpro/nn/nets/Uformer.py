@@ -8,7 +8,8 @@ from torch.nn import GELU, Identity, LeakyReLU, Module
 
 from mrpro.nn.DropPath import DropPath
 from mrpro.nn.FiLM import FiLM
-from mrpro.nn.NDModules import ConvND, ConvTransposeND, InstanceNormND
+from mrpro.nn.join import Concat
+from mrpro.nn.ndmodules import ConvND, ConvTransposeND, InstanceNormND
 from mrpro.nn.nets.UNet import UNetBase
 from mrpro.nn.Sequential import Sequential
 from mrpro.nn.ShiftedWindowAttention import ShiftedWindowAttention
@@ -135,7 +136,7 @@ class Uformer(UNetBase):
     """Uformer: U-Net with window attention.
 
     Implements the Uformer network proposed in [WANG21]_
-    It is SWIN/U-Net hybrid consisting of (shifted) windows attention transformer layers at different
+    It is SWin-Transformer/U-Net hybrid consisting of (shifted) windows attention transformer layers at different
     resolution levels, extended by FiLM layers for conditioning.
 
     References
@@ -208,11 +209,11 @@ class Uformer(UNetBase):
             return layers
 
         drop_path_rates = torch.linspace(0, max_droppath_rate, len(n_heads)).tolist()
-        for n_head, p_droppath_input in zip(n_heads, drop_path_rates, strict=True):
+        for n_head, p_droppath_input in zip(n_heads[:-1], drop_path_rates[:-1], strict=True):
             self.input_blocks.append(blocks(n_heads=n_head, p_droppath=p_droppath_input))
             self.output_blocks.append(blocks(n_heads=n_head, p_droppath=max_droppath_rate))
             self.skip_blocks.append(Identity())
-        self.output_blocks = self.output_blocks[::-1]
+            self.concat_blocks.append(Concat())
         self.middle_block = blocks(n_heads=n_heads[-1], p_droppath=max_droppath_rate)
 
         for n_head_current, n_head_next in pairwise(n_heads):
@@ -230,6 +231,9 @@ class Uformer(UNetBase):
                     n_channels_per_head * n_head_next, n_channels_per_head * n_head_current, kernel_size=2, stride=2
                 )
             )
+        self.output_blocks = self.output_blocks[::-1]
+        self.up_blocks = self.up_blocks[::-1]
+
         self.first = torch.nn.Sequential(
             ConvND(dim)(channels_in, n_channels_per_head * n_heads[0], kernel_size=3, stride=1, padding='same'),
             LeakyReLU(),

@@ -4,7 +4,7 @@ import torch
 from einops import rearrange
 from torch.nn import Module, Parameter
 
-from mrpro.nn.NDModules import ConvND
+from mrpro.nn.ndmodules import ConvND
 
 
 class TransposedAttention(Module):

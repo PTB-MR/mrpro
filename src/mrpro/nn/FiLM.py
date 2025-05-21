@@ -38,7 +38,7 @@ class FiLM(CondMixin, Module):
         else:
             self.project = Identity()
 
-    def __call__(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
+    def __call__(self, *x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply FiLM.
 
         Parameters
@@ -48,12 +48,15 @@ class FiLM(CondMixin, Module):
         cond
             The conditioning tensor.
         """
-        return super().__call__(x, cond)
+        if len(x) != 1:
+            raise ValueError('FiLM expects a single input tensor')
+        return super().__call__(x[0], cond=cond)
 
     def forward(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply FiLM."""
         if cond is None:
             return x
         scale, shift = self.project(cond).chunk(2, dim=1)
+
         scale, shift = unsqueeze_tensors_right(scale, shift, ndim=x.ndim)
         return x * (1 + scale) + shift
