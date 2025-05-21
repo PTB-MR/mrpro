@@ -13,19 +13,19 @@ from mrpro.utils import RandomGenerator
     ],
 )
 @pytest.mark.parametrize(
-    ('dim', 'channels_in', 'channels_out', 'cond_dim', 'input_shape', 'emb_shape'),
+    ('dim', 'channels_in', 'channels_out', 'cond_dim', 'input_shape', 'cond_shape'),
     [
         (2, 32, 32, 16, (1, 32, 32, 32), (1, 16)),
         (3, 64, 32, 0, (2, 64, 16, 16, 16), None),
     ],
 )
-def test_resblock(dim, channels_in, channels_out, cond_dim, input_shape, emb_shape, device):
+def test_resblock(dim, channels_in, channels_out, cond_dim, input_shape, cond_shape, device):
     """Test ResBlock output shape and backpropagation."""
     rng = RandomGenerator(seed=42)
     x = rng.float32_tensor(input_shape).to(device).requires_grad_(True)
-    emb = rng.float32_tensor(emb_shape).to(device).requires_grad_(True) if emb_shape else None
+    cond = rng.float32_tensor(cond_shape).to(device).requires_grad_(True) if cond_shape else None
     res = ResBlock(dim=dim, channels_in=channels_in, channels_out=channels_out, cond_dim=cond_dim).to(device)
-    output = res(x, emb)
+    output = res(x, cond=cond)
     assert output.shape == (input_shape[0], channels_out, *input_shape[2:]), (
         f'Output shape {output.shape} != expected {(input_shape[0], channels_out, *input_shape[2:])}'
     )
@@ -34,7 +34,7 @@ def test_resblock(dim, channels_in, channels_out, cond_dim, input_shape, emb_sha
     assert not x.isnan().any(), 'NaN values in input'
     assert not x.grad.isnan().any(), 'NaN values in input gradients'
     assert res.block[2].weight.grad is not None, 'No gradient computed for first Conv'
-    if emb is not None:
-        assert emb.grad is not None, 'No gradient computed for embedding'
-        assert not emb.isnan().any(), 'NaN values in embedding'
-        assert not emb.grad.isnan().any(), 'NaN values in embedding gradients'
+    if cond is not None:
+        assert cond.grad is not None, 'No gradient computed for condedding'
+        assert not cond.isnan().any(), 'NaN values in condedding'
+        assert not cond.grad.isnan().any(), 'NaN values in condedding gradients'

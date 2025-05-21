@@ -47,7 +47,7 @@ class SwinTransformerLayer(Module):
         """
         super().__init__()
         self.norm1 = InstanceNormND(dim)(channels)
-        self.attn = ShiftedWindowAttention(dim, channels, n_heads, window_size)
+        self.attn = ShiftedWindowAttention(dim, channels, channels, n_heads, window_size)
         self.norm2 = Sequential(InstanceNormND(dim)(channels))
         if emb_dim > 0:
             self.norm2.append(FiLM(channels=channels, cond_dim=emb_dim))

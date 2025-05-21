@@ -42,7 +42,7 @@ class LeFF(Module):
             Expansion ratio of the hidden dimension
         """
         super().__init__()
-        hidden_dim = int(dim * expand_ratio)
+        hidden_dim = int(channels_in * expand_ratio)
         self.block = Sequential(
             ConvND(dim)(channels_in, hidden_dim, 1),
             GELU(),
@@ -211,10 +211,10 @@ class Uformer(UNetBase):
         drop_path_rates = torch.linspace(0, max_droppath_rate, len(n_heads)).tolist()
         for n_head, p_droppath_input in zip(n_heads[:-1], drop_path_rates[:-1], strict=True):
             self.input_blocks.append(blocks(n_heads=n_head, p_droppath=p_droppath_input))
-            self.output_blocks.append(blocks(n_heads=n_head, p_droppath=max_droppath_rate))
+            self.output_blocks.append(blocks(n_heads=2 * n_head, p_droppath=max_droppath_rate))
             self.skip_blocks.append(Identity())
             self.concat_blocks.append(Concat())
-        self.middle_block = blocks(n_heads=n_heads[-1], p_droppath=max_droppath_rate)
+        self.output_blocks = self.output_blocks[::-1]
 
         for n_head_current, n_head_next in pairwise(n_heads):
             self.down_blocks.append(
@@ -226,18 +226,25 @@ class Uformer(UNetBase):
                     padding=1,
                 )
             )
+
+        self.middle_block = blocks(n_heads=n_heads[-1], p_droppath=max_droppath_rate)
+
+        self.up_blocks.append(
+            ConvTransposeND(dim)(
+                n_channels_per_head * n_heads[-1], n_channels_per_head * n_heads[-2], kernel_size=2, stride=2
+            )
+        )
+        for n_head_current, n_head_next in pairwise(n_heads[-2::-1]):
             self.up_blocks.append(
                 ConvTransposeND(dim)(
-                    n_channels_per_head * n_head_next, n_channels_per_head * n_head_current, kernel_size=2, stride=2
+                    2 * n_channels_per_head * n_head_current, n_channels_per_head * n_head_next, kernel_size=2, stride=2
                 )
             )
-        self.output_blocks = self.output_blocks[::-1]
-        self.up_blocks = self.up_blocks[::-1]
 
         self.first = torch.nn.Sequential(
             ConvND(dim)(channels_in, n_channels_per_head * n_heads[0], kernel_size=3, stride=1, padding='same'),
             LeakyReLU(),
         )
         self.last = ConvND(dim)(
-            n_channels_per_head * n_heads[-1], channels_out, kernel_size=3, stride=1, padding='same'
+            2 * n_channels_per_head * n_heads[0], channels_out, kernel_size=3, stride=1, padding='same'
         )

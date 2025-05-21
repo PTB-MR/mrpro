@@ -97,6 +97,6 @@ class GluMBConvResBlock(CondMixin, Module):
         h, gate = torch.chunk(h, 2, dim=1)
         h = h * torch.nn.functional.silu(gate)
         if self.film is not None:
-            h = self.film(h, cond)
+            h = self.film(h, cond=cond)
         h = self.point_conv(h)
         return self.skip(x) + h

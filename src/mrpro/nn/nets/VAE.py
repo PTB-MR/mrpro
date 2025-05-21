@@ -47,6 +47,12 @@ class VAE(Module):
         """
         return self.forward(x)
 
+    def mode(self, x: torch.Tensor) -> torch.Tensor:
+        """Mode of the VAE."""
+        z = self.encoder(x)
+        mean, _ = z.chunk(2, dim=1)
+        return self.decoder(mean)
+
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """Forward pass of the VAE."""
         z = self.encoder(x)

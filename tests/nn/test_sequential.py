@@ -31,7 +31,7 @@ def test_sequential(input_shape, cond_dim, device):
         FastFourierOp(),
         FiLM(channels=64, cond_dim=16),
     ).to(device)
-    output = seq(x, cond)
+    output = seq(x, cond=cond)
     assert output.shape == (input_shape[0], 32), f'Output shape {output.shape} != expected {(input_shape[0], 32)}'
     output.sum().backward()
     assert x.grad is not None, 'No gradient computed for input'
