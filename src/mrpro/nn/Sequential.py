@@ -9,7 +9,7 @@ from mrpro.operators import Operator
 
 
 class Sequential(torch.nn.Sequential):
-    """Sequential container with support for conditioning and Operators
+    """Sequential container with support for conditioning and Operators.
 
     Allows multiple input tensors and a single output tensor of the sequential block.
 

@@ -13,6 +13,7 @@ class UNetBase(Module):
     """Base class for U-shaped networks."""
 
     def __init__(self) -> None:
+        """Initialize the UNetBase."""
         super().__init__()
         self.input_blocks = ModuleList()
         """The encoder blocks. Order is highest resolution to lowest resolution."""
@@ -98,9 +99,9 @@ class UNet(UNetBase):
         cond_dim: int,
         num_blocks: int,
         padding_modes: str | Sequence[str],
-    ) -> None: ...
-
-    """Initialize the UNet."""
+    ) -> None:
+        """Initialize the UNet."""
+        super().__init__()
 
 
 class AttentionUNet(UNet):

@@ -257,6 +257,7 @@ class DCVAE(VAE):
         widths: Sequence[int] = (256, 512, 512, 1024, 1024),
         depths: Sequence[int] = (4, 6, 2, 2, 2),
     ):
+        """Initialize the DCVAE."""
         encoder = Encoder(dim, channels, latent_dim * 2, block_types, widths, depths)
         decoder = Decoder(dim, latent_dim, channels, block_types[::-1], widths[::-1], depths[::-1])
         super().__init__(encoder, decoder)

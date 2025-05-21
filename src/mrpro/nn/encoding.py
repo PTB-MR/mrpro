@@ -28,7 +28,7 @@ class FourierFeatures(Module):
         out_features : int
             Number of output features (must be even)
         std : float, optional
-            Standard deviation for random initialization, by default 1.0
+            Standard deviation for random initialization
         """
         if out_features % 2 != 0:
             raise ValueError('out_features must be even.')
@@ -70,9 +70,9 @@ class AbsolutePositionEncoding(Module):
         features : int
             Number of output features
         include_radii : bool, optional
-            Whether to include radius features, by default True
+            Whether to include radius features
         base_resolution : int, optional
-            Base resolution for position encoding, by default 128
+            Base resolution for position encoding
         """
         super().__init__()
 

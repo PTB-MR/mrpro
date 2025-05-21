@@ -1,10 +1,11 @@
 """Convert Linear layers to kernel size 1 ConvNd layers and vice versa."""
 
-import torch
-import torch.nn as nn
-from torch.nn import Module, Conv1d, Conv2d, Conv3d, Linear
-from mrpro.nn.ndmodules import ConvND
 from typing import Literal, overload
+
+import torch
+from torch.nn import Conv1d, Conv2d, Conv3d, Linear
+
+from mrpro.nn.ndmodules import ConvND
 
 
 @overload
@@ -26,9 +27,11 @@ def linear_to_conv(linear_layer: Linear, dim: int) -> Conv1d | Conv2d | Conv3d: 
 def linear_to_conv(linear_layer: Linear, dim: int) -> Conv1d | Conv2d | Conv3d:
     """Convert a Linear layer to a ConvNd layer with kernel size 1.
 
-    Rearranging the spatial dimensions to the batch dimension, applying the linear layer and rearranging the spatial dimensions back
-    it equivalent to applying the a kernel size 1 ConvNd layer.
-    This function will create the ConvNd with the correct weights and bias.
+    Rearranging the spatial dimensions to the batch dimension,
+    applying the linear layer and rearranging the spatial dimensions back
+    is equivalent to applying a kernel size 1 ConvNd layer.
+
+    This function will create the Conv1d, Conv2d, or Conv3d with the correct weights and bias.
 
     See :func:`conv_to_linear` for the reverse operation.
 
@@ -83,8 +86,8 @@ def conv_to_linear(conv_layer: Conv1d | Conv2d | Conv3d) -> Linear:
     if not all(k == 1 for k in conv_layer.kernel_size):
         raise ValueError('Kernel size must be 1 for conversion.')
     linear = Linear(
-        conv_layer.weight.shape[0],
-        conv_layer.weight.shape[1],
+        conv_layer.in_channels,
+        conv_layer.out_channels,
         bias=conv_layer.bias is not None,
         device=conv_layer.weight.device,
         dtype=conv_layer.weight.dtype,
