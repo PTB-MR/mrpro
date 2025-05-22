@@ -2,9 +2,9 @@
 
 import math
 from collections.abc import Sequence
+from typing import Literal
 
 import torch
-import torch.nn.functional as F  # noqa: N812
 
 
 def normalize_index(ndim: int, index: int) -> int:
@@ -34,6 +34,7 @@ def pad_or_crop(
     data: torch.Tensor,
     new_shape: Sequence[int] | torch.Size,
     dim: None | Sequence[int] = None,
+    mode: Literal['constant', 'reflect', 'replicate', 'circular'] = 'constant',
     value: float = 0.0,
 ) -> torch.Tensor:
     """Change shape of data by center cropping or symmetric padding.
@@ -47,8 +48,10 @@ def pad_or_crop(
     dim
         Dimensions the `new_shape` corresponds to.
         `None` is interpreted as last ``len(new_shape)`` dimensions.
+    mode
+        Mode to use for padding.
     value
-        value to use for padding.
+        value to use for constant padding.
 
     Returns
     -------
@@ -78,5 +81,5 @@ def pad_or_crop(
 
     if any(npad):
         # F.pad expects paddings in reversed order
-        data = F.pad(data, npad[::-1], value=value)
+        data = torch.nn.functional.pad(data, npad[::-1], value=value, mode=mode)
     return data
