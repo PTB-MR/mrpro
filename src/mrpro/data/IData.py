@@ -179,10 +179,10 @@ class IData(Dataclass):
         mr_acquisition_type = '3D' if self.data.shape[-3] > 1 else '2D'
         frame_dimension = next((i for i in range(-3, -len(self.data.shape) - 1, -1) if self.data.shape[i] > 1), -3)
         number_of_frames = self.data.shape[frame_dimension]
-        pattern_in = ['d'+str(i) for i in range(self.data.ndim)]
+        pattern_in = ['d' + str(i) for i in range(self.data.ndim)]
         pattern_out = pattern_in.copy()
         pattern_out[frame_dimension], pattern_out[-3] = pattern_out[-3], pattern_out[frame_dimension]
-        dcm_idata = self.rearrange(' '.join(pattern_in)+'->'+' '.join(pattern_out))
+        dcm_idata = self.rearrange(' '.join(pattern_in) + '->' + ' '.join(pattern_out))
 
         # Metadata
         file_meta = pydicom.dataset.FileMetaDataset()
@@ -280,7 +280,11 @@ class IData(Dataclass):
                 )
                 dataset.PerFrameFunctionalGroupsSequence[-1].PixelMeasuresSequence = deepcopy(pixel_measure_sequence)
 
-                mr_timing_parameters_sequence[0].FlipAngle = rad_to_deg(dcm_frame_idata.header.fa)
+                mr_timing_parameters_sequence[0].FlipAngle = (
+                    rad_to_deg(dcm_frame_idata.header.fa).tolist()
+                    if isinstance(dcm_frame_idata.header.fa, torch.Tensor)
+                    else rad_to_deg(dcm_frame_idata.header.fa)
+                )
                 mr_timing_parameters_sequence[0].RepetitionTime = s_to_ms(dcm_frame_idata.header.tr)
                 dataset.PerFrameFunctionalGroupsSequence[-1].MRTimingAndRelatedParametersSequence = deepcopy(
                     mr_timing_parameters_sequence
