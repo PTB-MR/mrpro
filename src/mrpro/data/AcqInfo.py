@@ -342,66 +342,81 @@ class AcqInfo(Dataclass):
             additional_values = tuple(tensor_5d(headers[field]) for field in additional_fields)
             return acq_info, additional_values
 
-    def write_single_acquisition_to_ismrmrd_acquisition(
-        self,
-        acquisition: ismrmrd.Acquisition,
-        convert_time_stamp: Callable[[float], int] = convert_time_stamp_to_siemens,
-    ) -> ismrmrd.Acquisition:
-        """Overwrite ISMRMRD acquisition information for single acquisition."""
-        if np.prod(self.shape) != 1:
-            raise ValueError('Only single acquisition (single readout for all coils) can be written.')
-        acquisition.flags = self.flags
-        acquisition.idx.kspace_encode_step_1 = self.idx.k1
-        acquisition.idx.kspace_encode_step_2 = self.idx.k2
-        acquisition.idx.average = self.idx.average
-        acquisition.idx.slice = self.idx.slice
-        acquisition.idx.contrast = self.idx.contrast
-        acquisition.idx.phase = self.idx.phase
-        acquisition.idx.repetition = self.idx.repetition
-        acquisition.idx.set = self.idx.set
-        acquisition.idx.segment = self.idx.segment
-        acquisition.idx.user = (
-            self.idx.user0,
-            self.idx.user1,
-            self.idx.user2,
-            self.idx.user3,
-            self.idx.user4,
-            self.idx.user5,
-            self.idx.user6,
-            self.idx.user7,
-        )
-        # active_channesl, number_of_samples and trajectory_dimensions are read-only and cannot be set
-        acquisition.patient_table_position = self.patient_table_position[0].apply(m_to_mm).zyx[::-1]  # zyx -> xyz
-        directions = self.orientation[0].as_directions()
-        acquisition.slice_dir = directions[0].zyx[::-1]  # zyx -> xyz
-        acquisition.phase_dir = directions[1].zyx[::-1]
-        acquisition.read_dir = directions[2].zyx[::-1]
-        acquisition.position = self.position[0].apply(m_to_mm).zyx[::-1]
-        acquisition.sample_time_us = self.sample_time_us
-        acquisition.user_float = (
-            self.user.float0,
-            self.user.float1,
-            self.user.float2,
-            self.user.float3,
-            self.user.float4,
-            self.user.float5,
-            self.user.float6,
-            self.user.float7,
-        )
-        acquisition.user_int = (
-            self.user.int0,
-            self.user.int1,
-            self.user.int2,
-            self.user.int3,
-            self.user.int4,
-            self.user.int5,
-            self.user.int6,
-            self.user.int7,
-        )
-        acquisition.acquisition_time_stamp = convert_time_stamp(self.acquisition_time_stamp.item())
-        acquisition.physiology_time_stamp = (
-            convert_time_stamp(self.physiology_time_stamps.timestamp0.item()),
-            convert_time_stamp(self.physiology_time_stamps.timestamp1.item()),
-            convert_time_stamp(self.physiology_time_stamps.timestamp2.item()),
-        )
-        return acquisition
+
+def write_acqinfo_to_ismrmrd_acquisition_(
+    acq_info: AcqInfo,
+    ismrmrd_acq: ismrmrd.Acquisition,
+    convert_time_stamp: Callable[[float], int] = convert_time_stamp_to_siemens,
+) -> ismrmrd.Acquisition:
+    """Overwrite ISMRMRD acquisition information for single acquisition.
+
+    Parameters
+    ----------
+    acq_info
+        Acquisition information to write to ISMRMRD acquisition.
+    ismrmrd_acq
+        ISMRMRD acquisition to write to. Modified in place.
+    convert_time_stamp
+        Function to convert time stamp to ISMRMRD time stamp.
+
+    Returns
+    -------
+        ISMRMRD acquisition with updated information.
+    """
+    if acq_info.shape.numel() != 1:
+        raise ValueError('Only single acquisition (single readout for all coils) can be written.')
+    ismrmrd_acq.flags = acq_info.flags
+    ismrmrd_acq.idx.kspace_encode_step_1 = acq_info.idx.k1
+    ismrmrd_acq.idx.kspace_encode_step_2 = acq_info.idx.k2
+    ismrmrd_acq.idx.average = acq_info.idx.average
+    ismrmrd_acq.idx.slice = acq_info.idx.slice
+    ismrmrd_acq.idx.contrast = acq_info.idx.contrast
+    ismrmrd_acq.idx.phase = acq_info.idx.phase
+    ismrmrd_acq.idx.repetition = acq_info.idx.repetition
+    ismrmrd_acq.idx.set = acq_info.idx.set
+    ismrmrd_acq.idx.segment = acq_info.idx.segment
+    ismrmrd_acq.idx.user = (
+        acq_info.idx.user0,
+        acq_info.idx.user1,
+        acq_info.idx.user2,
+        acq_info.idx.user3,
+        acq_info.idx.user4,
+        acq_info.idx.user5,
+        acq_info.idx.user6,
+        acq_info.idx.user7,
+    )
+    # active_channesl, number_of_samples and trajectory_dimensions are read-only and cannot be set
+    ismrmrd_acq.patient_table_position = acq_info.patient_table_position[0].apply(m_to_mm).zyx[::-1]  # zyx -> xyz
+    directions = acq_info.orientation[0].as_directions()
+    ismrmrd_acq.slice_dir = directions[0].zyx[::-1]  # zyx -> xyz
+    ismrmrd_acq.phase_dir = directions[1].zyx[::-1]
+    ismrmrd_acq.read_dir = directions[2].zyx[::-1]
+    ismrmrd_acq.position = acq_info.position[0].apply(m_to_mm).zyx[::-1]
+    ismrmrd_acq.sample_time_us = acq_info.sample_time_us
+    ismrmrd_acq.user_float = (
+        acq_info.user.float0,
+        acq_info.user.float1,
+        acq_info.user.float2,
+        acq_info.user.float3,
+        acq_info.user.float4,
+        acq_info.user.float5,
+        acq_info.user.float6,
+        acq_info.user.float7,
+    )
+    ismrmrd_acq.user_int = (
+        acq_info.user.int0,
+        acq_info.user.int1,
+        acq_info.user.int2,
+        acq_info.user.int3,
+        acq_info.user.int4,
+        acq_info.user.int5,
+        acq_info.user.int6,
+        acq_info.user.int7,
+    )
+    ismrmrd_acq.acquisition_time_stamp = convert_time_stamp(acq_info.acquisition_time_stamp.item())
+    ismrmrd_acq.physiology_time_stamp = (
+        convert_time_stamp(acq_info.physiology_time_stamps.timestamp0.item()),
+        convert_time_stamp(acq_info.physiology_time_stamps.timestamp1.item()),
+        convert_time_stamp(acq_info.physiology_time_stamps.timestamp2.item()),
+    )
+    return ismrmrd_acq
