@@ -7,7 +7,7 @@ import torch
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
-from mrpro.utils import RandomGenerator
+from mrpro.utils.RandomGenerator import RandomGenerator
 from mrpro.utils.reshape import unsqueeze_tensors_left
 
 
