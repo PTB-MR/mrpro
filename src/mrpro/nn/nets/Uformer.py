@@ -4,13 +4,13 @@ from collections.abc import Sequence
 from itertools import pairwise
 
 import torch
-from torch.nn import GELU, Identity, LeakyReLU, Module
+from torch.nn import GELU, LeakyReLU, Module
 
 from mrpro.nn.DropPath import DropPath
 from mrpro.nn.FiLM import FiLM
 from mrpro.nn.join import Concat
 from mrpro.nn.ndmodules import ConvND, ConvTransposeND, InstanceNormND
-from mrpro.nn.nets.UNet import UNetBase
+from mrpro.nn.nets.UNet import UNetBase, UNetDecoder, UNetEncoder
 from mrpro.nn.Sequential import Sequential
 from mrpro.nn.ShiftedWindowAttention import ShiftedWindowAttention
 
@@ -186,7 +186,6 @@ class Uformer(UNetBase):
             is linearly increased from `0` to `max_droppath_rate` with decreasing resolution. The rate in output
             blocks is fixed to `max_droppath_rate`.
         """
-        super().__init__()
 
         def blocks(n_heads: int, p_droppath: float = 0.0):
             layers = Sequential(
@@ -208,43 +207,54 @@ class Uformer(UNetBase):
                 layers.insert(1, FiLM(channels=n_channels_per_head * n_heads, cond_dim=cond_dim))
             return layers
 
+        first_block = torch.nn.Sequential(
+            ConvND(dim)(channels_in, n_channels_per_head * n_heads[0], kernel_size=3, stride=1, padding='same'),
+            LeakyReLU(),
+        )
         drop_path_rates = torch.linspace(0, max_droppath_rate, len(n_heads)).tolist()
-        for n_head, p_droppath_input in zip(n_heads[:-1], drop_path_rates[:-1], strict=True):
-            self.input_blocks.append(blocks(n_heads=n_head, p_droppath=p_droppath_input))
-            self.output_blocks.append(blocks(n_heads=2 * n_head, p_droppath=max_droppath_rate))
-            self.skip_blocks.append(Identity())
-            self.concat_blocks.append(Concat())
-        self.output_blocks = self.output_blocks[::-1]
-
-        for n_head_current, n_head_next in pairwise(n_heads):
-            self.down_blocks.append(
-                ConvND(dim)(
-                    n_channels_per_head * n_head_current,
-                    n_channels_per_head * n_head_next,
-                    kernel_size=4,
-                    stride=2,
-                    padding=1,
-                )
+        encoder_blocks = [
+            blocks(n_heads=n_head, p_droppath=p_droppath_input)
+            for n_head, p_droppath_input in zip(n_heads[:-1], drop_path_rates[:-1], strict=True)
+        ]
+        down_blocks = [
+            ConvND(dim)(
+                n_channels_per_head * n_head_current,
+                n_channels_per_head * n_head_next,
+                kernel_size=4,
+                stride=2,
+                padding=1,
             )
+            for n_head_current, n_head_next in pairwise(n_heads)
+        ]
+        middle_block = blocks(n_heads=n_heads[-1], p_droppath=max_droppath_rate)
+        encoder = UNetEncoder(
+            first_block=first_block,
+            encoder_blocks=encoder_blocks,
+            down_blocks=down_blocks,
+            middle_block=middle_block,
+        )
 
-        self.middle_block = blocks(n_heads=n_heads[-1], p_droppath=max_droppath_rate)
-
-        self.up_blocks.append(
+        decoder_blocks = [blocks(n_heads=2 * n_head, p_droppath=max_droppath_rate) for n_head in reversed(n_heads[:-1])]
+        concat_blocks = [Concat() for _ in range(len(decoder_blocks))]
+        up_blocks = [
             ConvTransposeND(dim)(
                 n_channels_per_head * n_heads[-1], n_channels_per_head * n_heads[-2], kernel_size=2, stride=2
             )
-        )
-        for n_head_current, n_head_next in pairwise(n_heads[-2::-1]):
-            self.up_blocks.append(
+        ]
+        for n_head_current, n_head_next in pairwise(reversed(n_heads[:-1])):
+            up_blocks.append(
                 ConvTransposeND(dim)(
                     2 * n_channels_per_head * n_head_current, n_channels_per_head * n_head_next, kernel_size=2, stride=2
                 )
             )
-
-        self.first = torch.nn.Sequential(
-            ConvND(dim)(channels_in, n_channels_per_head * n_heads[0], kernel_size=3, stride=1, padding='same'),
-            LeakyReLU(),
-        )
-        self.last = ConvND(dim)(
+        last_block = ConvND(dim)(
             2 * n_channels_per_head * n_heads[0], channels_out, kernel_size=3, stride=1, padding='same'
         )
+        decoder = UNetDecoder(
+            decoder_blocks=decoder_blocks,
+            concat_blocks=concat_blocks,
+            up_blocks=up_blocks,
+            last_block=last_block,
+        )
+
+        super().__init__(encoder=encoder, decoder=decoder)

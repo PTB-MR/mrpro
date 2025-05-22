@@ -4,59 +4,173 @@ from collections.abc import Sequence
 from functools import partial
 
 import torch
-from torch.nn import Identity, Module, ModuleList
+from sympy import Identity
+from torch.nn import Module, ModuleList
 
 from mrpro.nn.CondMixin import call_with_cond
+
+
+class UNetEncoder(Module):
+    """Encoder."""
+
+    def __init__(
+        self,
+        first_block: Module,
+        encoder_blocks: Sequence[Module],
+        down_blocks: Sequence[Module],
+        middle_block: Module,
+    ) -> None:
+        """Initialize the UNetEncoder."""
+        super().__init__()
+        self.first = first_block
+        """The first block. Should expand from the number of input channels."""
+
+        self.encoder_blocks = ModuleList(encoder_blocks)
+        """The encoder blocks. Order is highest resolution to lowest resolution."""
+
+        self.down_blocks = ModuleList(down_blocks)
+        """The downsampling blocks"""
+
+        self.middle_block = middle_block
+        """Also called bottleneck block"""
+
+    def __len__(self):
+        """Get the number of resolutions levels."""
+        return len(self.down_blocks) + 1
+
+    def forward(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> tuple[torch.Tensor, ...]:
+        """Apply to Network."""
+        call = partial(call_with_cond, cond=cond)
+
+        x = call(self.first, x)
+
+        xs = []
+        for block, down in zip(self.encoder_blocks, self.down_blocks, strict=True):
+            x = call(block, x)
+            xs.append(x)
+            x = call(down, x)
+
+        x = call(self.middle_block, x)
+
+        return (*xs, x)
+
+    def __call__(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> tuple[torch.Tensor, ...]:
+        """Apply to Network.
+
+        Parameters
+        ----------
+        x
+            The input tensor.
+        cond
+            The conditioning tensor.
+
+        Returns
+        -------
+            The tensors at the different resolutions, highest resolution first.
+        """
+        return super().__call__(x, cond)
+
+
+class UNetDecoder(Module):
+    """Decoder."""
+
+    def __init__(
+        self,
+        decoder_blocks: Sequence[Module],
+        up_blocks: Sequence[Module],
+        concat_blocks: Sequence[Module],
+        last_block: Module,
+    ) -> None:
+        """Initialize the UNetDecoder."""
+        super().__init__()
+        self.decoder_blocks = ModuleList(decoder_blocks)
+        """The decoder blocks. Order is lowest resolution to highest resolution."""
+
+        self.up_blocks = ModuleList(up_blocks)
+        """The upsampling blocks"""
+
+        self.concat_blocks = ModuleList(concat_blocks)
+        """Joins the skip connections with the upsampled features from a lower resolution level"""
+
+        self.last_block = last_block
+        """The last block. Should reduce to the number of output channels."""
+
+    def __len__(self):
+        """Get the number of resolutions levels."""
+        return len(self.up_blocks) + 1
+
+    def forward(self, hs: tuple[torch.Tensor, ...], *, cond: torch.Tensor | None = None) -> torch.Tensor:
+        """Apply to Network."""
+        call = partial(call_with_cond, cond=cond)
+
+        x = hs[-1]  # lowest resolution, from middle block
+        for block, up, concat, h in zip(
+            self.decoder_blocks, self.up_blocks, self.concat_blocks, hs[-2::-1], strict=True
+        ):
+            x = call(up, x)
+            x = concat(x, h)
+            x = call(block, x)
+
+        x = call(self.last_block, x)
+        return x
+
+    def __call__(self, hs: tuple[torch.Tensor, ...], *, cond: torch.Tensor | None = None) -> torch.Tensor:
+        """Apply to Network.
+
+        Parameters
+        ----------
+        hs
+            The tensors at the different resolutions, highest resolution first.
+        cond
+            The conditioning tensor.
+
+        Returns
+        -------
+            The output tensor.
+        """
+        return super().__call__(hs, cond=cond)
 
 
 class UNetBase(Module):
     """Base class for U-shaped networks."""
 
-    def __init__(self) -> None:
+    def __init__(self, encoder: UNetEncoder, decoder: UNetDecoder, skip_blocks: Sequence[Module] | None = None) -> None:
         """Initialize the UNetBase."""
         super().__init__()
-        self.input_blocks = ModuleList()
-        """The encoder blocks. Order is highest resolution to lowest resolution."""
+        self.encoder = encoder
+        """The encoder."""
 
-        self.down_blocks = ModuleList()
-        """The downsampling blocks"""
+        self.decoder = decoder
+        """The decoder."""
 
         self.skip_blocks = ModuleList()
-        """Modifications to the skip connections"""
+        """Modifications of the skip connections."""
 
-        self.middle_block: Module = Identity()
-        """Also called bottleneck block"""
+        if len(decoder) != len(encoder):
+            raise ValueError(
+                'The number of resolutions in the encoder and decoder must be the same, '
+                f'got {len(decoder)} and {len(encoder)}'
+            )
 
-        self.output_blocks = ModuleList()
-        """Also called decoder blocks. Order is lowest resolution to highest resolution."""
-
-        self.up_blocks = ModuleList()
-        """The upsampling blocks"""
-
-        self.concat_blocks = ModuleList()
-        """Joins the skip connections with the upsampled features from a lower resolution level"""
-
-        self.last: Module = Identity()
-        """The last block. Should reduce to the number of output channels."""
-
-        self.first: Module = Identity()
-        """The first block. Should expand from the number of input channels."""
+        if skip_blocks is None:
+            self.skip_blocks.extend(Identity() for _ in range(len(decoder)))
+        elif len(skip_blocks) != len(decoder):
+            raise ValueError(
+                f'The number of skip blocks must be the same as the number of resolutions, '
+                f'got {len(skip_blocks)} and {len(encoder)}'
+            )
+        else:
+            self.skip_blocks.extend(skip_blocks)
 
     def forward(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply to Network."""
-        call = partial(call_with_cond, cond=cond)
-        x = call(self.first, x)
-        xs = []
-        for block, down, skip in zip(self.input_blocks, self.down_blocks, self.skip_blocks, strict=True):
-            x = call(block, x)
-            xs.append(call(skip, x))
-            x = call(down, x)
-        x = call(self.middle_block, x)
-        for block, up, concat in zip(self.output_blocks, self.up_blocks, self.concat_blocks, strict=True):
-            x = call(up, x)
-            x = concat(x, xs.pop())
-            x = call(block, x)
-        return call(self.last, x)
+        xs = self.encoder(x, cond=cond)
+        xs = tuple(
+            call_with_cond(self.skip_blocks[i], x, cond=cond) if i < len(self.skip_blocks) else x
+            for i, x in enumerate(xs)
+        )
+        x = self.decoder(xs, cond=cond)
+        return x
 
     def __call__(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply to Network.
@@ -72,7 +186,7 @@ class UNetBase(Module):
         -------
             The output tensor.
         """
-        return super().__call__(x, cond)
+        return super().__call__(x, cond=cond)
 
 
 class UNet(UNetBase):

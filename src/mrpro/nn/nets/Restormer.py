@@ -4,12 +4,12 @@ from collections.abc import Sequence
 from itertools import pairwise
 
 import torch
-from torch.nn import Identity, Module
+from torch.nn import Module
 
 from mrpro.nn.FiLM import FiLM
 from mrpro.nn.join import Concat
 from mrpro.nn.ndmodules import ConvND, InstanceNormND
-from mrpro.nn.nets.UNet import UNetBase
+from mrpro.nn.nets.UNet import UNetBase, UNetDecoder, UNetEncoder
 from mrpro.nn.PixelShuffle import PixelShuffleUpsample, PixelUnshuffleDownsample
 from mrpro.nn.Sequential import Sequential
 from mrpro.nn.TransposedAttention import TransposedAttention
@@ -159,9 +159,6 @@ class Restormer(UNetBase):
         cond_dim : int, optional
             Dimension of conditioning input
         """
-        super().__init__()
-
-        self.first = ConvND(dim)(channels_in, n_channels_per_head, kernel_size=3, stride=1, padding=1, bias=False)
 
         def blocks(n_heads: int, n_blocks: int):
             layers = Sequential(
@@ -172,28 +169,35 @@ class Restormer(UNetBase):
                 layers.insert(1, FiLM(channels=n_channels_per_head * n_heads, cond_dim=cond_dim))
             return layers
 
-        for block, head in zip(n_blocks[:-1], n_heads[:-1], strict=True):
-            self.input_blocks.append(blocks(head, block))
-            self.output_blocks.append(blocks(head, block))
-
-            self.skip_blocks.append(Identity())
-            self.concat_blocks.append(Concat())
-
-        self.middle_block = blocks(n_heads[-1], n_blocks[-1])
-        self.output_blocks = self.output_blocks[::-1]
-        for head_current, head_next in pairwise(n_heads):
-            self.down_blocks.append(
-                PixelUnshuffleDownsample(dim, n_channels_per_head * head_current, n_channels_per_head * head_next)
-            )
-
-            self.up_blocks.append(
-                PixelShuffleUpsample(dim, n_channels_per_head * head_next, n_channels_per_head * head_current)
-            )
-
-        self.output_blocks = self.input_blocks[::-1]
-        self.up_blocks = self.up_blocks[::-1]
-        self.concat_blocks = self.concat_blocks[::-1]
-        self.refinement_blocks = Sequential(
-            *(RestormerBlock(dim, n_channels_per_head, n_heads[0], mlp_ratio) for _ in range(n_refinement_blocks))
+        first_block = ConvND(dim)(channels_in, n_channels_per_head, kernel_size=3, stride=1, padding=1, bias=False)
+        encoder_blocks = [blocks(head, block) for head, block in zip(n_heads[:-1], n_blocks[:-1], strict=True)]
+        down_blocks = [
+            PixelUnshuffleDownsample(dim, n_channels_per_head * head_current, n_channels_per_head * head_next)
+            for head_current, head_next in pairwise(n_heads)
+        ]
+        middle_block = blocks(n_heads[-1], n_blocks[-1])
+        encoder = UNetEncoder(
+            first_block=first_block,
+            encoder_blocks=encoder_blocks,
+            down_blocks=down_blocks,
+            middle_block=middle_block,
         )
-        self.last = ConvND(dim)(n_channels_per_head, channels_out, kernel_size=3, stride=1, padding=1)
+
+        up_blocks = [
+            PixelShuffleUpsample(dim, n_channels_per_head * head_next, n_channels_per_head * head_current)
+            for head_current, head_next in pairwise(n_heads)
+        ][::-1]
+        concat_blocks = [Concat() for _ in range(len(encoder_blocks))]
+        decoder_blocks = [blocks(head, block) for head, block in zip(n_heads[:-1], n_blocks[:-1], strict=True)][::-1]
+        last_block = Sequential(
+            *(RestormerBlock(dim, n_channels_per_head, n_heads[0], mlp_ratio) for _ in range(n_refinement_blocks)),
+            ConvND(dim)(n_channels_per_head, channels_out, kernel_size=3, stride=1, padding=1),
+        )
+        decoder = UNetDecoder(
+            decoder_blocks=decoder_blocks,
+            up_blocks=up_blocks,
+            concat_blocks=concat_blocks,
+            last_block=last_block,
+        )
+
+        super().__init__(encoder=encoder, decoder=decoder)
