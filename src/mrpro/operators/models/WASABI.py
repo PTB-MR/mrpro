@@ -6,7 +6,7 @@ import torch
 from torch import nn
 
 from mrpro.operators.SignalModel import SignalModel
-from mrpro.utils import unsqueeze_right
+from mrpro.utils.reshape import unsqueeze_right
 from mrpro.utils.unit_conversion import GYROMAGNETIC_RATIO_PROTON
 
 
