@@ -5,4 +5,12 @@ from mrpro.nn.nets.VAE import VAE
 from mrpro.nn.nets.UNet import UNet, AttentionUNet
 from mrpro.nn.nets.SwinIR import SwinIR
 
-__all__ = ["AttentionUNet", "DCVAE", "Restormer", "UNet", "Uformer", "VAE", "SwinIR"]
+__all__ = [
+    "AttentionUNet",
+    "DCVAE",
+    "Restormer",
+    "SwinIR",
+    "UNet",
+    "Uformer",
+    "VAE"
+]
