@@ -18,6 +18,7 @@ class MultiHeadAttention(Module):
         n_heads: int,
         features_last: bool = False,
         p_dropout: float = 0.0,
+        channels_cross: int | None = None,
     ):
         """Initialize the Multi-head Attention.
 
@@ -36,10 +37,17 @@ class MultiHeadAttention(Module):
             or the second dimension, as common in image models.
         p_dropout
             Dropout probability.
+        channels_cross
+            Number of channels for cross-attention. If `None`, use `channels_in`.
         """
         super().__init__()
         self.mha = torch.nn.MultiheadAttention(
-            embed_dim=channels_in, num_heads=n_heads, batch_first=True, dropout=p_dropout
+            embed_dim=channels_in,
+            num_heads=n_heads,
+            batch_first=True,
+            dropout=p_dropout,
+            kdim=channels_cross,
+            vdim=channels_cross,
         )
         self.features_last = features_last
         self.to_out = Linear(channels_in, channels_out)

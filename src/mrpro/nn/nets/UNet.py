@@ -8,7 +8,11 @@ from sympy import Identity
 from torch.nn import Module, ModuleList
 
 from mrpro.nn.CondMixin import call_with_cond
-
+from mrpro.nn.SpatialTransformerBlock import SpatialTransformerBlock
+from mrpro.nn.ndmodules import ConvND
+from mrpro.nn.Sequential import Sequential
+from mrpro.nn.SpatialTransformerBlock import SpatialTransformerBlock
+from mrpro.nn.ResBlock import ResBlock
 
 class UNetEncoder(Module):
     """Encoder."""
@@ -207,15 +211,30 @@ class UNet(UNetBase):
         dim: int,
         in_channels: int,
         out_channels: int,
+        attention_depths: Sequence[int],
         n_features: Sequence[int],
-        n_heads: Sequence[int],
-        n_blocks: int | Sequence[int],
+        n_heads: int,
         cond_dim: int,
-        num_blocks: int,
+        n_resblocks: int
         padding_modes: str | Sequence[str],
     ) -> None:
         """Initialize the UNet."""
-        super().__init__()
+
+        encoder_blocks = []
+        decoder_blocks = []
+        skip_blocks = []
+        for i, (n_feat, n_heads, depth) in enumerate(zip(n_features, n_heads, n_resblocks, strict=True):
+            enc_block = Sequential(*[ResBlock(dim, n_feat, n_heads, cond_dim) for _ in range(depth)])
+            dec_block = Sequential(*[ResBlock(dim, n_feat, n_heads, cond_dim) for _ in range(depth)])
+            if i in attention_depths:
+                enc_block.append(SpatialTransformerBlock(dim, n_feat, n_heads, cond_dim))
+                dec_block.append(SpatialTransformerBlock(dim, n_feat, n_heads, cond_dim))
+            decoder_blocks.append(dec_block)
+            skip_blocks.append(enc_block)
+
+        encoder = UNetEncoder(encoder_blocks, down_blocks, middle_block)
+        decoder = UNetDecoder(decoder_blocks, up_blocks, concat_blocks, last_block)
+        super().__init__(encoder, decoder)
 
 
 class AttentionUNet(UNet):
