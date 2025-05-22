@@ -15,61 +15,6 @@ from mrpro.nn.Sequential import Sequential
 from mrpro.nn.ShiftedWindowAttention import ShiftedWindowAttention
 
 
-class LeFF(Module):
-    """Locally-enhanced Feed-Forward Network.
-
-    Part of the Uformer architecture.
-    """
-
-    def __init__(
-        self,
-        dim: int,
-        channels_in: int = 32,
-        channels_out: int = 32,
-        expand_ratio: float = 4,
-    ) -> None:
-        """Initialize the LeFF module.
-
-        Parameters
-        ----------
-        dim : int
-            2 or 3, for 2D or 3D input
-        channels_in : int
-            Input feature dimension
-        channels_out : int
-            Output feature dimension
-        expand_ratio : float
-            Expansion ratio of the hidden dimension
-        """
-        super().__init__()
-        hidden_dim = int(channels_in * expand_ratio)
-        self.block = Sequential(
-            ConvND(dim)(channels_in, hidden_dim, 1),
-            GELU(),
-            ConvND(dim)(hidden_dim, hidden_dim, kernel_size=3, groups=hidden_dim, stride=1, padding=1),
-            GELU(),
-            ConvND(dim)(hidden_dim, channels_out, 1),
-        )
-
-    def __call__(self, x: torch.Tensor) -> torch.Tensor:
-        """Apply the LeFF module.
-
-        Parameters
-        ----------
-        x : torch.Tensor
-            The input tensor.
-
-        Returns
-        -------
-            The output tensor.
-        """
-        return super().__call__(x)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Apply the LeFF module."""
-        return self.block(x)
-
-
 class LeWinTransformerBlock(Module):
     """Locally-enhanced windowed attention transformer block.
 
@@ -85,6 +30,7 @@ class LeWinTransformerBlock(Module):
         shifted: bool = False,
         mlp_ratio: float = 4.0,
         p_droppath: float = 0.0,
+        cond_dim: int = 0,
     ) -> None:
         """Initialize the LeWinTransformerBlock module.
 
@@ -104,9 +50,12 @@ class LeWinTransformerBlock(Module):
             Ratio of the hidden dimension to the input dimension
         p_droppath : float, optional
             Dropout probability for the drop path.
+        cond_dim : int, optional
+            Dimension of a conditioning tensor. If `0`, no FiLM layers are added.
         """
         super().__init__()
         channels = n_channels_per_head * n_heads
+        hidden_dim = int(channels * mlp_ratio)
         self.norm1 = InstanceNormND(dim)(channels)
         self.attn = ShiftedWindowAttention(
             dim=dim,
@@ -116,19 +65,26 @@ class LeWinTransformerBlock(Module):
             window_size=window_size,
             shifted=shifted,
         )
-
         self.norm2 = InstanceNormND(dim)(channels)
-        self.ff = LeFF(dim=dim, channels_in=channels, channels_out=channels, expand_ratio=mlp_ratio)
+        self.ff = Sequential(
+            ConvND(dim)(channels, hidden_dim, 1),
+            GELU(),
+            ConvND(dim)(hidden_dim, hidden_dim, kernel_size=3, groups=hidden_dim, stride=1, padding=1),
+            GELU(),
+            ConvND(dim)(hidden_dim, channels, 1),
+        )
+        if cond_dim > 0:
+            self.ff.append(FiLM(channels, cond_dim))
         self.modulator = torch.nn.Parameter(torch.empty(channels, *((window_size,) * dim)))
         torch.nn.init.trunc_normal_(self.modulator)
         self.drop_path = DropPath(droprate=p_droppath)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the transformer block."""
         modulator = self.modulator.tile([t // s for t, s in zip(x.shape[1:], self.modulator.shape, strict=False)])
         x_mod = self.norm1(x) + modulator
         x_attn = self.attn(x_mod)
-        x_ff = self.ff(self.norm2(x_attn))
+        x_ff = self.ff(self.norm2(x_attn), cond=cond)
         return x + self.drop_path(x_ff)
 
 
@@ -188,7 +144,7 @@ class Uformer(UNetBase):
         """
 
         def blocks(n_heads: int, p_droppath: float = 0.0):
-            layers = Sequential(
+            return Sequential(
                 *(
                     LeWinTransformerBlock(
                         dim=dim,
@@ -198,14 +154,11 @@ class Uformer(UNetBase):
                         mlp_ratio=mlp_ratio,
                         shifted=bool(i % 2),
                         p_droppath=p_droppath,
+                        cond_dim=cond_dim,
                     )
                     for i in range(n_blocks)
                 )
             )
-
-            if cond_dim > 0 and n_blocks > 1:
-                layers.insert(1, FiLM(channels=n_channels_per_head * n_heads, cond_dim=cond_dim))
-            return layers
 
         first_block = torch.nn.Sequential(
             ConvND(dim)(channels_in, n_channels_per_head * n_heads[0], kernel_size=3, stride=1, padding='same'),

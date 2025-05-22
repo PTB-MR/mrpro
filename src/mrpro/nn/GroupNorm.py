@@ -21,9 +21,9 @@ class GroupNorm(torch.nn.GroupNorm):
             a power of 2 that is less than or equal to 32 and leaves at least 4 channels per group.
         """
         if groups is None:
-            groups_ = channels & -channels
-            while (groups_ >= channels // 4) or groups_ > 32:
-                groups_ //= 2
+            groups_, candidate = 1, 2
+            while (candidate <= min(32, channels // 4)) and (channels % candidate == 0):
+                groups_, candidate = candidate, groups_ * 2
         else:
             groups_ = groups
         super().__init__(groups_, channels)

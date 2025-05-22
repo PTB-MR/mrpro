@@ -1,7 +1,7 @@
 """Feature-wise Linear Modulation."""
 
 import torch
-from torch.nn import Identity, Linear, Module, Sequential, SiLU
+from torch.nn import Linear, Module
 
 from mrpro.nn.CondMixin import CondMixin
 from mrpro.utils.reshape import unsqueeze_tensors_right
@@ -30,13 +30,7 @@ class FiLM(CondMixin, Module):
             The dimension of the conditioning tensor.
         """
         super().__init__()
-        if cond_dim > 0:
-            self.project: Module = Sequential(
-                SiLU(),
-                Linear(cond_dim, 2 * channels),
-            )
-        else:
-            self.project = Identity()
+        self.project = Linear(cond_dim, 2 * channels) if cond_dim > 0 else None
 
     def __call__(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply FiLM.
@@ -54,7 +48,7 @@ class FiLM(CondMixin, Module):
 
     def forward(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply FiLM."""
-        if cond is None:
+        if cond is None or self.project is None:
             return x
         scale, shift = self.project(cond).chunk(2, dim=1)
 
