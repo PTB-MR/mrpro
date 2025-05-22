@@ -88,7 +88,7 @@ class EfficientViTBlock(Module):
         """
         super().__init__()
         if linear_attn:
-            attention: Module = LinearSelfAttention(channels, channels, n_heads)  # TODO: check heads and head dim
+            attention: Module = LinearSelfAttention(channels, channels, n_heads)
         else:
             attention = MultiHeadAttention(channels, channels, n_heads, features_last=False)
         self.context_module = Residual(Sequential(attention, RMSNorm(channels)))
@@ -155,18 +155,23 @@ class Encoder(Sequential):
                 case 'CNN':
                     stage: list[Module] = [CNNBlock(dim, width) for _ in range(depth)]
                 case 'LinearViT':
-                    stage = [
-                        EfficientViTBlock(dim, width, n_heads=1, linear_attn=True) for _ in range(depth)
-                    ]  # TODO: heads
+                    stage = [EfficientViTBlock(dim, width, n_heads=width // 32, linear_attn=True) for _ in range(depth)]
                 case 'ViT':
-                    stage = [EfficientViTBlock(dim, width, n_heads=1, linear_attn=False) for _ in range(depth)]
+                    stage = [
+                        EfficientViTBlock(dim, width, n_heads=width // 32, linear_attn=False) for _ in range(depth)
+                    ]
                 case _:
                     raise ValueError(f'Block type {block_type} not supported')
             self.append(Sequential(*stage))
             if next_width:
                 self.append(PixelUnshuffleDownsample(dim, width, next_width, downscale_factor=2, residual=True))
-        # Norm # relu
-        self.append(PixelUnshuffleDownsample(dim, widths[-1], channels_out, downscale_factor=1, residual=True))
+        self.append(
+            Sequential(
+                RMSNorm(widths[-1]),
+                ReLU(),
+                PixelUnshuffleDownsample(dim, widths[-1], channels_out, downscale_factor=1, residual=True),
+            )
+        )
 
 
 class Decoder(Sequential):
@@ -219,11 +224,11 @@ class Decoder(Sequential):
                 case 'CNN':
                     stage: list[Module] = [CNNBlock(dim, width) for _ in range(depth)]
                 case 'LinearViT':
-                    stage = [
-                        EfficientViTBlock(dim, width, n_heads=1, linear_attn=True) for _ in range(depth)
-                    ]  # TODO: heads
+                    stage = [EfficientViTBlock(dim, width, n_heads=width // 32, linear_attn=True) for _ in range(depth)]
                 case 'ViT':
-                    stage = [EfficientViTBlock(dim, width, n_heads=1, linear_attn=False) for _ in range(depth)]
+                    stage = [
+                        EfficientViTBlock(dim, width, n_heads=width // 32, linear_attn=False) for _ in range(depth)
+                    ]
                 case _:
                     raise ValueError(f'Block type {block_type} not supported')
             self.append(Sequential(*stage))
