@@ -394,10 +394,10 @@ def broadcasted_rearrange(
 
     """
     tensor = tensor.broadcast_to(broadcasted_shape) if broadcasted_shape is not None else tensor
-    # the broadcast-preservation is done by patching the reshape method of the tensor
-    original_reshape, tensor.reshape = tensor.reshape, lambda shape: reshape_broadcasted(tensor, *shape)  # type: ignore[method-assign, assignment]
+    # the broadcast-preservation is done by patching the reshape method of the einops backend
+    einops._backends.TorchBackend.reshape = lambda _, tensor, shape: reshape_broadcasted(tensor, *shape)  # type: ignore[method-assign]
     new_tensor = einops.repeat(tensor, pattern, **axes_lengths)  # allows both repeat and rearrange
-    tensor.reshape = original_reshape  # type: ignore[method-assign]
+    del einops._backends.TorchBackend.reshape  # resets to inherited method
     if reduce_views:
         new_tensor = reduce_view(new_tensor)
     return new_tensor
