@@ -57,8 +57,8 @@ from scipy._lib._util import check_random_state
 from typing_extensions import Self, Unpack, overload
 
 from mrpro.data.SpatialDimension import SpatialDimension
-from mrpro.utils import reduce_repeat
 from mrpro.utils.indexing import Indexer
+from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.reshape import broadcasted_rearrange
 from mrpro.utils.typing import NestedSequence, TorchIndexerType
 from mrpro.utils.vmf import sample_vmf
