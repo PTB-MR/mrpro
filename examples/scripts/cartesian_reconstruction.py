@@ -17,11 +17,11 @@ from pathlib import Path
 
 import zenodo_get
 
-dataset = '14173489'
+dataset = '15223816'
 
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
-zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
+zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder, '-g', '*.mrd'])  # r: retries
 
 # %% [markdown]
 # We have three different scans obtained from the same object with the same FOV and resolution, saved as ISMRMRD
@@ -240,20 +240,19 @@ show_images(magnitude_fully_sampled, magnitude_pe_pf, titles=['fully sampled', '
 # %%
 
 fourier_op = mrpro.operators.FourierOp.from_kdata(kdata_pe_pf)
-# no need for and explicit CartesianSamplingOp anymore!
+# no need for an explicit CartesianSamplingOp anymore!
 (img_pe_pf,) = fourier_op.adjoint(kdata_pe_pf.data)
 magnitude_pe_pf = img_pe_pf.abs().square().sum(dim=-4).sqrt().squeeze()
 show_images(magnitude_fully_sampled, magnitude_pe_pf, titles=['fully sampled', 'PF & PE'])
 
 # %% [markdown]
 # That was easy!
-# But wait a second — something still looks a bit off. In the bottom left corner, it seems like there's a "hole"
-# in the brain. That definitely shouldn't be there.
+# But wait a second — what about all these nice receiver elements of our coil?
 #
-# The issue is that we combined the data from the different coils using a root-sum-of-squares approach.
-# While it's simple, it's not the ideal method. Typically, coil sensitivity maps are calculated to combine the data
-# from different coils. In MRpro, you can do this by calculating coil sensitivity data and then creating a
-# `~mrpro.operators.SensitivityOp` to combine the data after image reconstruction.
+# Here we used a root-sum-of-squares approach which is simple, but it's not the ideal method.
+# Typically, coil sensitivity maps are calculated to combine the data rom different coils. In MRpro, you can do this
+# by calculating coil sensitivity data and then creating a `~mrpro.operators.SensitivityOp` to combine the data after
+# image reconstruction.
 
 # %% [markdown]
 # ### Sensitivity Operator
@@ -276,7 +275,7 @@ magnitude_walsh_combined = img_walsh_combined.abs().squeeze()
 show_images(magnitude_pe_pf, magnitude_walsh_combined, titles=['RSS', 'Adaptive Combination'])
 
 # %% [markdown]
-# Tada! The "hole" is gone, and the image looks much better 🎉.
+# Tada! Now we have taken everything into consideration 🎉.
 #
 # When we reconstructed the image, we called the adjoint method of several different operators one after the other. That
 # was a bit cumbersome. To make our life easier, MRpro allows to combine the operators first, get the adjoint
@@ -339,7 +338,7 @@ show_images(idat_pe_pf.rss().squeeze(), idat_us.rss().squeeze(), titles=['PE & P
 #
 # ```{note}
 # There are already some other filter criteria available, see `mrpro.data.acq_filters`. You can also implement your own
-# function returning whether to include an acquisition
+# function returning whether to include an acquisition.
 # ```
 #
 # %%
@@ -368,6 +367,13 @@ show_images(
     *direct_recon_calib_lines.csm.data[0].abs().squeeze(),
     titles=[f'|CSM {i}|' for i in range(direct_recon_calib_lines.csm.data.size(-4))],
 )
+
+# %% [markdown]
+# ```{note}
+# There are already some other filter criteria available, see `mrpro.data.acq_filters`. You can also implement your own
+# function returning whether to include an acquisition.
+# ```
+
 # %% [markdown]
 # ### Reconstruction
 # We can now use these CSMs in a new `~mrpro.algorithms.reconstruction.DirectReconstruction`:
@@ -397,3 +403,20 @@ show_images(idat_us_sense.rss().squeeze(), titles=['Iterative SENSE'])
 # This looks better! More information about the iterative SENSE reconstruction and its implementation in MRpro
 # can be found in the examples <project:iterative_sense_reconstruction_radial2D.ipynb> and
 # <project:iterative_sense_reconstruction_with_regularization.ipynb>.
+# ```{note}
+# In this example we used an "integrated" calibration scan, which means that the data used for calibration are acquired
+# with the same parameters (e.g. FOV and resolution) as the image data. There is also the option to use separately
+# acquired calibration lines. Most of the time they are acquired with a different resolution and hence have a different
+# k-space range than the image data. To utilize them, the encoding limits have to be adapted manually.
+# ```
+
+
+# %% [markdown]
+# We can also compare our reconstruction to the reconstruction done on the scanner.
+
+# %%
+# Download dicom image
+zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder, '-g', '*.dcm'])  # r: retries
+
+idat_dcm = mrpro.data.IData.from_dicom_files(data_folder / 'cart_t1_msense_integrated.dcm')
+show_images(idat_us_sense.rss().squeeze(), idat_dcm.rss().squeeze(), titles=['MRpro', 'Scanner'])
