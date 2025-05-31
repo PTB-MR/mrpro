@@ -142,7 +142,8 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
         """Apply forward of FourierOp.
 
         .. note::
-        Prefer calling the instance of the FourierOp operator as ``operator(x)`` over directly calling this method.
+            Prefer calling the instance of the FourierOp operator as ``operator(x)`` over
+            directly calling this method.
         """
         # NUFFT Type 2 followed by FFT
         if self._non_uniform_fast_fourier_op:
@@ -269,7 +270,8 @@ class FourierGramOp(LinearOperator):
         """Apply forward of FourierGramOp.
 
         .. note::
-        Prefer calling the instance of the FourierGramOp operator as ``operator(x)`` over directly calling this method.
+            Prefer calling the instance of the FourierGramOp operator as ``operator(x)`` over
+            directly calling this method.
         """
         if self.nufft_gram:
             (x,) = self.nufft_gram(x)

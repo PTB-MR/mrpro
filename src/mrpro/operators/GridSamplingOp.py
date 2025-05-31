@@ -387,15 +387,11 @@ class GridSamplingOp(LinearOperator):
         Parameters
         ----------
         x
-            Input tensor to be sampled. Expected shape is `(..., C, D_in, H_in, W_in)` for 3D
-            or `(..., C, H_in, W_in)` for 2D, where `...` are batch dimensions,
-            `C` is number of channels.
+            Input tensor to be sampled.
 
         Returns
         -------
-            Output tensor containing sampled values. Shape will be
-            `(..., C, D_grid, H_grid, W_grid)` or `(..., C, H_grid, W_grid)`
-            matching the grid's spatial dimensions.
+            Output tensor containing sampled values.
         """
         return super().__call__(x)
 
@@ -403,7 +399,8 @@ class GridSamplingOp(LinearOperator):
         """Apply forward of GridSamplingOp.
 
         .. note::
-        Prefer calling the instance of the GridSamplingOp operator as ``operator(x)`` over directly calling this method.
+            Prefer calling the instance of the GridSamplingOp operator as ``operator(x)`` over
+            directly calling this method.
         """
         if (
             (x.shape[-1] != self.input_shape.x)
@@ -444,12 +441,9 @@ class GridSamplingOp(LinearOperator):
         ----------
         x
             Input tensor, corresponding to the output of the forward operation.
-            Expected shape is `(..., C, D_grid, H_grid, W_grid)` for 3D or
-            `(..., C, H_grid, W_grid)` for 2D.
 
         Returns
         -------
             Output tensor in the original input domain of the forward operation.
-            Shape will be `(..., C, D_in, H_in, W_in)` or `(..., C, H_in, W_in)`.
         """
         return self.__reshape_wrapper(x, self._adjoint_implementation)

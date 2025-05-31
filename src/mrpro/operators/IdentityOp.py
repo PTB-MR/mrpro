@@ -35,7 +35,8 @@ class IdentityOp(LinearOperator):
         """Apply forward of IdentityOp.
 
         .. note::
-        Prefer calling the instance of the IdentityOp operator as ``operator(x)`` over directly calling this method.
+            Prefer calling the instance of the IdentityOp operator as ``operator(x)`` over
+            directly calling this method.
         """
         return (x,)
 

@@ -115,8 +115,8 @@ class DictionaryMatchOp(Operator[torch.Tensor, tuple[Unpack[Tin]]]):
         ----------
         input_signal
             Input signal(s) to match against the dictionary.
-            Expected shape is (m, ...), where 'm' is the signal dimension
-            (e.g., number of time points) and '...' represents optional batch dimensions.
+            Expected shape is `m, ...`, where `m` is the signal dimension
+            (e.g., number of time points) and `...` are batch dimensions.
 
         Returns
         -------

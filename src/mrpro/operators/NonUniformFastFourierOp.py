@@ -192,9 +192,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
     def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply Non-Uniform Fast Fourier Transform (NUFFT) from image to k-space (Type 2).
 
-        Transforms data from image space to non-uniform k-space locations specified
-        by the trajectory omega (`_omega`). This involves reshaping, applying `finufft_type2`,
-        and scaling.
+        Transforms data from image space to non-uniform k-space locations.
 
         Parameters
         ----------
@@ -204,7 +202,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         Returns
         -------
             Coil k-space data at non-uniform locations,
-            typically with shape `(... coils k2 k1 k0)`.
+            with shape `(... coils k2 k1 k0)`.
         """
         return super().__call__(x)
 
@@ -242,20 +240,18 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply adjoint NUFFT from k-space to image space (Type 1).
 
-        Transforms data from non-uniform k-space (specified by `_omega`)
-        to a Cartesian image grid. This involves reshaping, applying `finufft_type1`,
-        and scaling.
+        Transforms data from non-uniform k-space to a Cartesian image grid.
 
         Parameters
         ----------
         x
             Coil k-space data at non-uniform locations,
-            typically with shape `(... coils k2 k1 k0)`.
+            with shape `(... coils k2 k1 k0)`.
 
         Returns
         -------
             Coil image data on a Cartesian grid,
-            typically with shape `(... coils z y x)`.
+            with shape `(... coils z y x)`.
         """
         if len(self._direction_zyx):
             if x.device.type == 'cpu' and self.oversampling not in (0.0, 1.25, 2.0):
@@ -430,7 +426,7 @@ class NonUniformFastFourierOpGramOp(LinearOperator):
 
         This operation applies the composition of the adjoint NUFFT operator
         and the forward NUFFT operator. It is implemented via a convolution
-        with a precomputed kernel in Fourier space.
+        with a precomputed kernel.
 
         Parameters
         ----------
@@ -465,13 +461,10 @@ class NonUniformFastFourierOpGramOp(LinearOperator):
         ----------
         x
             Input tensor, typically image-space data with shape `(..., coils, z, y, x)`.
-            The original docstring mentioned k-space shape, but for a self-adjoint
-            image-to-image Gram operator, the input to adjoint should match input to forward.
-
 
         Returns
         -------
-            Output tensor, same as the forward operation.
+            Output tensor, same shape as the input.
         """
         return self.forward(x)
 

@@ -64,7 +64,7 @@ class EinsumOp(LinearOperator):
     def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor]:
         """Apply sum-product of input `x` with the operator's matrix `A`.
 
-        The specific sum-product rule (Einstein notation) is defined at initialization.
+        :math:`A` and the rule used to perform the sum-product is set at initialization.
 
         Parameters
         ----------
@@ -81,21 +81,19 @@ class EinsumOp(LinearOperator):
         """Apply forward of EinsumOp.
 
         .. note::
-        Prefer calling the instance of the EinsumOp operator as ``operator(x)`` over directly calling this method.
+            Prefer calling the instance of the EinsumOp operator as ``operator(x)`` over
+            directly calling this method.
         """
         y = einsum(self.matrix, x, self._forward_pattern)
         return (y,)
 
     def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor]:
-        """Apply sum-product of input `y` with the adjoint of the operator's matrix `A`.
-
-        The adjoint operation uses a derived Einstein notation rule based on the
-        forward rule and the complex conjugate of the operator's matrix `A`.
+        """Multiplication of input with the adjoint of :math:`A`.
 
         Parameters
         ----------
         y
-            Input tensor.
+            tensor to be multiplied with hermitian/adjoint 'matrix' :math:`A`
 
         Returns
         -------

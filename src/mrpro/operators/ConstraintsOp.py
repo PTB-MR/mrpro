@@ -163,7 +163,8 @@ class ConstraintsOp(EndomorphOperator):
         """Apply forward of ConstraintsOp.
 
         .. note::
-        Prefer calling the instance of the ConstraintsOp operator as ``operator(x)`` over directly calling this method.
+            Prefer calling the instance of the ConstraintsOp operator as ``operator(x)`` over
+            directly calling this method.
         """
         x_constrained = [
             self._apply_forward(item, lb, ub)

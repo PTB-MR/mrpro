@@ -29,6 +29,7 @@ class MagnitudeOp(EndomorphOperator):
         """Apply forward of MagnitudeOp.
 
         .. note::
-        Prefer calling the instance of the MagnitudeOp operator as ``operator(x)`` over directly calling this method.
+            Prefer calling the instance of the MagnitudeOp operator as ``operator(x)`` over
+            directly calling this method.
         """
         return tuple([torch.abs(xi) for xi in x])
