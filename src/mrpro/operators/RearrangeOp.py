@@ -38,34 +38,45 @@ class RearrangeOp(LinearOperator):
         self._forward_pattern = pattern
         self.additional_info = {} if additional_info is None else additional_info
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Rearrange input.
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Rearrange input tensor `x` based on the pattern defined at initialization.
 
-        The rule used to perform the rearranging is set at initialization.
+        This operator uses `einops.rearrange` to perform the rearrangement.
 
         Parameters
         ----------
         x
-            input tensor to be rearranged
+            Input tensor to be rearranged.
 
         Returns
         -------
-            rearranged tensor
+        tuple[torch.Tensor,]
+            The rearranged tensor.
         """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply forward of RearrangeOp.
+
+        Note: Do not use. Instead, call the instance of the Operator as operator(x)"""
         y = rearrange(x, self._forward_pattern, **self.additional_info)
         return (y,)
 
     def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor]:
-        """Rearrange input with the adjoint rule.
+        """Rearrange input tensor `y` using the adjoint (inverse) pattern.
+
+        This operator uses `einops.rearrange` with a pattern that reverses
+        the forward operation.
 
         Parameters
         ----------
         y
-            tensor to be rearranged
+            Input tensor to be rearranged (typically the output of the forward pass).
 
         Returns
         -------
-            rearranged tensor
+        tuple[torch.Tensor,]
+            The rearranged tensor, effectively undoing the forward rearrangement.
         """
         x = rearrange(y, self._adjoint_pattern, **self.additional_info)
         return (x,)

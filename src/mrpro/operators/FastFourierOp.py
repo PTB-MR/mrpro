@@ -112,18 +112,32 @@ class FastFourierOp(LinearOperator):
                 f'{encoding_matrix=} and {recon_matrix=}'
             )
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """FFT from image space to k-space.
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply Fast Fourier Transform (FFT) from image space to k-space.
+
+        Performs an FFT along the specified dimensions. Input data `x` is assumed
+        to have its zero-frequency component at the center. The operation includes
+        ifftshift before FFT and fftshift after FFT to handle PyTorch's FFT convention.
+        Zero-padding or cropping via `ZeroPadOp` is applied based on `recon_matrix`
+        and `encoding_matrix` set during initialization.
 
         Parameters
         ----------
         x
-            image data on Cartesian grid
+            Image-space data on a Cartesian grid.
 
         Returns
         -------
-            FFT of `x`
+            k-space data resulting from the FFT.
         """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply forward of FastFourierOp.
+
+.. note::
+   Prefer calling the instance of the FastFourierOp operator as ``operator(x)`` over directly calling this method.
+"""
         y = torch.fft.fftshift(
             torch.fft.fftn(torch.fft.ifftshift(*self._pad_op(x), dim=self._dim), dim=self._dim, norm='ortho'),
             dim=self._dim,
@@ -131,16 +145,22 @@ class FastFourierOp(LinearOperator):
         return (y,)
 
     def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
-        """IFFT from k-space to image space.
+        """Apply Inverse Fast Fourier Transform (IFFT) from k-space to image space.
+
+        Performs an IFFT along the specified dimensions. Input data `y` is assumed
+        to have its zero-frequency component at the center. The operation includes
+        ifftshift before IFFT and fftshift after IFFT to handle PyTorch's IFFT convention.
+        The adjoint of `ZeroPadOp` (cropping or zero-padding) is applied based on
+        `recon_matrix` and `encoding_matrix` set during initialization.
 
         Parameters
         ----------
         y
-            k-space data on Cartesian grid
+            k-space data on a Cartesian grid.
 
         Returns
         -------
-            IFFT of `y`
+            Image-space data resulting from the IFFT.
         """
         # FFT
         return self._pad_op.adjoint(

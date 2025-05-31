@@ -20,23 +20,38 @@ class L1NormViewAsReal(ElementaryProximableFunctional):
     The norm of the vector is computed along the dimensions set at initialization.
     """
 
-    def forward(
+    def __call__(
         self,
         x: torch.Tensor,
     ) -> tuple[torch.Tensor]:
-        """Forward method.
+        """Compute the L1 norm, viewing complex numbers as R^2.
 
-        Compute the L1 norm of the input with :math:`C` identified as :math:`R^2`.
+        Calculates :math:`\|W_r * Re(x-b)\|_1 + \|W_i * Im(x-b)\|_1`.
+        If `self.weight` is real, :math:`W_r = W_i = self.weight`.
+        If `self.weight` is complex, :math:`W_r = Re(self.weight)` and :math:`W_i = Im(self.weight)`.
+        `b` is `self.target`. The norm is computed along `self.dim`.
+        If `self.divide_by_n` is true, the result is averaged; otherwise, summed.
 
         Parameters
         ----------
         x
-            input tensor
+            Input tensor.
 
         Returns
         -------
-            L1 norm of the input tensor, where :math:`C` is identified as :math:`R^2`.
+        tuple[torch.Tensor]
+            A tuple containing a single tensor representing the L1 norm (viewed as R^2).
+            If `self.keepdim` is true, `self.dim` are retained; otherwise, reduced.
         """
+        return super().__call__(x)
+
+    def forward(
+        self,
+        x: torch.Tensor,
+    ) -> tuple[torch.Tensor]:
+        """Apply forward of L1NormViewAsReal.
+
+        Note: Do not use. Instead, call the instance of the Operator as operator(x)"""
         dtype = torch.promote_types(self.target.dtype, x.dtype)
         x = x.to(dtype)
         target = self.target.to(dtype)

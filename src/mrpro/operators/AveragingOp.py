@@ -47,8 +47,26 @@ class AveragingOp(LinearOperator):
         self.idx = idx
         self.dim = dim
 
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply the averaging operator to the input tensor.
+
+        Parameters
+        ----------
+        x
+            Input tensor to be averaged.
+
+        Returns
+        -------
+            Averaged tensor.
+        """
+        return super().__call__(x)
+
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Apply the averaging operator to the input tensor."""
+        """Apply forward of AveragingOp.
+
+.. note::
+   Prefer calling the instance of the AveragingOp operator as ``operator(x)`` over directly calling this method.
+"""
         if self.domain_size and self.domain_size != x.shape[self.dim]:
             raise ValueError(f'Expected domain size {self.domain_size}, got {x.shape[self.dim]}')
         self._last_domain_size = x.shape[self.dim]
@@ -58,7 +76,23 @@ class AveragingOp(LinearOperator):
         return (averaged,)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Apply the adjoint of the averaging operator to the input tensor."""
+        """Apply the adjoint of the averaging operator.
+
+        The adjoint operation distributes the values from the input tensor `x`
+        (which corresponds to the output of the forward pass) back to a
+        tensor matching the original domain size. Each element in the output
+        of the adjoint receives a contribution from `x` divided by the
+        number of elements in its original averaging group.
+
+        Parameters
+        ----------
+        x
+            Input tensor, corresponding to the output of the forward operation.
+
+        Returns
+        -------
+            Tensor with values distributed back to the original domain.
+        """
         if self.domain_size is None:
             if self._last_domain_size is None:
                 raise ValueError('Domain size is not set. Please set it explicitly or run forward first.')

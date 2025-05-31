@@ -217,19 +217,33 @@ class SliceProjectionOp(LinearOperator):
         self._range_shape: tuple[int] = (*batch_shapes, 1, max_shape, max_shape)
         self._domain_shape = input_shape.zyx
 
-    def forward(self, x: Tensor) -> tuple[Tensor]:
-        """Transform from a 3D Volume to a 2D Slice.
+    def __call__(self, x: Tensor) -> tuple[Tensor]:
+        """Project a 3D volume to a 2D slice.
+
+        This operation uses a sparse matrix multiplication, where the matrix
+        is determined by the slice rotation, shift, and profile defined
+        at initialization. It samples the input 3D volume to generate a 2D slice.
 
         Parameters
         ----------
         x
-            3D Volume with shape `(..., z, y, x)`
-            with z, y, x matching the input_shape
+            Input 3D Volume tensor. Expected shape `(..., Z, Y, X)`,
+            where Z, Y, X match the `input_shape` provided during initialization.
+            `...` represents optional batch dimensions.
 
         Returns
         -------
-        A 2D slice with shape `(..., 1, max(z, y, x), (max(z, y, x)))`
+        tuple[Tensor,]
+            A tuple containing the 2D slice. The shape of the slice will be
+            `(..., 1, max_dim, max_dim)` where `max_dim` is the maximum of
+            the input Z, Y, X dimensions, and `...` matches input batch dimensions.
         """
+        return super().__call__(x)
+
+    def forward(self, x: Tensor) -> tuple[Tensor]:
+        """Apply forward of SliceProjectionOp.
+
+        Note: Do not use. Instead, call the instance of the Operator as operator(x)"""
         match (self.matrix, self.matrix_adjoint):
             # selection based on the optimize_for setting
             case (None, None):
@@ -250,18 +264,23 @@ class SliceProjectionOp(LinearOperator):
         return (y,)
 
     def adjoint(self, x: Tensor) -> tuple[Tensor,]:
-        """Transform from a 2D slice to a 3D Volume.
+        """Project a 2D slice back into a 3D volume (adjoint operation).
+
+        This operation uses the adjoint of the sparse projection matrix
+        to map the input 2D slice data back into the 3D volume space.
 
         Parameters
         ----------
         x
-            2D Slice with shape `(..., 1, max(z, y, x), (max(z, y, x)))`
-            with `z, y, x` matching the input_shape
+            Input 2D Slice tensor. Expected shape is `(..., 1, max_dim, max_dim)`,
+            where `max_dim` corresponds to the output slice dimensions from the
+            forward pass. `...` represents optional batch dimensions.
 
         Returns
         -------
-        A 3D Volume with shape `(..., z, y, x)`
-           with` z, y, x` matching the input_shape
+        tuple[Tensor,]
+            A tuple containing the 3D Volume. The shape will be `(..., Z, Y, X)`,
+            matching the original `input_shape` of the forward operation.
         """
         match (self.matrix, self.matrix_adjoint):
             # selection based on the optimize_for setting

@@ -10,20 +10,32 @@ from mrpro.operators import ElementaryProximableFunctional
 class ZeroFunctional(ElementaryProximableFunctional):
     """The constant zero functional."""
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply the functional to the tensor.
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Evaluate the zero functional for the given input tensor.
 
-        Always returns 0.
+        This functional always returns a tensor of zeros. The shape of the output
+        depends on `self.dim` and `self.keepdim` (set during initialization).
+        The data type of the output tensor is determined by promoting the types
+        of the input `x`, `self.weight`, and `self.target`.
 
         Parameters
         ----------
         x
-            input tensor
+            Input tensor. Its data type is used in type promotion for the output.
+            Its shape is used to determine output shape if `self.dim` is None
+            or if `self.keepdim` is True.
 
         Returns
         -------
-        Result of the functional applied to x.
+        tuple[torch.Tensor]
+            A tuple containing a single tensor of zeros.
         """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply forward of ZeroFunctional.
+
+        Note: Do not use. Instead, call the instance of the Operator as operator(x)"""
         # To ensure that the dtype matches what it would be if we were to apply the weight and target
         dtype = torch.promote_types(torch.promote_types(x.dtype, self.weight.dtype), self.target.dtype).to_real()
 

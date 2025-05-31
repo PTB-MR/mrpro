@@ -101,23 +101,37 @@ class DictionaryMatchOp(Operator[torch.Tensor, tuple[Unpack[Tin]]]):
             self.inverse_norm_y = torch.cat((self.inverse_norm_y, inverse_norm_y))
         return self
 
-    def forward(self, input_signal: torch.Tensor) -> tuple[Unpack[Tin]]:
+    def __call__(self, input_signal: torch.Tensor) -> tuple[Unpack[Tin]]:
         """Perform dot-product matching.
 
-        Given y values as input_signal, the tuple of x values in the dictionary
-        that result in a signal with the highest dot-product similarity will be returned
+        Given an input signal (or batch of signals), this method finds the entry in the
+        precomputed dictionary that has the highest absolute normalized dot product similarity.
+        It then returns the set of parameters `x` that generated this dictionary entry.
+
+        If `index_of_scaling_parameter` was set during initialization, the corresponding
+        scaling parameter is estimated and inserted into the returned tuple of parameters.
 
         Parameters
         ----------
         input_signal
-            y values, shape `(m ...)` where `m` is the return dimension of the signal model,
-            for example time points.
+            Input signal(s) to match against the dictionary.
+            Expected shape is (m, ...), where 'm' is the signal dimension
+            (e.g., number of time points) and '...' represents optional batch dimensions.
 
         Returns
         -------
-        match
-            tuple of n tensors with shape (...)
+            A tuple of tensors representing the parameters `x` from the dictionary
+            that best matched the input signal(s). Each tensor in the tuple corresponds
+            to a parameter, and their shapes will match the batch dimensions of `input_signal`.
         """
+        return super().__call__(input_signal)
+
+    def forward(self, input_signal: torch.Tensor) -> tuple[Unpack[Tin]]:
+        """Apply forward of DictionaryMatchOp.
+
+.. note::
+   Prefer calling the instance of the DictionaryMatchOp operator as ``operator(x)`` over directly calling this method.
+"""
         if not self.x:
             raise KeyError('No keys in the dictionary. Please first add some x values using `append`.')
 

@@ -37,26 +37,38 @@ class SpoiledGRE(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         self.echo_time = torch.nn.Parameter(torch.as_tensor(echo_time))
         self.repetition_time = torch.nn.Parameter(torch.as_tensor(repetition_time))
 
-    def forward(self, m0: torch.Tensor, t1: torch.Tensor, t2star: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Calculate Signal.
+    def __call__(self, m0: torch.Tensor, t1: torch.Tensor, t2star: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Calculate the Spoiled Gradient Recalled Echo (SPGR) signal.
+
+        Assumes perfect spoiling and a longitudinal steady state.
+        The signal is calculated as:
+        S = M0 * exp(-TE / T2*) * sin(FA) * (1 - exp(-TR / T1)) / (1 - cos(FA) * exp(-TR / T1))
 
         Parameters
         ----------
         m0
-            Equilibrium signal.
-            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
+            Equilibrium magnetization.
+            Expected shape `...` (e.g., `*other, coils, z, y, x` or `samples`).
         t1
-            T1 relaxation time.
-            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
+            Longitudinal (T1) relaxation time.
+            Expected shape `...`.
         t2star
-            T2* relaxation time.
-            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
+            Effective transverse (T2*) relaxation time.
+            Expected shape `...`.
 
         Returns
         -------
-            Signal
-            Shape `1 ...`, for example `1, *other, coils, z, y, x` or `1, samples`, respectively.
+        tuple[torch.Tensor,]
+            Calculated signal.
+            Shape `1 ...` (e.g., `1, *other, coils, z, y, x` or `1, samples`).
+            The leading dimension of 1 signifies a single signal point per parameter set.
         """
+        return super().__call__(m0, t1, t2star)
+
+    def forward(self, m0: torch.Tensor, t1: torch.Tensor, t2star: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply forward of SpoiledGRE.
+
+        Note: Do not use. Instead, call the instance of the Operator as operator(x)"""
         ndim = max(m0.ndim, t1.ndim, t2star.ndim) + 1
         flip_angle = unsqueeze_right(self.flip_angle, ndim - self.flip_angle.ndim)
         echo_time = unsqueeze_right(self.echo_time, ndim - self.echo_time.ndim)

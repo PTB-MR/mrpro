@@ -128,23 +128,39 @@ class WaveletOp(LinearOperator):
                 self.coefficients_shape = self.coefficients_shape[::-1]
                 self.coefficients_shape.insert(0, self.coefficients_shape[0])  # shape of a/aa/aaa term
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Calculate wavelet coefficients from (image) data.
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply wavelet decomposition to the input tensor.
+
+        This method calculates the wavelet coefficients of the input (image) data
+        along the specified dimensions. For complex inputs, the wavelet transform
+        is applied to the real and imaginary parts separately. The resulting
+        coefficients from different levels and orientations are stacked along
+        a single dimension.
 
         Parameters
         ----------
         x
-            (Image) data
+            Input (image) data tensor.
 
         Returns
         -------
-            Wavelet coefficients stacked along one dimension
+        tuple[torch.Tensor,]
+            A tuple containing one tensor of wavelet coefficients, stacked along
+            one dimension. The first wavelet dimension specified in `dim` during
+            initialization is used for stacking.
 
         Raises
         ------
         ValueError
-            If the dimensions along which wavelets are to be calculated are not unique.
+            If the dimensions along which wavelets are to be calculated (specified
+            during initialization) are not unique after normalization.
         """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply forward of WaveletOp.
+
+        Note: Do not use. Instead, call the instance of the Operator as operator(x)"""
         # normalize axes to allow negative indexing in input
         dim = tuple(d % x.ndim for d in self._dim)
         if len(dim) != len(set(dim)):
@@ -182,23 +198,33 @@ class WaveletOp(LinearOperator):
         return (coefficients_stack,)
 
     def adjoint(self, coefficients_stack: torch.Tensor) -> tuple[torch.Tensor]:
-        """Transform wavelet coefficients to (image) data.
+        """Apply inverse wavelet transform (reconstruction) to wavelet coefficients.
+
+        This method reconstructs the (image) data from its wavelet coefficients.
+        The input `coefficients_stack` is first unstacked into a list of
+        coefficients for different levels and orientations, and then the
+        inverse wavelet transform is applied. For complex inputs, the transform
+        is applied to real and imaginary parts separately.
 
         Parameters
         ----------
         coefficients_stack
-            Wavelet coefficients stacked along one dimension
+            Tensor of wavelet coefficients, stacked along one dimension
+            (assumed to be the first wavelet dimension specified in `dim`
+            during initialization).
 
         Returns
         -------
-            (Image) data
+        tuple[torch.Tensor,]
+            A tuple containing the reconstructed (image) data tensor.
 
         Raises
         ------
         ValueError
-            If the domain_shape is not defined.
+            If `domain_shape` was not defined during operator initialization.
         ValueError
-            If the dimensions along which wavelets are to be calculated are not unique.
+            If the dimensions along which wavelets were calculated (specified
+            during initialization) are not unique after normalization.
         """
         if self._domain_shape is None:
             raise ValueError('Adjoint requires to define the domain_shape in init()')

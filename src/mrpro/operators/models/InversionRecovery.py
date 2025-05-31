@@ -24,22 +24,35 @@ class InversionRecovery(SignalModel[torch.Tensor, torch.Tensor]):
         ti = torch.as_tensor(ti)
         self.ti = torch.nn.Parameter(ti, requires_grad=ti.requires_grad)
 
-    def forward(self, m0: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply inversion recovery signal model.
+    def __call__(self, m0: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply the inversion recovery signal model.
+
+        Calculates the signal based on the formula:
+        S(TI) = M0 * (1 - 2 * exp(-TI / T1))
+        where TI are the inversion times.
 
         Parameters
         ----------
         m0
-            equilibrium signal / proton density
-            with shape `(*other, coils, z, y, x)`
+            Equilibrium signal or proton density.
+            Expected shape `(*other, coils, z, y, x)`.
         t1
-            longitudinal relaxation time T1
-            with shape `(*other, coils, z, y, x)`
+            Longitudinal relaxation time T1.
+            Expected shape `(*other, coils, z, y, x)`.
 
         Returns
         -------
-            signal with shape `(time, *other, coils, z, y, x)`
+        tuple[torch.Tensor,]
+            Signal calculated for each inversion time.
+            Shape `(time, *other, coils, z, y, x)`, where `time` corresponds
+            to the number of inversion times.
         """
+        return super().__call__(m0, t1)
+
+    def forward(self, m0: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply forward of InversionRecovery.
+
+        Note: Do not use. Instead, call the instance of the Operator as operator(x)"""
         ndim = max(m0.ndim, t1.ndim)
         ti = unsqueeze_right(self.ti, ndim - self.ti.ndim + 1)  # leftmost is time
         signal = m0 * (1 - 2 * torch.exp(-(ti / t1)))

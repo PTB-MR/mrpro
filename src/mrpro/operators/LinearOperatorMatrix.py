@@ -66,18 +66,33 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
         """Shape of the Operator Matrix (rows, columns)."""
         return self._shape
 
-    def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
-        """Apply the operator to the input.
+    def __call__(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        """Apply the linear operator matrix to a sequence of input tensors.
+
+        The i-th output tensor is calculated as the sum over j of
+        `operators[i][j](x[j])`, where `operators[i][j]` is the
+        linear operator in the i-th row and j-th column, and `x[j]` is
+        the j-th input tensor.
 
         Parameters
         ----------
-        x
-            Input tensors. Requires the same number of tensors as the operator has columns.
+        *x
+            Input tensors. The number of input tensors must match the
+            number of columns in the operator matrix.
 
         Returns
         -------
-            Output tensors. The same number of tensors as the operator has rows.
+            Output tensors. The number of output tensors will match the
+            number of rows in the operator matrix.
         """
+        return super().__call__(*x)
+
+    def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        """Apply forward of LinearOperatorMatrix.
+
+.. note::
+   Prefer calling the instance of the LinearOperatorMatrix operator as ``operator(x)`` over directly calling this method.
+"""
         if len(x) != self.shape[1]:
             raise ValueError('Input should be the same number of tensors as the LinearOperatorMatrix has columns.')
         return tuple(
@@ -226,16 +241,22 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
         return self.__class__([[op.H for op in row] for row in zip(*self._operators, strict=True)])
 
     def adjoint(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
-        """Apply the adjoint of the operator to the input.
+        """Apply the adjoint of the linear operator matrix.
+
+        This is achieved by applying the matrix composed of the adjoints of each
+        individual operator (i.e., `self.H`) to the input tensors `*x`.
+        The k-th output tensor is `sum_i self.operators[i][k].H(x[i])`.
 
         Parameters
         ----------
-        x
-            Input tensors. Requires the same number of tensors as the operator has rows.
+        *x
+            Input tensors. The number of input tensors must match the
+            number of rows in the original operator matrix.
 
         Returns
         -------
-            Output tensors. The same number of tensors as the operator has columns.
+            Output tensors. The number of output tensors will match the
+            number of columns in the original operator matrix.
         """
         return self.H(*x)
 

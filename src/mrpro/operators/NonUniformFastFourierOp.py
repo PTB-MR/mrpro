@@ -189,18 +189,31 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         permute_210 = [*sep_dims_210, *joint_dims_other, *self._joint_dims_210, *self._dimension_210]
         return sep_dims_zyx, permute_zyx, sep_dims_210, permute_210
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """NUFFT from image space to k-space.
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply Non-Uniform Fast Fourier Transform (NUFFT) from image to k-space (Type 2).
+
+        Transforms data from image space to non-uniform k-space locations specified
+        by the trajectory omega (`_omega`). This involves reshaping, applying `finufft_type2`,
+        and scaling.
 
         Parameters
         ----------
         x
-            coil image data with shape `(... coils z y x)`
+            Coil image data, typically with shape `(... coils z y x)`.
 
         Returns
         -------
-            coil k-space data with shape `(... coils k2 k1 k0)`
+            Coil k-space data at non-uniform locations,
+            typically with shape `(... coils k2 k1 k0)`.
         """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply forward of NonUniformFastFourierOp.
+
+.. note::
+   Prefer calling the instance of the NonUniformFastFourierOp operator as ``operator(x)`` over directly calling this method.
+"""
         if len(self._direction_zyx):
             if x.device.type == 'cpu' and self.oversampling not in (0.0, 1.25, 2.0):
                 raise ValueError('Only oversampling 1.25 and 2.0 are supported on CPU')
@@ -226,16 +239,22 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         return (x,)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """NUFFT from k-space to image space.
+        """Apply adjoint NUFFT from k-space to image space (Type 1).
+
+        Transforms data from non-uniform k-space (specified by `_omega`)
+        to a Cartesian image grid. This involves reshaping, applying `finufft_type1`,
+        and scaling.
 
         Parameters
         ----------
         x
-            coil k-space data with shape `(... coils k2 k1 k0)`
+            Coil k-space data at non-uniform locations,
+            typically with shape `(... coils k2 k1 k0)`.
 
         Returns
         -------
-            coil image data with shape `(... coils z y x)`
+            Coil image data on a Cartesian grid,
+            typically with shape `(... coils z y x)`.
         """
         if len(self._direction_zyx):
             if x.device.type == 'cpu' and self.oversampling not in (0.0, 1.25, 2.0):
@@ -405,26 +424,52 @@ class NonUniformFastFourierOpGramOp(LinearOperator):
         )
         self.nufft_gram = fft.H * kernel @ fft
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply the operator to the input tensor.
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply the Gram operator of the NonUniformFastFourierOp (NUFFT.H @ NUFFT).
+
+        This operation applies the composition of the adjoint NUFFT operator
+        and the forward NUFFT operator. It is implemented via a convolution
+        with a precomputed kernel in Fourier space.
 
         Parameters
         ----------
         x
-            input tensor, shape `(..., coils, z, y, x)`
+            Input tensor, typically image-space data with shape `(..., coils, z, y, x)`.
+
+        Returns
+        -------
+            Output tensor, image-space data after NUFFT.H @ NUFFT has been applied.
         """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply forward of NonUniformFastFourierOpGramOp.
+
+.. note::
+   Prefer calling the instance of the NonUniformFastFourierOpGramOp operator as ``operator(x)`` over directly calling this method.
+"""
         if self.nufft_gram is not None:
             (x,) = self.nufft_gram(x)
 
         return (x,)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply the adjoint operator to the input tensor.
+        """Apply the adjoint of the Gram operator.
+
+        Since the Gram operator (NUFFT.H @ NUFFT) is self-adjoint,
+        this method calls the forward operation.
 
         Parameters
         ----------
         x
-            input tensor, shape `(..., coils, k2, k1, k0)`
+            Input tensor, typically image-space data with shape `(..., coils, z, y, x)`.
+            The original docstring mentioned k-space shape, but for a self-adjoint
+            image-to-image Gram operator, the input to adjoint should match input to forward.
+
+
+        Returns
+        -------
+            Output tensor, same as the forward operation.
         """
         return self.forward(x)
 

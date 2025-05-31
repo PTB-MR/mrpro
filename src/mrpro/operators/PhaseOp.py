@@ -9,16 +9,26 @@ class PhaseOp(EndomorphOperator):
     """Phase of input tensors."""
 
     @endomorph
-    def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
-        """Phase of tensors.
+    def __call__(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        """Calculate the element-wise phase (angle) of input tensors.
 
         Parameters
         ----------
-        x
-            input tensors
+        *x
+            One or more input tensors. Can be complex or real.
 
         Returns
         -------
-            tensors with phase of input tensors
+            A tuple of tensors, where each tensor contains the element-wise
+            phase of the corresponding input tensor. The phase is in radians.
         """
+        return super().__call__(*x)
+
+    @endomorph
+    def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        """Apply forward of PhaseOp.
+
+.. note::
+   Prefer calling the instance of the PhaseOp operator as ``operator(x)`` over directly calling this method.
+"""
         return tuple([torch.angle(xi) for xi in x])

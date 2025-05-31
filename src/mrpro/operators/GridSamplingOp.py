@@ -376,11 +376,35 @@ class GridSamplingOp(LinearOperator):
 
         return sampled
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Apply the GridSampleOperator.
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply the GridSampling operator.
 
-        Samples at the location determine by the grid.
+        This operator samples an input tensor `x` at locations specified by a grid.
+        The grid coordinates are normalized to `[-1, 1]`. The output tensor's spatial
+        dimensions are determined by the grid's dimensions. Interpolation is used
+        if grid points do not fall exactly on input tensor elements.
+
+        Parameters
+        ----------
+        x
+            Input tensor to be sampled. Expected shape is `(..., C, D_in, H_in, W_in)` for 3D
+            or `(..., C, H_in, W_in)` for 2D, where `...` are batch dimensions,
+            `C` is number of channels.
+
+        Returns
+        -------
+            Output tensor containing sampled values. Shape will be
+            `(..., C, D_grid, H_grid, W_grid)` or `(..., C, H_grid, W_grid)`
+            matching the grid's spatial dimensions.
         """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply forward of GridSamplingOp.
+
+.. note::
+   Prefer calling the instance of the GridSamplingOp operator as ``operator(x)`` over directly calling this method.
+"""
         if (
             (x.shape[-1] != self.input_shape.x)
             or (x.shape[-2] != self.input_shape.y)
@@ -409,5 +433,23 @@ class GridSamplingOp(LinearOperator):
         return sampled
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Apply the adjoint of the GridSampleOperator."""
+        """Apply the adjoint of the GridSampling operator.
+
+        This operation is the adjoint of the forward grid sampling. It effectively
+        "scatters" the values from the input tensor `x` (which is in the grid's domain)
+        back to a tensor in the original input domain of the forward operation,
+        using the same grid and interpolation settings.
+
+        Parameters
+        ----------
+        x
+            Input tensor, corresponding to the output of the forward operation.
+            Expected shape is `(..., C, D_grid, H_grid, W_grid)` for 3D or
+            `(..., C, H_grid, W_grid)` for 2D.
+
+        Returns
+        -------
+            Output tensor in the original input domain of the forward operation.
+            Shape will be `(..., C, D_in, H_in, W_in)` or `(..., C, H_in, W_in)`.
+        """
         return self.__reshape_wrapper(x, self._adjoint_implementation)

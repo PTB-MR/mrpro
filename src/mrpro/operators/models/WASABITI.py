@@ -56,25 +56,40 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         self.b1_nominal = nn.Parameter(b1_nominal_tensor, requires_grad=b1_nominal_tensor.requires_grad)
         self.gamma = gamma
 
-    def forward(self, b0_shift: torch.Tensor, relative_b1: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply WASABITI signal model.
+    def __call__(self, b0_shift: torch.Tensor, relative_b1: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply the WASABITI (Water Shift and B1 and T1) signal model.
+
+        Calculates the signal based on the formula:
+        S(offset, TR) = (1 - exp(-TR/T1)) *
+                        (1 - 2 * (pi * B1 * gamma * t_rf)^2 *
+                        sinc(t_rf * sqrt((B1*gamma)^2 + (offset - B0_shift)^2))^2)
+        where B1 = b1_nominal * relative_b1, and TR is recovery_time.
 
         Parameters
         ----------
         b0_shift
-            B0 shift [Hz]
-            with shape `(*other, coils, z, y, x)`
+            B0 field inhomogeneity or off-resonance shift in Hz.
+            Expected shape `(*other, coils, z, y, x)`.
         relative_b1
-            relative B1 amplitude
-            with shape `(*other, coils, z, y, x)`
+            Relative B1 amplitude scaling factor (actual B1 / nominal B1).
+            Expected shape `(*other, coils, z, y, x)`.
         t1
-            longitudinal relaxation time T1 [s]
-            with shape `(*other, coils, z, y, x)`
+            Longitudinal (T1) relaxation time in seconds.
+            Expected shape `(*other, coils, z, y, x)`.
 
         Returns
         -------
-            signal with shape `(offsets, *other, coils, z, y, x)`
+        tuple[torch.Tensor,]
+            Signal calculated for each frequency offset and recovery time.
+            Shape `(offsets, *other, coils, z, y, x)`, where `offsets`
+            corresponds to the number of frequency offsets/recovery times.
         """
+        return super().__call__(b0_shift, relative_b1, t1)
+
+    def forward(self, b0_shift: torch.Tensor, relative_b1: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply forward of WASABITI.
+
+        Note: Do not use. Instead, call the instance of the Operator as operator(x)"""
         ndim = max(b0_shift.ndim, relative_b1.ndim, t1.ndim)
         offsets = unsqueeze_right(self.offsets, ndim - self.offsets.ndim + 1)  # leftmost is offset
         recovery_time = unsqueeze_right(self.recovery_time, ndim - self.recovery_time.ndim + 1)  # leftmost is offset

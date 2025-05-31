@@ -40,18 +40,30 @@ class PCACompressionOp(LinearOperator):
         v = repeat(v, '... comp1 comp2 -> ... joint_dim comp1 comp2', joint_dim=1)
         self._compression_matrix = v[..., :n_components, :].clone()
 
-    def forward(self, data: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply the compression to the data.
+    def __call__(self, data: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply PCA-based compression to the input data.
+
+        The data is projected onto the principal components determined during
+        the operator's initialization.
 
         Parameters
         ----------
         data
-            data to be compressed of shape `(*other, joint_dim, compression_dim)`
+            Input data to be compressed. Expected shape is
+            `(*other, joint_dim, compression_dim)`.
 
         Returns
         -------
-            compressed data of shape `(*other, joint_dim, n_components)`
+            Compressed data, with shape `(*other, joint_dim, n_components)`.
         """
+        return super().__call__(data)
+
+    def forward(self, data: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply forward of PCACompressionOp.
+
+.. note::
+   Prefer calling the instance of the PCACompressionOp operator as ``operator(x)`` over directly calling this method.
+"""
         try:
             result = (self._compression_matrix @ data.unsqueeze(-1)).squeeze(-1)
         except RuntimeError as e:
@@ -63,16 +75,21 @@ class PCACompressionOp(LinearOperator):
         return (result,)
 
     def adjoint(self, data: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply the adjoint compression to the data.
+        """Apply the adjoint of PCA-based compression (expansion).
+
+        The data, assumed to be in the compressed principal component space,
+        is projected back to the original data space using the hermitian
+        transpose of the compression matrix.
 
         Parameters
         ----------
         data
-            compressed data of shape `(*other, joint_dim, n_components)`
+            Compressed input data. Expected shape is
+            `(*other, joint_dim, n_components)`.
 
         Returns
         -------
-            expanded data of shape `(*other, joint_dim, compression_dim)`
+            Expanded data, with shape `(*other, joint_dim, compression_dim)`.
         """
         try:
             result = (self._compression_matrix.mH @ data.unsqueeze(-1)).squeeze(-1)

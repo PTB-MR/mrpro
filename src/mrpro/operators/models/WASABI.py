@@ -49,6 +49,43 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         self.b1_nominal = nn.Parameter(b1_nominal_tensor, requires_grad=b1_nominal_tensor.requires_grad)
         self.gamma = gamma
 
+    def __call__(
+        self,
+        b0_shift: torch.Tensor,
+        relative_b1: torch.Tensor,
+        c: torch.Tensor,
+        d: torch.Tensor,
+    ) -> tuple[torch.Tensor,]:
+        """Apply the WASABI (Water Shift and B1) signal model.
+
+        Calculates the signal based on the formula involving sinc function:
+        S(offset) = c - d * (pi * B1 * gamma * t_rf)^2 * sinc(t_rf * sqrt((B1*gamma)^2 + (offset - B0_shift)^2))^2
+        where B1 = b1_nominal * relative_b1.
+
+        Parameters
+        ----------
+        b0_shift
+            B0 field inhomogeneity or off-resonance shift in Hz.
+            Expected shape `(*other, coils, z, y, x)`.
+        relative_b1
+            Relative B1 amplitude scaling factor (actual B1 / nominal B1).
+            Expected shape `(*other, coils, z, y, x)`.
+        c
+            Signal offset parameter (related to M0).
+            Expected shape `(*other, coils, z, y, x)`.
+        d
+            Signal amplitude scaling parameter.
+            Expected shape `(*other, coils, z, y, x)`.
+
+        Returns
+        -------
+        tuple[torch.Tensor,]
+            Signal calculated for each frequency offset.
+            Shape `(offsets, *other, coils, z, y, x)`, where `offsets`
+            corresponds to the number of frequency offsets.
+        """
+        return super().__call__(b0_shift, relative_b1, c, d)
+
     def forward(
         self,
         b0_shift: torch.Tensor,
@@ -56,27 +93,9 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         c: torch.Tensor,
         d: torch.Tensor,
     ) -> tuple[torch.Tensor,]:
-        """Apply WASABI signal model.
+        """Apply forward of WASABI.
 
-        Parameters
-        ----------
-        b0_shift
-            B0 shift [Hz]
-            with shape `(*other, coils, z, y, x)`
-        relative_b1
-            relative B1 amplitude
-            with shape `(*other, coils, z, y, x)`
-        c
-            additional fit parameter for the signal model
-            with shape `(*other, coils, z, y, x)`
-        d
-            additional fit parameter for the signal model
-            with shape `(*other, coils, z, y, x)`
-
-        Returns
-        -------
-            signal with shape `(offsets, *other, coils, z, y, x)`
-        """
+        Note: Do not use. Instead, call the instance of the Operator as operator(x)"""
         ndim = max(b0_shift.ndim, relative_b1.ndim, c.ndim, d.ndim)
         offsets = unsqueeze_right(self.offsets, ndim - self.offsets.ndim + 1)  # leftmost is offsets
         rf_duration = unsqueeze_right(self.rf_duration, ndim - self.rf_duration.ndim)

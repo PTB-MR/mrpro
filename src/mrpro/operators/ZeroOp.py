@@ -29,8 +29,12 @@ class ZeroOp(LinearOperator):
         self.keep_shape = keep_shape
         super().__init__()
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply the operator to the input.
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply the zero operator to the input tensor.
+
+        This operator returns a tensor of zeros. Depending on the `keep_shape`
+        attribute set during initialization, the output will either be a
+        tensor of zeros with the same shape as the input `x`, or a scalar zero.
 
         Parameters
         ----------
@@ -39,15 +43,28 @@ class ZeroOp(LinearOperator):
 
         Returns
         -------
-        zeros_like(x) or scalar 0
+        tuple[torch.Tensor,]
+            A tuple containing a tensor of zeros. This will be `torch.zeros_like(x)`
+            if `keep_shape` is True, or `torch.tensor(0)` if `keep_shape` is False.
         """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply forward of ZeroOp.
+
+        Note: Do not use. Instead, call the instance of the Operator as operator(x)"""
         if self.keep_shape:
             return (torch.zeros_like(x),)
         else:
             return (torch.tensor(0),)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply the adjoint of the operator to the input.
+        """Apply the adjoint of the zero operator.
+
+        Since the zero operator is self-adjoint (mapping everything to zero),
+        this method behaves identically to the forward operation. It returns
+        a tensor of zeros, either with the same shape as input `x` or as a
+        scalar zero, depending on `keep_shape`.
 
         Parameters
         ----------
@@ -56,7 +73,9 @@ class ZeroOp(LinearOperator):
 
         Returns
         -------
-        zeros_like(x)
+        tuple[torch.Tensor,]
+            A tuple containing a tensor of zeros. This will be `torch.zeros_like(x)`
+            if `keep_shape` is True, or `torch.tensor(0)` if `keep_shape` is False.
         """
         if self.keep_shape:
             return (torch.zeros_like(x),)

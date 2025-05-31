@@ -13,32 +13,46 @@ class MultiIdentityOp(EndomorphOperator):
     """
 
     @endomorph
-    def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
-        """Identity of input.
+    def __call__(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        """Apply the multi-input identity operation.
+
+        This operator returns all input tensors unchanged.
 
         Parameters
         ----------
-        x
-            input tensor
+        *x
+            One or more input tensors.
 
         Returns
         -------
-            the input tensor
+            The input tensors, unchanged.
         """
+        return super().__call__(*x)
+
+    @endomorph
+    def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        """Apply forward of MultiIdentityOp.
+
+.. note::
+   Prefer calling the instance of the MultiIdentityOp operator as ``operator(x)`` over directly calling this method.
+"""
         return x
 
     @endomorph
     def adjoint(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
-        """Adjoint Identity.
+        """Apply the adjoint of the multi-input identity operation.
+
+        Since the multi-input identity operator is self-adjoint, this method
+        returns all input tensors unchanged.
 
         Parameters
         ----------
-        x
-            input tensor
+        *x
+            One or more input tensors.
 
         Returns
         -------
-            the input tensor
+            The input tensors, unchanged.
         """
         return x
 

@@ -138,18 +138,33 @@ class ConstraintsOp(EndomorphOperator):
         return item  # unconstrained case
 
     @endomorph
-    def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+    def __call__(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Transform tensors to chosen range.
+
+        Applies element-wise transformations to map input tensors to specified bounds.
+        - If bounded below and above: uses a sigmoid transformation.
+        - If bounded below or above: uses a softplus transformation.
+        - If complex: applies transformation to real and imaginary parts separately.
+        - If more input tensors than bounds: remaining tensors pass through unchanged.
 
         Parameters
         ----------
-        x
-            tensors to be transformed
+        *x
+            One or more input tensors to be transformed.
 
         Returns
         -------
-            tensors transformed to the range defined by the chosen bounds
+            Transformed tensors, with values mapped to the ranges defined by the bounds.
         """
+        return super().__call__(*x)
+
+    @endomorph
+    def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        """Apply forward of ConstraintsOp.
+
+.. note::
+   Prefer calling the instance of the ConstraintsOp operator as ``operator(x)`` over directly calling this method.
+"""
         x_constrained = [
             self._apply_forward(item, lb, ub)
             for item, lb, ub in zip(x, self.lower_bounds, self.upper_bounds, strict=False)
@@ -201,8 +216,30 @@ class InverseConstraintOp(EndomorphOperator):
         self.constraints_op = constraints_op
 
     @endomorph
+    def __call__(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        """Apply the inverse of the constraint operator.
+
+        This reverses the transformation applied by the corresponding `ConstraintsOp`,
+        mapping values from their constrained ranges back to the unbounded domain.
+
+        Parameters
+        ----------
+        *x
+            One or more input tensors, assumed to be in the constrained ranges.
+
+        Returns
+        -------
+            Tensors with the inverse transformation applied, mapped back to the unbounded domain.
+        """
+        return super().__call__(*x)
+
+    @endomorph
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
-        """Apply the inverse of the constraint operator."""
+        """Apply forward of InverseConstraintOp.
+
+.. note::
+   Prefer calling the instance of the InverseConstraintOp operator as ``operator(x)`` over directly calling this method.
+"""
         return self.constraints_op.invert(*x)
 
     @endomorph

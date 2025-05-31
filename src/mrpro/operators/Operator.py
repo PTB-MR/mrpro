@@ -32,14 +32,7 @@ class Operator(Generic[Unpack[Tin], Tout], ABC, TensorAttributeMixin, torch.nn.M
         ...
 
     def __call__(self, *args: Unpack[Tin]) -> Tout:
-        """Apply the forward operator.
-
-        For more information, see `forward`.
-
-        .. note::
-           Prefer using ``operator_instance(*parameters)``, i.e. using
-           `__call__` over using `forward`.
-        """
+        """Applies the operator by calling the forward method."""
         return super().__call__(*args)
 
     def __matmul__(
@@ -121,8 +114,26 @@ class OperatorComposition(Operator[Unpack[Tin2], Tout]):
         self._operator1 = operator1
         self._operator2 = operator2
 
+    def __call__(self, *args: Unpack[Tin2]) -> Tout:
+        """Operator composition.
+
+        Parameters
+        ----------
+        *args
+            Input tensors for the inner operator.
+
+        Returns
+        -------
+            Result of the composed operation.
+        """
+        return super().__call__(*args)
+
     def forward(self, *args: Unpack[Tin2]) -> Tout:
-        """Operator composition."""
+        """Apply forward of OperatorComposition.
+
+.. note::
+   Prefer calling the instance of the OperatorComposition operator as ``operator(x)`` over directly calling this method.
+"""
         return self._operator1(*self._operator2(*args))
 
 
@@ -142,8 +153,26 @@ class OperatorSum(Operator[Unpack[Tin], Tout]):
                 ops.append(op)
         self._operators = cast(list[Operator[Unpack[Tin], Tout]], torch.nn.ModuleList(ops))
 
+    def __call__(self, *args: Unpack[Tin]) -> Tout:
+        """Operator addition.
+
+        Parameters
+        ----------
+        *args
+            Input tensors to which the sum of operators is applied.
+
+        Returns
+        -------
+            Result of the sum of operator applications.
+        """
+        return super().__call__(*args)
+
     def forward(self, *args: Unpack[Tin]) -> Tout:
-        """Operator addition."""
+        """Apply forward of OperatorSum.
+
+.. note::
+   Prefer calling the instance of the OperatorSum operator as ``operator(x)`` over directly calling this method.
+"""
 
         def _add(a: tuple[torch.Tensor, ...], b: tuple[torch.Tensor, ...]) -> Tout:
             return cast(Tout, tuple(a_ + b_ for a_, b_ in zip(a, b, strict=True)))
@@ -164,8 +193,28 @@ class OperatorElementwiseProductRight(Operator[Unpack[Tin], Tout]):
         self._operator = operator
         self._scalar = scalar
 
+    def __call__(self, *args: Unpack[Tin]) -> Tout:
+        """Operator elementwise right multiplication.
+
+        Performs ``Tensor*Operator(x)``
+
+        Parameters
+        ----------
+        *args
+            Input tensors for the operator.
+
+        Returns
+        -------
+            Result of the elementwise multiplication.
+        """
+        return super().__call__(*args)
+
     def forward(self, *args: Unpack[Tin]) -> Tout:
-        """Operator elementwise right multiplication."""
+        """Apply forward of OperatorElementwiseProductRight.
+
+.. note::
+   Prefer calling the instance of the OperatorElementwiseProductRight operator as ``operator(x)`` over directly calling this method.
+"""
         out = self._operator(*args)
         return cast(Tout, tuple(a * self._scalar for a in out))
 
@@ -182,8 +231,28 @@ class OperatorElementwiseProductLeft(Operator[Unpack[Tin], Tout]):
         self._operator = operator
         self._scalar = scalar
 
+    def __call__(self, *args: Unpack[Tin]) -> Tout:
+        """Operator elementwise left multiplication.
+
+        Performs ``Operator(x*Tensor)``
+
+        Parameters
+        ----------
+        *args
+            Input tensors to be multiplied by the scalar before applying the operator.
+
+        Returns
+        -------
+            Result of the operator application on the scaled tensors.
+        """
+        return super().__call__(*args)
+
     def forward(self, *args: Unpack[Tin]) -> Tout:
-        """Operator elementwise left multiplication."""
+        """Apply forward of OperatorElementwiseProductLeft.
+
+.. note::
+   Prefer calling the instance of the OperatorElementwiseProductLeft operator as ``operator(x)`` over directly calling this method.
+"""
         multiplied = cast(tuple[Unpack[Tin]], tuple(a * self._scalar for a in args if isinstance(a, torch.Tensor)))
         out = self._operator(*multiplied)
         return cast(Tout, out)

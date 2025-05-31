@@ -94,23 +94,35 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
             sequence.append(block)
         self.sequence = sequence.to(device=block_time.device)
 
-    def forward(self, m0: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor) -> tuple[torch.Tensor]:
-        """Simulate the Cardiac MR Fingerprinting signal.
+    def __call__(self, m0: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor) -> tuple[torch.Tensor]:
+        """Simulate the Cardiac MR Fingerprinting (cMRF) signal.
+
+        This method uses a predefined sequence of EPG blocks (inversion, T2 preparation,
+        FISP acquisitions, delays) to simulate the signal evolution based on
+        input tissue parameters M0, T1, and T2.
 
         Parameters
         ----------
         m0
-            steady state magnetization (complex)
+            Equilibrium magnetization (can be complex).
         t1
-            longitudinal relaxation time T1 in s
+            Longitudinal (T1) relaxation time in seconds.
         t2
-            transversal relaxation time T2 in s
-
+            Transversal (T2) relaxation time in seconds.
 
         Returns
         -------
-            Simulated Cardiac MR Fingerprinting signal with the different acquisitions in the first dimension.
+        tuple[torch.Tensor,]
+            A tuple containing a single tensor representing the simulated cMRF signal.
+            The first dimension of the tensor corresponds to the different acquisitions
+            in the sequence.
         """
+        return super().__call__(m0, t1, t2)
+
+    def forward(self, m0: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply forward of CardiacFingerprinting.
+
+        Note: Do not use. Instead, call the instance of the Operator as operator(x)"""
         parameters = Parameters(m0, t1, t2)
         _, signals = self.sequence(parameters, states=20)
         signal = torch.stack(signals, dim=0)
