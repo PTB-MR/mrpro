@@ -144,10 +144,8 @@ class WaveletOp(LinearOperator):
 
         Returns
         -------
-        tuple[torch.Tensor,]
-            A tuple containing one tensor of wavelet coefficients, stacked along
-            one dimension. The first wavelet dimension specified in `dim` during
-            initialization is used for stacking.
+            The wavelet coefficients, stacked along one dimension.
+            The first wavelet dimension specified in `dim` during initialization is used for stacking.
 
         Raises
         ------
@@ -216,8 +214,7 @@ class WaveletOp(LinearOperator):
 
         Returns
         -------
-        tuple[torch.Tensor,]
-            A tuple containing the reconstructed (image) data tensor.
+            The reconstructed (image) data tensor.
 
         Raises
         ------

@@ -83,7 +83,8 @@ class PatchOp(LinearOperator):
         """Apply forward of PatchOp.
 
         .. note::
-        Prefer calling the instance of the PatchOp operator as ``operator(x)`` over directly calling this method.
+            Prefer calling the instance of the PatchOp operator as ``operator(x)`` over
+            directly calling this method.
         """
         domain_size = tuple(x.shape[dim] for dim in self.dim)
         if self.domain_size is None:

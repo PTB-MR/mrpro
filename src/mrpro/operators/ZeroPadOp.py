@@ -49,16 +49,19 @@ class ZeroPadOp(LinearOperator):
 
         Returns
         -------
-        tuple[torch.Tensor,]
             The padded or cropped tensor. Its shape along the dimensions in `dim`
             will match `padded_shape`.
+
+
         """
         return super().__call__(x)
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply forward of ZeroPadOp.
 
-        Note: Do not use. Instead, call the instance of the Operator as operator(x)
+        .. note::
+            Prefer calling the instance of the ZeroPadOp operator as ``operator(x)`` over
+            directly calling this method.
         """
         return (pad_or_crop(x, self.padded_shape, self.dim),)
 
@@ -78,7 +81,6 @@ class ZeroPadOp(LinearOperator):
 
         Returns
         -------
-        tuple[torch.Tensor,]
             The cropped or padded tensor. Its shape along the dimensions in `dim`
             will match `original_shape` (from initialization).
         """

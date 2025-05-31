@@ -43,9 +43,12 @@ class ZeroOp(LinearOperator):
 
         Returns
         -------
-        tuple[torch.Tensor,]
-            A tuple containing a tensor of zeros. This will be `torch.zeros_like(x)`
+            A tensor of zeros. This will be `torch.zeros_like(x)`
             if `keep_shape` is True, or `torch.tensor(0)` if `keep_shape` is False.
+
+        .. note::
+            Prefer calling the instance of the ZeroOp operator as ``operator(x)`` over
+            directly calling this method.
         """
         return super().__call__(x)
 
@@ -74,9 +77,9 @@ class ZeroOp(LinearOperator):
 
         Returns
         -------
-        tuple[torch.Tensor,]
-            A tuple containing a tensor of zeros. This will be `torch.zeros_like(x)`
+            A tensor of zeros. This will be `torch.zeros_like(x)`
             if `keep_shape` is True, or `torch.tensor(0)` if `keep_shape` is False.
+
         """
         if self.keep_shape:
             return (torch.zeros_like(x),)

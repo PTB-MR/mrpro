@@ -96,12 +96,16 @@ class Operator(Generic[Unpack[Tin], Tout], ABC, TensorAttributeMixin, torch.nn.M
 
 
 class OperatorComposition(Operator[Unpack[Tin2], Tout]):
-    """Operator composition."""
+    """Operator composition.
+
+    Returns ``lambda x: operator1(operator2(x))``
+
+    .. note::
+        This is usually created by operator composition, e.g. ``operator1 @ operator2``.
+    """
 
     def __init__(self, operator1: Operator[Unpack[Tin], Tout], operator2: Operator[Unpack[Tin2], tuple[Unpack[Tin]]]):
         """Operator composition initialization.
-
-        Returns ``lambda x: operator1(operator2(x))``
 
         Parameters
         ----------
@@ -139,12 +143,26 @@ class OperatorComposition(Operator[Unpack[Tin2], Tout]):
 
 
 class OperatorSum(Operator[Unpack[Tin], Tout]):
-    """Operator addition."""
+    """Operator addition.
+
+    Returns ``lambda x: operator1(x) + ... + operatorN(x)``
+
+    .. note::
+        This is usually created by operator addition, e.g. ``operator1 + operator2``.
+    """
 
     _operators: list[Operator[Unpack[Tin], Tout]]  # actually a torch.nn.ModuleList
 
     def __init__(self, operator1: Operator[Unpack[Tin], Tout], /, *other_operators: Operator[Unpack[Tin], Tout]):
-        """Operator addition initialization."""
+        """Operator addition initialization.
+
+        Parameters
+        ----------
+        operator1
+            First operator to add.
+        *other_operators
+            Additional operators to add.
+        """
         super().__init__()
         ops: list[Operator[Unpack[Tin], Tout]] = []
         for op in (operator1, *other_operators):
@@ -172,7 +190,8 @@ class OperatorSum(Operator[Unpack[Tin], Tout]):
         """Apply forward of OperatorSum.
 
         .. note::
-        Prefer calling the instance of the OperatorSum operator as ``operator(x)`` over directly calling this method.
+            Prefer calling the instance of the OperatorSum operator as ``operator(x)`` over
+            directly calling this method.
         """
 
         def _add(a: tuple[torch.Tensor, ...], b: tuple[torch.Tensor, ...]) -> Tout:
@@ -186,18 +205,27 @@ class OperatorElementwiseProductRight(Operator[Unpack[Tin], Tout]):
     """Operator elementwise right multiplication with a tensor.
 
     Performs ``Tensor*Operator(x)``
+
+    .. note::
+        This is usually created by operator multiplication with a tensor, e.g. ``tensor * operator``.
     """
 
     def __init__(self, operator: Operator[Unpack[Tin], Tout], scalar: torch.Tensor | complex):
-        """Operator elementwise right multiplication initialization."""
+        """Operator elementwise right multiplication initialization.
+
+        Parameters
+        ----------
+        operator
+            Operator to multiply with the scalar.
+        scalar
+            Scalar to multiply with the operator.
+        """
         super().__init__()
         self._operator = operator
         self._scalar = scalar
 
     def __call__(self, *args: Unpack[Tin]) -> Tout:
         """Operator elementwise right multiplication.
-
-        Performs ``Tensor*Operator(x)``
 
         Parameters
         ----------
@@ -225,6 +253,9 @@ class OperatorElementwiseProductLeft(Operator[Unpack[Tin], Tout]):
     """Operator elementwise left multiplication  with a tensor.
 
     Performs ``Operator(x*Tensor)``
+
+    .. note::
+        This is usually created by operator multiplication with a tensor, e.g. `` operator * tensor``.
     """
 
     def __init__(self, operator: Operator[Unpack[Tin], Tout], scalar: torch.Tensor | complex):
@@ -235,8 +266,6 @@ class OperatorElementwiseProductLeft(Operator[Unpack[Tin], Tout]):
 
     def __call__(self, *args: Unpack[Tin]) -> Tout:
         """Operator elementwise left multiplication.
-
-        Performs ``Operator(x*Tensor)``
 
         Parameters
         ----------

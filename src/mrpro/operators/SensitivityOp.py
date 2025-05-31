@@ -37,21 +37,20 @@ class SensitivityOp(LinearOperator):
         Parameters
         ----------
         img
-            Input image data, typically with shape `(... 1 z y x)` or `(... z y x)`.
-            The coil dimension (if present) should be 1.
+            Input image data, typically with shape `... 1 z y x`.
 
         Returns
         -------
-        tuple[torch.Tensor,]
-            Multi-coil image data with shape `(... coils z y x)`, where `coils`
-            is determined by the CSM.
+            Multi-coil image data with shape `... coils z y x`.
         """
         return super().__call__(img)
 
     def forward(self, img: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply forward of SensitivityOp.
 
-        Note: Do not use. Instead, call the instance of the Operator as operator(x)
+        .. note::
+            Prefer calling the instance of the SensitivityOp operator as ``operator(x)`` over
+            directly calling this method.
         """
         return (self.csm_tensor * img,)
 
@@ -65,11 +64,10 @@ class SensitivityOp(LinearOperator):
         Parameters
         ----------
         img
-            Multi-coil image data, typically with shape `(... coils z y x)`.
+            Multi-coil image data, typically with shape `... coils z y x`.
 
         Returns
         -------
-        tuple[torch.Tensor,]
-            Combined image data, with shape `(... 1 z y x)`.
+            Combined image data, with shape `... 1 z y x`.
         """
         return ((self.csm_tensor.conj() * img).sum(-4, keepdim=True),)

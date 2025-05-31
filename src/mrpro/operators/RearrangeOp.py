@@ -39,8 +39,8 @@ class RearrangeOp(LinearOperator):
         self.additional_info = {} if additional_info is None else additional_info
 
     def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Rearrange input tensor `x` based on the pattern defined at initialization.
-
+        """Rearrange input tensor.
+        The rule used to perform the rearranging is set at initialization.
         This operator uses `einops.rearrange` to perform the rearrangement.
 
         Parameters
@@ -50,7 +50,6 @@ class RearrangeOp(LinearOperator):
 
         Returns
         -------
-        tuple[torch.Tensor,]
             The rearranged tensor.
         """
         return super().__call__(x)
@@ -64,10 +63,10 @@ class RearrangeOp(LinearOperator):
         return (y,)
 
     def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor]:
-        """Rearrange input tensor `y` using the adjoint (inverse) pattern.
+        """Rearrange input tensor using the adjoint rule.
 
-        This operator uses `einops.rearrange` with a pattern that reverses
-        the forward operation.
+        The rule used to perform the rearranging is set at initialization.
+        This operator uses `einops.rearrange` to perform the rearrangement.
 
         Parameters
         ----------
@@ -76,8 +75,7 @@ class RearrangeOp(LinearOperator):
 
         Returns
         -------
-        tuple[torch.Tensor,]
-            The rearranged tensor, effectively undoing the forward rearrangement.
+            The rearranged tensor.
         """
         x = rearrange(y, self._adjoint_pattern, **self.additional_info)
         return (x,)

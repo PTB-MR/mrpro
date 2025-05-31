@@ -29,6 +29,7 @@ class PhaseOp(EndomorphOperator):
         """Apply forward of PhaseOp.
 
         .. note::
-        Prefer calling the instance of the PhaseOp operator as ``operator(x)`` over directly calling this method.
+            Prefer calling the instance of the PhaseOp operator as ``operator(x)`` over
+            directly calling this method.
         """
         return tuple([torch.angle(xi) for xi in x])
