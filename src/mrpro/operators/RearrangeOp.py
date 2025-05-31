@@ -40,6 +40,7 @@ class RearrangeOp(LinearOperator):
 
     def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor]:
         """Rearrange input tensor.
+
         The rule used to perform the rearranging is set at initialization.
         This operator uses `einops.rearrange` to perform the rearrangement.
 

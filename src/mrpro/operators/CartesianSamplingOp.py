@@ -180,7 +180,7 @@ class CartesianSamplingOp(LinearOperator):
         Parameters
         ----------
         y
-            k-space data in acquired shape.
+            K-space data in acquired shape.
 
         Returns
         -------
