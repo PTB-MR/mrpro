@@ -27,31 +27,32 @@ class SaturationRecovery(SignalModel[torch.Tensor, torch.Tensor]):
         """Apply the saturation recovery signal model.
 
         Calculates the signal based on the formula:
-        S(t_sat) = M0 * (1 - exp(-t_sat / T1))
-        where t_sat are the saturation times.
+        :math:`S(t_{sat}) = M_0 * (1 - exp(-t_{sat} / T_1))`,
+        where `t_{sat}` are the saturation times.
 
         Parameters
         ----------
         m0
-            Equilibrium signal or proton density.
-            Expected shape `(*other, coils, z, y, x)`.
+            Equilibrium signal / proton density.
+            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
         t1
             Longitudinal relaxation time T1.
-            Expected shape `(*other, coils, z, y, x)`.
+            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
 
         Returns
         -------
-        tuple[torch.Tensor,]
             Signal calculated for each saturation time.
-            Shape `(time, *other, coils, z, y, x)`, where `time` corresponds
-            to the number of saturation times.
+            Shape `times ...`. For example `times, *other, coils, z, y, x`, or `times, samples`
+            where `times` is the number of saturation times.
         """
         return super().__call__(m0, t1)
 
     def forward(self, m0: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply forward of SaturationRecovery.
 
-        Note: Do not use. Instead, call the instance of the Operator as operator(x)"""
+        .. note::
+            Prefer calling the instance of the SaturationRecovery as ``operator(x)`` over directly calling this method.
+        """
         ndim = max(m0.ndim, t1.ndim)
         saturation_time = unsqueeze_right(
             self.saturation_time, ndim - self.saturation_time.ndim + 1

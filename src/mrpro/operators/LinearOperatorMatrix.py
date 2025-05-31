@@ -90,9 +90,10 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Apply forward of LinearOperatorMatrix.
 
-.. note::
-   Prefer calling the instance of the LinearOperatorMatrix operator as ``operator(x)`` over directly calling this method.
-"""
+        .. note::
+            Prefer calling the instance of the LinearOperatorMatrix operator as ``operator(x)`` over
+            directly calling this method.
+        """
         if len(x) != self.shape[1]:
             raise ValueError('Input should be the same number of tensors as the LinearOperatorMatrix has columns.')
         return tuple(

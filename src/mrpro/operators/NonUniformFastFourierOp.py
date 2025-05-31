@@ -211,9 +211,10 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply forward of NonUniformFastFourierOp.
 
-.. note::
-   Prefer calling the instance of the NonUniformFastFourierOp operator as ``operator(x)`` over directly calling this method.
-"""
+        .. note::
+            Prefer calling the instance of the NonUniformFastFourierOp operator as ``operator(x)`` over
+            directly calling this method.
+        """
         if len(self._direction_zyx):
             if x.device.type == 'cpu' and self.oversampling not in (0.0, 1.25, 2.0):
                 raise ValueError('Only oversampling 1.25 and 2.0 are supported on CPU')
@@ -445,9 +446,10 @@ class NonUniformFastFourierOpGramOp(LinearOperator):
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply forward of NonUniformFastFourierOpGramOp.
 
-.. note::
-   Prefer calling the instance of the NonUniformFastFourierOpGramOp operator as ``operator(x)`` over directly calling this method.
-"""
+        .. note::
+            Prefer calling the instance of the NonUniformFastFourierOpGramOp operator as ``operator(x)`` over
+            directly calling this method.
+        """
         if self.nufft_gram is not None:
             (x,) = self.nufft_gram(x)
 

@@ -243,7 +243,8 @@ class SliceProjectionOp(LinearOperator):
     def forward(self, x: Tensor) -> tuple[Tensor]:
         """Apply forward of SliceProjectionOp.
 
-        Note: Do not use. Instead, call the instance of the Operator as operator(x)"""
+        Note: Do not use. Instead, call the instance of the Operator as operator(x)
+        """
         match (self.matrix, self.matrix_adjoint):
             # selection based on the optimize_for setting
             case (None, None):

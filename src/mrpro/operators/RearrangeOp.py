@@ -58,7 +58,8 @@ class RearrangeOp(LinearOperator):
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
         """Apply forward of RearrangeOp.
 
-        Note: Do not use. Instead, call the instance of the Operator as operator(x)"""
+        Note: Do not use. Instead, call the instance of the Operator as operator(x)
+        """
         y = rearrange(x, self._forward_pattern, **self.additional_info)
         return (y,)
 

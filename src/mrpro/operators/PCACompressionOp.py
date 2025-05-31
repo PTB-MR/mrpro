@@ -61,9 +61,10 @@ class PCACompressionOp(LinearOperator):
     def forward(self, data: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply forward of PCACompressionOp.
 
-.. note::
-   Prefer calling the instance of the PCACompressionOp operator as ``operator(x)`` over directly calling this method.
-"""
+        .. note::
+            Prefer calling the instance of the PCACompressionOp operator as ``operator(x)`` over
+            directly calling this method.
+        """
         try:
             result = (self._compression_matrix @ data.unsqueeze(-1)).squeeze(-1)
         except RuntimeError as e:

@@ -52,7 +52,8 @@ class ZeroOp(LinearOperator):
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply forward of ZeroOp.
 
-        Note: Do not use. Instead, call the instance of the Operator as operator(x)"""
+        Note: Do not use. Instead, call the instance of the Operator as operator(x)
+        """
         if self.keep_shape:
             return (torch.zeros_like(x),)
         else:

@@ -50,12 +50,12 @@ class MSE(L2NormSquared):
         self,
         x: torch.Tensor,
     ) -> tuple[torch.Tensor]:
-        """Compute the Mean Squared Error (MSE).
+        r"""Compute the Mean Squared Error (MSE).
 
-        Calculates :math:`1/N \| W * (x - b) \|_2^2`, where `W` is `self.weight`,
-        `b` is `self.target`, and `N` is the number of elements over which the
-        mean is computed (if `self.divide_by_n` is true at initialization of L2NormSquared).
-        The squared norm is computed along dimensions specified by `self.dim`.
+        Calculates :math:`1/N \| W * (x - b) \|_2^2`, where `W` is `weight`,
+        `b` is `target`, and `N` is the number of elements over which the
+        mean is computed (if `divide_by_n` is true at initialization of L2NormSquared).
+        The squared norm is computed along dimensions specified by `dim`.
 
         Parameters
         ----------
@@ -64,11 +64,8 @@ class MSE(L2NormSquared):
 
         Returns
         -------
-        tuple[torch.Tensor]
-            A tuple containing a single tensor representing the MSE.
-            If `self.keepdim` is true (at initialization of L2NormSquared),
-            the dimensions `self.dim` are retained with size 1; otherwise,
-            they are reduced.
+            The MSE. If `keepdim` is true, the dimensions `dim` are retained
+            with size 1; otherwise, they are reduced.
         """
         return super().__call__(x)
 
@@ -78,6 +75,8 @@ class MSE(L2NormSquared):
     ) -> tuple[torch.Tensor]:
         """Apply forward of MSE.
 
-        Note: Do not use. Instead, call the instance of the Operator as operator(x)"""
+        .. note::
+            Prefer calling the instance of the MSE as ``operator(x)`` over directly calling this method.
+        """
         # MSE uses the forward implementation of L2NormSquared
         return super().forward(x)

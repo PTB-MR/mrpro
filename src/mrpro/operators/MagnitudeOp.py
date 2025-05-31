@@ -28,7 +28,7 @@ class MagnitudeOp(EndomorphOperator):
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Apply forward of MagnitudeOp.
 
-.. note::
-   Prefer calling the instance of the MagnitudeOp operator as ``operator(x)`` over directly calling this method.
-"""
+        .. note::
+        Prefer calling the instance of the MagnitudeOp operator as ``operator(x)`` over directly calling this method.
+        """
         return tuple([torch.abs(xi) for xi in x])

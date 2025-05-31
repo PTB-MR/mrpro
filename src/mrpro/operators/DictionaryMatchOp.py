@@ -129,9 +129,10 @@ class DictionaryMatchOp(Operator[torch.Tensor, tuple[Unpack[Tin]]]):
     def forward(self, input_signal: torch.Tensor) -> tuple[Unpack[Tin]]:
         """Apply forward of DictionaryMatchOp.
 
-.. note::
-   Prefer calling the instance of the DictionaryMatchOp operator as ``operator(x)`` over directly calling this method.
-"""
+        .. note::
+            Prefer calling the instance of the DictionaryMatchOp operator as ``operator(x)`` over
+            directly calling this method.
+        """
         if not self.x:
             raise KeyError('No keys in the dictionary. Please first add some x values using `append`.')
 

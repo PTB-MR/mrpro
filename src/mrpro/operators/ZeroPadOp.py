@@ -58,7 +58,8 @@ class ZeroPadOp(LinearOperator):
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply forward of ZeroPadOp.
 
-        Note: Do not use. Instead, call the instance of the Operator as operator(x)"""
+        Note: Do not use. Instead, call the instance of the Operator as operator(x)
+        """
         return (pad_or_crop(x, self.padded_shape, self.dim),)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:

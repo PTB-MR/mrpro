@@ -162,9 +162,9 @@ class ConstraintsOp(EndomorphOperator):
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Apply forward of ConstraintsOp.
 
-.. note::
-   Prefer calling the instance of the ConstraintsOp operator as ``operator(x)`` over directly calling this method.
-"""
+        .. note::
+        Prefer calling the instance of the ConstraintsOp operator as ``operator(x)`` over directly calling this method.
+        """
         x_constrained = [
             self._apply_forward(item, lb, ub)
             for item, lb, ub in zip(x, self.lower_bounds, self.upper_bounds, strict=False)
@@ -237,9 +237,10 @@ class InverseConstraintOp(EndomorphOperator):
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Apply forward of InverseConstraintOp.
 
-.. note::
-   Prefer calling the instance of the InverseConstraintOp operator as ``operator(x)`` over directly calling this method.
-"""
+        .. note::
+            Prefer calling the instance of the InverseConstraintOp operator as ``operator(x)`` over
+            directly calling this method.
+        """
         return self.constraints_op.invert(*x)
 
     @endomorph

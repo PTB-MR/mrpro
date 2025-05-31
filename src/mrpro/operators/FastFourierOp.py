@@ -135,9 +135,9 @@ class FastFourierOp(LinearOperator):
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply forward of FastFourierOp.
 
-.. note::
-   Prefer calling the instance of the FastFourierOp operator as ``operator(x)`` over directly calling this method.
-"""
+        .. note::
+        Prefer calling the instance of the FastFourierOp operator as ``operator(x)`` over directly calling this method.
+        """
         y = torch.fft.fftshift(
             torch.fft.fftn(torch.fft.ifftshift(*self._pad_op(x), dim=self._dim), dim=self._dim, norm='ortho'),
             dim=self._dim,

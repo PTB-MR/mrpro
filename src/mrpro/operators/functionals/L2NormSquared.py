@@ -25,11 +25,11 @@ class L2NormSquared(ElementaryProximableFunctional):
         self,
         x: torch.Tensor,
     ) -> tuple[torch.Tensor]:
-        """Compute the squared L2 norm of the input tensor.
+        r"""Compute the squared L2 norm of the input tensor.
 
-        Calculates :math:`\| W * (x - b) \|_2^2`, where `W` is `self.weight` and `b` is `self.target`.
-        The squared norm is computed along dimensions specified by `self.dim`.
-        If `self.divide_by_n` is true, the result is averaged over these
+        Calculates :math:`\| W * (x - b) \|_2^2`, where `W` is `weight` and `b` is `target`.
+        The squared norm is computed along dimensions specified by `dim`.
+        If `divide_by_n` is true, the result is averaged over these
         dimensions; otherwise, it's summed.
 
         Parameters
@@ -39,9 +39,7 @@ class L2NormSquared(ElementaryProximableFunctional):
 
         Returns
         -------
-        tuple[torch.Tensor]
-            A tuple containing a single tensor representing the squared L2 norm.
-            If `self.keepdim` is true, the dimensions `self.dim` are retained
+            The squared L2 norm. If `keepdim` is true, the dimensions `dim` are retained
             with size 1; otherwise, they are reduced.
         """
         return super().__call__(x)
@@ -52,7 +50,9 @@ class L2NormSquared(ElementaryProximableFunctional):
     ) -> tuple[torch.Tensor]:
         """Apply forward of L2NormSquared.
 
-        Note: Do not use. Instead, call the instance of the Operator as operator(x)"""
+        .. note::
+            Prefer calling the instance of the L2NormSquared as ``operator(x)`` over directly calling this method.
+        """
         value = (self.weight * (x - self.target)).abs().square()
 
         if self.divide_by_n:

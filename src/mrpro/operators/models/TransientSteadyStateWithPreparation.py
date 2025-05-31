@@ -96,36 +96,38 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
         """Apply the transient steady-state signal model with preparation.
 
         Calculates the signal based on the formula:
-        M_z(t) = M0* + (M_init - M0*) * exp(-t / T1*)
-        where M_init is the magnetization after preparation and initial delay,
-        M0* is the effective steady-state magnetization, and T1* is the
+        :math:`M_z(t) = M_0^* + (M_{init} - M_0^*) * exp(-t / T_1^*)`,
+        where :math:`M_{init}` is the magnetization after preparation and initial delay,
+        :math:`M_0^*` is the effective steady-state magnetization, and :math:`T_1^*` is the
         effective T1 relaxation time during continuous acquisition.
 
         Parameters
         ----------
         m0
-            Equilibrium signal or proton density.
-            Expected shape `(*other, coils, z, y, x)`.
+            Equilibrium signal / proton density.
+            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
         t1
             Longitudinal relaxation time T1.
-            Expected shape `(*other, coils, z, y, x)`.
+            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
         flip_angle
-            Flip angle of data acquisition pulses in radians.
-            Expected shape `(*other, coils, z, y, x)`.
+            Flip angle of data acquisition rf pulses in radians.
+            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
 
         Returns
         -------
-        tuple[torch.Tensor,]
             Signal calculated for each sampling time.
-            Shape `(time, *other, coils, z, y, x)`, where `time` corresponds
-            to the number of sampling times.
+            Shape `times ...`. For example `times, *other, coils, z, y, x`, or `times, samples`
+            where `times` is the number of sampling times.
         """
         return super().__call__(m0, t1, flip_angle)
 
     def forward(self, m0: torch.Tensor, t1: torch.Tensor, flip_angle: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply forward of TransientSteadyStateWithPreparation.
 
-        Note: Do not use. Instead, call the instance of the Operator as operator(x)"""
+        .. note::
+            Prefer calling the instance of the TransientSteadyStateWithPreparation as ``operator(x)`` over
+            directly calling this method.
+        """
         ndim = max(m0.ndim, t1.ndim, flip_angle.ndim)
         repetition_time = unsqueeze_right(self.repetition_time, ndim - self.repetition_time.ndim)
         m0_scaling_preparation = unsqueeze_right(self.m0_scaling_preparation, ndim - self.m0_scaling_preparation.ndim)

@@ -80,9 +80,9 @@ class EinsumOp(LinearOperator):
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
         """Apply forward of EinsumOp.
 
-.. note::
-   Prefer calling the instance of the EinsumOp operator as ``operator(x)`` over directly calling this method.
-"""
+        .. note::
+        Prefer calling the instance of the EinsumOp operator as ``operator(x)`` over directly calling this method.
+        """
         y = einsum(self.matrix, x, self._forward_pattern)
         return (y,)
 

@@ -402,9 +402,10 @@ class LinearOperatorComposition(LinearOperator):
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
         """Apply forward of LinearOperatorComposition.
 
-.. note::
-   Prefer calling the instance of the LinearOperatorComposition operator as ``operator(x)`` over directly calling this method.
-"""
+        .. note::
+            Prefer calling the instance of the LinearOperatorComposition operator as ``operator(x)`` over
+            directly calling this method.
+        """
         return self._operator1(*self._operator2(x))
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
@@ -464,9 +465,10 @@ class LinearOperatorSum(LinearOperator):
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
         """Apply forward of LinearOperatorSum.
 
-.. note::
-   Prefer calling the instance of the LinearOperatorSum operator as ``operator(x)`` over directly calling this method.
-"""
+        .. note::
+            Prefer calling the instance of the LinearOperatorSum operator as ``operator(x)`` over
+            directly calling this method.
+        """
         return (functools.reduce(operator.add, (op(x)[0] for op in self._operators)),)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
@@ -518,9 +520,10 @@ class LinearOperatorElementwiseProductRight(LinearOperator):
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply forward of LinearOperatorElementwiseProductRight.
 
-.. note::
-   Prefer calling the instance of the LinearOperatorElementwiseProductRight operator as ``operator(x)`` over directly calling this method.
-"""
+        .. note::
+            Prefer calling the instance of the LinearOperatorElementwiseProductRight operator as ``operator(x)`` over
+            directly calling this method.
+        """
         (out,) = self._operator(x)
         return (out * self._scalar,)
 
@@ -585,9 +588,10 @@ class LinearOperatorElementwiseProductLeft(LinearOperator):
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply forward of LinearOperatorElementwiseProductLeft.
 
-.. note::
-   Prefer calling the instance of the LinearOperatorElementwiseProductLeft operator as ``operator(x)`` over directly calling this method.
-"""
+        .. note::
+            Prefer calling the instance of the LinearOperatorElementwiseProductLeft operator as ``operator(x)`` over
+            directly calling this method.
+        """
         return self._operator(x * self._scalar)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
@@ -639,9 +643,10 @@ class AdjointLinearOperator(LinearOperator):
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply forward of AdjointLinearOperator.
 
-.. note::
-   Prefer calling the instance of the AdjointLinearOperator operator as ``operator(x)`` over directly calling this method.
-"""
+        .. note::
+            Prefer calling the instance of the AdjointLinearOperator operator as ``operator(x)`` over
+            directly calling this method.
+        """
         return self._operator.adjoint(x)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:

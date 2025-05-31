@@ -24,13 +24,13 @@ class L1NormViewAsReal(ElementaryProximableFunctional):
         self,
         x: torch.Tensor,
     ) -> tuple[torch.Tensor]:
-        """Compute the L1 norm, viewing complex numbers as R^2.
+        r"""Compute the L1 norm, viewing complex numbers as R^2.
 
         Calculates :math:`\|W_r * Re(x-b)\|_1 + \|W_i * Im(x-b)\|_1`.
-        If `self.weight` is real, :math:`W_r = W_i = self.weight`.
-        If `self.weight` is complex, :math:`W_r = Re(self.weight)` and :math:`W_i = Im(self.weight)`.
-        `b` is `self.target`. The norm is computed along `self.dim`.
-        If `self.divide_by_n` is true, the result is averaged; otherwise, summed.
+        If `weight` is real, :math:`W_r = W_i = weight`.
+        If `weight` is complex, :math:`W_r = Re(weight)` and :math:`W_i = Im(weight)`.
+        `b` is `target`. The norm is computed along `dim`.
+        If `divide_by_n` is true, the result is averaged; otherwise, summed.
 
         Parameters
         ----------
@@ -39,9 +39,8 @@ class L1NormViewAsReal(ElementaryProximableFunctional):
 
         Returns
         -------
-        tuple[torch.Tensor]
-            A tuple containing a single tensor representing the L1 norm (viewed as R^2).
-            If `self.keepdim` is true, `self.dim` are retained; otherwise, reduced.
+            The L1 norm. If `keepdim` is true, the dimensions `dim` are retained
+            with size 1; otherwise, they are reduced.
         """
         return super().__call__(x)
 
@@ -51,7 +50,8 @@ class L1NormViewAsReal(ElementaryProximableFunctional):
     ) -> tuple[torch.Tensor]:
         """Apply forward of L1NormViewAsReal.
 
-        Note: Do not use. Instead, call the instance of the Operator as operator(x)"""
+        Note: Do not use. Instead, call the instance of the Operator as operator(x)
+        """
         dtype = torch.promote_types(self.target.dtype, x.dtype)
         x = x.to(dtype)
         target = self.target.to(dtype)

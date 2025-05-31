@@ -82,9 +82,9 @@ class PatchOp(LinearOperator):
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply forward of PatchOp.
 
-.. note::
-   Prefer calling the instance of the PatchOp operator as ``operator(x)`` over directly calling this method.
-"""
+        .. note::
+        Prefer calling the instance of the PatchOp operator as ``operator(x)`` over directly calling this method.
+        """
         domain_size = tuple(x.shape[dim] for dim in self.dim)
         if self.domain_size is None:
             self.domain_size = domain_size

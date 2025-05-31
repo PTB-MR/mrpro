@@ -402,9 +402,9 @@ class GridSamplingOp(LinearOperator):
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
         """Apply forward of GridSamplingOp.
 
-.. note::
-   Prefer calling the instance of the GridSamplingOp operator as ``operator(x)`` over directly calling this method.
-"""
+        .. note::
+        Prefer calling the instance of the GridSamplingOp operator as ``operator(x)`` over directly calling this method.
+        """
         if (
             (x.shape[-1] != self.input_shape.x)
             or (x.shape[-2] != self.input_shape.y)

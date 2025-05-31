@@ -22,6 +22,9 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
     ) -> None:
         """Initialize WASABI signal model for mapping of B0 and B1 [SCHU2016]_.
 
+        This model uses a slight modification from the original published model.
+        The parameter `a` corresponds to `d/c` in the original model.
+
         Parameters
         ----------
         offsets
@@ -54,49 +57,46 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         b0_shift: torch.Tensor,
         relative_b1: torch.Tensor,
         c: torch.Tensor,
-        d: torch.Tensor,
+        a: torch.Tensor,
     ) -> tuple[torch.Tensor,]:
         """Apply the WASABI (Water Shift and B1) signal model.
-
-        Calculates the signal based on the formula involving sinc function:
-        S(offset) = c - d * (pi * B1 * gamma * t_rf)^2 * sinc(t_rf * sqrt((B1*gamma)^2 + (offset - B0_shift)^2))^2
-        where B1 = b1_nominal * relative_b1.
 
         Parameters
         ----------
         b0_shift
-            B0 field inhomogeneity or off-resonance shift in Hz.
-            Expected shape `(*other, coils, z, y, x)`.
+            B0 field in homogeneity or off-resonance shift in Hz.
+            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
         relative_b1
             Relative B1 amplitude scaling factor (actual B1 / nominal B1).
-            Expected shape `(*other, coils, z, y, x)`.
+            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
         c
-            Signal offset parameter (related to M0).
-            Expected shape `(*other, coils, z, y, x)`.
-        d
-            Signal amplitude scaling parameter.
-            Expected shape `(*other, coils, z, y, x)`.
+            Signal amplitude parameter (related to M0).
+            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
+        a
+            Signal modulation scaling parameter, corresponds to `d/c` in the original model.
+            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
 
         Returns
         -------
-        tuple[torch.Tensor,]
             Signal calculated for each frequency offset.
-            Shape `(offsets, *other, coils, z, y, x)`, where `offsets`
-            corresponds to the number of frequency offsets.
+            Shape `offsets ...`. For example `offsets, *other, coils, z, y, x`, or `offsets, samples`
+            where `offsets` is the number of frequency offsets.
         """
-        return super().__call__(b0_shift, relative_b1, c, d)
+        return super().__call__(b0_shift, relative_b1, c, a)
 
     def forward(
         self,
         b0_shift: torch.Tensor,
         relative_b1: torch.Tensor,
         c: torch.Tensor,
-        d: torch.Tensor,
+        a: torch.Tensor,
     ) -> tuple[torch.Tensor,]:
         """Apply forward of WASABI.
 
-        Note: Do not use. Instead, call the instance of the Operator as operator(x)"""
-        ndim = max(b0_shift.ndim, relative_b1.ndim, c.ndim, d.ndim)
+        .. note::
+            Prefer calling the instance of the WASABI as ``operator(x)`` over directly calling this method.
+        """
+        ndim = max(b0_shift.ndim, relative_b1.ndim, c.ndim, a.ndim)
         offsets = unsqueeze_right(self.offsets, ndim - self.offsets.ndim + 1)  # leftmost is offsets
         rf_duration = unsqueeze_right(self.rf_duration, ndim - self.rf_duration.ndim)
         b1_nominal = unsqueeze_right(self.b1_nominal, ndim - self.b1_nominal.ndim)
@@ -104,9 +104,9 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         offsets_shifted = offsets - b0_shift
         b1 = b1_nominal * relative_b1
 
-        signal = (
-            c
-            - d
+        signal = c * (
+            1
+            - a
             * (torch.pi * b1 * self.gamma * rf_duration) ** 2
             * torch.sinc(rf_duration * torch.sqrt((b1 * self.gamma) ** 2 + offsets_shifted**2)) ** 2
         )

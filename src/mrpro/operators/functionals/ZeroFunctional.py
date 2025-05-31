@@ -13,29 +13,29 @@ class ZeroFunctional(ElementaryProximableFunctional):
     def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Evaluate the zero functional for the given input tensor.
 
-        This functional always returns a tensor of zeros. The shape of the output
-        depends on `self.dim` and `self.keepdim` (set during initialization).
-        The data type of the output tensor is determined by promoting the types
-        of the input `x`, `self.weight`, and `self.target`.
+        This functional always returns a tensor of zeros.
+
 
         Parameters
         ----------
         x
-            Input tensor. Its data type is used in type promotion for the output.
-            Its shape is used to determine output shape if `self.dim` is None
-            or if `self.keepdim` is True.
+            Input tensor.
 
         Returns
         -------
-        tuple[torch.Tensor]
-            A tuple containing a single tensor of zeros.
+            Tensor of zeros. The shape is determined by the input `x` and the `dim` and `keepdim` at initialization.
+            If `dim` is `None`, the shape matches `x`. Else dimensions of `x` indexed by `dim` are reduced to 1 if
+            `keepdim` is `True`, otherwise they are removed.
+
         """
         return super().__call__(x)
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply forward of ZeroFunctional.
 
-        Note: Do not use. Instead, call the instance of the Operator as operator(x)"""
+        .. note::
+            Prefer calling the instance of the ZeroFunctional as ``operator(x)`` over directly calling this method.
+        """
         # To ensure that the dtype matches what it would be if we were to apply the weight and target
         dtype = torch.promote_types(torch.promote_types(x.dtype, self.weight.dtype), self.target.dtype).to_real()
 

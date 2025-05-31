@@ -37,10 +37,6 @@ class ProximableFunctionalSeparableSum(Operator[Unpack[tuple[torch.Tensor, ...]]
     def __call__(self, *x: torch.Tensor) -> tuple[torch.Tensor]:
         """Evaluate the sum of separable functionals.
 
-        Each functional in the sum is applied to its corresponding input tensor `x_i`.
-        The results are then summed to produce a single output tensor.
-        :math:`f(x_1, ..., x_N) = \\sum_{i=1}^N f_i(x_i)`
-
         Parameters
         ----------
         *x
@@ -49,17 +45,17 @@ class ProximableFunctionalSeparableSum(Operator[Unpack[tuple[torch.Tensor, ...]]
 
         Returns
         -------
-            A tuple containing a single tensor which is the sum of the
-            functionals applied to their respective inputs.
+            Sum of the functionals applied to their respective inputs.
         """
         return super().__call__(*x)
 
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor]:
         """Apply forward of ProximableFunctionalSeparableSum.
 
-.. note::
-   Prefer calling the instance of the ProximableFunctionalSeparableSum operator as ``operator(x)`` over directly calling this method.
-"""
+        .. note::
+            Prefer calling the instance of the ProximableFunctionalSeparableSum operator as ``operator(x)`` over
+            directly calling this method.
+        """
         if len(x) != len(self.functionals):
             raise ValueError('The number of inputs must match the number of functionals.')
         result = reduce(operator.add, (f(xi)[0] for f, xi in zip(self.functionals, x, strict=True)))

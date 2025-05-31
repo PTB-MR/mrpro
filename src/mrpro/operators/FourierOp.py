@@ -141,9 +141,9 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply forward of FourierOp.
 
-.. note::
-   Prefer calling the instance of the FourierOp operator as ``operator(x)`` over directly calling this method.
-"""
+        .. note::
+        Prefer calling the instance of the FourierOp operator as ``operator(x)`` over directly calling this method.
+        """
         # NUFFT Type 2 followed by FFT
         if self._non_uniform_fast_fourier_op:
             (x,) = self._non_uniform_fast_fourier_op(x)
@@ -268,9 +268,9 @@ class FourierGramOp(LinearOperator):
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply forward of FourierGramOp.
 
-.. note::
-   Prefer calling the instance of the FourierGramOp operator as ``operator(x)`` over directly calling this method.
-"""
+        .. note::
+        Prefer calling the instance of the FourierGramOp operator as ``operator(x)`` over directly calling this method.
+        """
         if self.nufft_gram:
             (x,) = self.nufft_gram(x)
 

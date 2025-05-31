@@ -47,9 +47,10 @@ class EndomorphOperator(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torch.T
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Apply forward of EndomorphOperator.
 
-.. note::
-   Prefer calling the instance of the EndomorphOperator operator as ``operator(x)`` over directly calling this method.
-"""
+        .. note::
+            Prefer calling the instance of the EndomorphOperator operator as ``operator(x)`` over
+            directly calling this method.
+        """
 
     @overload
     def __matmul__(self, other: EndomorphOperator) -> EndomorphOperator: ...

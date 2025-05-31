@@ -84,9 +84,10 @@ class FiniteDifferenceOp(LinearOperator):
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply forward of FiniteDifferenceOp.
 
-.. note::
-   Prefer calling the instance of the FiniteDifferenceOp operator as ``operator(x)`` over directly calling this method.
-"""
+        .. note::
+            Prefer calling the instance of the FiniteDifferenceOp operator as ``operator(x)`` over
+            directly calling this method.
+        """
         return (
             torch.stack(
                 [

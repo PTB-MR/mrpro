@@ -51,7 +51,8 @@ class SensitivityOp(LinearOperator):
     def forward(self, img: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply forward of SensitivityOp.
 
-        Note: Do not use. Instead, call the instance of the Operator as operator(x)"""
+        Note: Do not use. Instead, call the instance of the Operator as operator(x)
+        """
         return (self.csm_tensor * img,)
 
     def adjoint(self, img: torch.Tensor) -> tuple[torch.Tensor,]:

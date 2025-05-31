@@ -143,9 +143,10 @@ class CartesianSamplingOp(LinearOperator):
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply forward of CartesianSamplingOp.
 
-.. note::
-   Prefer calling the instance of the CartesianSamplingOp operator as ``operator(x)`` over directly calling this method.
-"""
+        .. note::
+            Prefer calling the instance of the CartesianSamplingOp operator as ``operator(x)`` over directly
+            calling this method.
+        """
         if self._sorted_grid_shape != SpatialDimension(*x.shape[-3:]):
             raise ValueError('k-space data shape mismatch')
 
@@ -348,9 +349,10 @@ class CartesianMaskingOp(LinearOperator):
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply forward of CartesianMaskingOp.
 
-.. note::
-   Prefer calling the instance of the CartesianMaskingOp operator as ``operator(x)`` over directly calling this method.
-"""
+        .. note::
+            Prefer calling the instance of the CartesianMaskingOp operator as ``operator(x)`` over
+            directly calling this method.
+        """
         if self.mask is None:
             return (x,)
         return (x * self.mask,)
