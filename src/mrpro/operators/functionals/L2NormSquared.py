@@ -21,22 +21,37 @@ class L2NormSquared(ElementaryProximableFunctional):
     considered batch dimensions.
     """
 
-    def forward(
+    def __call__(
         self,
         x: torch.Tensor,
     ) -> tuple[torch.Tensor]:
-        """Forward method.
+        r"""Compute the squared L2 norm of the input tensor.
 
-        Compute the squared L2 norm of the input.
+        Calculates :math:`\| W * (x - b) \|_2^2`, where `W` is `weight` and `b` is `target`.
+        The squared norm is computed along dimensions specified by `dim`.
+        If `divide_by_n` is true, the result is averaged over these
+        dimensions; otherwise, it's summed.
 
         Parameters
         ----------
         x
-            input tensor
+            Input tensor.
 
         Returns
         -------
-            squared L2 norm of the input tensor
+            The squared L2 norm. If `keepdim` is true, the dimensions `dim` are retained
+            with size 1; otherwise, they are reduced.
+        """
+        return super().__call__(x)
+
+    def forward(
+        self,
+        x: torch.Tensor,
+    ) -> tuple[torch.Tensor]:
+        """Apply forward of L2NormSquared.
+
+        .. note::
+            Prefer calling the instance of the L2NormSquared as ``operator(x)`` over directly calling this method.
         """
         value = (self.weight * (x - self.target)).abs().square()
 

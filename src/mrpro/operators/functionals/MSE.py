@@ -45,3 +45,38 @@ class MSE(L2NormSquared):
 
         """
         super().__init__(weight=weight, target=target, dim=dim, divide_by_n=divide_by_n, keepdim=keepdim)
+
+    def __call__(
+        self,
+        x: torch.Tensor,
+    ) -> tuple[torch.Tensor]:
+        r"""Compute the Mean Squared Error (MSE).
+
+        Calculates :math:`1/N \| W * (x - b) \|_2^2`, where `W` is `weight`,
+        `b` is `target`, and `N` is the number of elements over which the
+        mean is computed (if `divide_by_n` is true at initialization of L2NormSquared).
+        The squared norm is computed along dimensions specified by `dim`.
+
+        Parameters
+        ----------
+        x
+            Input tensor.
+
+        Returns
+        -------
+            The MSE. If `keepdim` is true, the dimensions `dim` are retained
+            with size 1; otherwise, they are reduced.
+        """
+        return super().__call__(x)
+
+    def forward(
+        self,
+        x: torch.Tensor,
+    ) -> tuple[torch.Tensor]:
+        """Apply forward of MSE.
+
+        .. note::
+            Prefer calling the instance of the MSE as ``operator(x)`` over directly calling this method.
+        """
+        # MSE uses the forward implementation of L2NormSquared
+        return super().forward(x)

@@ -61,19 +61,28 @@ class EinsumOp(LinearOperator):
         self._forward_pattern = einsum_rule
         self.matrix = torch.nn.Parameter(matrix, matrix.requires_grad)
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Sum-Multiplication of input :math:`x` with :math:`A`.
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply sum-product of input `x` with the operator's matrix `A`.
 
         :math:`A` and the rule used to perform the sum-product is set at initialization.
 
         Parameters
         ----------
         x
-            input tensor to be multiplied with the 'matrix' :math:`A`.
+            Input tensor.
 
         Returns
         -------
-            result of matrix-vector multiplication
+            Result of the sum-product operation.
+        """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply forward of EinsumOp.
+
+        .. note::
+            Prefer calling the instance of the EinsumOp operator as ``operator(x)`` over
+            directly calling this method.
         """
         y = einsum(self.matrix, x, self._forward_pattern)
         return (y,)
@@ -88,7 +97,7 @@ class EinsumOp(LinearOperator):
 
         Returns
         -------
-            result of adjoint sum product
+            Result of the adjoint sum-product operation.
         """
         x = einsum(self.matrix.conj(), y, self._adjoint_pattern)
         return (x,)
