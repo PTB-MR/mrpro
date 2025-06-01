@@ -81,7 +81,7 @@ tests = [
     "codecov",
     "pre-commit",
     "pytest",
-    "pytest-cov<6.1",
+    "pytest-cov",
     "pytest-xdist",
 ]
 docs = [
@@ -97,15 +97,14 @@ docs = [
     "sphinx-last-updated-by-git>=0.3, <0.4",
 ]
 notebooks = [
-    "zenodo_get",
+    "zenodo_get>=2.0",
     "ipykernel",
     "ipywidgets",
     "jupytext",
     "matplotlib",
+    "cmap",
 ]
-dev = [
-    "mrpro[tests, docs]"
-]
+dev = ["mrpro[tests, docs]"]
 
 [project.urls]
 "Documentation" = "https://ptb-mr.github.io/mrpro/"
@@ -145,6 +144,7 @@ module = [
     "pywt.*",
     "torchvision.*",
     "platformdirs",
+    "cmap",
 ]
 ignore_missing_imports = true
 

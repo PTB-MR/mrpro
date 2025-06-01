@@ -5,7 +5,7 @@ from collections.abc import Sequence
 import torch
 
 from mrpro.operators.SignalModel import SignalModel
-from mrpro.utils import unsqueeze_right
+from mrpro.utils.reshape import unsqueeze_right
 
 
 class MOLLI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
