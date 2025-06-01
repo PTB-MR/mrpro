@@ -62,10 +62,10 @@ from pathlib import Path
 import numpy as np
 import torch
 import zenodo_get
-from einops import rearrange, repeat
+from einops import rearrange
 from mrpro.algorithms.optimizers import cg, pdhg
 from mrpro.algorithms.reconstruction import IterativeSENSEReconstruction
-from mrpro.data import CsmData, IData, KData, KTrajectory, Rotation
+from mrpro.data import CsmData, IData, KData
 from mrpro.data.traj_calculators import KTrajectoryRpe
 from mrpro.operators import (
     AveragingOp,
@@ -78,7 +78,7 @@ from mrpro.operators import (
     SensitivityOp,
 )
 from mrpro.operators.functionals import L1NormViewAsReal, L2NormSquared, ZeroFunctional
-from mrpro.utils import split_idx, unsqueeze_right
+from mrpro.utils import unsqueeze_right
 
 dataset = '15288250'
 
@@ -112,33 +112,6 @@ def tv_reg_reco(kdata, csm, img_initial, reg_weight=0.1, reg_weight_t=0.1, n_ite
 
     (img_pdhg,) = pdhg(f=f, g=g, operator=K, initial_values=initial_values, max_iterations=n_iterations)
     return IData(data=img_pdhg, header=img_initial.header)
-
-
-def rearrange_k2_k1_into_k1(kdata: KData) -> KData:
-    """Rearrange kdata from (... k2 k1 ...) to (... 1 (k2 k1) ...).
-
-    Parameters
-    ----------
-    kdata
-        K-space data (other coils k2 k1 k0)
-
-    Returns
-    -------
-        K-space data (other coils 1 (k2 k1) k0)
-    """
-    # Rearrange data
-    kdat = rearrange(kdata.data, '... coils k2 k1 k0->... coils 1 (k2 k1) k0')
-
-    # Rearrange trajectory
-    ktraj = rearrange(kdata.traj.as_tensor(), 'dim ... k2 k1 k0-> dim ... 1 (k2 k1) k0')
-
-    header = kdata.header.apply(
-        lambda field: rearrange(field, 'dim ... k2 k1 k0-> dim ... 1 (k2 k1) k0')
-        if isinstance(field, Rotation | torch.Tensor)
-        else field
-    )
-
-    return KData(header, kdat, KTrajectory.from_tensor(ktraj))
 
 
 # %% [markdown]
@@ -227,7 +200,7 @@ def get_respiratory_self_navigator_from_grpe(
 
 # %%
 # To separate all phase encoding points into different motion states we combine ky and kz points along k1 first
-kdata = rearrange_k2_k1_into_k1(kdata)
+kdata = kdata.rearrange('... k2 k1 k0 -> ... 1 (k2 k1) k0')
 
 respiratory_navigator = get_respiratory_self_navigator_from_grpe(kdata)
 
@@ -242,15 +215,11 @@ plt.ylabel('Navigator signal (a.u.)')
 # The self-navigator is used to split the data into different motion phases. We use a sliding window approach to ensure
 # we have got enough data in each motion state.
 
-resp_idx = split_idx(
-    torch.argsort(respiratory_navigator), int(kdata.data.shape[-2] * 0.36), int(kdata.data.shape[-2] * 0.18)
-)
-kdata_resp_resolved = kdata.split_k1_into_other(resp_idx, other_label='repetition')
-
+# %%
 n_points_per_motion_state = int(kdata.data.shape[-2] * 0.36)
-sorted_idx = respiratory_navigator.argsort()
-split_idx = sorted_idx.unfold(0, n_points_per_motion_state, n_points_per_motion_state//2)
-kdata_resp_resolved = kdata[..., split_idx, :]
+navigator_idx = respiratory_navigator.argsort()
+navigator_idx = navigator_idx.unfold(0, n_points_per_motion_state, n_points_per_motion_state // 2)
+kdata_resp_resolved = kdata[..., navigator_idx, :]
 
 # %% [markdown]
 # ### 3. Reconstruct dynamic images of different breathing states
@@ -309,17 +278,7 @@ show_motion_states(
 
 # %%
 mf = torch.as_tensor(np.load(data_folder / 'grpe_t1_free_breathing_displacement_fields.npy'), dtype=torch.float32)
-# The motion fields describe the motion transformation in voxel units. We need to convert them to the convention of
-# the grid sampling operator, which is in [-1, 1] for each dimension.
-for dim in range(3):
-    mf[..., dim] /= kdata_resp_resolved.data.shape[-1] / 2
-n_motion_states = mf.shape[0]
-unity_matrix = repeat(torch.cat((torch.eye(3), torch.zeros(3, 1)), dim=1), 'h w->n_ms h w', n_ms=n_motion_states)
-grid = torch.nn.functional.affine_grid(unity_matrix, (n_motion_states, 1, *mf.shape[1:-1]))
-grid += mf
-grid[grid > 1] = 1
-grid[grid < -1] = -1
-moco_op = GridSamplingOp(grid, input_shape=kdata.header.recon_matrix)
+motion_op = GridSamplingOp.from_displacement(mf[..., 2], mf[..., 1], mf[..., 0])
 
 # %% [markdown]
 # ### 5. Use the motion fields to obtain a motion-corrected image
@@ -340,14 +299,14 @@ fourier_op = recon_resp_resolved.fourier_op
 dcf_op = recon_resp_resolved.dcf.as_operator()
 csm_op = SensitivityOp(csm_maps)
 averaging_op = AveragingOp(dim=0)
-acquisition_operator = fourier_op @ moco_op @ csm_op @ averaging_op.H
+acquisition_operator = fourier_op @ motion_op @ csm_op @ averaging_op.H
 
 (initial_value,) = acquisition_operator.H(dcf_op(kdata_resp_resolved.data)[0])
 (right_hand_side,) = acquisition_operator.H(kdata_resp_resolved.data)
 operator = acquisition_operator.H @ acquisition_operator
 
 # Minimize the functional
-img_mcir = cg(operator, right_hand_side, initial_value=initial_value, max_iterations=30, tolerance=0.0)
+(img_mcir,) = cg(operator, right_hand_side, initial_value=initial_value, max_iterations=30, tolerance=0.0)
 
 
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show plotting details"}
@@ -366,3 +325,5 @@ def show_images(*images: torch.Tensor, titles: list[str] | None = None) -> None:
 
 # %%
 show_images(img.rss(), img_mcir.abs(), titles=('Uncorrected', 'MCIR'))
+
+# %%
