@@ -21,39 +21,62 @@ def zero_init(m: Module) -> Module:
 
 
 class BasicTransformerBlock(Module):
-    def __init__(self, channels: int, n_heads: int, p_dropout: float = 0.0, cond_dim: int = 0, mlp_ratio: float = 4):
+    def __init__(
+        self,
+        channels: int,
+        n_heads: int,
+        p_dropout: float = 0.0,
+        cond_dim: int = 0,
+        mlp_ratio: float = 4,
+        features_last: bool = False,
+    ):
         super().__init__()
+        self.features_last = features_last
         self.selfattention = Sequential(
-            LayerNorm(channels),
-            MultiHeadAttention(channels_in=channels, channels_out=channels, n_heads=n_heads, p_dropout=p_dropout),
+            LayerNorm(channels, features_last=True),
+            MultiHeadAttention(
+                channels_in=channels,
+                channels_out=channels,
+                n_heads=n_heads,
+                p_dropout=p_dropout,
+                features_last=True,
+            ),
         )
         hidden_dim = int(channels * mlp_ratio)
         self.ff = Sequential(
-            LayerNorm(channels), GEGLU(channels, hidden_dim), Dropout(p_dropout), Linear(hidden_dim, channels)
+            LayerNorm(channels, features_last=True),
+            GEGLU(channels, hidden_dim, features_last=True),
+            Dropout(p_dropout),
+            Linear(hidden_dim, channels),
         )
         self.crossattention = (
             Sequential(
-                LayerNorm(channels),
+                LayerNorm(channels, features_last=True),
                 MultiHeadAttention(
                     channels_in=channels,
                     channels_out=channels,
                     n_heads=n_heads,
                     p_dropout=p_dropout,
                     channels_cross=cond_dim,
+                    features_last=True,
                 ),
             )
             if cond_dim > 0
             else None
         )
-        self.norm2 = LayerNorm(channels)
+        self.norm2 = LayerNorm(channels, features_last=True)
         self.cond_dim = cond_dim
 
     def forward(self, x, cond: torch.Tensor | None = None):
+        if not self.features_last:
+            x = x.moveaxis(1, -1)
         x = self.selfattention(x) + x
         if cond is not None and self.crossattention is not None:
             cond = cond.unflatten(-1, (-1, self.cond_dim))
             x = self.crossattention(x, cond=cond) + x
         x = self.ff(x) + x
+        if not self.features_last:
+            x = x.moveaxis(-1, 1)
         return x
 
 

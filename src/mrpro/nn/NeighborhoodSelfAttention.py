@@ -125,7 +125,7 @@ class NeighborhoodSelfAttention(Module):
         kernel_size: int | Sequence[int],
         dilation: int | Sequence[int] = 1,
         circular: bool | Sequence[bool] = False,
-        channel_last: bool = False,
+        features_last: bool = False,
     ) -> None:
         """Initialize a neighborhood attention module.
 
@@ -146,7 +146,7 @@ class NeighborhoodSelfAttention(Module):
             The dilation factor for the neighborhood.
         circular
             Whether the neighborhood wraps around the edges (circular padding)
-        channel_last
+        features_last
             Whether the channels are in the last dimension of the tensor, as common in visíon transformers.
             Otherwise, assume the channels are in the second dimension, as common in CNN models.
         """
@@ -155,7 +155,7 @@ class NeighborhoodSelfAttention(Module):
         self.kernel_size = kernel_size
         self.dilation = dilation
         self.circular = circular
-        self.channel_last = channel_last
+        self.features_last = features_last
         channels_per_head = channels_in // n_heads
         self.to_qkv = Linear(channels_in, 3 * channels_per_head * n_heads)
         self.to_out = Linear(channels_per_head * n_heads, channels_out)
@@ -172,7 +172,7 @@ class NeighborhoodSelfAttention(Module):
         -------
             The output tensor after attention, with the same shape as the input tensor.
         """
-        if not self.channel_last:
+        if not self.features_last:
             x = x.moveaxis(1, -1)
         spatial_shape = x.shape[2:-1]
         qkv = self.to_qkv(x)
@@ -187,6 +187,6 @@ class NeighborhoodSelfAttention(Module):
         out: torch.Tensor = flex_attention(query.contiguous(), key.contiguous(), value.contiguous(), block_mask=mask)  # type: ignore[assignment] # wrong type hints
         out = self.to_out(out)
         out = out.unflatten(-2, spatial_shape)
-        if not self.channel_last:
+        if not self.features_last:
             out = out.moveaxis(-1, 1)
         return out

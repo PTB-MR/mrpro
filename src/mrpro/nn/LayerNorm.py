@@ -9,7 +9,7 @@ from mrpro.utils.reshape import unsqueeze_right
 class LayerNorm(Module):
     """Layer normalization."""
 
-    def __init__(self, channels: int | None, channel_last: bool = False, bias: bool = True) -> None:
+    def __init__(self, channels: int | None, features_last: bool = False, bias: bool = True) -> None:
         """Initialize the layer normalization.
 
         Parameters
@@ -17,7 +17,7 @@ class LayerNorm(Module):
         channels
             Number of channels in the input tensor. If `None`, the layer normalization does not do an elementwise
             affine transformation.
-        channel_last
+        features_last
             If `True`, the channel dimension is the last dimension.
         bias
             If `False`, only a scaling is applied without an offset if an affine transformation is used.
@@ -29,7 +29,7 @@ class LayerNorm(Module):
         else:
             self.weight = None
             self.bias = None
-        self.channel_last = channel_last
+        self.features_last = features_last
 
     def __call__(self, x: torch.Tensor) -> torch.Tensor:
         """Apply layer normalization to the input tensor.
@@ -53,13 +53,13 @@ class LayerNorm(Module):
         x = (x - mean) / (std + 1e-5)
 
         if self.weight is not None:
-            if self.channel_last:
+            if self.features_last:
                 x = x * self.weight
             else:
                 x = x * unsqueeze_right(self.weight, x.ndim - 2)
 
         if self.bias is not None:
-            if self.channel_last:
+            if self.features_last:
                 x = x + self.bias
             else:
                 x = x + unsqueeze_right(self.bias, x.ndim - 2)

@@ -35,7 +35,7 @@ class LinearSelfAttention(Module):
         channels_out: int,
         n_heads: int,
         eps: float = 1e-6,
-        channel_last: bool = False,
+        features_last: bool = False,
     ):
         """Initialize linear self-attention layer.
 
@@ -49,12 +49,12 @@ class LinearSelfAttention(Module):
             Number of attention heads.
         eps
             Small epsilon for numerical stability in normalization.
-        channel_last
+        features_last
             Whether the channel dimension is the last dimension, as common in transformer models,
             or the second dimension, as common in image models.
         """
         super().__init__()
-        self.channel_last = channel_last
+        self.features_last = features_last
         self.eps = eps
         self.n_heads = n_heads
         channels_per_head = channels_in // n_heads
@@ -68,7 +68,7 @@ class LinearSelfAttention(Module):
         Parameters
         ----------
         x
-            Tensor of shape `batch, channels, *spatial_dims` or (`batch, *spatial_dims, channels` if `channel_last`)
+            Tensor of shape `batch, channels, *spatial_dims` or (`batch, *spatial_dims, channels` if `features_last`)
 
         Returns
         -------
@@ -81,7 +81,7 @@ class LinearSelfAttention(Module):
         orig_dtype = x.dtype
         if x.dtype == torch.float16:
             x = x.float()
-        if not self.channel_last:
+        if not self.features_last:
             x = x.moveaxis(1, -1)
         spatial_shape = x.shape[1:-1]
 
@@ -104,6 +104,6 @@ class LinearSelfAttention(Module):
         out = out.to(orig_dtype)
         out = out.moveaxis(1, -1).flatten(-2)  # join heads and channels
         out = out.unflatten(-2, spatial_shape)
-        if not self.channel_last:
+        if not self.features_last:
             out = out.moveaxis(-1, 1)
         return out
