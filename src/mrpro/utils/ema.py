@@ -30,13 +30,13 @@ class EMADict:
         self.decay: float = decay
         if not 0 <= decay <= 1:
             raise ValueError(f'Decay must be between 0 and 1, got {decay}')
-        self._data: dict[str, Any] = dict()
+        self._data: dict[str, Any] = {}
 
-    def __getitem__(self, key: str) -> Any:
+    def __getitem__(self, key: str) -> Any:  # noqa: ANN401
         """Get the value of the EMA dict for a given key."""
         return self._data[key]
 
-    def __setitem__(self, key: str, value: Any) -> None:
+    def __setitem__(self, key: str, value: Any) -> None:  # noqa: ANN401
         """Set the value of the EMA dict for a given key."""
         if key in self._data:
             old_v = self._data[key]

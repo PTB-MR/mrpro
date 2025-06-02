@@ -1,3 +1,5 @@
+"""Upsampling by interpolation."""
+
 from typing import Literal
 
 import torch
@@ -5,6 +7,8 @@ from torch.nn import Module
 
 
 class Upsample(Module):
+    """Upsampling by interpolation."""
+
     def __init__(self, dim: int, scale_factor: int = 2, mode: Literal['nearest', 'linear', 'cubic'] = 'linear'):
         """Initialize the upsampling layer.
 

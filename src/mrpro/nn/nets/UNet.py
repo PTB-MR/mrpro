@@ -340,6 +340,22 @@ class AttentionGatedUNet(UNetBase):
     """
 
     def __init__(self, dim: int, channels_in: int, channels_out: int, n_features: Sequence[int], cond_dim: int = 0):
+        """Initialize the AttentionGatedUNet.
+
+        Parameters
+        ----------
+        dim
+            Spatial dimension of the input tensor.
+        channels_in
+            Number of channels in the input tensor.
+        channels_out
+            Number of channels in the output tensor.
+        n_features
+            Number of features at each resolution level. The length determines the number of resolution levels.
+        cond_dim
+            Number of channels in the conditioning tensor. If 0, no conditioning is applied.
+        """
+
         def block(channels_in: int, channels_out: int) -> Module:
             block = Sequential(
                 ConvND(dim)(channels_in, channels_out, 3, padding=1),
@@ -348,7 +364,7 @@ class AttentionGatedUNet(UNetBase):
                 ReLU(True),
             )
             if cond_dim > 0:
-                block.insert(2, FiLM(cond_dim))
+                block.insert(2, FiLM(channels_out, cond_dim))
             return block
 
         encoder_blocks: list[Module] = []

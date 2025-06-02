@@ -21,6 +21,8 @@ def zero_init(m: Module) -> Module:
 
 
 class BasicTransformerBlock(Module):
+    """Basic vision transformer block."""
+
     def __init__(
         self,
         channels: int,
@@ -30,6 +32,23 @@ class BasicTransformerBlock(Module):
         mlp_ratio: float = 4,
         features_last: bool = False,
     ):
+        """Initialize the basic transformer block.
+
+        Parameters
+        ----------
+        channels
+            Number of channels in the input and output.
+        n_heads
+            Number of attention heads.
+        p_dropout
+            Dropout probability.
+        cond_dim
+            Number of channels in the conditioning tensor.
+        mlp_ratio
+            Ratio of the hidden dimension to the input dimension.
+        features_last
+            Whether the features are last in the input tensor.
+        """
         super().__init__()
         self.features_last = features_last
         self.selfattention = Sequential(
@@ -66,7 +85,20 @@ class BasicTransformerBlock(Module):
         )
         self.cond_dim = cond_dim
 
-    def forward(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
+    def __call__(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
+        """Apply the basic transformer block.
+
+        Parameters
+        ----------
+        x
+            Input tensor.
+        cond
+            Conditioning tensor. If None, no conditioning is applied.
+        """
+        return super().__call__(x, cond=cond)
+
+    def forward(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
+        """Apply the basic transformer block."""
         if not self.features_last:
             x = x.moveaxis(1, -1)
         x = self.selfattention(x) + x
@@ -80,6 +112,8 @@ class BasicTransformerBlock(Module):
 
 
 class SpatialTransformerBlock(Module):
+    """Spatial transformer block."""
+
     def __init__(
         self,
         dim: int,
@@ -90,6 +124,25 @@ class SpatialTransformerBlock(Module):
         dropout: float = 0.0,
         cond_dim: int = 0,
     ):
+        """Initialize the spatial transformer block.
+
+        Parameters
+        ----------
+        dim
+            Spatial dimension of the input tensor.
+        channels
+            Number of channels in the input and output.
+        n_heads
+            Number of attention heads.
+        channels_per_head
+            Number of channels per attention head.
+        depth
+            Number of transformer blocks.
+        dropout
+            Dropout probability.
+        cond_dim
+            Number of channels in the conditioning tensor. If 0, no conditioning is applied.
+        """
         super().__init__()
         self.in_channels = channels
         hidden_dim = n_heads * channels_per_head
@@ -101,16 +154,7 @@ class SpatialTransformerBlock(Module):
 
         self.proj_out = zero_init(ConvND(dim)(hidden_dim, channels, kernel_size=1, stride=1, padding=0))
 
-    def forward(self, x, cond: torch.Tensor | None = None):
-        """Apply the spatial transformer block."""
-        skip = x
-        x = self.norm(x)
-        x = self.proj_in(x)
-        x = self.transformer_blocks(x, cond=cond)
-        x = self.proj_out(x)
-        return x + skip
-
-    def __call__(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
+    def __call__(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the spatial transformer block.
 
         Parameters
@@ -125,3 +169,12 @@ class SpatialTransformerBlock(Module):
             Output tensor after spatial transformer
         """
         return super().__call__(x, cond=cond)
+
+    def forward(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
+        """Apply the spatial transformer block."""
+        skip = x
+        x = self.norm(x)
+        x = self.proj_in(x)
+        x = self.transformer_blocks(x, cond=cond)
+        x = self.proj_out(x)
+        return x + skip

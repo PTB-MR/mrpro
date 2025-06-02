@@ -34,4 +34,5 @@ def test_film(channels, channels_cond, input_shape, cond_shape, device):
     assert not cond.isnan().any(), 'NaN values in condedding'
     assert not x.grad.isnan().any(), 'NaN values in input gradients'
     assert not cond.grad.isnan().any(), 'NaN values in condedding gradients'
+    assert film.project is not None, 'Linear layer is not initialized'
     assert next(film.project.parameters()).grad is not None, 'No gradient computed for Linear layer'
