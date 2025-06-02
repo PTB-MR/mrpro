@@ -17,7 +17,7 @@ class AttentionGate(Module):
       https://arxiv.org/abs/1804.03999
     """
 
-    def __init__(self, dim: int, channels_gate: int, channels_in: int, channels_hidden: int):
+    def __init__(self, dim: int, channels_gate: int, channels_in: int, channels_hidden: int, concatenate: bool = False):
         """Initialize the attention gate.
 
         Parameters
@@ -30,6 +30,8 @@ class AttentionGate(Module):
             The number of channels in the input tensor.
         channels_hidden
             The number of internal, hidden channels.
+        concatenate
+            Whether to concatenate the gated signal with the gate signal in the channel dimension (1)
         """
         super().__init__()
         self.project_gate = ConvND(dim)(channels_gate, channels_hidden, kernel_size=1)
@@ -39,6 +41,7 @@ class AttentionGate(Module):
             ConvND(dim)(channels_hidden, 1, kernel_size=1),
             Sigmoid(),
         )
+        self.concatenate = concatenate
 
     def __call__(self, x: torch.Tensor, gate: torch.Tensor) -> torch.Tensor:
         """Apply the attention gate.
@@ -63,4 +66,7 @@ class AttentionGate(Module):
         if gate.shape[2:] != x.shape[2:]:
             projected_gate = torch.nn.functional.interpolate(projected_gate, size=x.shape[2:], mode='nearest')
         alpha = self.psi(projected_gate + projected_x)
-        return x * alpha
+        x = x * alpha
+        if self.concatenate:
+            x = torch.cat([x, gate], dim=1)
+        return x

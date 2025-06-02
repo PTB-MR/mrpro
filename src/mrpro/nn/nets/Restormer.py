@@ -178,7 +178,7 @@ class Restormer(UNetBase):
         middle_block = blocks(n_heads[-1], n_blocks[-1])
         encoder = UNetEncoder(
             first_block=first_block,
-            encoder_blocks=encoder_blocks,
+            blocks=encoder_blocks,
             down_blocks=down_blocks,
             middle_block=middle_block,
         )
@@ -194,7 +194,7 @@ class Restormer(UNetBase):
             ConvND(dim)(n_channels_per_head, channels_out, kernel_size=3, stride=1, padding=1),
         )
         decoder = UNetDecoder(
-            decoder_blocks=decoder_blocks,
+            blocks=decoder_blocks,
             up_blocks=up_blocks,
             concat_blocks=concat_blocks,
             last_block=last_block,

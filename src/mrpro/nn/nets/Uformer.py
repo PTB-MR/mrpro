@@ -182,7 +182,7 @@ class Uformer(UNetBase):
         middle_block = blocks(n_heads=n_heads[-1], p_droppath=max_droppath_rate)
         encoder = UNetEncoder(
             first_block=first_block,
-            encoder_blocks=encoder_blocks,
+            blocks=encoder_blocks,
             down_blocks=down_blocks,
             middle_block=middle_block,
         )
@@ -204,7 +204,7 @@ class Uformer(UNetBase):
             2 * n_channels_per_head * n_heads[0], channels_out, kernel_size=3, stride=1, padding='same'
         )
         decoder = UNetDecoder(
-            decoder_blocks=decoder_blocks,
+            blocks=decoder_blocks,
             concat_blocks=concat_blocks,
             up_blocks=up_blocks,
             last_block=last_block,

@@ -30,7 +30,7 @@ class ResBlock(CondMixin, Module):
 
         """
         super().__init__()
-        self.rezero = torch.nn.Parameter(torch.tensor(1e-6))
+        self.rezero = torch.nn.Parameter(torch.tensor(1e-2))
         self.block = Sequential(
             GroupNorm(channels_in),
             SiLU(),
@@ -66,5 +66,5 @@ class ResBlock(CondMixin, Module):
     def forward(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the ResBlock."""
         h = self.block(x, cond=cond)
-        x = self.skip_connection(x) + h
+        x = self.skip_connection(x) + self.rezero * h
         return x

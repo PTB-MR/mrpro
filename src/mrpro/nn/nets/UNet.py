@@ -2,14 +2,17 @@
 
 from collections.abc import Sequence
 from functools import partial
+from itertools import pairwise
 
 import torch
-from torch.nn import Identity, Module, ModuleList, SiLU
+from torch.nn import Identity, Module, ModuleList, ReLU, SiLU
 
+from mrpro.nn.AttentionGate import AttentionGate
 from mrpro.nn.CondMixin import call_with_cond
+from mrpro.nn.FiLM import FiLM
 from mrpro.nn.GroupNorm import GroupNorm
 from mrpro.nn.join import Concat
-from mrpro.nn.ndmodules import ConvND
+from mrpro.nn.ndmodules import ConvND, MaxPoolND
 from mrpro.nn.ResBlock import ResBlock
 from mrpro.nn.Sequential import Sequential
 from mrpro.nn.SpatialTransformerBlock import SpatialTransformerBlock
@@ -22,7 +25,7 @@ class UNetEncoder(Module):
     def __init__(
         self,
         first_block: Module,
-        encoder_blocks: Sequence[Module],
+        blocks: Sequence[Module],
         down_blocks: Sequence[Module],
         middle_block: Module,
     ) -> None:
@@ -31,7 +34,7 @@ class UNetEncoder(Module):
         self.first = first_block
         """The first block. Should expand from the number of input channels."""
 
-        self.encoder_blocks = ModuleList(encoder_blocks)
+        self.blocks = ModuleList(blocks)
         """The encoder blocks. Order is highest resolution to lowest resolution."""
 
         self.down_blocks = ModuleList(down_blocks)
@@ -51,7 +54,7 @@ class UNetEncoder(Module):
         x = call(self.first, x)
 
         xs = []
-        for block, down in zip(self.encoder_blocks, self.down_blocks, strict=True):
+        for block, down in zip(self.blocks, self.down_blocks, strict=True):
             x = call(block, x)
             xs.append(x)
             x = call(down, x)
@@ -82,14 +85,14 @@ class UNetDecoder(Module):
 
     def __init__(
         self,
-        decoder_blocks: Sequence[Module],
+        blocks: Sequence[Module],
         up_blocks: Sequence[Module],
         concat_blocks: Sequence[Module],
         last_block: Module,
     ) -> None:
         """Initialize the UNetDecoder."""
         super().__init__()
-        self.decoder_blocks = ModuleList(decoder_blocks)
+        self.blocks = ModuleList(blocks)
         """The decoder blocks. Order is lowest resolution to highest resolution."""
 
         self.up_blocks = ModuleList(up_blocks)
@@ -110,13 +113,10 @@ class UNetDecoder(Module):
         call = partial(call_with_cond, cond=cond)
 
         x = hs[-1]  # lowest resolution, from middle block
-        for block, up, concat, h in zip(
-            self.decoder_blocks, self.up_blocks, self.concat_blocks, hs[-2::-1], strict=True
-        ):
+        for block, up, concat, h in zip(self.blocks, self.up_blocks, self.concat_blocks, hs[-2::-1], strict=True):
             x = call(up, x)
-            x = concat(x, h)
+            x = concat(h, x)
             x = call(block, x)
-
         x = call(self.last_block, x)
         return x
 
@@ -195,11 +195,51 @@ class UNetBase(Module):
         return super().__call__(x, cond=cond)
 
 
+class BasicUNet(UNetBase):
+    """Basic UNet.
+
+    A Basic UNet with residual blocks, convolutional downsampling, and nearest neighbor upsampling.
+
+
+    """
+
+    def __init__(self, dim: int, channels_in: int, channels_out: int, n_features: Sequence[int], cond_dim: int):
+        """Initialize the BasicUNet."""
+        encoder_blocks: list[Module] = []
+        decoder_blocks: list[Module] = []
+        down_blocks: list[Module] = []
+        up_blocks: list[Module] = []
+        concat_blocks: list[Module] = []
+        for n_feat, n_feat_next in pairwise(n_features):
+            encoder_blocks.append(ResBlock(dim, n_feat, n_feat, cond_dim))
+            decoder_blocks.append(ResBlock(dim, 2 * n_feat, n_feat, cond_dim))
+            down_blocks.append(ConvND(dim)(n_feat, n_feat_next, 3, stride=2, padding=1))
+            up_blocks.append(Sequential(Upsample(dim, scale_factor=2), ConvND(dim)(n_feat_next, n_feat, 3, padding=1)))
+            concat_blocks.append(Concat())
+        up_blocks = up_blocks[::-1]
+        decoder_blocks = decoder_blocks[::-1]
+        first_block = ConvND(dim)(channels_in, n_features[0], 3, padding=1)
+        last_block = Sequential(
+            GroupNorm(n_features[0]), SiLU(), ConvND(dim)(n_features[0], channels_out, 3, padding=1)
+        )
+        middle_block = ResBlock(dim, n_features[-1], n_features[-1], cond_dim)
+        encoder = UNetEncoder(first_block, encoder_blocks, down_blocks, middle_block)
+        decoder = UNetDecoder(decoder_blocks, up_blocks, concat_blocks, last_block)
+        super().__init__(encoder, decoder)
+
+
 class UNet(UNetBase):
     """UNet.
 
-    U-shaped convolutional network [UNET]_ with optional patch attention.
-    Inspired by the OpenAi DDPM UNet/Latent Diffusion UNet [LDM]_.
+    U-shaped convolutional network with optional patch attention.
+    Inspired by the OpenAi DDPM UNet/Latent Diffusion UNet [LDM]_,
+    significant differences to the vanilla UNet [UNET]_ include:
+       - Spatial attention
+       - Multiple skip connections per resolution
+       - Convolutional downsampling, nearest neighbor upsampling
+       - Residual convolution blocks
+       - Group normalization
+       - SiLU activation
 
     References
     ----------
@@ -240,12 +280,10 @@ class UNet(UNetBase):
             return Sequential(ResBlock(dim, channels_in, channels_out, cond_dim), attention_block(channels_out))
 
         first_block = ConvND(dim)(in_channels, n_features[0], 3, padding=1)
-
         encoder_blocks: list[Module] = []
         down_blocks: list[Module] = []
         skip_features = []
         n_feat_old = n_features[0]
-
         for i_level, n_feat in enumerate(n_features):
             encoder_blocks.append(Identity())
             skip_features.append(n_feat_old)
@@ -256,14 +294,12 @@ class UNet(UNetBase):
                 skip_features.append(n_feat_old)
             down_blocks.append(ConvND(dim)(n_feat, n_feat, 3, stride=2, padding=1))
         down_blocks[-1] = Identity()
-
         middle_block = Sequential(
             ResBlock(dim, n_features[-1], n_features[-1], cond_dim),
             ResBlock(dim, n_features[-1], n_features[-1], cond_dim),
         )
         if i_level in attention_depths:
             middle_block.insert(1, attention_block(n_features[-1]))
-
         encoder = UNetEncoder(first_block, encoder_blocks, down_blocks, middle_block)
 
         decoder_blocks: list[Module] = []
@@ -283,24 +319,59 @@ class UNet(UNetBase):
                 n_feat_old = n_feat
             up_blocks.append(Upsample(dim, scale_factor=2))
         up_blocks.pop()
-
         concat_blocks = [Concat()] * len(decoder_blocks)
         last_block = Sequential(
             GroupNorm(n_features[0]), SiLU(), ConvND(dim)(n_features[0], out_channels, 3, padding=1)
         )
-
         decoder = UNetDecoder(decoder_blocks, up_blocks, concat_blocks, last_block)
+
         super().__init__(encoder, decoder)
 
 
-class AttentionUNet(UNet):
+class AttentionGatedUNet(UNetBase):
     """UNet with attention gates.
+
+    Basic UNet with attention gating of the skip signals by the lower resolution features [OKT18]_.
 
     References
     ----------
     .. [OKT18] Oktay, Ozan, et al. "Attention U-net: Learning where to look for the pancreas." MIDL (2018).
       https://arxiv.org/abs/1804.03999
     """
+
+    def __init__(self, dim: int, channels_in: int, channels_out: int, n_features: Sequence[int], cond_dim: int = 0):
+        def block(channels_in: int, channels_out: int) -> Module:
+            block = Sequential(
+                ConvND(dim)(channels_in, channels_out, 3, padding=1),
+                ReLU(True),
+                ConvND(dim)(channels_out, channels_out, 3, padding=1),
+                ReLU(True),
+            )
+            if cond_dim > 0:
+                block.insert(2, FiLM(cond_dim))
+            return block
+
+        encoder_blocks: list[Module] = []
+        down_blocks: list[Module] = []
+        n_feat_old = channels_in
+        for n_feat in n_features[:-1]:
+            encoder_blocks.append(block(n_feat_old, n_feat))
+            down_blocks.append(MaxPoolND(dim)(2))
+            n_feat_old = n_feat
+        middle_block = block(n_features[-2], n_features[-1])
+        encoder = UNetEncoder(Identity(), encoder_blocks, down_blocks, middle_block)
+
+        concat_blocks = []
+        decoder_blocks: list[Module] = []
+        up_blocks: list[Module] = []
+        for n_feat, n_feat_skip in pairwise(n_features[::-1]):
+            concat_blocks.append(AttentionGate(dim, n_feat, n_feat_skip, n_feat_skip, concatenate=True))
+            decoder_blocks.append(block(n_feat + n_feat_skip, n_feat_skip))
+            up_blocks.append(Upsample(dim, scale_factor=2))
+        last_block = ConvND(dim)(n_features[0], channels_out, 1)
+        decoder = UNetDecoder(decoder_blocks, up_blocks, concat_blocks, last_block)
+
+        super().__init__(encoder, decoder)
 
 
 class SeparableUNet(UNetBase):

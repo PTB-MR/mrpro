@@ -64,10 +64,9 @@ class BasicTransformerBlock(Module):
             if cond_dim > 0
             else None
         )
-        self.norm2 = LayerNorm(channels, features_last=True)
         self.cond_dim = cond_dim
 
-    def forward(self, x, cond: torch.Tensor | None = None):
+    def forward(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         if not self.features_last:
             x = x.moveaxis(1, -1)
         x = self.selfattention(x) + x
