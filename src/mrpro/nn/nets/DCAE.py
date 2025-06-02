@@ -99,6 +99,20 @@ class EfficientViTBlock(Module):
             expand_ratio=expand_ratio,
         )
 
+    def __call__(self, x: torch.Tensor) -> torch.Tensor:
+        """Apply the EfficientViTBlock.
+
+        Parameters
+        ----------
+        x
+            Input tensor
+
+        Returns
+        -------
+            Output tensor
+        """
+        return super().__call__(x)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass for EfficientViTBlock."""
         x = self.context_module(x)

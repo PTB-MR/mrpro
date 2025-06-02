@@ -40,3 +40,17 @@ class GEGLU(Module):
         if not self.features_last:
             out = out.moveaxis(-1, 1)
         return out
+
+    def __call__(self, x: torch.Tensor) -> torch.Tensor:
+        """Apply the GEGLU activation.
+
+        Parameters
+        ----------
+        x
+            Input tensor
+
+        Returns
+        -------
+            Activated tensor
+        """
+        return super().__call__(x)

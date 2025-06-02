@@ -6,6 +6,7 @@ from itertools import pairwise
 import torch
 from torch.nn import Module
 
+from mrpro.nn.CondMixin import CondMixin
 from mrpro.nn.FiLM import FiLM
 from mrpro.nn.join import Concat
 from mrpro.nn.ndmodules import ConvND, InstanceNormND
@@ -47,18 +48,17 @@ class GDFN(Module):
         )
         self.project_out = ConvND(dim)(hidden_features, channels, kernel_size=1)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Apply gated depthwise feed forward network.
+    def __call__(self, x: torch.Tensor) -> torch.Tensor:
+        """Apply the gated depthwise feed forward network.
 
         Parameters
         ----------
-        x : torch.Tensor
+        x
             Input tensor
 
         Returns
         -------
-        torch.Tensor
-            Output tensor
+        Output tensor
         """
         x = self.project_in(x)
         x1, x2 = self.depthwise_conv(x).chunk(2, dim=1)
@@ -67,7 +67,7 @@ class GDFN(Module):
         return x
 
 
-class RestormerBlock(Module):
+class RestormerBlock(CondMixin, Module):
     """Transformer block with transposed attention and gated depthwise feed forward network."""
 
     def __init__(self, dim: int, channels: int, n_heads: int, mlp_ratio: float, cond_dim: int = 0):
@@ -75,16 +75,16 @@ class RestormerBlock(Module):
 
         Parameters
         ----------
-        dim : int
+        dim
             Dimension of the input space
         channels : int
             Number of input/output channels
-        n_heads : int
+        n_heads
             Number of attention heads
-        mlp_ratio : float
+        mlp_ratio
             Ratio for hidden dimension expansion
-        cond_dim : int, optional
-            Dimension of conditioning input
+        cond_dim
+            Dimension of conditioning input. If 0, no conditioning is applied.
         """
         super().__init__()
         self.norm1 = Sequential(InstanceNormND(dim)(channels))
@@ -94,21 +94,26 @@ class RestormerBlock(Module):
         if cond_dim > 0:
             self.norm2.append(FiLM(channels=channels, cond_dim=cond_dim))
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def __call__(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply Restormer block.
 
         Parameters
         ----------
-        x : torch.Tensor
+        x
             Input tensor
+        cond
+            Conditioning tensor. If None, no conditioning is applied.
 
         Returns
         -------
-        torch.Tensor
             Output tensor
         """
+        return super().__call__(x, cond=cond)
+
+    def forward(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
+        """Forward pass for RestormerBlock."""
         x = x + self.attn(self.norm1(x))
-        x = x + self.ffn(self.norm2(x))
+        x = x + self.ffn(self.norm2(x, cond=cond))
         return x
 
 
@@ -140,24 +145,24 @@ class Restormer(UNetBase):
 
         Parameters
         ----------
-        dim : int
+        dim
             Dimension of the input space
-        channels_in : int
+        channels_in
             Number of input channels
-        channels_out : int
+        channels_out
             Number of output channels
-        n_blocks : Sequence[int], optional
+        n_blocks
             Number of blocks in each stage
-        n_refinement_blocks : int, optional
+        n_refinement_blocks
             Number of refinement blocks
-        n_heads : Sequence[int], optional
+        n_heads
             Number of attention heads in each stage
-        n_channels_per_head : int, optional
+        n_channels_per_head
             Number of channels per attention head
-        mlp_ratio : float, optional
+        mlp_ratio
             Ratio for hidden dimension expansion
-        cond_dim : int, optional
-            Dimension of conditioning input
+        cond_dim
+            Dimension of conditioning input. If 0, no conditioning is applied.
         """
 
         def blocks(n_heads: int, n_blocks: int):

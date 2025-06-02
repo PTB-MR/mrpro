@@ -57,6 +57,21 @@ class Concat(Module):
         xs = _fix_shapes(xs, self.mode, dim=[i for i in range(max(x.ndim for x in xs)) if i != self.dim])
         return torch.cat(xs, dim=1)
 
+    def __call__(self, *xs: torch.Tensor) -> torch.Tensor:
+        """
+        Concatenate input tensors.
+
+        Parameters
+        ----------
+        xs
+            Input tensors
+
+        Returns
+        -------
+            Concatenated tensor
+        """
+        return super().__call__(*xs)
+
 
 class Add(Module):
     """Add tensors."""
@@ -84,3 +99,18 @@ class Add(Module):
         """Add input tensors."""
         xs = _fix_shapes(xs, self.mode, dim=range(max(x.ndim for x in xs)))
         return sum(xs, start=torch.tensor(0.0))
+
+    def __call__(self, *xs: torch.Tensor) -> torch.Tensor:
+        """
+        Add input tensors.
+
+        Parameters
+        ----------
+        xs
+            Input tensors
+
+        Returns
+        -------
+        Summed tensor
+        """
+        return super().__call__(*xs)

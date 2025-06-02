@@ -79,13 +79,21 @@ class LeWinTransformerBlock(Module):
         torch.nn.init.trunc_normal_(self.modulator)
         self.drop_path = DropPath(droprate=p_droppath)
 
-    def forward(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
-        """Apply the transformer block."""
-        modulator = self.modulator.tile([t // s for t, s in zip(x.shape[1:], self.modulator.shape, strict=False)])
-        x_mod = self.norm1(x) + modulator
-        x_attn = self.attn(x_mod)
-        x_ff = self.ff(self.norm2(x_attn), cond=cond)
-        return x + self.drop_path(x_ff)
+    def __call__(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
+        """Apply the transformer block.
+
+        Parameters
+        ----------
+        x
+            Input tensor
+        cond
+            Conditioning tensor
+
+        Returns
+        -------
+        Output tensor
+        """
+        return super().__call__(x, cond=cond)
 
 
 class Uformer(UNetBase):

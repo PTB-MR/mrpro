@@ -102,9 +102,26 @@ class SpatialTransformerBlock(Module):
         self.proj_out = zero_init(ConvND(dim)(hidden_dim, channels, kernel_size=1, stride=1, padding=0))
 
     def forward(self, x, cond: torch.Tensor | None = None):
+        """Apply the spatial transformer block."""
         skip = x
         x = self.norm(x)
         x = self.proj_in(x)
         x = self.transformer_blocks(x, cond=cond)
         x = self.proj_out(x)
         return x + skip
+
+    def __call__(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
+        """Apply the spatial transformer block.
+
+        Parameters
+        ----------
+        x
+            Input tensor
+        cond
+            Conditioning tensor. If None, no conditioning is applied.
+
+        Returns
+        -------
+            Output tensor after spatial transformer
+        """
+        return super().__call__(x, cond=cond)

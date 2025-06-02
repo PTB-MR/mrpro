@@ -35,19 +35,22 @@ class FourierFeatures(Module):
         super().__init__()
         self.register_buffer('weight', torch.randn([out_features // 2, in_features]) * std)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def __call__(self, x: torch.Tensor) -> torch.Tensor:
         """Apply Fourier feature encoding.
 
         Parameters
         ----------
-        x : torch.Tensor
+        x
             Input tensor of shape (..., in_features)
 
         Returns
         -------
-        torch.Tensor
-            Encoded features of shape (..., out_features)
+        Encoded features of shape (..., out_features)
         """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Apply Fourier feature encoding."""
         f = 2 * torch.pi * x @ self.weight.T
         return torch.cat([f.cos(), f.sin()], dim=-1)
 
@@ -90,8 +93,19 @@ class AbsolutePositionEncoding(Module):
         self.register_buffer('encoding', torch.cat(encoding, dim=1)[:, :features])
         self.interpolation_mode = ['linear', 'bilinear', 'trilinear'][dim - 1]
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass for encoding."""
+    def __call__(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass for encoding.
+
+        Parameters
+        ----------
+        x
+            Input tensor
+
+        Returns
+        -------
+        Encoded tensor with absolute position information
+        """
         features = self.encoding.shape[1]
         if features > x.shape[1]:
             raise ValueError(f'x has {x.shape[1]} features, but {features} are required')
