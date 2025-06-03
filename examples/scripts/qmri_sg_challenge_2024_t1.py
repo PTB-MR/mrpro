@@ -41,6 +41,7 @@ if idata_multi_ti.header.ti is None:
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show plotting details"}
 import matplotlib.pyplot as plt
 import torch
+from cmap import Colormap
 
 
 def show_images(*images: torch.Tensor, titles: list[str] | None = None) -> None:
@@ -124,6 +125,8 @@ m0_start, t1_start = dictionary(idata_multi_ti.data.real)
 # Let's have a look at the starting values for $M_0$ and $T_1$:
 
 # %%
+cmap_t1 = Colormap('lipari')
+
 fig, axes = plt.subplots(1, 2, figsize=(6, 2), squeeze=False)
 
 im = axes[0, 0].imshow(m0_start[0, 0])
@@ -131,7 +134,7 @@ axes[0, 0].set_title('$M_0$ start values')
 axes[0, 0].set_axis_off()
 fig.colorbar(im, ax=axes[0, 0], label='a.u.')
 
-im = axes[0, 1].imshow(t1_start[0, 0], vmin=0, vmax=2.5, cmap='magma')
+im = axes[0, 1].imshow(t1_start[0, 0], vmin=0, vmax=2.5, cmap=cmap_t1.to_mpl())
 axes[0, 1].set_title('$T_1$ start values')
 axes[0, 1].set_axis_off()
 fig.colorbar(im, ax=axes[0, 1], label='s')
@@ -188,7 +191,7 @@ axes[0, 0].set_title('$M_0$')
 axes[0, 0].set_axis_off()
 fig.colorbar(im, ax=axes[0, 0], label='a.u.')
 
-im = axes[0, 1].imshow(t1[0, 0], vmin=0, vmax=2.5, cmap='magma')
+im = axes[0, 1].imshow(t1[0, 0], vmin=0, vmax=2.5, cmap=cmap_t1.to_mpl())
 axes[0, 1].set_title('$T_1$')
 axes[0, 1].set_axis_off()
 fig.colorbar(im, ax=axes[0, 1], label='s')

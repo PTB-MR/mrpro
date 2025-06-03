@@ -237,6 +237,10 @@ m0, t1, flip_angle = (p.detach().cpu().squeeze() for p in constraints_op(*result
 # Finally, we can take a look at the estimated $M_0$, $T_1$, and flip angle maps:
 # %%
 # Visualize parametric maps
+from cmap import Colormap
+
+cmap_t1 = Colormap('lipari')
+
 fig, axes = plt.subplots(1, 3, figsize=(10, 2), squeeze=False)
 
 im = axes[0, 0].imshow(m0.abs(), cmap='gray')
@@ -244,7 +248,7 @@ axes[0, 0].set_title('$|M_0|$')
 axes[0, 0].set_axis_off()
 fig.colorbar(im, ax=axes[0, 0])
 
-im = axes[0, 1].imshow(t1, vmin=0, vmax=2, cmap='magma')
+im = axes[0, 1].imshow(t1, vmin=0, vmax=2, cmap=cmap_t1.to_mpl())
 axes[0, 1].set_title('$T_1$ (s)')
 axes[0, 1].set_axis_off()
 fig.colorbar(im, ax=axes[0, 1])
