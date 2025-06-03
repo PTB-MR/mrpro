@@ -747,6 +747,16 @@ def test_approx_equal_single_rotation() -> None:
     assert not p.approx_equal(q[3], atol=1e-8, degrees=True)
 
 
+def test_equal() -> None:
+    """Test __eq__ method of the Rotation class."""
+    a = Rotation.random(10, random_state=0)
+    assert a == a  # same instance
+    b = Rotation.random(10, random_state=0)
+    assert b == a  # same random state
+    c = Rotation.random(10, random_state=1)
+    assert c != a  # different random state
+
+
 def test_apply_single_spatialdim() -> None:
     vec = SpatialDimension(1.0, 2.0, 3.0)
     mat = torch.tensor([[0, -1, 0], [1, 0, 0], [0, 0, 1]]).float()
@@ -1233,13 +1243,23 @@ def test_as_euler_contiguous() -> None:
     assert e2.is_contiguous()
 
 
-def test_concatenate() -> None:
-    """Test Rotation"""
+def test_concatenate_classmethod() -> None:
+    """Test concatenation of Rotation objects as a classmethod"""
     rotation = Rotation.random(10, random_state=0)
     sizes = [1, 2, 3, 1, 3]
     starts = [0, *np.cumsum(sizes)]
     split = [rotation[i : i + n] for i, n in zip(starts, sizes, strict=False)]
     result = Rotation.concatenate(split)
+    assert (rotation.as_quat() == result.as_quat()).all()
+
+
+def test_concatenate_instance() -> None:
+    """Test concatenation of Rotation objects as an instance method"""
+    rotation = Rotation.random(10, random_state=0)
+    sizes = [1, 2, 3, 1, 3]
+    starts = [0, *np.cumsum(sizes)]
+    split = [rotation[i : i + n] for i, n in zip(starts, sizes, strict=False)]
+    result = split[0].concatenate(*split[1:])
     assert (rotation.as_quat() == result.as_quat()).all()
 
 

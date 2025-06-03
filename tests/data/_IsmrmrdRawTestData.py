@@ -26,33 +26,6 @@ class IsmrmrdRawTestData:
 
     This is based on
     https://github.com/ismrmrd/ismrmrd-python-tools/blob/master/generate_cartesian_shepp_logan_dataset.py
-
-    Parameters
-    ----------
-    filename
-        full path and filename
-    matrix_size
-        size of image matrix
-    n_coils
-        number of coils
-    oversampling
-        oversampling along readout (k0) direction
-    repetitions
-        number of repetitions,
-    flag_invalid_reps
-        flag to indicate that number of phase encoding steps are different for repetitions
-    acceleration
-        undersampling along phase encoding (k1)
-    noise_level
-        scaling factor for noise level
-    trajectory_type
-        cartesian
-    sampling_order
-        order how phase encoding points (k1) are obtained
-    phantom
-        phantom with different ellipses
-    n_separate_calibration_lines
-        number of additional calibration lines, linear Cartesian sampled
     """
 
     def __init__(
@@ -70,7 +43,42 @@ class IsmrmrdRawTestData:
         phantom: EllipsePhantom | None = None,
         add_bodycoil_acquisitions: bool = False,
         n_separate_calibration_lines: int = 0,
+        discard_pre: int = 0,
+        discard_post: int = 0,
     ):
+        """Initialize IsmrmrdRawTestData.
+
+        Parameters
+        ----------
+        filename
+            full path and filename
+        matrix_size
+            size of image matrix
+        n_coils
+            number of coils
+        oversampling
+            oversampling along readout (k0) direction
+        repetitions
+            number of repetitions,
+        flag_invalid_reps
+            flag to indicate that number of phase encoding steps are different for repetitions
+        acceleration
+            undersampling along phase encoding (k1)
+        noise_level
+            scaling factor for noise level
+        trajectory_type
+            cartesian
+        sampling_order
+            order how phase encoding points (k1) are obtained
+        phantom
+            phantom with different ellipses
+        n_separate_calibration_lines
+            number of additional calibration lines, linear Cartesian sampled
+        discard_pre
+            data points to discard at the beginning of the first five readouts
+        discard_post
+            data points to discard at the end of the first five readouts
+        """
         if not phantom:
             phantom = EllipsePhantom()
 
@@ -320,13 +328,31 @@ class IsmrmrdRawTestData:
                         acq.setFlag(ismrmrd.ACQ_LAST_IN_SLICE)
                         acq.setFlag(ismrmrd.ACQ_LAST_IN_REPETITION)
 
-                    # Set trajectory.
-                    acq.traj[:] = (
-                        torch.stack((traj_kx[rep][:, pe_idx], traj_ky[rep][:, pe_idx]), dim=1).numpy().astype(float)
-                    )
-
-                    # Set the data and append
-                    acq.data[:] = kspace_with_noise[:, :, pe_idx].numpy()
+                    # Set trajectory and data
+                    traj = torch.stack((traj_kx[rep][:, pe_idx], traj_ky[rep][:, pe_idx]), dim=1)
+                    if pe_idx < 5:  # add readouts with elements to be discarded
+                        acq.resize(n_freq_encoding + discard_pre + discard_post, self.n_coils, trajectory_dimensions=2)
+                        acq.traj[:] = (
+                            torch.cat((torch.zeros((discard_pre, 2)), traj, torch.zeros((discard_post, 2))))
+                            .numpy()
+                            .astype(float)
+                        )
+                        acq.data[:] = torch.cat(
+                            (
+                                torch.zeros((self.n_coils, discard_pre)),
+                                kspace_with_noise[:, :, pe_idx],
+                                torch.zeros((self.n_coils, discard_post)),
+                            ),
+                            dim=1,
+                        ).numpy()
+                        acq.discard_pre = discard_pre
+                        acq.discard_post = discard_post
+                    else:
+                        acq.resize(n_freq_encoding, self.n_coils, trajectory_dimensions=2)
+                        acq.traj[:] = traj.numpy().astype(float)
+                        acq.data[:] = kspace_with_noise[:, :, pe_idx].numpy()
+                        acq.discard_pre = 0
+                        acq.discard_post = 0
                     dataset.append_acquisition(acq)
                     scan_counter += 1
 
