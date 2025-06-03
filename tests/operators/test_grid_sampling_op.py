@@ -399,3 +399,38 @@ def test_grid_sampling_op_from_displacement_2d():
     )
 
     torch.testing.assert_close(phantom_shifted, operator(phantom)[0])
+
+
+@pytest.mark.cuda
+def test_grid_sampling_op_from_displacement_cuda():
+    """Test operator grid on cuda if the input displacement on cuda."""
+    displacement_x = torch.zeros(1, 30, 40, 40).cuda()
+    displacement_y = torch.zeros(1, 30, 40, 40).cuda()
+    displacement_z = torch.zeros(1, 30, 40, 40).cuda()
+
+    # all displacements are on cuda, so the operator grid should also be on cuda
+    operator_all_cuda = GridSamplingOp.from_displacement(
+        displacement_z=displacement_z,
+        displacement_y=displacement_y,
+        displacement_x=displacement_x,
+        interpolation_mode='nearest',
+    )
+
+    # at least one displacement is on cuda, so the operator grid should also be on cuda
+    operator_one_cuda = GridSamplingOp.from_displacement(
+        displacement_z=displacement_z.cpu(),
+        displacement_y=displacement_y.cpu(),
+        displacement_x=displacement_x,
+        interpolation_mode='nearest',
+    )
+
+    operator_2d_one_cuda = GridSamplingOp.from_displacement(
+        displacement_z=None,
+        displacement_y=displacement_y.cpu(),
+        displacement_x=displacement_x,
+        interpolation_mode='nearest',
+    )
+
+    assert operator_all_cuda.grid.is_cuda
+    assert operator_one_cuda.grid.is_cuda
+    assert operator_2d_one_cuda.grid.is_cuda
