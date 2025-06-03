@@ -3,12 +3,14 @@
 import torch
 from torch.nn import Dropout, Linear, Module
 
+from mrpro.nn.CondMixin import CondMixin
 from mrpro.nn.GEGLU import GEGLU
 from mrpro.nn.GroupNorm import GroupNorm
 from mrpro.nn.LayerNorm import LayerNorm
 from mrpro.nn.MultiHeadAttention import MultiHeadAttention
 from mrpro.nn.ndmodules import ConvND
 from mrpro.nn.Sequential import Sequential
+from mrpro.nn.CondMixin import CondMixin
 
 
 def zero_init(m: Module) -> Module:
@@ -20,7 +22,7 @@ def zero_init(m: Module) -> Module:
     return m
 
 
-class BasicTransformerBlock(Module):
+class BasicTransformerBlock(CondMixin, Module):
     """Basic vision transformer block."""
 
     def __init__(
@@ -111,7 +113,7 @@ class BasicTransformerBlock(Module):
         return x
 
 
-class SpatialTransformerBlock(Module):
+class SpatialTransformerBlock(CondMixin, Module):
     """Spatial transformer block."""
 
     def __init__(

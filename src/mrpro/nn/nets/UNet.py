@@ -200,7 +200,10 @@ class BasicUNet(UNetBase):
 
     A Basic UNet with residual blocks, convolutional downsampling, and nearest neighbor upsampling.
 
-
+    References
+    ----------
+    .. [UNET] Ronneberger, Olaf, Philipp Fischer, and Thomas Brox. "U-net: Convolutional networks for biomedical image
+       segmentation MICCAI 2015. https://arxiv.org/abs/1505.04597
     """
 
     def __init__(self, dim: int, channels_in: int, channels_out: int, n_features: Sequence[int], cond_dim: int):
@@ -234,12 +237,10 @@ class UNet(UNetBase):
     U-shaped convolutional network with optional patch attention.
     Inspired by the OpenAi DDPM UNet/Latent Diffusion UNet [LDM]_,
     significant differences to the vanilla UNet [UNET]_ include:
-       - Spatial attention
+       - Spatial transformer blocks
        - Multiple skip connections per resolution
        - Convolutional downsampling, nearest neighbor upsampling
-       - Residual convolution blocks
-       - Group normalization
-       - SiLU activation
+       - Residual convolution blocks with group normalization and SiLU activation
 
     References
     ----------
@@ -251,15 +252,35 @@ class UNet(UNetBase):
     def __init__(
         self,
         dim: int,
-        in_channels: int,
-        out_channels: int,
+        channels_in: int,
+        channels_out: int,
         attention_depths: Sequence[int] = (-1, -2),
         n_features: Sequence[int] = (64, 128, 192, 256),
         n_heads: int = 4,
         cond_dim: int = 0,
         encoder_blocks_per_scale: int = 2,
     ) -> None:
-        """Initialize the UNet."""
+        """Initialize the UNet.
+
+        Parameters
+        ----------
+        dim
+            Spatial dimension of the input tensor.
+        channels_in
+            Number of channels in the input tensor.
+        channels_out
+            Number of channels in the output tensor.
+        attention_depths
+            The depths at which to apply attention.
+        n_features
+            Number of features at each resolution level. The length determines the number of resolution levels.
+        n_heads
+            Number of attention heads.
+        cond_dim
+            Number of channels in the conditioning tensor. If 0, no conditioning is applied.
+        encoder_blocks_per_scale
+            Number of encoder blocks per resolution level. The number of decoder blocks is one more.
+        """
         depth = len(n_features)
         if not all(-depth <= d < depth for d in attention_depths):
             raise ValueError(
@@ -279,7 +300,7 @@ class UNet(UNetBase):
                 return ResBlock(dim, channels_in, channels_out, cond_dim)
             return Sequential(ResBlock(dim, channels_in, channels_out, cond_dim), attention_block(channels_out))
 
-        first_block = ConvND(dim)(in_channels, n_features[0], 3, padding=1)
+        first_block = ConvND(dim)(channels_in, n_features[0], 3, padding=1)
         encoder_blocks: list[Module] = []
         down_blocks: list[Module] = []
         skip_features = []
@@ -293,7 +314,7 @@ class UNet(UNetBase):
                 down_blocks.append(Identity())
                 skip_features.append(n_feat_old)
             down_blocks.append(ConvND(dim)(n_feat, n_feat, 3, stride=2, padding=1))
-        down_blocks[-1] = Identity()
+        down_blocks[-1] = Identity()  # no downsampling after the last resolution level
         middle_block = Sequential(
             ResBlock(dim, n_features[-1], n_features[-1], cond_dim),
             ResBlock(dim, n_features[-1], n_features[-1], cond_dim),
@@ -313,15 +334,14 @@ class UNet(UNetBase):
                 decoder_blocks.append(
                     block(n_feat_old + skip_features.pop(), n_feat, attention=i_level in attention_depths)
                 )
-                n_feat_old = n_feat
-
                 up_blocks.append(Identity())
-                n_feat_old = n_feat
             up_blocks.append(Upsample(dim, scale_factor=2))
-        up_blocks.pop()
+        up_blocks.pop()  # no upsampling after the last resolution level
         concat_blocks = [Concat()] * len(decoder_blocks)
         last_block = Sequential(
-            GroupNorm(n_features[0]), SiLU(), ConvND(dim)(n_features[0], out_channels, 3, padding=1)
+            GroupNorm(n_features[0]),
+            SiLU(),
+            ConvND(dim)(n_features[0], channels_out, 3, padding=1),
         )
         decoder = UNetDecoder(decoder_blocks, up_blocks, concat_blocks, last_block)
 
@@ -390,17 +410,153 @@ class AttentionGatedUNet(UNetBase):
         super().__init__(encoder, decoder)
 
 
-class SeparableUNet(UNetBase):
-    """UNet where blocks apply separable convolutions in different dimensions.
+from einops import rearrange
 
-    Based on the pseudo-3D residual network of [QUI]_, [TRAN]_ and the residual blocks of [ZIM]_.
 
-    References
-    ----------
-    .. [TRAN] Tran, D., Wang, H., Torresani, L., Ray, J., LeCun, Y., & Paluri, M. A closer look at spatiotemporal
-       convolutions for action recognition. CVPR 2018. https://arxiv.org/abs/1711.11248
-    .. [QUI] Qiu, Z., Yao, T., & Mei, T. Learning spatio-temporal representation with pseudo-3d residual networks.
-       ICCV 2017. https://arxiv.org/abs/1711.10305
-    .. [ZIM] Zimmermann, F. F., & Kofler, A. (2023, October). NoSENSE: Learned unrolled cardiac MRI reconstruction
-       without explicit sensitivity maps. STACOM MICCAI 2023. https://arxiv.org/abs/2309.15608
+class SpatioTemporalBlock(Module):
+    """Spatio-temporal block.
+
+    Applies first a spatial block then a temporal block.
+    In the spatial block, the time dimension is a batch dimension,
+    in the temporal block, the spatial dimensions are a batch dimension.
     """
+
+    def __init__(self, spatial_block: Module, temporal_block: Module):
+        """Initialize the SpatioTemporalBlock."""
+        super().__init__()
+        self.spatial_block = spatial_block
+        self.temporal_block = temporal_block
+
+    def forward(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
+        batchsize = x.shape[0]
+        x = rearrange(x, 'batch channel time ... -> (batch time) channel ...')
+        x = call_with_cond(self.spatial_block, x, cond=cond)
+        spatial_shape = x.shape[2:]
+        x = rearrange(x, '(batch time) channel ... -> (batch ...) channel time', batch=batchsize)
+        x = call_with_cond(self.temporal_block, x, cond=cond)
+        x = rearrange(x, '(batch spatial) channel time -> batch channel time spatial').unflatten(-1, spatial_shape)
+        return x
+
+
+# class SpatioTemporalUNet(UNetBase):
+#     """UNet where blocks apply separable convolutions in different dimensions.
+#     U-shaped convolutional network with optional patch attention.
+#     Inspired by the OpenAi DDPM UNet/Latent Diffusion UNet [UNET]_, [LDM]_,
+#     Based on the pseudo-3D residual network of [QUI]_, [TRAN]_, [HO]_, and the residual blocks of [ZIM]_.
+
+#     References
+#     ----------
+#     .. [UNET] Ronneberger, Olaf, Philipp Fischer, and Thomas Brox. "U-net: Convolutional networks for biomedical image
+#        segmentation MICCAI 2015. https://arxiv.org/abs/1505.04597
+#     .. [LDM] https://github.com/CompVis/stable-diffusion/blob/main/ldm/modules/diffusionmodules/openaimodel.py
+#     .. [TRAN] Tran, D., Wang, H., Torresani, L., Ray, J., LeCun, Y., & Paluri, M. A closer look at spatiotemporal
+#        convolutions for action recognition. CVPR 2018. https://arxiv.org/abs/1711.11248
+#     .. [QUI] Qiu, Z., Yao, T., & Mei, T. Learning spatio-temporal representation with pseudo-3d residual networks.
+#        ICCV 2017. https://arxiv.org/abs/1711.10305
+#     .. [HO] Ho, J., Salimans, T., Gritsenko, A., Chan, W., Norouzi, M., & Fleet, D. J. Video diffusion models.
+#        NeurIPS 2022. https://arxiv.org/abs/2209.11168
+#     .. [ZIM] Zimmermann, F. F., & Kofler, A. (2023, October). NoSENSE: Learned unrolled cardiac MRI reconstruction
+#        without explicit sensitivity maps. STACOM MICCAI 2023. https://arxiv.org/abs/2309.15608
+#     """
+
+
+#     def __init__(
+#         self,
+#         dim: int,
+#         in_channels: int,
+#         out_channels: int,
+#         attention_depths: Sequence[int] = (-1, -2),
+#         n_features: Sequence[int] = (64, 128, 192, 256),
+#         n_heads: int = 4,
+#         cond_dim: int = 0,
+#         encoder_blocks_per_scale: int = 2,
+#         temporal_downsampling: bool = False,
+#     ) -> None:
+#         """Initialize the UNet.
+
+#         Parameters
+#         ----------
+#         dim
+#             Spatial dimension of the input tensor.
+#         channels_in
+#             Number of channels in the input tensor.
+#         channels_out
+#             Number of channels in the output tensor.
+#         attention_depths
+#             The depths at which to apply attention.
+#         n_features
+#             Number of features at each resolution level. The length determines the number of resolution levels.
+#         n_heads
+#             Number of attention heads.
+#         cond_dim
+#             Number of channels in the conditioning tensor. If 0, no conditioning is applied.
+#         encoder_blocks_per_scale
+#             Number of encoder blocks per resolution level. The number of decoder blocks is one more.
+#         temporal_downsampling
+#             Whether to downsample the temporal dimension.
+#         """
+#         depth = len(n_features)
+#         if not all(-depth <= d < depth for d in attention_depths):
+#             raise ValueError(
+#                 f'attention_depths must be in the range [-depth, depth], got {attention_depths=} for {depth=}'
+#             )
+#         attention_depths = tuple(d % depth for d in attention_depths)
+#         if len(attention_depths) != len(set(attention_depths)):
+#             raise ValueError(f'attention_depths must be unique, got {attention_depths=}')
+
+#         def attention_block(channels: int) -> Module:
+#             SpatioTemporalBlock(SpatialTransformerBlock(
+#                 dim, channels, n_heads, channels_per_head=channels // n_heads, cond_dim=cond_dim
+#             )
+
+#         def block(channels_in: int, channels_out: int, attention: bool) -> Module:
+#             if not attention:
+#                 return ResBlock(dim, channels_in, channels_out, cond_dim)
+#             return Sequential(ResBlock(dim, channels_in, channels_out, cond_dim), attention_block(channels_out))
+
+#         first_block = ConvND(dim)(in_channels, n_features[0], 3, padding=1)
+#         encoder_blocks: list[Module] = []
+#         down_blocks: list[Module] = []
+#         skip_features = []
+#         n_feat_old = n_features[0]
+#         for i_level, n_feat in enumerate(n_features):
+#             encoder_blocks.append(Identity())
+#             skip_features.append(n_feat_old)
+#             for _ in range(encoder_blocks_per_scale):
+#                 encoder_blocks.append(block(n_feat_old, n_feat, attention=i_level in attention_depths))
+#                 n_feat_old = n_feat
+#                 down_blocks.append(Identity())
+#                 skip_features.append(n_feat_old)
+#             down_blocks.append(ConvND(dim)(n_feat, n_feat, 3, stride=2, padding=1))
+#         down_blocks[-1] = Identity()  # no downsampling after the last resolution level
+#         middle_block = Sequential(
+#             ResBlock(dim, n_features[-1], n_features[-1], cond_dim),
+#             ResBlock(dim, n_features[-1], n_features[-1], cond_dim),
+#         )
+#         if i_level in attention_depths:
+#             middle_block.insert(1, attention_block(n_features[-1]))
+#         encoder = UNetEncoder(first_block, encoder_blocks, down_blocks, middle_block)
+
+#         decoder_blocks: list[Module] = []
+#         up_blocks: list[Module] = [Identity()]
+#         for i_level, n_feat in reversed(list(enumerate(n_features))):
+#             decoder_blocks.append(
+#                 block(n_feat_old + skip_features.pop(), n_feat, attention=i_level in attention_depths)
+#             )
+#             n_feat_old = n_feat
+#             for _ in range(encoder_blocks_per_scale):
+#                 decoder_blocks.append(
+#                     block(n_feat_old + skip_features.pop(), n_feat, attention=i_level in attention_depths)
+#                 )
+#                 up_blocks.append(Identity())
+#             up_blocks.append(Upsample(dim, scale_factor=2))
+#         up_blocks.pop()  # no upsampling after the last resolution level
+#         concat_blocks = [Concat()] * len(decoder_blocks)
+#         last_block = Sequential(
+#             GroupNorm(n_features[0]),
+#             SiLU(),
+#             ConvND(dim)(n_features[0], out_channels, 3, padding=1),
+#         )
+#         decoder = UNetDecoder(decoder_blocks, up_blocks, concat_blocks, last_block)
+
+#         super().__init__(encoder, decoder)

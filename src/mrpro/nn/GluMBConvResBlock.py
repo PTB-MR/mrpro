@@ -90,7 +90,23 @@ class GluMBConvResBlock(CondMixin, Module):
         else:
             self.film = None
 
-    def forward(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
+    def __call__(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
+        """Apply MBConv block.
+
+        Parameters
+        ----------
+        x
+            Input tensor.
+        cond
+            Conditioning tensor. If None, no conditioning is applied.
+
+        Returns
+        -------
+            Output tensor.
+        """
+        return super().__call__(x, cond=cond)
+
+    def forward(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply MBConv block."""
         h = self.inverted_conv(x)
         h = self.depth_conv(h)
