@@ -17,9 +17,9 @@ class GEGLU(Module):
 
         Parameters
         ----------
-        in_features : int
+        in_features
             The number of input features.
-        out_features : int
+        out_features
             The number of output features. If None, the number of
             output features is the same as the number of input features.
         features_last

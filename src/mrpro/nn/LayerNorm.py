@@ -36,7 +36,7 @@ class LayerNorm(Module):
 
         Parameters
         ----------
-        x : torch.Tensor
+        x
             Input tensor
 
         Returns
