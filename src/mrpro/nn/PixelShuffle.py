@@ -49,6 +49,8 @@ class PixelUnshuffle(Module):
         new_shape = list(x.shape[:2])
         source_positions = []
         for i, old in enumerate(x.shape[2:]):
+            if old % self.downscale_factor:
+                raise ValueError('Spatial size must be divisible by downscale_factor.')
             new_shape.append(old // self.downscale_factor)
             new_shape.append(self.downscale_factor)
             source_positions.append(2 + 2 * i)

@@ -17,9 +17,9 @@ T = TypeVar('T')
 @cache
 def neighborhood_mask(
     input_size: torch.Size,
-    kernel_size: int | Sequence[int],
-    dilation: int | Sequence[int] = 1,
-    circular: bool | Sequence[bool] = False,
+    kernel_size: int | tuple[int, ...],  # tuples instead of Sequence for cache
+    dilation: int | tuple[int, ...] = 1,
+    circular: bool | tuple[bool, ...] = False,
 ) -> BlockMask:
     """Create a flex attention block mask for neighborhood attention.
 
@@ -152,9 +152,9 @@ class NeighborhoodSelfAttention(Module):
         """
         super().__init__()
         self.n_head = n_heads
-        self.kernel_size = kernel_size
-        self.dilation = dilation
-        self.circular = circular
+        self.kernel_size = kernel_size if isinstance(kernel_size, int) else tuple(kernel_size)
+        self.dilation = dilation if isinstance(dilation, int) else tuple(dilation)
+        self.circular = circular if isinstance(circular, bool) else tuple(circular)
         self.features_last = features_last
         channels_per_head = channels_in // n_heads
         self.to_qkv = Linear(channels_in, 3 * channels_per_head * n_heads)
@@ -174,7 +174,7 @@ class NeighborhoodSelfAttention(Module):
         """
         if not self.features_last:
             x = x.moveaxis(1, -1)
-        spatial_shape = x.shape[2:-1]
+        spatial_shape = x.shape[1:-1]
         qkv = self.to_qkv(x)
         query, key, value = rearrange(
             qkv, 'batch ... (qkv head channels) -> qkv batch head (...) channel', qkv=3, head=self.n_head

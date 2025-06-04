@@ -100,9 +100,9 @@ class LinearSelfAttention(Module):
         value_key_query = value_key @ query
         normalization = value_key_query[..., -1:, :] + self.eps
         attn = value_key_query[..., :-1, :] / normalization
+        attn = attn.moveaxis(1, -1).flatten(-2)  # join heads and channels
         out = self.to_out(attn)
         out = out.to(orig_dtype)
-        out = out.moveaxis(1, -1).flatten(-2)  # join heads and channels
         out = out.unflatten(-2, spatial_shape)
         if not self.features_last:
             out = out.moveaxis(-1, 1)

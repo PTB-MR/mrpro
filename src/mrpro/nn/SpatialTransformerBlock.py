@@ -151,7 +151,9 @@ class SpatialTransformerBlock(CondMixin, Module):
         self.norm = GroupNorm(channels)
 
         self.proj_in = ConvND(dim)(channels, hidden_dim, kernel_size=1, stride=1, padding=0)
-        blocks = [BasicTransformerBlock(channels, n_heads, p_dropout=dropout, cond_dim=cond_dim) for _ in range(depth)]
+        blocks = [
+            BasicTransformerBlock(hidden_dim, n_heads, p_dropout=dropout, cond_dim=cond_dim) for _ in range(depth)
+        ]
         self.transformer_blocks = Sequential(*blocks)
 
         self.proj_out = zero_init(ConvND(dim)(hidden_dim, channels, kernel_size=1, stride=1, padding=0))

@@ -7,20 +7,25 @@ import torch
 from torch.nn import Module
 
 from mrpro.utils.pad_or_crop import pad_or_crop
+from mrpro.utils.interpolate import interpolate
 
 
 def _fix_shapes(
-    xs: Sequence[torch.Tensor], mode: Literal['fail', 'crop', 'zero', 'replicate', 'circular'], dim: Sequence[int]
+    xs: Sequence[torch.Tensor],
+    mode: Literal['fail', 'crop', 'zero', 'replicate', 'circular', 'linear', 'nearest'],
+    dim: Sequence[int],
 ) -> tuple[torch.Tensor, ...]:
     """Fix shapes of input tensors by padding or cropping."""
     if mode == 'fail':
         return tuple(xs)
 
     shapes = [[x.shape[d] for d in dim] for x in xs]
-    if mode == 'crop':
+    if mode == 'crop':  # smallest as target
         target = tuple(min(s) for s in zip(*shapes, strict=True))
-    else:
+    else:  # largest as target
         target = tuple(max(s) for s in zip(*shapes, strict=True))
+    if mode == 'linear' or mode == 'nearest':
+        return tuple(interpolate(x, target, dim=dim, mode=mode) for x in xs)
     if mode == 'zero' or mode == 'crop':
         return tuple(pad_or_crop(x, target, dim=dim, mode='constant', value=0.0) for x in xs)
     else:
@@ -30,23 +35,27 @@ def _fix_shapes(
 class Concat(Module):
     """Concatenate tensors along the channel dimension."""
 
-    def __init__(self, mode: Literal['fail', 'crop', 'zero', 'replicate', 'circular'] = 'fail', dim: int = 1) -> None:
+    def __init__(
+        self, mode: Literal['fail', 'crop', 'zero', 'replicate', 'circular', 'linear', 'nearest'] = 'fail', dim: int = 1
+    ) -> None:
         """Initialize Concat.
 
         Parameters
         ----------
-        mode : {'fail', 'crop', 'zero', 'replicate', 'circular'}, default='zero'
+        mode
             How to handle mismatched spatial dimensions:
             - 'fail': do not align, raise error if shapes mismatch
             - 'crop': center-crop to smallest spatial size
             - 'zero': zero-pad to largest spatial size
             - 'replicate': pad by edge value replication
             - 'circular': circular padding
+            - 'linear': linear interpolation to largest spatial size
+            - 'nearest': nearest neighbor interpolation to largest spatial size
         dim
             Dimension along which to concatenate.
         """
         super().__init__()
-        modes = {'fail', 'crop', 'zero', 'replicate', 'circular'}
+        modes = {'fail', 'crop', 'zero', 'replicate', 'circular', 'interpolate'}
         if mode not in modes:
             raise ValueError(f'mode must be one of {modes}')
         self.mode = mode
@@ -55,7 +64,7 @@ class Concat(Module):
     def forward(self, *xs: torch.Tensor) -> torch.Tensor:
         """Concatenate input tensors."""
         xs = _fix_shapes(xs, self.mode, dim=[i for i in range(max(x.ndim for x in xs)) if i != self.dim])
-        return torch.cat(xs, dim=1)
+        return torch.cat(xs, dim=self.dim)
 
     def __call__(self, *xs: torch.Tensor) -> torch.Tensor:
         """

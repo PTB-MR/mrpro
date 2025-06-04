@@ -1,6 +1,7 @@
 """Sequential container with support for conditioning and Operators."""
 
 from collections import OrderedDict
+from typing import cast
 
 import torch
 
@@ -35,7 +36,7 @@ class Sequential(torch.nn.Sequential):
         """Apply all modules in series to the input."""
         for module in self:
             if isinstance(module, Operator):
-                x = module(*x)
+                x = cast(tuple[torch.Tensor, ...], module(*x))  # always tuple
             else:
                 ret: torch.Tensor | tuple[torch.Tensor, ...]
                 if isinstance(module, CondMixin):

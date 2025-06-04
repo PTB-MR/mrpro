@@ -39,7 +39,7 @@ class RMSNorm(Module):
         -------
             Normalized tensor.
         """
-        return self.forward(x)
+        return super().__call__(x)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Apply RMSNorm over the channel dimension."""

@@ -13,9 +13,10 @@ from mrpro.nn.ndmodules import ConvND, ConvTransposeND, InstanceNormND
 from mrpro.nn.nets.UNet import UNetBase, UNetDecoder, UNetEncoder
 from mrpro.nn.Sequential import Sequential
 from mrpro.nn.ShiftedWindowAttention import ShiftedWindowAttention
+from mrpro.nn.CondMixin import CondMixin
 
 
-class LeWinTransformerBlock(Module):
+class LeWinTransformerBlock(CondMixin, Module):
     """Locally-enhanced windowed attention transformer block.
 
     Part of the Uformer architecture.
@@ -36,21 +37,21 @@ class LeWinTransformerBlock(Module):
 
         Parameters
         ----------
-        dim : int
+        dim
             Dimension of the input, e.g. 2 or 3
-        n_channels_per_head : int
+        n_channels_per_head
             Number of features per head
-        n_heads : int
+        n_heads
             Number of attention heads
-        window_size : int, optional
+        window_size
             Size of the attention window
-        shifted : bool, optional
+        shifted
             Whether to use shifted variant of the attention
-        mlp_ratio : float, optional
+        mlp_ratio
             Ratio of the hidden dimension to the input dimension
-        p_droppath : float, optional
+        p_droppath
             Dropout probability for the drop path.
-        cond_dim : int, optional
+        cond_dim
             Dimension of a conditioning tensor. If `0`, no FiLM layers are added.
         """
         super().__init__()
@@ -79,7 +80,7 @@ class LeWinTransformerBlock(Module):
         torch.nn.init.trunc_normal_(self.modulator)
         self.drop_path = DropPath(droprate=p_droppath)
 
-    def __call__(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
+    def __call__(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the transformer block.
 
         Parameters
@@ -94,6 +95,14 @@ class LeWinTransformerBlock(Module):
         Output tensor
         """
         return super().__call__(x, cond=cond)
+
+    def forward(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
+        """Apply the transformer block."""
+        modulator = self.modulator.tile([t // s for t, s in zip(x.shape[1:], self.modulator.shape, strict=False)])
+        x_mod = self.norm1(x) + modulator
+        x_attn = self.attn(x_mod)
+        x_ff = self.ff(self.norm2(x_attn), cond=cond)
+        return x + self.drop_path(x_ff)
 
 
 class Uformer(UNetBase):

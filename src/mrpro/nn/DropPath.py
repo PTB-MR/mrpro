@@ -49,7 +49,7 @@ class DropPath(Module):
         if self.droprate == 0 or not self.training:
             return x
         shape = (x.shape[0],) + (1,) * (x.ndim - 1)
-        mask = (
-            ((1 - self.droprate) + torch.rand(shape, dtype=x.dtype, device=x.device)).floor_().div_(1 - self.droprate)
-        )
+        mask = ((1 - self.droprate) + torch.rand(shape, dtype=x.dtype, device=x.device)).floor_()
+        if self.scale_by_keep:
+            mask = mask.div_(1 - self.droprate)
         return x * mask

@@ -169,11 +169,9 @@ class Encoder(Sequential):
                 case 'CNN':
                     stage: list[Module] = [CNNBlock(dim, width) for _ in range(depth)]
                 case 'LinearViT':
-                    stage = [EfficientViTBlock(dim, width, n_heads=width // 32, linear_attn=True) for _ in range(depth)]
+                    stage = [EfficientViTBlock(dim, width, max(1, width // 32), linear_attn=True) for _ in range(depth)]
                 case 'ViT':
-                    stage = [
-                        EfficientViTBlock(dim, width, n_heads=width // 32, linear_attn=False) for _ in range(depth)
-                    ]
+                    stage = [EfficientViTBlock(dim, width, max(1, width // 32)) for _ in range(depth)]
                 case _:
                     raise ValueError(f'Block type {block_type} not supported')
             self.append(Sequential(*stage))

@@ -63,10 +63,10 @@ class AttentionGate(Module):
         """Apply the attention gate."""
         projected_gate = self.project_gate(gate)
         projected_x = self.project_x(x)
-        if gate.shape[2:] != x.shape[2:]:
-            projected_gate = torch.nn.functional.interpolate(projected_gate, size=x.shape[2:], mode='nearest')
+        projected_gate = torch.nn.functional.interpolate(projected_gate, size=x.shape[2:], mode='nearest')
         alpha = self.psi(projected_gate + projected_x)
         x = x * alpha
         if self.concatenate:
+            gate = torch.nn.functional.interpolate(gate, size=x.shape[2:], mode='nearest')
             x = torch.cat([x, gate], dim=1)
         return x

@@ -337,7 +337,7 @@ class UNet(UNetBase):
                 up_blocks.append(Identity())
             up_blocks.append(Upsample(dim, scale_factor=2))
         up_blocks.pop()  # no upsampling after the last resolution level
-        concat_blocks = [Concat()] * len(decoder_blocks)
+        concat_blocks = [Concat() for _ in range(len(decoder_blocks))]
         last_block = Sequential(
             GroupNorm(n_features[0]),
             SiLU(),

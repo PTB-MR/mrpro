@@ -35,6 +35,6 @@ def test_resblock(dim, channels_in, channels_out, cond_dim, input_shape, cond_sh
     assert not x.grad.isnan().any(), 'NaN values in input gradients'
     assert res.block[2].weight.grad is not None, 'No gradient computed for first Conv'
     if cond is not None:
-        assert cond.grad is not None, 'No gradient computed for condedding'
-        assert not cond.isnan().any(), 'NaN values in condedding'
-        assert not cond.grad.isnan().any(), 'NaN values in condedding gradients'
+        assert cond.grad is not None, 'No gradient computed for conditioning'
+        assert not cond.isnan().any(), 'NaN values in conditioning'
+        assert not cond.grad.isnan().any(), 'NaN values in conditioning gradients'
