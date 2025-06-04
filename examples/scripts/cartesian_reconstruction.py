@@ -17,11 +17,9 @@ from pathlib import Path
 
 import zenodo_get
 
-dataset = '14173489'
-
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
-zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
+zenodo_get.download(record='14173489', retry_attempts=5, output_dir=data_folder)
 
 # %% [markdown]
 # We have three different scans obtained from the same object with the same FOV and resolution, saved as ISMRMRD

@@ -16,6 +16,7 @@ from mrpro.data.KData import KData
 from mrpro.data.KNoise import KNoise
 from mrpro.operators.IdentityOp import IdentityOp
 from mrpro.operators.LinearOperator import LinearOperator
+from mrpro.utils import unsqueeze_right
 
 
 class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
@@ -143,7 +144,9 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
             (v,) = (acquisition_model.H @ dcf_op @ acquisition_model)(u)
             u_flat = u.flatten(start_dim=-3)
             v_flat = v.flatten(start_dim=-3)
-            initial_value = torch.linalg.vecdot(u_flat, u_flat) / torch.linalg.vecdot(v_flat, u_flat) * u
+            initial_value = (
+                unsqueeze_right(torch.linalg.vecdot(u_flat, u_flat) / torch.linalg.vecdot(v_flat, u_flat), 3) * u
+            )
         else:
             # The right and side is not a good starting point without DCF.
             initial_value = torch.zeros_like(right_hand_side)
