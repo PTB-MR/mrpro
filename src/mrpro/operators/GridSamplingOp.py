@@ -5,6 +5,7 @@ from collections.abc import Callable, Sequence
 from typing import Literal
 
 import torch
+from typing_extensions import Self
 
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators.LinearOperator import LinearOperator
@@ -179,8 +180,10 @@ class GridSamplingOp(LinearOperator):
 
     def __init__(
         self,
-        grid: torch.Tensor,
-        input_shape: SpatialDimension,
+        grid_z: torch.Tensor | None,
+        grid_y: torch.Tensor,
+        grid_x: torch.Tensor,
+        input_shape: SpatialDimension | None = None,
         interpolation_mode: Literal['bilinear', 'nearest', 'bicubic'] = 'bilinear',
         padding_mode: Literal['zeros', 'border', 'reflection'] = 'zeros',
         align_corners: bool = False,
@@ -189,12 +192,18 @@ class GridSamplingOp(LinearOperator):
 
         Parameters
         ----------
-        grid
-            sampling grid. Shape `*batchdim, z,y,x,3` / `*batchdim, y,x,2`.
+        grid_z
+            Z-component of sampling grid. Shape `*batchdim, z,y,x`. Values should be in ``[-1, 1.]``. Use `None` for a
+            2D interpolation along `y` and `x`.
+        grid_y
+            Y-component of sampling grid. Shape `*batchdim, z,y,x` or `*batchdim, y,x` if `grid_z` is `None`.
+            Values should be in ``[-1, 1.]``.
+        grid_x
+            X-component of sampling grid. Shape `*batchdim, z,y,x` or `*batchdim, y,x` if `grid_z` is `None`.
             Values should be in ``[-1, 1.]``.
         input_shape
             Used in the adjoint. The z, y, x shape of the domain of the operator.
-            If grid has 2 as the last dimension, only y and x will be used.
+            If `grid_z` is `None`, only y and x will be used.
         interpolation_mode
             mode used for interpolation. bilinear is trilinear in 3D, bicubic is only supported in 2D.
         padding_mode
@@ -205,23 +214,25 @@ class GridSamplingOp(LinearOperator):
         """
         super().__init__()
 
-        match grid.shape[-1]:
-            case 2:  # 2D
-                if grid.ndim < 4:
-                    raise ValueError(
-                        'For a 2D gridding (determined by last dimension of grid), grid should have at least'
-                        f' 4 dimensions: batch y x 2. Got shape {grid.shape}.'
-                    )
-            case 3:  # 3D
-                if grid.ndim < 5:
-                    raise ValueError(
-                        'For a 3D gridding (determined by last dimension of grid), grid should have at least'
-                        f' 5 dimensions: batch z y x 3. Got shape {grid.shape}.'
-                    )
-                if interpolation_mode == 'bicubic':
-                    raise NotImplementedError('Bicubic only implemented for 2D')
-            case _:
-                raise ValueError('Grid should have 2 or 3 as last dimension for 2D or 3D sampling')
+        if grid_y.shape != grid_x.shape:
+            raise ValueError('Grid y,x should have the same shape.')
+        if grid_z is not None:
+            if grid_z.shape != grid_y.shape:
+                raise ValueError('Grid z,y,x should have the same shape.')
+            if grid_x.ndim < 4:
+                raise ValueError(
+                    f'For a 3D gridding, grid should have at least 4 dimensions: batch z y x. Got shape {grid_x.shape}.'
+                )
+            if interpolation_mode == 'bicubic':
+                raise NotImplementedError('Bicubic only implemented for 2D')
+            grid = torch.stack((grid_x, grid_y, grid_z), dim=-1)  # pytorch expects grid components x,y,z for 3D
+        else:
+            if grid_x.ndim < 3:
+                raise ValueError(
+                    f'For a 2D gridding, grid should have at least 3 dimensions: batch y x. Got shape {grid_x.shape}.'
+                )
+            grid = torch.stack((grid_x, grid_y), dim=-1)  # pytorch expects grid components x,y for 2D
+
         if not grid.is_floating_point():
             raise ValueError(f'Grid should be a real floating dtype, got {grid.dtype}')
         if grid.max() > 1.0 or grid.min() < -1.0:
@@ -230,8 +241,81 @@ class GridSamplingOp(LinearOperator):
         self.interpolation_mode = interpolation_mode
         self.padding_mode = padding_mode
         self.grid = grid
-        self.input_shape = input_shape
+        self.input_shape = SpatialDimension.from_array_zyx(grid.shape[-4:-1]) if input_shape is None else input_shape
         self.align_corners = align_corners
+
+    @classmethod
+    def from_displacement(
+        cls,
+        displacement_z: torch.Tensor | None,
+        displacement_y: torch.Tensor,
+        displacement_x: torch.Tensor,
+        interpolation_mode: Literal['bilinear', 'nearest', 'bicubic'] = 'bilinear',
+        padding_mode: Literal['zeros', 'border', 'reflection'] = 'zeros',
+    ) -> Self:
+        """Create a GridSamplingOp from a displacement.
+
+        The displacement is expected to describe a pull operation in voxel units. Let's assume we have an input image
+        :math:`i(x,y)` and a displacement :math:`d_x(x,y)` and :math:`d_y(x,y)` then the output image :math:`o(x,y)`
+        will be calculated as:
+        .. math::
+            o(x,y) = i(x + d_x(x,y), y + d_y(x,y))
+
+        Parameters
+        ----------
+        displacement_z
+            Z-component of the displacement. Use `None` for a 2D interpolation along `y` and `x`.  Shape is
+            `*batchdim, z,y,x`. Values should describe the displacement in voxel.
+        displacement_y
+            Y-component of sampling grid. Shape is `*batchdim, z,y,x` or `*batchdim, y,x` if `displacement_z` is
+            `None`. Values should describe the displacement in voxel. Values should describe the displacement in voxel.
+        displacement_x
+            X-component of sampling grid. Shape is `*batchdim, z,y,x` or `*batchdim, y,x` if `displacement_z` is
+            `None`. Values should describe the displacement in voxel. Values should describe the displacement in voxel.
+        interpolation_mode
+            mode used for interpolation. bilinear is trilinear in 3D, bicubic is only supported in 2D.
+        padding_mode
+            how the input of the forward is padded.
+        """
+        if displacement_z is not None:  # 3D
+            if displacement_x.ndim < 4 or displacement_y.ndim < 4 or displacement_z.ndim < 4:
+                raise ValueError(
+                    'For a 3D displacement, displacement should have at least 4 dimensions: batch z y x. ',
+                    f'Got shape {displacement_x.shape}.',
+                )
+            try:
+                *_, n_z, n_y, n_x = torch.broadcast_shapes(
+                    displacement_z.shape, displacement_y.shape, displacement_x.shape
+                )
+            except RuntimeError:
+                raise ValueError(
+                    'Displacement dimensions are not broadcastable. '
+                    f'Got shapes {displacement_z.shape}, {displacement_y.shape}, {displacement_x.shape}.'
+                ) from None
+            grid_z, grid_y, grid_x = torch.meshgrid(
+                torch.linspace(-1, 1, n_z), torch.linspace(-1, 1, n_y), torch.linspace(-1, 1, n_x), indexing='ij'
+            )
+            grid_z = grid_z + displacement_z * 2 / (n_z - 1)
+            grid_y = grid_y + displacement_y * 2 / (n_y - 1)
+            grid_x = grid_x + displacement_x * 2 / (n_x - 1)
+        else:  # 2D
+            if displacement_x.ndim < 3 or displacement_y.ndim < 3:
+                raise ValueError(
+                    'For a 2D displacement, displacement should have at least 3 dimensions: batch y x. ',
+                    f'Got shape {displacement_x.shape} and {displacement_y.shape}.',
+                )
+            try:
+                *_, n_y, n_x = torch.broadcast_shapes(displacement_y.shape, displacement_x.shape)
+            except RuntimeError:
+                raise ValueError(
+                    'Displacement dimensions are not broadcastable. '
+                    f'Got shapes {displacement_y.shape}, {displacement_x.shape}.'
+                ) from None
+            grid_y, grid_x = torch.meshgrid(torch.linspace(-1, 1, n_y), torch.linspace(-1, 1, n_x), indexing='ij')
+            grid_y = grid_y + displacement_y * 2 / (n_y - 1)
+            grid_x = grid_x + displacement_x * 2 / (n_x - 1)
+            grid_z = None
+        return cls(grid_z, grid_y, grid_x, None, interpolation_mode, padding_mode, align_corners=True)
 
     def __reshape_wrapper(
         self, x: torch.Tensor, inner: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
