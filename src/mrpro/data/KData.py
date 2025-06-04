@@ -389,14 +389,6 @@ class KData(Dataclass):
                 write_acqinfo_to_ismrmrd_acquisition_(acq.header.acq_info, ismrmrd_acq, convert_time_stamp)
                 ismrmrd_acq.traj[:] = acq.traj.as_tensor(-1).squeeze().cpu().numpy()[:, ::-1]  # zyx -> xyz
                 ismrmrd_acq.center_sample = np.argmin(np.abs(ismrmrd_acq.traj[:, 0]))
-
-                # TODO :Why do we need this? This looks wrong, i.e. only correct without partial readout?
-                # Thould it be something like centersample=length - center_sample if it "counts from the other end"?
-                # @christoph
-
-                if ismrmrd_acq.flags & AcqFlags.ACQ_IS_REVERSE.value:
-                    ismrmrd_acq.center_sample += 1
-
                 ismrmrd_acq.data[:] = acq.data.squeeze().cpu().numpy()
                 ismrmrd_acq.scan_counter = scan_counter
                 dataset.append_acquisition(ismrmrd_acq)
