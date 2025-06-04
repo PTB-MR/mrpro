@@ -144,8 +144,8 @@ class CartesianSamplingOp(LinearOperator):
         """Apply forward of CartesianSamplingOp.
 
         .. note::
-            Prefer calling the instance of the CartesianSamplingOp operator as ``operator(x)`` over directly
-            calling this method.
+            Prefer calling the instance of the CartesianSamplingOp operator as ``operator(x)`` over
+            directly calling this method.
         """
         if self._sorted_grid_shape != SpatialDimension(*x.shape[-3:]):
             raise ValueError('k-space data shape mismatch')
