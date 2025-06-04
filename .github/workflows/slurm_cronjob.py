@@ -45,6 +45,7 @@ def get_running_job_names() -> list[str]:
     -------
         list[str]: A list of names of currently running jobs.
     """
+    # ruff: noqa: S603
     process = subprocess.run(
         ['/usr/bin/squeue', '--user', ENV_VARS['USER_NAME'], '--noheader', '--format=%j'],
         capture_output=True,
@@ -71,6 +72,7 @@ def dispatch_run(runner_token: str, run_id: int) -> None:
         runner_token (str): A token used to authenticate the runner process.
         run_id (int): A unique identifier for the run, used to track and name the process.
     """
+    # ruff: noqa: S603
     process = subprocess.run(
         # pass the run_id as a unique identifier for the runner name
         ['/usr/bin/sbatch'],
