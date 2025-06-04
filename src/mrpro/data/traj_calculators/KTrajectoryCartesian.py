@@ -117,8 +117,13 @@ class KTrajectoryCartesian(KTrajectoryCalculator):
         k1_center = n_k1 // 2
         center_start = k1_center - n_center // 2
         center_end = center_start + n_center
+
         k1_idx = rng.gaussian_variable_density_samples(
-            (*n_other, n_keep), low=0, high=n_k1, fwhm=fwhm_ratio * n_k1, always_sample=range(center_start, center_end)
+            (*n_other, n_keep),
+            low=-n_k1 // 2,
+            high=n_k1 // 2,
+            fwhm=fwhm_ratio * n_k1,
+            always_sample=range(center_start, center_end),
         )
 
         return cls()(
