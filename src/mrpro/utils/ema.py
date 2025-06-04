@@ -1,3 +1,5 @@
+"""Exponential Moving Average (EMA) dictionary."""
+
 from collections.abc import ItemsView, KeysView, Mapping, ValuesView
 from typing import Any
 

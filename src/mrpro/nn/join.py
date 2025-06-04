@@ -6,8 +6,8 @@ from typing import Literal
 import torch
 from torch.nn import Module
 
-from mrpro.utils.pad_or_crop import pad_or_crop
 from mrpro.utils.interpolate import interpolate
+from mrpro.utils.pad_or_crop import pad_or_crop
 
 
 def _fix_shapes(

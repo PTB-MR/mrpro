@@ -10,7 +10,6 @@ from mrpro.nn.LayerNorm import LayerNorm
 from mrpro.nn.MultiHeadAttention import MultiHeadAttention
 from mrpro.nn.ndmodules import ConvND
 from mrpro.nn.Sequential import Sequential
-from mrpro.nn.CondMixin import CondMixin
 
 
 def zero_init(m: Module) -> Module:
