@@ -10,11 +10,9 @@ from pathlib import Path
 
 import zenodo_get
 
-dataset = '14617082'
-
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
-zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
+zenodo_get.download(record='14617082', retry_attempts=5, output_dir=data_folder)
 
 # %% [markdown]
 # ### Image reconstruction
@@ -43,7 +41,7 @@ zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 # One important question of course is, what to use as $x_\mathrm{{reg}}$ and $B$. For dynamic images (e.g. cine MRI)
 # low-resolution dynamic images or high-quality static images have been proposed.
 # In recent years, the output of neural networks has also been used, i.e. $x_{\mathrm{reg}} = u_{\theta}(x_0)$
-# $B=\mathrm{Id}$ for a pre-trained network $u_{\theta}$ and initial image $x_0$ [Kofler et al., IOP PMB 2020].
+# $B=\mathrm{Id}$ for a pre-trained network $u_{\theta}$ and initial image $x_0$ [[Kofler et al. 2020](https://doi.org/10.1088/1361-6560/ab990e)].
 #
 # In this example we are going to use a high-quality image to regularize the reconstruction of an undersampled image.
 # Both images are obtained from the same data acquisition - one using all the acquired data ($x_{\mathrm{reg}}$),
@@ -51,11 +49,10 @@ zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 # the effect of the regularization.
 #
 # ```{note}
-# In Pruessmann, K.P., et al. MRM 2001 (https://doi.org/10.1002/mrm.1241) the k-space density is used to reweight the
-# loss to achieve faster convergence. This increases reconstruction error, see Ong F., Uecker M., Lustig M. TMI 2020
-# (https://doi.org/10.1109/TMI.2019.2954121). We follow a recommendation by Fessler and Noll
-# (https://ece-classes.usc.edu/ee591/library/Fessler-Iterative%20Reconstruction.pdf) and use the DCF to obtain a good
-# starting point.
+# In [Pruessmann et al. 2001](https://doi.org/10.1002/mrm.1241) the k-space density is used to reweight the
+# loss to achieve faster convergence. This increases reconstruction error, see [Ong F., Uecker M., Lustig M. 2020](https://doi.org/10.1109/TMI.2019.2954121).
+# We follow a recommendation by [Fessler and Noll](https://ece-classes.usc.edu/ee591/library/Fessler-Iterative%20Reconstruction.pdf)
+# and use the DCF to obtain a good starting point.
 # ```
 
 # %% [markdown]

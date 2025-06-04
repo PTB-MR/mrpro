@@ -11,12 +11,12 @@ import h5py
 import ismrmrd
 import numpy as np
 import torch
-from einops import rearrange, repeat
+from einops import rearrange
 from typing_extensions import Self, TypeVar
 
 from mrpro.data.acq_filters import has_n_coils, is_image_acquisition
 from mrpro.data.AcqInfo import AcqInfo, convert_time_stamp_osi2, convert_time_stamp_siemens
-from mrpro.data.Dataclass import Dataclass, HasReduceRepeats
+from mrpro.data.Dataclass import Dataclass
 from mrpro.data.EncodingLimits import EncodingLimits
 from mrpro.data.enums import AcqFlags
 from mrpro.data.KHeader import KHeader
@@ -24,7 +24,6 @@ from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.Rotation import Rotation
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 from mrpro.data.traj_calculators.KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
-from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.typing import FileOrPath
 
 from ..utils.summarize import summarize_object
@@ -163,6 +162,8 @@ class KData(Dataclass):
             additional_fields=('center_sample', 'number_of_samples', 'discard_pre', 'discard_post'),
             convert_time_stamp=convert_time_stamp,
         )
+        discard_pre_1d = rearrange(discard_pre, 'n_readouts 1 1 1 1 -> n_readouts')
+        discard_post_1d = rearrange(discard_post, 'n_readouts 1 1 1 1 -> n_readouts')
 
         if len(torch.unique(acq_info.idx.user5)) > 1:
             warnings.warn(
@@ -180,22 +181,25 @@ class KData(Dataclass):
                 stacklevel=1,
             )
 
-        shapes = (torch.as_tensor([acq.data.shape[-1] for acq in acquisitions]) - discard_pre - discard_post).unique()
+        shapes = (
+            torch.as_tensor([acq.data.shape[-1] for acq in acquisitions]) - discard_pre_1d - discard_post_1d
+        ).unique()
         if len(shapes) > 1:
             warnings.warn(
                 f'Acquisitions have different shape. Got {list(shapes)}. '
                 f'Keeping only acquisistions with {shapes[-1]} data samples. Note: discard_pre and discard_post '
-                f'{"have been applied. " if discard_pre.any() or discard_post.any() else "were empty. "}'
+                f'{"have been applied. " if discard_pre_1d.any() or discard_post_1d.any() else "were empty. "}'
                 'Please open an issue of you need to handle this kind of data.',
                 stacklevel=1,
             )
         data = torch.stack(
             [
                 torch.as_tensor(acq.data[..., pre : acq.data.shape[-1] - post], dtype=torch.complex64)
-                for acq, pre, post in zip(acquisitions, discard_pre, discard_post, strict=True)
+                for acq, pre, post in zip(acquisitions, discard_pre_1d, discard_post_1d, strict=True)
                 if acq.data.shape[-1] - pre - post == shapes[-1]
             ]
         )
+        n_k0_tensor = n_k0_tensor - discard_pre - discard_post
         data = rearrange(data, 'acquisitions coils k0 -> acquisitions coils 1 1 k0')
 
         # Raises ValueError if required fields are missing in the header
@@ -313,36 +317,15 @@ class KData(Dataclass):
         sort_idx = torch.as_tensor(np.lexsort(acq_indices))  # torch has no lexsort as of pytorch 2.6 (March 2025)
 
         # Finally, reshape and sort the tensors in acqinfo and acqinfo.idx, and kdata.
-        header = self.header.apply(
-            lambda field: rearrange(
-                cast(Rotation | torch.Tensor, rearrange(expand(field), '... coils k2 k1 k0 -> (... k2 k1) coils k0'))[
-                    sort_idx
-                ],
-                '(other k2 k1) coils k0 -> other coils k2 k1 k0',
-                k1=n_k1,
-                k2=n_k2,
-                k0=1,
+        def sort(x: T) -> T:
+            flat = cast(T, rearrange(expand(x), '... coils k2 k1 k0 -> (... k2 k1) coils k0'))
+            return cast(
+                T, rearrange(flat[sort_idx], '(other k2 k1) coils k0 -> other coils k2 k1 k0', k1=n_k1, k2=n_k2)
             )
-            if isinstance(field, torch.Tensor | Rotation)
-            else field
-        )
 
-        data = rearrange(
-            rearrange(expand(self.data), '... coils k2 k1 k0-> (... k2 k1) coils k0 ')[sort_idx],
-            '(other k2 k1) coils k0 -> other coils k2 k1 k0',
-            k1=n_k1,
-            k2=n_k2,
-        )
-
-        kz, ky, kx = (
-            rearrange(
-                expand(t).flatten(end_dim=-3)[sort_idx],
-                '(other k2 k1) coils k0 ->other coils k2 k1 k0 ',
-                k1=n_k1,
-                k2=n_k2,
-            )
-            for t in (self.traj.kz, self.traj.ky, self.traj.kx)
-        )
+        header = self.header.apply(lambda field: sort(field) if isinstance(field, torch.Tensor | Rotation) else field)
+        data = sort(self.data)
+        kz, ky, kx = (sort(t) for t in (self.traj.kz, self.traj.ky, self.traj.kx))
         traj = KTrajectory(kz, ky, kx, self.traj.grid_detection_tolerance, self.traj.repeat_detection_tolerance)
         return type(self)(header=header._reduce_repeats_(), data=data, traj=traj._reduce_repeats_())
 
@@ -568,94 +551,3 @@ class KData(Dataclass):
         data = data[other_idx]
         traj = traj[:, other_idx]
         return type(self)(header, data, type(self.traj).from_tensor(traj))
-
-    def split_k1_into_other(
-        self,
-        split_idx: torch.Tensor,
-        other_label: Literal['average', 'slice', 'contrast', 'phase', 'repetition', 'set'],
-    ) -> Self:
-        """Based on an index tensor, split the data in e.g. phases.
-
-        Parameters
-        ----------
-        split_idx
-            2D index describing  the k1 points in each block to be moved to the other dimension
-            `(other_split, k1_per_split)`
-        other_label
-            Label of other dimension, e.g. repetition, phase
-
-        Returns
-        -------
-            K-space data with new shape `((other other_split) coils k2 k1_per_split k0)`
-
-        """
-        n_other_split, n_k1_per_split = split_idx.shape
-        n_k1 = self.data.shape[-2]  # This assumes that data is not broadcasted along k1
-
-        def split(data: RotationOrTensor) -> RotationOrTensor:
-            # broadcast "k1"
-            expanded = data.expand((*data.shape[:-2], n_k1, data.shape[-1]))
-            # cast due to https://github.com/python/mypy/issues/10817
-            return cast(RotationOrTensor, expanded[..., split_idx, :])
-
-        data = rearrange(
-            split(self.data.flatten(end_dim=-5)), 'other coils k2 other_split k1 k0->(other other_split) coils k2 k1 k0'
-        )
-
-        traj = self.traj.as_tensor()
-        traj = torch.broadcast_to(traj, (traj.shape[0], *self.data.shape[:-4], *traj.shape[-4:]))  # broadcast "other"
-        traj = traj.flatten(start_dim=1, end_dim=-5)  # flatten "other" dimensions
-        traj = rearrange(split(traj), 'dim other coils k2 other_split k1 k0->dim (other other_split) coils k2 k1 k0')
-
-        header = self.header.apply(
-            lambda field: rearrange(
-                split(  # type: ignore[type-var] # mypy does not recognize return type of rearrange here
-                    rearrange(field, '... coils k2 k1 k0 -> (...) coils k2 k1 k0 ')  # flatten "other" dimensions
-                ),
-                'other coils k2 other_split k1 k0->(other other_split) coils k2 k1 k0',
-            )
-            if isinstance(field, Rotation | torch.Tensor)
-            else field
-        )
-
-        new_idx = repeat(
-            torch.arange(n_other_split),
-            'other_split-> (other_split other) 1 k2 k1 1',
-            other=data.shape[0] // n_other_split,
-            k2=data.shape[-3],
-            k1=n_k1_per_split,
-        )
-        setattr(header.acq_info.idx, other_label, new_idx)
-        header._reduce_repeats_()
-        return type(self)(header, data, type(self.traj).from_tensor(traj))
-
-    def _reduce_repeats_(self, tol: float = 1e-6, dim: Sequence[int] | None = None, recurse: bool = True) -> Self:
-        """Reduce repeated dimensions in fields to singleton.
-
-        .. warning::
-
-            This function does not reduce the `data` field.
-
-        Parameters
-        ----------
-        tol
-            tolerance.
-        dim
-            dimensions to try to reduce to singletons. `None` means all.
-        recurse
-            recurse into dataclass fields. If `False`, for this `~mrpro.data.KData` class, the function will be a no-op.
-        """
-        if not recurse:
-            # as we skip data, there is nothing to do if we dont recurse
-            return self
-
-        def apply_reduce(data: T) -> T:
-            if isinstance(data, torch.Tensor):
-                return cast(T, reduce_repeat(data, tol, dim))
-            if isinstance(data, HasReduceRepeats) and not isinstance(data, Dataclass):
-                data._reduce_repeats_(tol, dim)
-            return cast(T, data)
-
-        self.header.apply_(apply_reduce, recurse=True)
-        self.traj.apply_(apply_reduce, recurse=True)
-        return self
