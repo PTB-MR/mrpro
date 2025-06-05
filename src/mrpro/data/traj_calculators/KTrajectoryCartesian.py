@@ -65,9 +65,9 @@ class KTrajectoryCartesian(KTrajectoryCalculator):
         encoding_matrix: SpatialDimension[int] | int,
         acceleration: float = 2.0,
         n_center: int = 10,
-        fwhm_ratio: float = 0.3,
+        fwhm_ratio: float = 1.0,
         n_other: Sequence[int] = (1,),
-        seed: int = 0,
+        seed: int | None = None,
     ) -> KTrajectory:
         """
         Generate k-space Gaussian weighted variable density sampling.
