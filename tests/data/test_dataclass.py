@@ -431,3 +431,10 @@ def test_dataclass_rearrange_einops() -> None:
     a = A()
     with pytest.raises(NotImplementedError, match='rearrange method'):
         einops.rearrange(a, 'dim1 dim2 -> dim2 dim1')
+
+
+def test_dataclass_shape() -> None:
+    """Test shape property of the dataclass."""
+    a = A()
+    assert a.shape == (10, 20)
+    assert len(a) == 10
