@@ -112,20 +112,20 @@ class KTrajectoryCartesian(KTrajectoryCalculator):
         n_keep = min(int(n_k1 / acceleration), n_k1)
         if n_center > n_keep:
             raise ValueError(f'Number of center lines ({n_center}) exceeds number of lines to keep ({n_keep}).')
-
         rng = RandomGenerator(seed)
-        k1_center = n_k1 // 2
-        center_start = k1_center - n_center // 2
-        center_end = center_start + n_center
         k1_idx = rng.gaussian_variable_density_samples(
-            (*n_other, n_keep), low=0, high=n_k1, fwhm=fwhm_ratio * n_k1, always_sample=range(center_start, center_end)
+            (*n_other, n_keep),
+            low=-n_k1 // 2,
+            high=n_k1 // 2,
+            fwhm=fwhm_ratio * n_k1,
+            always_sample=range(-n_center // 2, n_center // 2),
         )
 
         return cls()(
             n_k0=n_k0,
             k0_center=n_k0 // 2,
             k1_idx=k1_idx[..., None, None, :, None],
-            k1_center=k1_center,
+            k1_center=0,
             k2_idx=torch.tensor(0),
             k2_center=0,
         )
