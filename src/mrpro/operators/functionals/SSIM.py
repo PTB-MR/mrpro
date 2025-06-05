@@ -222,8 +222,29 @@ class SSIM(Functional):
         self.data_range = data_range
         self.reduction = reduction
 
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Calculate the Structural Similarity Index (SSIM) between the input and a target.
+
+        This method computes the SSIM between the provided input tensor `x` and
+        the `target` tensor defined during initialization.
+
+        Parameters
+        ----------
+        x
+            Input tensor, expected to be comparable to `target`.
+
+        Returns
+        -------
+            The SSIM value(s), the shape of which depends on the `reduction` parameter.
+        """
+        return super().__call__(x)
+
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Calculate SSIM of an input."""
+        """Apply forward of SSIM.
+
+        .. note::
+            Prefer calling the instance of the SSIM as ``operator(x)`` over directly calling this method.
+        """
         ssim = ssim3d(
             self.target.real,
             x.real,

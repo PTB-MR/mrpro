@@ -25,3 +25,20 @@ class DensityCompensationOp(EinsumOp):
         else:
             dcf_tensor = dcf
         super().__init__(dcf_tensor, '...,... -> ...')
+
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply density compensation to k-space data.
+
+        This operator performs an element-wise multiplication of the input k-space data
+        with the density compensation factors (DCF).
+
+        Parameters
+        ----------
+        x
+            Input k-space data.
+
+        Returns
+        -------
+            Density compensated k-space data.
+        """
+        return super().__call__(x)
