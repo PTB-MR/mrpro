@@ -87,12 +87,12 @@ class OptimizerFunction(torch.autograd.Function):
         solution = optimize(objective, initial_values)
         ctx.save_for_backward(*solution, *parameters_)
         ctx.len_x = len(initial_values_)
-        return xprime
+        return solution
 
     @staticmethod
-    def backward(ctx: OptimizeCtx, *grad_outputs: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
+    def backward(ctx: OptimizerCtx, *grad_outputs: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
         """Calculate the backward pass using implicit differentiation."""
-        xprime = tuple(xp.detach().clone().requires_grad_(True) for xp in ctx.saved_tensors[: ctx.len_x])
+        solution = tuple(x.detach().clone().requires_grad_(True) for x in ctx.saved_tensors[: ctx.len_x])
         parameters = ctx.saved_tensors[ctx.len_x :]
         parameters = tuple(
             p.detach().clone().requires_grad_(True) if ctx.needs_input_grad[i + 3] else p.detach()
@@ -103,13 +103,13 @@ class OptimizerFunction(torch.autograd.Function):
         objective = ctx.factory(*parameters)
 
         def hvp(*v: torch.Tensor) -> tuple[torch.Tensor, ...]:
-            return torch.autograd.functional.vhp(lambda *x: objective(*x)[0], xprime, v=v)[1]
+            return torch.autograd.functional.vhp(lambda *x: objective(*x)[0], solution, v=v)[1]
 
         hessian_inverse_grad = cg(hvp, grad_outputs, max_iterations=100, tolerance=1e-7)
         with torch.enable_grad():
-            dobjective_dxprime = torch.autograd.grad(objective(*xprime), xprime, create_graph=True)
-            # - d^2_obective / d_xprime d_params Hessian^-1 * grad
-            grad_params = list(torch.autograd.grad(dobjective_dxprime, dparams, hessian_inverse_grad))
+            dobjective_dsolution = torch.autograd.grad(objective(*solution), solution, create_graph=True)
+            # - d^2_obective / d_solution d_params Hessian^-1 * grad
+            grad_params = list(torch.autograd.grad(dobjective_dsolution, dparams, hessian_inverse_grad))
         grad_inputs: list[torch.Tensor | None] = [None, None, None]  # factory, x0, optimize
         for need_grad in ctx.needs_input_grad[3:]:
             if need_grad:
@@ -123,9 +123,12 @@ class OptimizerFunction(torch.autograd.Function):
 class OptimizerOp(Operator[Unpack[ArgumentType], VariableType]):
     """Differentiable Optimization Operator.
 
+    Finds :math:`x^*=argmin_x f_p(x).
+    The solution :math:`x^*`  will be differentiable with respect to some parameters :math:`p`
+    of the functional :math:`f`.
+
     One of the building blocks of PINQI [ZIMM2024]_
-    Finds :math:`x^*=argmin_x f_p(x). 
-    The solution :math:`x^*`  will be differentiable with respect to some parameters :math:`p` for the functional :math:`f`.
+
 
     References
     ----------
@@ -184,7 +187,7 @@ class OptimizerOp(Operator[Unpack[ArgumentType], VariableType]):
         """
         initial_values = self.initializer(*parameters)
         initial_values_ = tuple(x.clone() if any(x is p for p in parameters) else x for x in initial_values)
-        result = OptimizeFunction.apply(
+        result = OptimizerFunction.apply(
             self.factory, initial_values_, self.optimize, *cast(tuple[torch.Tensor, ...], parameters)
         )
         return cast(VariableType, result)

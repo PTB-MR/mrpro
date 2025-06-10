@@ -111,10 +111,11 @@ class ConjugateGradientFunction(torch.autograd.Function):
 class ConjugateGradientOp(torch.nn.Module):
     r"""Solves a linear positive semidefinite system with the conjugate gradient method.
 
-    Solves :math: `A x = b` where :math:`A` is a linear operator or a matrix of linear operators , :math:`b` is a  tensor or a tuple of tensors.
+    Solves :math: `A x = b` where :math:`A` is a linear operator or a matrix of linear operators ,
+    :math:`b` is a  tensor or a tuple of tensors.
 
-    The operator is autograd differentiable using implicit differentiation, which can be helpfpul for including CG as a method to increase data-consistency within a neural network based on algorithm unrolling.
-    If the latter property is not needed for your application, consider using `mrpro.algorithms.optimizers.cg` directly.
+    The operator is autograd differentiable using implicit differentiation. This is useful for including CG within a
+    network. If this is not needed for your application, consider using `mrpro.algorithms.optimizers.cg` directly.
     """
 
     def __init__(
@@ -164,7 +165,8 @@ class ConjugateGradientOp(torch.nn.Module):
             implicit differentiation.
 
         .. warning::
-            If implicit_backward is `True`, `tolerance` and `max_iter` should be chosen such that the cg algorithm converges, otherwise the backward will be wrong.
+            If implicit_backward is `True`, `tolerance` and `max_iterations` should be chosen such that the cg algorithm
+            converges, otherwise the backward will be wrong.
         """
         super().__init__()
         self.operator_factory = operator_factory
@@ -194,17 +196,17 @@ class ConjugateGradientOp(torch.nn.Module):
             op = self.operator_factory(*parameters)
             rhs = self.rhs_factory(*parameters)
             rhs_norm = sum((r.abs().square().sum() for r in rhs), torch.tensor(0.0)).sqrt().item()
-            forward_tolerance = self.tolerance * rhs_norm
+            tolerance = self.tolerance * rhs_norm
             if isinstance(op, LinearOperator):
                 if len(rhs) != 1:
                     raise ValueError('LinearOperator requires a single right-hand side tensor.')
                 if initial_value is not None and len(initial_value) != 1:
                     raise ValueError('LinearOperator requires a single initial value tensor.')
                 solution = cg(
-                    op, rhs, initial_value=initial_value, tolerance=fwd_tol, max_iterations=self.max_iterations
+                    op, rhs, initial_value=initial_value, tolerance=tolerance, max_iterations=self.max_iterations
                 )
             else:
                 solution = cg(
-                    op, rhs, initial_value=initial_value, tolerance=fwd_tol, max_iterations=self.max_iterations
+                    op, rhs, initial_value=initial_value, tolerance=tolerance, max_iterations=self.max_iterations
                 )
         return solution
