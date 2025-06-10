@@ -248,11 +248,10 @@ class AcqInfo(Dataclass):
         def tensor(data: np.ndarray) -> torch.Tensor:
             # we have to convert first as pytoch cant create tensors from np.uint16 arrays
             # we use int32 for uint16 and int64 for uint32 to fit largest values.
-            match data.dtype:
-                case np.uint16:
-                    data = data.astype(np.int32)
-                case np.uint32 | np.uint64:
-                    data = data.astype(np.int64)
+            if data.dtype == np.uint16:
+                data = data.astype(np.int32)
+            elif data.dtype in {np.uint32, np.uint64}:
+                data = data.astype(np.int64)
             # Remove any unnecessary dimensions
             return torch.tensor(np.squeeze(data))
 
