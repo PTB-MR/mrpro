@@ -245,9 +245,9 @@ class AcqInfo(Dataclass):
             # we use int32 for uint16 and int64 for uint32 to fit largest values.
             match data.dtype:
                 case np.uint16:
-                    data = data.astype(np.int32) # type: ignore[unreachable]
+                    data = data.astype(np.int32)  # type: ignore[unreachable]
                 case np.uint32 | np.uint64:
-                    data = data.astype(np.int64) # type: ignore[unreachable]
+                    data = data.astype(np.int64)  # type: ignore[unreachable]
             # Remove any unnecessary dimensions
             return torch.tensor(np.squeeze(data))
 
