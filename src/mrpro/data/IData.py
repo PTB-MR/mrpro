@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import pydicom
 import torch
-from einops import repeat
+from einops import rearrange, repeat
 from pydicom import dcmread
 from pydicom.dataset import Dataset
 from typing_extensions import Self
@@ -15,6 +15,7 @@ from typing_extensions import Self
 from mrpro.data.Dataclass import Dataclass
 from mrpro.data.IHeader import IHeader
 from mrpro.data.KHeader import KHeader
+from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.unit_conversion import m_to_mm, rad_to_deg, s_to_ms
 
 
@@ -158,7 +159,12 @@ class IData(Dataclass):
         # Pass on sorted file list as order of dicom files is often the same as the required order
         return cls.from_dicom_files(filenames=sorted(file_paths))
 
-    def to_dicom_folder(self, foldername: str | Path, series_description: str | None = None) -> None:
+    def to_dicom_folder(
+        self,
+        foldername: str | Path,
+        series_description: str | None = None,
+        reference_patient_table_position: SpatialDimension | None = None,
+    ) -> None:
         """Write the image data to DICOM files in a folder.
 
         The data is always saved in a multi-frame DICOM files.
@@ -205,13 +211,14 @@ class IData(Dataclass):
         dataset.SeriesTime = datetime.datetime.now(datetime.timezone.utc).strftime('%H%M%S.%f')
         if series_description:
             dataset.SeriesDescription = series_description
+            dataset.ProtocolName = series_description
         dataset.SeriesInstanceUID = pydicom.uid.generate_uid()
 
         # When accessing the data using dataset.pixel_array pydicom will return an image with dimensions (rows columns).
         # According to the dicom standard rows corresponds to the vertical dimension (i.e. y) and columns corresponds
         # to the horizontal dimension (i.e. x)
-        dataset.Rows = self.data.shape[-2]
-        dataset.Columns = self.data.shape[-1]
+        dataset.Rows = self.data.shape[-1]
+        dataset.Columns = self.data.shape[-2]
 
         dataset.BitsAllocated = 16
         dataset.PixelRepresentation = 0  # uint
@@ -261,12 +268,21 @@ class IData(Dataclass):
                         image_position_patient
                         + slice_direction * dcm_frame_idata.header.resolution.z * (-number_of_frames / 2 + frame)
                     )
+                if reference_patient_table_position:
+                    image_position_patient += np.asarray(
+                        np.squeeze(
+                            (
+                                (dcm_frame_idata.header.patient_table_position - reference_patient_table_position)
+                                / 1000.0
+                            ).zyx[::-1]
+                        )
+                    )
 
                 plane_position_sequence[0].ImagePositionPatient = m_to_mm(image_position_patient.tolist())
                 dataset.PerFrameFunctionalGroupsSequence[-1].PlanePositionSequence = deepcopy(plane_position_sequence)
 
                 # The direction cosines of the first row (y) and the first column (x) with respect to the patient
-                plane_orientation_sequence[0].ImageOrientationPatient = [*readout_direction, *phase_direction]
+                plane_orientation_sequence[0].ImageOrientationPatient = [*phase_direction, *readout_direction]
                 dataset.PerFrameFunctionalGroupsSequence[-1].PlaneOrientationSequence = deepcopy(
                     plane_orientation_sequence
                 )
@@ -292,7 +308,12 @@ class IData(Dataclass):
 
             pixel_data = dcm_file_idata.data.abs()
             pixel_data /= pixel_data.max()
-            dataset.PixelData = (pixel_data * 2**16).numpy().astype(np.uint16).tobytes()
+            dataset.PixelData = (
+                (rearrange(pixel_data[0, 0, ...], 'frames y x -> frames x y') * 2**16)
+                .numpy()
+                .astype(np.uint16)
+                .tobytes()
+            )
 
             dataset['PixelData'].VR = 'OB'
 
