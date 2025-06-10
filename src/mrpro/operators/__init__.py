@@ -5,7 +5,7 @@ from mrpro.operators.LinearOperator import LinearOperator
 from mrpro.operators.Functional import FunctionalType, ProximableFunctional, ElementaryFunctional, ElementaryProximableFunctional, ScaledProximableFunctional
 from mrpro.operators import functionals, models
 from mrpro.operators.AveragingOp import AveragingOp
-from mrpro.operators.CartesianSamplingOp import CartesianSamplingOp
+from mrpro.operators.CartesianSamplingOp import CartesianSamplingOp, CartesianMaskingOp
 from mrpro.operators.ConjugateGradientOp import ConjugateGradientOp
 from mrpro.operators.ConstraintsOp import ConstraintsOp
 from mrpro.operators.DensityCompensationOp import DensityCompensationOp
@@ -37,6 +37,7 @@ from mrpro.operators.ZeroOp import ZeroOp
 
 __all__ = [
     "AveragingOp",
+    "CartesianMaskingOp",
     "CartesianSamplingOp",
     "ConjugateGradientOp",
     "ConstraintsOp",

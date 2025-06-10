@@ -80,10 +80,8 @@ def summarize_values(value: torch.Tensor | Sequence[float], summarization_thresh
     if value.numel() == 0:
         pass
     elif value.is_complex():
-        # workaround for missing unique of complex values
-        unique = torch.view_as_complex(torch.unique(torch.view_as_real(value.ravel()), dim=0))
-        if len(unique) == 1:
-            string.append(f'constant {unique.item():.3g}')
+        if value.isclose(value.ravel()[0]).all():
+            string.append(f'constant {value.ravel()[0].item():.3g}')
             constant = True
         elif value.numel() > summarization_threshold:
             magnitude = value.abs()

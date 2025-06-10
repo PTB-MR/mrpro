@@ -162,6 +162,8 @@ class KData(Dataclass):
             additional_fields=('center_sample', 'number_of_samples', 'discard_pre', 'discard_post'),
             convert_time_stamp=convert_time_stamp,
         )
+        discard_pre_1d = rearrange(discard_pre, 'n_readouts 1 1 1 1 -> n_readouts')
+        discard_post_1d = rearrange(discard_post, 'n_readouts 1 1 1 1 -> n_readouts')
 
         if len(torch.unique(acq_info.idx.user5)) > 1:
             warnings.warn(
@@ -179,22 +181,25 @@ class KData(Dataclass):
                 stacklevel=1,
             )
 
-        shapes = (torch.as_tensor([acq.data.shape[-1] for acq in acquisitions]) - discard_pre - discard_post).unique()
+        shapes = (
+            torch.as_tensor([acq.data.shape[-1] for acq in acquisitions]) - discard_pre_1d - discard_post_1d
+        ).unique()
         if len(shapes) > 1:
             warnings.warn(
                 f'Acquisitions have different shape. Got {list(shapes)}. '
                 f'Keeping only acquisistions with {shapes[-1]} data samples. Note: discard_pre and discard_post '
-                f'{"have been applied. " if discard_pre.any() or discard_post.any() else "were empty. "}'
+                f'{"have been applied. " if discard_pre_1d.any() or discard_post_1d.any() else "were empty. "}'
                 'Please open an issue of you need to handle this kind of data.',
                 stacklevel=1,
             )
         data = torch.stack(
             [
                 torch.as_tensor(acq.data[..., pre : acq.data.shape[-1] - post], dtype=torch.complex64)
-                for acq, pre, post in zip(acquisitions, discard_pre, discard_post, strict=True)
+                for acq, pre, post in zip(acquisitions, discard_pre_1d, discard_post_1d, strict=True)
                 if acq.data.shape[-1] - pre - post == shapes[-1]
             ]
         )
+        n_k0_tensor = n_k0_tensor - discard_pre - discard_post
         data = rearrange(data, 'acquisitions coils k0 -> acquisitions coils 1 1 k0')
 
         # Raises ValueError if required fields are missing in the header

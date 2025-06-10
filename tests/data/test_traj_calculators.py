@@ -98,8 +98,8 @@ def test_KTrajectorySunflowerGoldenRpe() -> None:
     n_k0 = 100
     n_k1 = 20
     n_k2 = 10
-    k2_idx = torch.arange(n_k2)[:, None]
-    k1_idx = torch.arange(n_k1)
+    k2_idx = torch.arange(n_k2)[:, None, None]
+    k1_idx = torch.arange(n_k1)[:, None]
 
     trajectory_calculator = KTrajectorySunflowerGoldenRpe()
     trajectory = trajectory_calculator(
@@ -198,14 +198,9 @@ def test_KTrajectoryPulseq(pulseq_example_rad_seq) -> None:
     torch.testing.assert_close(trajectory.ky.to(torch.float32), ky_test.to(torch.float32), atol=1e-2, rtol=1e-3)
 
 
-@pytest.mark.parametrize(
-    'acceleration',
-    [
-        2,
-    ],
-)
-def test_KTrajectoryCartesian_random(acceleration: int, n_k=64) -> None:
+def test_KTrajectoryCartesian_random(acceleration: int = 2, n_k: int = 64) -> None:
     """Test the generation of a 2D gaussian variable density pattern"""
+
     traj = KTrajectoryCartesian.gaussian_variable_density(n_k, acceleration=acceleration, n_other=(2, 3), n_center=8)
 
     assert traj.kx.shape == (1, 1, 1, 1, 1, n_k)
