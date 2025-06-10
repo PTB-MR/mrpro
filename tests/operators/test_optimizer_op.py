@@ -10,8 +10,8 @@ def test_optimizer_op_gradcheck() -> None:
     rng = RandomGenerator(seed=42)
     constraints_op = ConstraintsOp(
         bounds=(
-            (-1, 1),  # M0 is not constrained
-            (0.001, 4.0),  # T1 is constrained between 1 ms and 3 s
+            (-1, 1),  # M0 in [-1, 1]
+            (0.001, 4.0),  # T1 is constrained between 1 ms and 4 s
         )
     ).double()  # everything is double, otherwise the numerical derivative used in gradcheck gives wrong values
 
