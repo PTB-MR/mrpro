@@ -28,7 +28,7 @@ class ConjugateGradientCTX(torch.autograd.function.FunctionCtx):
 
 
 class ConjugateGradientFunction(torch.autograd.Function):
-    """Autograd function for the regularized least squares operator."""
+    """Autograd function for the CG operator."""
 
     if TYPE_CHECKING:
 
@@ -111,10 +111,10 @@ class ConjugateGradientFunction(torch.autograd.Function):
 class ConjugateGradientOp(torch.nn.Module):
     r"""Solves a linear positive semidefinite system with the conjugate gradient method.
 
-    Solves :math: `A x = b` where :math:`A` is a linear operator , :math:`b` is a  tensor or a tuple of tensors.
+    Solves :math: `A x = b` where :math:`A` is a linear operator or a matrix of linear operators , :math:`b` is a  tensor or a tuple of tensors.
 
-    The operator is autograd differentiable using implicit differentiation.
-    If this is not needed, consider using `mrpro.algorithms.optimizers.cg` directly.
+    The operator is autograd differentiable using implicit differentiation, which can be helpfpul for including CG as a method to increase data-consistency within a neural network based on algorithm unrolling.
+    If the latter property is not needed for your application, consider using `mrpro.algorithms.optimizers.cg` directly.
     """
 
     def __init__(
@@ -133,9 +133,9 @@ class ConjugateGradientOp(torch.nn.Module):
         **Example: Regularized Least Squares**
 
         Consider the regularized least squares problem:
-        :math:`\min_x \|A x - b\|_2^2 + \alpha \|x - x_0\|_2^2`.
+        :math:`\min_x \|A x - y\|_2^2 + \alpha \|x - x_0\|_2^2`.
 
-        The normal equations are :math:`(A^H A + \alpha I) x = A^H b + \alpha x_0`.
+        The normal equations are :math:`(A^H A + \alpha I) x = A^H y + \alpha x_0`.
         This can be solved using the ConjugateGradientOp as follows:
         .. code-block:: python
             operator_factory = lambda alpha, x0, b: A.gram + alpha
@@ -164,8 +164,7 @@ class ConjugateGradientOp(torch.nn.Module):
             implicit differentiation.
 
         .. warning::
-            If implicit_backward is `True`, the problem has to converge, otherwise the backward
-            will be wrong. `tolerance` and `max_iter` should be chosen accordingly.
+            If implicit_backward is `True`, `tolerance` and `max_iter` should be chosen such that the cg algorithm converges, otherwise the backward will be wrong.
         """
         super().__init__()
         self.operator_factory = operator_factory
@@ -195,7 +194,7 @@ class ConjugateGradientOp(torch.nn.Module):
             op = self.operator_factory(*parameters)
             rhs = self.rhs_factory(*parameters)
             rhs_norm = sum((r.abs().square().sum() for r in rhs), torch.tensor(0.0)).sqrt().item()
-            fwd_tol = self.tolerance * rhs_norm
+            forward_tolerance = self.tolerance * rhs_norm
             if isinstance(op, LinearOperator):
                 if len(rhs) != 1:
                     raise ValueError('LinearOperator requires a single right-hand side tensor.')

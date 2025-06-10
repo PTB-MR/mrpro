@@ -29,8 +29,8 @@ default_lbfgs = functools.partial(
 """LBFGS Optimizer"""
 
 
-class OptimizeCtx(torch.autograd.function.FunctionCtx):
-    """Rype hinting the CTX object."""
+class OptimizerCtx(torch.autograd.function.FunctionCtx):
+    """Type hinting the CTX object."""
 
     factory: Callable[
         [Unpack[tuple[torch.Tensor, ...]]], Callable[[Unpack[tuple[torch.Tensor, ...]]], tuple[torch.Tensor]]
@@ -40,7 +40,7 @@ class OptimizeCtx(torch.autograd.function.FunctionCtx):
     saved_tensors: tuple[torch.Tensor, ...]
 
 
-class OptimizeFunction(torch.autograd.Function):
+class OptimizerFunction(torch.autograd.Function):
     """Implicit Backward."""
 
     if TYPE_CHECKING:
@@ -64,7 +64,7 @@ class OptimizeFunction(torch.autograd.Function):
 
     @staticmethod
     def forward(
-        ctx: OptimizeCtx,
+        ctx: OptimizerCtx,
         factory: Callable[
             [Unpack[tuple[torch.Tensor, ...]]], Callable[[Unpack[tuple[torch.Tensor, ...]]], tuple[torch.Tensor]]
         ],
@@ -84,8 +84,8 @@ class OptimizeFunction(torch.autograd.Function):
         parameters_ = tuple(p.detach().clone() for p in parameters if isinstance(p, torch.Tensor))
         initial_values_ = tuple(x.detach().requires_grad_(True) for x in initial_values if isinstance(x, torch.Tensor))
         objective = factory(*parameters)
-        xprime = optimize(objective, initial_values)
-        ctx.save_for_backward(*xprime, *parameters_)
+        solution = optimize(objective, initial_values)
+        ctx.save_for_backward(*solution, *parameters_)
         ctx.len_x = len(initial_values_)
         return xprime
 
@@ -108,7 +108,7 @@ class OptimizeFunction(torch.autograd.Function):
         hessian_inverse_grad = cg(hvp, grad_outputs, max_iterations=100, tolerance=1e-7)
         with torch.enable_grad():
             dobjective_dxprime = torch.autograd.grad(objective(*xprime), xprime, create_graph=True)
-            # - d^2_obective / d_xprime d_params Hessian^-1_grad
+            # - d^2_obective / d_xprime d_params Hessian^-1 * grad
             grad_params = list(torch.autograd.grad(dobjective_dxprime, dparams, hessian_inverse_grad))
         grad_inputs: list[torch.Tensor | None] = [None, None, None]  # factory, x0, optimize
         for need_grad in ctx.needs_input_grad[3:]:
@@ -124,7 +124,8 @@ class OptimizerOp(Operator[Unpack[ArgumentType], VariableType]):
     """Differentiable Optimization Operator.
 
     One of the building blocks of PINQI [ZIMM2024]_
-    Finds :math:`x^*=argmin_x f_p(x)
+    Finds :math:`x^*=argmin_x f_p(x). 
+    The solution :math:`x^*`  will be differentiable with respect to some parameters :math:`p` for the functional :math:`f`.
 
     References
     ----------
@@ -146,7 +147,7 @@ class OptimizerOp(Operator[Unpack[ArgumentType], VariableType]):
             Function, that given the parameters of the problem returns an objective function.
             The objective function should be a callable that takes the variable(s) as input and returns a scalar.
         initializer
-            Function, that given the parameters of the problem returns a tuple of initial values for the variable(s)
+            Function that, given the parameters of the problem, returns a tuple of initial values for the variable(s)
         optimize
             Function used to perform the optimization, for example `lbfgs`.
             Use `functools.partial` to setup up all settings besides the objective function and the initial values.
