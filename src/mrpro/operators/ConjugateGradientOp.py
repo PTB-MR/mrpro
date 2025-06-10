@@ -86,7 +86,7 @@ class ConjugateGradientFunction(torch.autograd.Function):
         with torch.enable_grad():
             rhs = ctx.rhs_factory(*inputs)
             operator = ctx.operator_factory(*inputs)
-        inputs_with_grad = tuple(i for i, need_grad in zip(inputs, ctx.needs_input_grad[2:], strict=True) if need_grad)
+        inputs_with_grad = tuple(x for x, need_grad in zip(inputs, ctx.needs_input_grad[2:], strict=True) if need_grad)
         if inputs_with_grad:
             rhs_norm = sum((r.abs().square().sum() for r in grad_output), torch.tensor(0.0)).sqrt().item()
             bwd_tol = ctx.tolerance * max(rhs_norm, 1e-6)  # clip in case rhs is 0
