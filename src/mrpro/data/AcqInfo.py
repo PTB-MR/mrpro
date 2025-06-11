@@ -190,7 +190,6 @@ class AcqInfo(Dataclass):
         *,
         additional_fields: None,
         convert_time_stamp: _convert_time_stamp_type = convert_time_stamp_siemens,
-        convert_patient_table_position: Callable[[torch.Tensor], torch.Tensor] = micrometer_to_m,
     ) -> Self: ...
 
     @overload
@@ -201,7 +200,6 @@ class AcqInfo(Dataclass):
         *,
         additional_fields: Sequence[str],
         convert_time_stamp: _convert_time_stamp_type = convert_time_stamp_siemens,
-        convert_patient_table_position: Callable[[torch.Tensor], torch.Tensor] = micrometer_to_m,
     ) -> tuple[Self, tuple[torch.Tensor, ...]]: ...
 
     @classmethod
@@ -211,7 +209,6 @@ class AcqInfo(Dataclass):
         *,
         additional_fields: Sequence[str] | None = None,
         convert_time_stamp: _convert_time_stamp_type = convert_time_stamp_siemens,
-        convert_patient_table_position: Callable[[torch.Tensor], torch.Tensor] = micrometer_to_m,
     ) -> Self | tuple[Self, tuple[torch.Tensor, ...]]:
         """Read the header of a list of acquisition and store information.
 
@@ -224,8 +221,6 @@ class AcqInfo(Dataclass):
             ismrmrd acquisitions and returned as tensors.
         convert_time_stamp
             function used to convert the raw time stamps to seconds.
-        convert_patient_table_position
-            function used to convert the patient table position to meters.
         """
         # Idea: create array of structs, then a struct of arrays,
         # convert it into tensors to store in our dataclass.
@@ -320,9 +315,7 @@ class AcqInfo(Dataclass):
                 spatialdimension_5d(headers['phase_dir']),
                 spatialdimension_5d(headers['read_dir']),
             ),
-            patient_table_position=spatialdimension_5d(headers['patient_table_position']).apply_(
-                convert_patient_table_position
-            ),
+            patient_table_position=spatialdimension_5d(headers['patient_table_position']).apply_(micrometer_to_m),
             position=spatialdimension_5d(headers['position']).apply_(mm_to_m),
             sample_time_us=tensor_5d(headers['sample_time_us']),
             user=user,
