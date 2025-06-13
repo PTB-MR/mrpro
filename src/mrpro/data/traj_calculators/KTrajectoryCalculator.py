@@ -80,19 +80,11 @@ class KTrajectoryCalculator(ABC):
             k0_center = repeat(
                 torch.tensor(k0_center), '... -> ... other coils k2 k1 k0', other=1, coils=1, k2=1, k1=1, k0=1
             )
-        elif k0_center.ndim < 4:
-            raise ValueError(f'Expected k0_center to have at least 4 dimensions, got {k0_center.ndim}.')
-        k0 = torch.linspace(0, n_k0 - 1, n_k0, dtype=torch.float32)
-        # Data can be obtained with standard or reversed readout (e.g. bipolar readout).
+        elif k0_center.ndim < 5:
+            raise ValueError(f'Expected k0_center to have at least 5 dimensions, got {k0_center.ndim}.')
+        k0 = torch.arange(n_k0, dtype=torch.float32) - k0_center
         if reversed_readout_mask is not None:
-            shape = torch.broadcast_shapes(k0.shape[:-1], reversed_readout_mask.shape)
-            k0 = k0.broadcast_to(*shape, k0.shape[-1]).contiguous()
-            reversed_readout_mask = reversed_readout_mask.broadcast_to(shape, k0.shape[-1])
-            k0[reversed_readout_mask] = torch.flip(k0[reversed_readout_mask], (-1,))
-        # k0_center describes the index of the k-space center in the readout direction.
-        k0 = k0 - torch.gather(k0, dim=-1, index=k0_center.to(dtype=torch.int64))
-        if reversed_readout_mask is not None:
-            k0[reversed_readout_mask] = k0[reversed_readout_mask] - 1
+            k0 = torch.where(reversed_readout_mask.unsqueeze(-1), -1 - k0, k0)
         return k0
 
     def __repr__(self) -> str:
