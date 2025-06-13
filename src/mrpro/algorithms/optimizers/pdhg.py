@@ -143,7 +143,7 @@ def pdhg(
 
     # We always use a separable sum for homogeneous handling, even if it is just a ZeroFunctional
     if f is None:
-        f_sum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * n_rows)
+        f_sum: ProximableFunctionalSeparableSum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * n_rows)
     elif isinstance(f, ProximableFunctional):
         f_sum = ProximableFunctionalSeparableSum(f)
     else:
@@ -153,7 +153,7 @@ def pdhg(
         raise ValueError('Number of rows in operator does not match number of functionals in f')
 
     if g is None:
-        g_sum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * n_columns)
+        g_sum: ProximableFunctionalSeparableSum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * n_columns)
     elif isinstance(g, ProximableFunctional):
         g_sum = ProximableFunctionalSeparableSum(g)
     else:

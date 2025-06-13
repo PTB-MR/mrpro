@@ -2,7 +2,7 @@
 
 import torch
 
-from mrpro.operators.Functional import ElementaryProximableFunctional
+from mrpro.operators.Functional import ElementaryProximableFunctional, throw_if_negative_or_complex
 
 
 class L1Norm(ElementaryProximableFunctional):
@@ -58,7 +58,7 @@ class L1Norm(ElementaryProximableFunctional):
         -------
             Proximal mapping applied to the input tensor
         """
-        self._throw_if_negative_or_complex(sigma)
+        throw_if_negative_or_complex(sigma)
         diff = x - self.target
         threshold = self.weight * sigma
         threshold = self._divide_by_n(threshold, torch.broadcast_shapes(x.shape, threshold.shape))
@@ -86,7 +86,7 @@ class L1Norm(ElementaryProximableFunctional):
         -------
             Proximal of the convex conjugate applied to the input tensor
         """
-        self._throw_if_negative_or_complex(sigma)
+        throw_if_negative_or_complex(sigma)
         diff = x - sigma * self.target
         threshold = self._divide_by_n(self.weight.abs(), torch.broadcast_shapes(x.shape, self.weight.shape))
         x_out = torch.sgn(diff) * torch.clamp_max(diff.abs(), threshold.abs())
