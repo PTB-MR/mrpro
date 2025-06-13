@@ -2,6 +2,7 @@
 
 import math
 from collections.abc import Sequence
+from typing import Literal
 
 import torch
 import torch.nn.functional as F  # noqa: N812
@@ -22,7 +23,7 @@ def normalize_index(ndim: int, index: int) -> int:
     `IndexError`
         if index is outside ``[-ndim,ndim)``
     """
-    if 0 < index < ndim:
+    if 0 <= index < ndim:
         return index
     elif -ndim <= index < 0:
         return ndim + index
@@ -34,6 +35,7 @@ def pad_or_crop(
     data: torch.Tensor,
     new_shape: Sequence[int] | torch.Size,
     dim: None | Sequence[int] = None,
+    mode: Literal['constant', 'replicate', 'circular'] = 'constant',
     value: float = 0.0,
 ) -> torch.Tensor:
     """Change shape of data by center cropping or symmetric padding.
@@ -47,8 +49,10 @@ def pad_or_crop(
     dim
         Dimensions the `new_shape` corresponds to.
         `None` is interpreted as last ``len(new_shape)`` dimensions.
+    mode
+        Mode for padding.
     value
-        value to use for padding.
+        Value to use for padding.
 
     Returns
     -------
@@ -78,5 +82,5 @@ def pad_or_crop(
 
     if any(npad):
         # F.pad expects paddings in reversed order
-        data = F.pad(data, npad[::-1], value=value)
+        data = F.pad(data, npad[::-1], mode=mode, value=value)
     return data
