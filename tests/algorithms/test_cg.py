@@ -225,6 +225,6 @@ def test_cg_cuda(matrixsystem) -> None:
     operator = operator.to('cuda')
     initial_value = tuple(x.to('cuda') for x in initial_value) if initial_value is not None else None
     solution = tuple(x.to('cuda') for x in solution)
-    (result,) = cg(operator, right_hand_side, initial_value=initial_value, tolerance=1e-6, max_iterations=1000)
+    result = cg(operator, right_hand_side, initial_value=initial_value, tolerance=1e-6, max_iterations=1000)
     assert all(x.is_cuda for x in result)
     torch.testing.assert_close(result, solution, rtol=5e-3, atol=5e-3)
