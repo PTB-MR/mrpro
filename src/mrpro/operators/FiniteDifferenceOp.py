@@ -16,7 +16,7 @@ class FiniteDifferenceOp(LinearOperator):
     def finite_difference_kernel(mode: Literal['central', 'forward', 'backward']) -> torch.Tensor:
         """Finite difference kernel.
 
-        Kernels to be used by `~torch.nn.functional.conv1d`, which implemnts a correlation.
+        Kernels to be used by `~torch.nn.functional.conv1d`, which is a correlation.
         Thus, the kernels are all fipped.
 
         Parameters
