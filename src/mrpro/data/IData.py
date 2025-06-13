@@ -271,10 +271,7 @@ class IData(Dataclass):
                 if reference_patient_table_position:
                     image_position_patient += np.asarray(
                         np.squeeze(
-                            (
-                                (dcm_frame_idata.header.patient_table_position - reference_patient_table_position)
-                                / 1000.0
-                            ).zyx[::-1]
+                            (dcm_frame_idata.header.patient_table_position - reference_patient_table_position).zyx[::-1]
                         )
                     )
 
