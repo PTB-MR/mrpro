@@ -16,6 +16,9 @@ class FiniteDifferenceOp(LinearOperator):
     def finite_difference_kernel(mode: Literal['central', 'forward', 'backward']) -> torch.Tensor:
         """Finite difference kernel.
 
+        Kernels to be used by `~torch.nn.functional.conv1d`, which implemnts a correlation.
+        Thus, the kernels are all fipped.
+
         Parameters
         ----------
         mode
@@ -31,11 +34,11 @@ class FiniteDifferenceOp(LinearOperator):
             If mode is not central, forward, backward or doublecentral
         """
         if mode == 'central':
-            kernel = torch.tensor((-1, 0, 1)) / 2
+            kernel = torch.tensor((1, 0, -1)) / 2
         elif mode == 'forward':
-            kernel = torch.tensor((0, -1, 1))
+            kernel = torch.tensor((1, -1, 0))
         elif mode == 'backward':
-            kernel = torch.tensor((-1, 1, 0))
+            kernel = torch.tensor((0, 1, -1))
         else:
             raise ValueError(f'mode should be one of (central, forward, backward), not {mode}')
         return kernel
