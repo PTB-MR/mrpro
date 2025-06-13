@@ -45,6 +45,7 @@ class IsmrmrdRawTestData:
         n_separate_calibration_lines: int = 0,
         discard_pre: int = 0,
         discard_post: int = 0,
+        vendor: Literal['Siemens', 'OSI2'] = 'Siemens',
     ):
         """Initialize IsmrmrdRawTestData.
 
@@ -78,6 +79,8 @@ class IsmrmrdRawTestData:
             data points to discard at the beginning of the first five readouts
         discard_post
             data points to discard at the end of the first five readouts
+        vendor
+            Vendor of the MR scanner
         """
         if not phantom:
             phantom = EllipsePhantom()
@@ -161,7 +164,7 @@ class IsmrmrdRawTestData:
         # Acquisition System Information
         sys = ismrmrd.xsd.acquisitionSystemInformationType()
         sys.receiverChannels = self.n_coils
-        sys.systemVendor = 'Siemens'
+        sys.systemVendor = vendor
         header.acquisitionSystemInformation = sys
 
         # Sequence Information
@@ -286,6 +289,9 @@ class IsmrmrdRawTestData:
             kspace_calibration = kspace_calibration + self.noise_level * rng.randn_tensor(
                 (self.n_coils, n_freq_encoding, len(kpe_calibration)), dtype=torch.complex64
             )
+            if vendor.lower() == 'siemens':
+                # Siemens assumes fft from k-space to image space
+                kspace_calibration = kspace_calibration.conj_physical()
 
             for pe_idx, pe_pos in enumerate(kpe_calibration):
                 # Set some fields in the header
@@ -309,6 +315,11 @@ class IsmrmrdRawTestData:
             )
             # Here's where we would make the noise correlated
             kspace_with_noise = true_kspace[rep] + noise
+
+            if vendor.lower() == 'siemens':
+                # Siemens assumes fft from k-space to image space
+                kspace_with_noise = kspace_with_noise.conj_physical()
+
             acq.idx.repetition = rep
             for pe_idx, pe_pos in enumerate(kpe[rep]):
                 if not self.flag_invalid_reps or rep == 0 or pe_idx < len(kpe[rep]) // 2:  # fewer lines for rep > 0

@@ -212,6 +212,10 @@ class KData(Dataclass):
             },
             overwrite=header_overwrites,
         )
+        if header.vendor.lower() == 'siemens':
+            # Siemens assumes a fft to go from k-space to image space
+            data = data.conj_physical()
+
         # Calculate trajectory and check if it matches the kdata shape
         match trajectory:
             case KTrajectoryIsmrmrd():
