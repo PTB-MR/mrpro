@@ -56,17 +56,17 @@ class ConjugateGradientFunction(torch.autograd.Function):
         operator = operator_factory(*inputs)
         rhs = rhs_factory(*inputs)
         rhs_norm = sum((r.abs().square().sum() for r in rhs), torch.tensor(0.0)).sqrt().item()
-        fwd_tol = tolerance * max(rhs_norm, 1e-6)  # clip in case rhs is 0
+        tol_ = tolerance * max(rhs_norm, 1e-6)  # clip in case rhs is 0
         if isinstance(operator, LinearOperator):
             if len(rhs) != 1:
                 raise ValueError('LinearOperator requires a single right-hand side tensor.')
             if initial_value is not None and len(initial_value) != 1:
                 raise ValueError('LinearOperator requires a single initial value tensor.')
             solution: tuple[torch.Tensor, ...] = cg(
-                operator, rhs, initial_value=initial_value, tolerance=fwd_tol, max_iterations=max_iterations
+                operator, rhs, initial_value=initial_value, tolerance=tol_, max_iterations=max_iterations
             )
         else:
-            solution = cg(operator, rhs, initial_value=initial_value, tolerance=fwd_tol, max_iterations=max_iterations)
+            solution = cg(operator, rhs, initial_value=initial_value, tolerance=tol_, max_iterations=max_iterations)
         ctx.save_for_backward(*solution, *inputs)
         ctx.len_solution = len(solution)
         ctx.tolerance = tolerance
@@ -89,12 +89,12 @@ class ConjugateGradientFunction(torch.autograd.Function):
         inputs_with_grad = tuple(x for x, need_grad in zip(inputs, ctx.needs_input_grad[2:], strict=True) if need_grad)
         if inputs_with_grad:
             rhs_norm = sum((r.abs().square().sum() for r in grad_output), torch.tensor(0.0)).sqrt().item()
-            bwd_tol = ctx.tolerance * max(rhs_norm, 1e-6)  # clip in case rhs is 0
+            tol_ = ctx.tolerance * max(rhs_norm, 1e-6)  # clip in case rhs is 0
             with torch.no_grad():
                 if isinstance(operator, LinearOperatorMatrix):
-                    z = cg(operator.H, grad_output, tolerance=bwd_tol, max_iterations=ctx.max_iterations)
+                    z = cg(operator.H, grad_output, tolerance=tol_, max_iterations=ctx.max_iterations)
                 else:
-                    z = cg(operator.H, grad_output[0], tolerance=bwd_tol, max_iterations=ctx.max_iterations)
+                    z = cg(operator.H, grad_output[0], tolerance=tol_, max_iterations=ctx.max_iterations)
             if any(zi.isnan().any() for zi in z):
                 raise RuntimeError('NaN in ConjugateGradientFunction.backward')
             with torch.enable_grad():
@@ -115,7 +115,15 @@ class ConjugateGradientOp(torch.nn.Module):
     :math:`b` is a  tensor or a tuple of tensors.
 
     The operator is autograd differentiable using implicit differentiation. This is useful for including CG within a
-    network. If this is not needed for your application, consider using `mrpro.algorithms.optimizers.cg` directly.
+    network [MODL]_, [PINQI]_.
+    If this is not needed for your application, consider using `mrpro.algorithms.optimizers.cg` directly.
+
+    References
+    ----------
+    .. [MODL] Aggarwal, H. K., et al. MoDL: Model-based deep learning architecture for inverse problems.
+       (2018) IEEE TMI 2018, 38(2), 394-405. https://arxiv.org/abs/1712.02862
+    .. [PINQI] Zimmermann, F. F., Kolbitsch, C., Schuenke, P., & Kofler, A. PINQI: an end-to-end physics-informed
+       approach to learned quantitative MRI reconstruction. IEEE TCI 2024,  https://arxiv.org/abs/2306.11023
     """
 
     def __init__(
@@ -196,17 +204,13 @@ class ConjugateGradientOp(torch.nn.Module):
             op = self.operator_factory(*parameters)
             rhs = self.rhs_factory(*parameters)
             rhs_norm = sum((r.abs().square().sum() for r in rhs), torch.tensor(0.0)).sqrt().item()
-            tolerance = self.tolerance * rhs_norm
+            tol_ = self.tolerance * rhs_norm
             if isinstance(op, LinearOperator):
                 if len(rhs) != 1:
                     raise ValueError('LinearOperator requires a single right-hand side tensor.')
                 if initial_value is not None and len(initial_value) != 1:
                     raise ValueError('LinearOperator requires a single initial value tensor.')
-                solution = cg(
-                    op, rhs, initial_value=initial_value, tolerance=tolerance, max_iterations=self.max_iterations
-                )
+                solution = cg(op, rhs, initial_value=initial_value, tolerance=tol_, max_iterations=self.max_iterations)
             else:
-                solution = cg(
-                    op, rhs, initial_value=initial_value, tolerance=tolerance, max_iterations=self.max_iterations
-                )
+                solution = cg(op, rhs, initial_value=initial_value, tolerance=tol_, max_iterations=self.max_iterations)
         return solution
