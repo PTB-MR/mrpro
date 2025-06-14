@@ -136,10 +136,10 @@ def test_KTrajectoryCartesian() -> None:
 
 
 def test_KTrajectoryCartesian_bipolar() -> None:
-    """Verify that the readout for the second part of a bipolar readout is reversed"""
-    n_k0 = 30
-    n_k1 = 20
-    n_k2 = 10
+    """Partial fourier and reversed readout"""
+    n_k0 = 428
+    n_k1 = 3
+    n_k2 = 2
     k2_idx = torch.arange(n_k2)[:, None, None]
     k1_idx = torch.arange(n_k1)[:, None]
 
@@ -149,15 +149,17 @@ def test_KTrajectoryCartesian_bipolar() -> None:
     trajectory_calculator = KTrajectoryCartesian()
     trajectory = trajectory_calculator(
         n_k0=n_k0,
-        k0_center=n_k0 // 2,
+        k0_center=172,
         k1_idx=k1_idx,
         k1_center=n_k1 // 2,
         k2_idx=k2_idx,
         k2_center=n_k2 // 2,
         reversed_readout_mask=reversed_readout_mask,
     )
-
-    torch.testing.assert_close(trajectory.kx[..., 0, :], torch.flip(trajectory.kx[..., 1, :], dims=(-1,)))
+    assert trajectory.kx[..., 0, 172] == 0  # normal readout
+    assert trajectory.kx[..., 0, 0] == -172
+    assert trajectory.kx[..., 1, 171] == 0  # reversed readout
+    assert trajectory.kx[..., 1, 0] == 171
 
 
 def test_KTrajectoryIsmrmrdRadial(ismrmrd_rad) -> None:
