@@ -184,7 +184,7 @@ class CartesianSamplingOp(LinearOperator):
 
         Returns
         -------
-            K-space data sorted into encoding_space matrix. Non-acquired points are zero-filled.
+            k-space data sorted into encoding_space matrix. Non-acquired points are zero-filled.
         """
         if self._trajectory_shape[-3:] != y.shape[-3:]:
             raise ValueError('k-space data shape mismatch')
