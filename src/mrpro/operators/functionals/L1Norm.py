@@ -18,22 +18,37 @@ class L1Norm(ElementaryProximableFunctional):
     The norm of the vector is computed along the dimensions given at initialization.
     """
 
-    def forward(
+    def __call__(
         self,
         x: torch.Tensor,
     ) -> tuple[torch.Tensor]:
-        """Forward method.
+        """Compute the L1 norm of the input tensor.
 
-        Compute the L1 norm of the input.
+        Calculates `|| W * (x - b) ||_1`, where `W` is `weight` and `b` is `target`.
+        The norm is computed along dimensions specified by `dim`.
+        If `divide_by_n` is true, the result is averaged over these dimensions;
+        otherwise, it's summed.
 
         Parameters
         ----------
         x
-            input tensor
+            Input tensor.
 
         Returns
         -------
-            L1 norm of the input tensor
+            The L1 norm. If `keepdim` is true, the dimensions `dim` are retained
+            with size 1; otherwise, they are reduced.
+        """
+        return super().__call__(x)
+
+    def forward(
+        self,
+        x: torch.Tensor,
+    ) -> tuple[torch.Tensor]:
+        """Apply forward of L1Norm.
+
+        .. note::
+            Prefer calling the instance of the L1Norm as ``operator(x)`` over directly calling this method.
         """
         value = (self.weight * (x - self.target)).abs()
 
