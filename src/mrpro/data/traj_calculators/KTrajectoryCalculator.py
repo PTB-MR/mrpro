@@ -84,6 +84,9 @@ class KTrajectoryCalculator(ABC):
             raise ValueError(f'Expected k0_center to have at least 5 dimensions, got {k0_center.ndim}.')
         k0 = torch.arange(n_k0, dtype=torch.float32) - k0_center
         if reversed_readout_mask is not None:
+            # The -1 should not be requiered as far as we understand ISMRMRD, but
+            # at least our Siemens epi data needs it.
+            # See https://github.com/PTB-MR/mrpro/pull/832 for more details.
             k0 = torch.where(reversed_readout_mask.unsqueeze(-1), -1 - k0, k0)
         return k0
 
