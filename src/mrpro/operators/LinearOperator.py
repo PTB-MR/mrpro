@@ -341,7 +341,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         """Horizontal stacking of two LinearOperators.
 
         ``A|B`` is a `~mrpro.operators.LinearOperatorMatrix` with two columns,
-        with ``(A|B)(x1,x2) == A(x1)+B(x2)``.
+        with ``(A|B)(x1,x2) == A(x1) + B(x2)``.
         See `mrpro.operators.LinearOperatorMatrix` for more information.
         """
         if not isinstance(other, LinearOperator):

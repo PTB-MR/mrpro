@@ -46,7 +46,7 @@ class EinsumOp(LinearOperator):
         Parameters
         ----------
         matrix
-            'Matrix' :math:`A` to be used as first factor in the sum product :math:`A*x`
+            Matrix :math:`A` to be used as first factor in the sum product :math:`A*x`
 
         einsum_rule
             Einstein summation rule describing the forward of the operator.
@@ -93,7 +93,7 @@ class EinsumOp(LinearOperator):
         Parameters
         ----------
         y
-            tensor to be multiplied with hermitian/adjoint 'matrix' :math:`A`
+            Tensor to be multiplied with hermitian/adjoint matrix :math:`A`
 
         Returns
         -------
