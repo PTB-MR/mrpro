@@ -6,10 +6,10 @@ from mrpro.operators.Functional import ElementaryProximableFunctional
 
 
 class L1NormViewAsReal(ElementaryProximableFunctional):
-    r"""Functional class for the L1 Norm, where C is identified with R^2.
+    r"""Functional class for the L1 Norm, where C is identified with :math:`R^2`.
 
     This implements the functional given by
-    :math:`f: C^N -> [0, \infty), x ->  \|W_r * Re(x-b) )\|_1 + \|( W_i * Im(x-b) )\|_1`,
+    :math:`f: C^N \rightarrow [0, \infty), x \rightarrow \|W_r * \mathrm{Re}(x-b))\|_1 +\|( W_i *\mathrm{Im}(x-b))\|_1`,
     where :math:`W_r` and :math:`W_i` are a either scalars or tensors and `*` denotes element-wise multiplication.
 
     If the parameter `weight` is real-valued, :math:`W_r` and :math:`W_i` are both set to `weight`.
@@ -26,11 +26,11 @@ class L1NormViewAsReal(ElementaryProximableFunctional):
     ) -> tuple[torch.Tensor]:
         r"""Compute the L1 norm, viewing complex numbers as R^2.
 
-        Calculates :math:`\|W_r * Re(x-b)\|_1 + \|W_i * Im(x-b)\|_1`.
-        If `weight` is real, :math:`W_r = W_i = weight`.
-        If `weight` is complex, :math:`W_r = Re(weight)` and :math:`W_i = Im(weight)`.
+        Calculates :math:`\|W_r * \mathrm{Re}(x-b)\|_1 + \|W_i * \mathrm{Im}(x-b)\|_1`.
+        If `weight` is real, :math:`W_r = W_i = \mathrm{weight}`.
+        If `weight` is complex, :math:`W_r = \mathrm{Re}(\mathrm{weight})` and :math:`W_i=\mathrm{Im}(\mathrm{weight})`.
         `b` is `target`. The norm is computed along `dim`.
-        If `divide_by_n` is true, the result is averaged; otherwise, summed.
+        If `divide_by_n` is `True`, the result is averaged; otherwise, summed.
 
         Parameters
         ----------

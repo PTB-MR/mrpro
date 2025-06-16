@@ -116,14 +116,14 @@ def rf(state: torch.Tensor, matrix: torch.Tensor) -> torch.Tensor:
     Parameters
     ----------
     state
-        EPG configuration states. Shape `..., 3 (f_plus, f_minus, z), n`
+        EPG configuration states. Shape `(..., 3 (f_plus, f_minus, z), n)`
     matrix
         Rotation matrix describing the mixing of the EPG configuration states due to an RF pulse.
-        Shape `..., 3, 3`
+        Shape `(..., 3, 3)`
 
     Returns
     -------
-        EPG configuration states after RF pulse. Shape `..., 3 (f_plus, f_minus, z), n`
+        EPG configuration states after RF pulse. Shape `(..., 3 (f_plus, f_minus, z), n)`
     """
     return matrix.to(state) @ state
 
@@ -135,12 +135,12 @@ def gradient_dephasing(state: torch.Tensor) -> torch.Tensor:
     Parameters
     ----------
     state
-        EPG configuration states. Shape `..., 3 (f_plus, f_minus, z), n`
+        EPG configuration states. Shape `(..., 3 (f_plus, f_minus, z), n)`
         with n being the number of configuration states > 1
 
     Returns
     -------
-        EPG configuration states after gradient. Shape `..., 3 (f_plus, f_minus, z), n`
+        EPG configuration states after gradient. Shape `(..., 3 (f_plus, f_minus, z), n)`
     """
     zero = state.new_zeros(state.shape[:-2] + (1,))
     f_plus = torch.cat((state[..., 1, 1:2].conj(), state[..., 0, :-1]), dim=-1)
@@ -179,7 +179,7 @@ def relax(states: torch.Tensor, relaxation_matrix: torch.Tensor, t1_recovery: bo
     Parameters
     ----------
     states
-        EPG configuration states. Shape `..., 3 (f_plus, f_minus, z), n`
+        EPG configuration states. Shape `(..., 3 (f_plus, f_minus, z), n)`
     relaxation_matrix
         matrix describing EPG relaxation
     t1_recovery
@@ -188,7 +188,7 @@ def relax(states: torch.Tensor, relaxation_matrix: torch.Tensor, t1_recovery: bo
     Returns
     -------
         EPG configuration states after relaxation and recovery.
-        Shape `..., 3 (f_plus, f_minus, z), n`
+        Shape `(..., 3 (f_plus, f_minus, z), n)`
     """
     relaxation_matrix = relaxation_matrix.to(states)
     states = relaxation_matrix[..., None] * states
@@ -221,7 +221,7 @@ def initial_state(
 
     Returns
     -------
-        Initial EPG state tensor. Shape `*shape, 3 (f_plus, f_minus, z), n`
+        Initial EPG state tensor. Shape `(*shape, 3 (f_plus, f_minus, z), n)`
     """
     if n_states < 2:
         raise ValueError('Number of states should be at least 2.')

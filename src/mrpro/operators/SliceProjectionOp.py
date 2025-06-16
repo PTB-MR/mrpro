@@ -115,10 +115,11 @@ class SliceProjectionOp(LinearOperator):
         Different settings for different volume batches are NOT supported, consider creating multiple
         operators if required.
 
-        .. note::
-            All parameters must be on cpu when creating the operator. Preparation of the operator on
-            the GPU would be slower than transferring the parameters to the CPU, creation, then transferring
-            the operator back to the GPU.
+        Note
+        ----
+        All parameters must be on cpu when creating the operator. Preparation of the operator on
+        the GPU would be slower than transferring the parameters to the CPU, creation, then transferring
+        the operator back to the GPU.
 
 
         Parameters
@@ -171,7 +172,7 @@ class SliceProjectionOp(LinearOperator):
         if not np.vectorize(_at_least_width_1)(slice_profile_array).all():
             raise ValueError(
                 'The slice profile must have a width of at least 1 voxel,'
-                ' i.e. the profile should be greater then 1e-6 in (-0.5,0.5)'
+                ' i.e. the profile should be greater then 1e-6 in (-0.5, 0.5)'
             )
 
         slice_shift_tensor = cast(torch.Tensor, torch.atleast_1d(torch.as_tensor(slice_shift)))
@@ -227,15 +228,15 @@ class SliceProjectionOp(LinearOperator):
         Parameters
         ----------
         x
-            Input 3D Volume tensor. Expected shape `..., Z, Y, X`,
+            Input 3D Volume tensor. Expected shape `(..., Z, Y, X)`,
             where Z, Y, X match the `input_shape` provided during initialization.
-            `...` represents optional batch dimensions.
+            `(...)` represents optional batch dimensions.
 
         Returns
         -------
             The 2D slice. The shape of the slice will be
-            `..., 1, max_dim, max_dim` where `max_dim` is the maximum of
-            the input Z, Y, X dimensions, and `...` matches input batch dimensions.
+            `(..., 1, max_dim, max_dim)` where `max_dim` is the maximum of
+            the input Z, Y, X dimensions, and `(...)` matches input batch dimensions.
         """
         return super().__call__(x)
 
@@ -274,13 +275,13 @@ class SliceProjectionOp(LinearOperator):
         Parameters
         ----------
         x
-            Input 2D Slice tensor. Expected shape is `..., 1, max_dim, max_dim`,
+            Input 2D Slice tensor. Expected shape is `(..., 1, max_dim, max_dim)`,
             where `max_dim` corresponds to the output slice dimensions from the
-            forward pass. `...` represents optional batch dimensions.
+            forward pass. `(...)` represents optional batch dimensions.
 
         Returns
         -------
-            The 3D Volume. The shape will be `..., Z, Y, X`,
+            The 3D Volume. The shape will be `(..., Z, Y, X)`,
             matching the original `input_shape` of the forward operation.
         """
         match (self.matrix, self.matrix_adjoint):
@@ -376,8 +377,8 @@ class SliceProjectionOp(LinearOperator):
         slice_function
             Function that describes the slice profile. See `mrpro.utils.slice_profiles` for examples.
         rotation_center
-            Center of rotation, if None the center of the volume is used,
-            i.e. for 4 pixels 0 1 2 3 it is between 1 and 2
+            Center of rotation, if `None` the center of the volume is used,
+            i.e. for 4 pixels `[0 1 2 3]` it is between 1 and 2
 
         Returns
         -------

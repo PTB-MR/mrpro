@@ -22,8 +22,8 @@ class ZeroOp(LinearOperator):
         Parameters
         ----------
         keep_shape
-            If True, the shape of the input is kept.
-            If False, the output is, regardless of the input shape, an integer scalar 0,
+            If `True`, the shape of the input is kept.
+            If `False`, the output is, regardless of the input shape, an integer scalar 0,
             which can broadcast to the input shape and dtype.
         """
         self.keep_shape = keep_shape
@@ -44,7 +44,7 @@ class ZeroOp(LinearOperator):
         Returns
         -------
             A tensor of zeros. This will be `torch.zeros_like(x)`
-            if `keep_shape` is True, or `torch.tensor(0)` if `keep_shape` is False.
+            if `keep_shape` is `True`, or `torch.tensor(0)` if `keep_shape` is `False`.
 
         .. note::
             Prefer calling the instance of the ZeroOp operator as ``operator(x)`` over
@@ -78,7 +78,7 @@ class ZeroOp(LinearOperator):
         Returns
         -------
             A tensor of zeros. This will be `torch.zeros_like(x)`
-            if `keep_shape` is True, or `torch.tensor(0)` if `keep_shape` is False.
+            if `keep_shape` is `True`, or `torch.tensor(0)` if `keep_shape` is `False`.
 
         """
         if self.keep_shape:

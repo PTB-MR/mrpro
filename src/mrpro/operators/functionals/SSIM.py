@@ -29,14 +29,14 @@ def ssim3d(
     target
         Ground truth tensor, shape `(... z, y, x)` or broadcastable with prediction.
     prediction
-        Predicted tensor, same shape as target
+        Predicted tensor, same shape as target.
     data_range
-        Value range if the data. If None, the max-to-min per volume of the target will be used.
+        Value range if the data. If `None`, the max-to-min per volume of the target will be used.
     weight
         Weight (or mask) tensor, same shape as target.
-        Only windows with all weight values > 0 (or True) are considered.
+        Only windows with all weight values > 0 (or `True`) are considered.
         Windows will be weighted by the average value of the weight in the window.
-        If None, all windows are considered without weighting.
+        If `None`, all windows are considered without weighting.
     k1
         Constant for SSIM computation. Commonly 0.01.
     k2
@@ -242,8 +242,9 @@ class SSIM(Functional):
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
         """Apply forward of SSIM.
 
-        .. note::
-            Prefer calling the instance of the SSIM as ``operator(x)`` over directly calling this method.
+        Note
+        ----
+        Prefer calling the instance of the SSIM as ``operator(x)`` over directly calling this method.
         """
         ssim = ssim3d(
             self.target.real,

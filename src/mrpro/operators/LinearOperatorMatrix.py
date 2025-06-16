@@ -184,7 +184,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
     def __mul__(self, other: torch.Tensor | Sequence[torch.Tensor | complex] | complex) -> Self:
         """LinearOperatorMatrix*Tensor multiplication.
 
-        Example: ([A,B]*c)(x) = [A*c, B*c](x) = A(c*x) + B(c*x)
+        Example: :math:`([A,B]c)(x) = [Ac, Bc](x) = A(cx) + B(cx)`
         """
         if isinstance(other, torch.Tensor | complex | float | int):
             other_: Sequence[torch.Tensor | complex] = (other,) * self.shape[1]
@@ -200,7 +200,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
     def __rmul__(self, other: torch.Tensor | Sequence[torch.Tensor] | complex) -> Self:
         """Tensor*LinearOperatorMatrix multiplication.
 
-        Example: (c*[A,B])(x) = [c*A, c*B](x) = c*A(x) + c*B(x)
+        Example: (c[A,B])(x) = [cA, cB](x) = cA(x) + cB(x)
         """
         if isinstance(other, torch.Tensor | complex | float | int):
             other_: Sequence[torch.Tensor | complex] = (other,) * self.shape[0]
@@ -287,9 +287,9 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
         absolute_tolerance: float = 1e-5,
         callback: Callable[[torch.Tensor], None] | None = None,
     ) -> torch.Tensor:
-        """Upper bound of operator norm of the Matrix.
+        r"""Upper bound of operator norm of the Matrix.
 
-        Uses the bounds :math:`||[A, B]^T|||<=sqrt(||A||^2 + ||B||^2)` and :math:`||[A, B]|||<=max(||A||,||B||)`
+        Uses the bounds :math:`||[A, B]^T||\leq\sqrt{(||A||^2 + ||B||^2)}` and :math:`||[A, B]||\leq\max(||A||,||B||)`
         to estimate the operator norm of the matrix.
         First,  operator_norm is called on each element of the matrix.
         Next, the norm is estimated for each column using the first bound.
