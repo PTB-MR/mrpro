@@ -847,6 +847,15 @@ class Dataclass:
                 return False
         return True
 
+    def __len__(self) -> int:
+        """Return the number of fields in the dataclass along the first dimension."""
+        return self.shape[0]
+
+    def __iter__(self) -> Iterator[Any]:
+        """Iterate over the first dimension of the dataclass."""
+        for i in range(len(self)):
+            yield self[i]
+
 
 class FakeDataclassBackend(einops._backends.AbstractBackend):
     """Einops backend for Dataclass: Will only raise an error if used."""
