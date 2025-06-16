@@ -180,7 +180,7 @@ class CartesianSamplingOp(LinearOperator):
         Parameters
         ----------
         y
-            K-space data in acquired shape.
+            k-space data in acquired shape.
 
         Returns
         -------
@@ -263,7 +263,7 @@ class CartesianSamplingOp(LinearOperator):
             enc_matrix_warning = ''
         else:
             enc_matrix_warning = (
-                '\nK-space points lie outside of the encoding_matrix and will be ignored.'
+                '\nk-space points lie outside of the encoding_matrix and will be ignored.'
                 '\nIncrease the encoding_matrix to include these points.'
             )
 
@@ -279,7 +279,7 @@ class CartesianSamplingOp(LinearOperator):
 class CartesianMaskingOp(LinearOperator):
     """Cartesian Masking Operator.
 
-    The Cartesian Masking Operator is the composition CartesianSamplingOp.H @ CartesianSamplingOp,
+    The Cartesian Masking Operator is the composition `CartesianSamplingOp.H @ CartesianSamplingOp`,
     which sets to zero all non sampled Cartesian k-space points.
     """
 
@@ -300,7 +300,7 @@ class CartesianMaskingOp(LinearOperator):
 
         This operator applies a mask to the input tensor, effectively zeroing out
         points that were not sampled according to the Cartesian trajectory.
-        It represents CartesianSamplingOp.H @ CartesianSamplingOp.
+        It represents `CartesianSamplingOp.H @ CartesianSamplingOp`.
 
         Parameters
         ----------

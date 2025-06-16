@@ -46,16 +46,16 @@ class ConstraintsOp(EndomorphOperator):
         If an input tensor is bounded from below OR above, a softplus transformation is applied.
 
         If an input is complex valued, the bounds are to the real and imaginary parts separately,
-        i.e., for bounds (a,b), the complex number is constrained to a rectangle in the complex plane
-        with corners a+ai, a+bi, b+ai, b+bi.
+        i.e., for bounds :math:`(a, b)`, the complex number is constrained to a rectangle in the complex plane
+        with corners :math:`(a+ai, a+bi, b+ai, b+bi)`.
 
         Parameters
         ----------
         bounds
-            Sequence of (lower_bound, upper_bound) values. If a bound is None, the value is not constrained.
-            If a lower bound is -inf, the value is not constrained from below. If an upper bound is inf,
+            Sequence of `(lower_bound, upper_bound)` values. If a bound is `None`, the value is not constrained.
+            If a lower bound is `-inf`, the value is not constrained from below. If an upper bound is `+inf`,
             the value is not constrained from above.
-            If the bounds are set to (None, None) or (-inf, inf), the value is not constrained at all.
+            If the bounds are set to `(None, None)` or `(-inf, +inf)`, the value is not constrained at all.
         beta_sigmoid
             beta parameter for the sigmoid transformation (used if an input has two bounds).
             A higher value leads to a steeper sigmoid.

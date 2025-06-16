@@ -25,18 +25,18 @@ class EinsumOp(LinearOperator):
     - matrix-vector multiplication of :math:`A` and the batched vector :math:`x = [x1, ..., xN]` consisting
       of :math:`N` vectors :math:`x1, x2, ..., xN`. Then, the operation defined by
       :math:`A @ x := \mathrm{diag}(A, A, ..., A) * [x1, x2, ..., xN]^T` = :math:`[A*x1, A*x2, ..., A*xN]^T`
-      can be implemented by the einsum rule ``"i j, ... j -> ... i"``.
+      can be implemented by the einsum rule ``'i j, ... j -> ... i'``.
 
     - matrix-vector multiplication of a matrix :math:`A` consisting of :math:`N` different matrices
       :math:`A1, A2, ... AN` with one vector :math:`x`. Then, the operation defined by
       :math:`A @ x: = \mathrm{diag}(A1, A2,..., AN) * [x, x, ..., x]^T`
-      can be implemented by the einsum rule ``"... i j, j -> ... i"``.
+      can be implemented by the einsum rule ``'... i j, j -> ... i'``.
 
     - matrix-vector multiplication of a matrix :math:`A` consisting of :math:`N` different matrices
       :math:`A1, A2, ... AN` with a vector :math:`x = [x1,...,xN]` consisting
       of :math:`N` vectors :math:`x1, x2, ..., xN`. Then, the operation defined by
       :math:`A @ x: = \mathrm{diag}(A1, A2,..., AN) * [x1, x2, ..., xN]^T`
-      can be implemented by the einsum rule ``"... i j, ... j -> ... i"``.
+      can be implemented by the einsum rule ``'... i j, ... j -> ... i'``.
       This is the default behavior of the operator.
     """
 
