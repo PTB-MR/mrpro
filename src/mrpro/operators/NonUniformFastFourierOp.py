@@ -28,16 +28,14 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
     ) -> None:
         """Initialize Non-Uniform Fast Fourier Operator.
 
-        ```{note}
-        Consider using `~mrpro.operators.FourierOp` instead of this operator. It automatically detects if a non-uniform
-        or regular fast Fourier transformation is required and can also be constructed automatically from
-        a `mrpro.data.KData` object.
-        ````
+        .. note::
+            Consider using `~mrpro.operators.FourierOp` instead of this operator. It automatically detects if a
+            non-uniform or regular fast Fourier transformation is required and can also be constructed automatically
+            from a `mrpro.data.KData` object.
 
-        ```{note}
-        The NUFFT is scaled such that it matches 'orthonormal' FFT scaling for cartesian trajectories.
-        This is different from other packages, which apply scaling based on the size of the oversampled grid.
-        ````
+        .. note::
+            The NUFFT is scaled such that it matches 'orthonormal' FFT scaling for cartesian trajectories.
+            This is different from other packages, which apply scaling based on the size of the oversampled grid.
 
         Parameters
         ----------
@@ -197,12 +195,12 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         Parameters
         ----------
         x
-            Coil image data, typically with shape `(... coils z y x)`.
+            Coil image data, typically with shape `(..., coils, z, y, x)`.
 
         Returns
         -------
             Coil k-space data at non-uniform locations,
-            with shape `(... coils k2 k1 k0)`.
+            with shape `(..., coils, k2, k1, k0)`.
         """
         return super().__call__(x)
 
@@ -246,12 +244,12 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         ----------
         x
             Coil k-space data at non-uniform locations,
-            with shape `(... coils k2 k1 k0)`.
+            with shape `(..., coils, k2, k1, k0)`.
 
         Returns
         -------
             Coil image data on a Cartesian grid,
-            with shape `(... coils z y x)`.
+            with shape `(..., coils, z, y, x)`.
         """
         if len(self._direction_zyx):
             if x.device.type == 'cpu' and self.oversampling not in (0.0, 1.25, 2.0):

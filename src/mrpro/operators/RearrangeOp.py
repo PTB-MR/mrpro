@@ -22,12 +22,12 @@ class RearrangeOp(LinearOperator):
         pattern
             Pattern describing the forward of the operator.
             Also see `einops.rearrange` for more information.
-            Example: "... h w -> ... (w h)"
+            Example: `(... h w) -> (... (w h))`
         additional_info
             Additional information passed to the rearrange function,
             describing the size of certain dimensions.
             Might be required for the adjoint rule.
-            Example: {'h': 2, 'w': 2}
+            Example: `{'h': 2, 'w': 2}`
         """
         super().__init__()
         if (match := re.match('(.+)->(.+)', pattern)) is None:

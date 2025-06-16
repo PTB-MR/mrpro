@@ -9,7 +9,7 @@ class L1Norm(ElementaryProximableFunctional):
     r"""Functional class for the L1 Norm.
 
     This implements the functional given by
-    :math:`f: C^N -> [0, \infty), x ->  \| W (x-b)\|_1`,
+    :math:`f: C^N \rightarrow [0, \infty), x \rightarrow  \| W (x-b)\|_1`,
     where W is a either a scalar or tensor that corresponds to a (block-) diagonal operator
     that is applied to the input.
 
@@ -24,7 +24,7 @@ class L1Norm(ElementaryProximableFunctional):
     ) -> tuple[torch.Tensor]:
         """Compute the L1 norm of the input tensor.
 
-        Calculates `|| W * (x - b) ||_1`, where `W` is `weight` and `b` is `target`.
+        Calculates :math:`|| W * (x - b) ||_1`, where :math:`W` is `weight` and :math:`b` is `target`.
         The norm is computed along dimensions specified by `dim`.
         If `divide_by_n` is true, the result is averaged over these dimensions;
         otherwise, it's summed.

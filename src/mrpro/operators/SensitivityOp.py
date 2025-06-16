@@ -37,11 +37,11 @@ class SensitivityOp(LinearOperator):
         Parameters
         ----------
         img
-            Input image data, typically with shape `... 1 z y x`.
+            Input image data, typically with shape `(... 1 z y x)`.
 
         Returns
         -------
-            Multi-coil image data with shape `... coils z y x`.
+            Multi-coil image data with shape `(... coils z y x)`.
         """
         return super().__call__(img)
 
@@ -64,10 +64,10 @@ class SensitivityOp(LinearOperator):
         Parameters
         ----------
         img
-            Multi-coil image data, typically with shape `... coils z y x`.
+            Multi-coil image data, typically with shape `(... coils z y x)`.
 
         Returns
         -------
-            Combined image data, with shape `... 1 z y x`.
+            Combined image data, with shape `(... 1 z y x)`.
         """
         return ((self.csm_tensor.conj() * img).sum(-4, keepdim=True),)
