@@ -33,12 +33,12 @@ class PEX(SignalModel[torch.Tensor, torch.Tensor]):
             number of transmit channels.
         """
         super().__init__()
-        voltages = torch.as_tensor(voltages) * n_tx**0.5
-        prep_delay = torch.as_tensor(prep_delay)
-        pulse_duration = torch.as_tensor(pulse_duration)
-        self.voltages = torch.nn.Parameter(voltages, requires_grad=voltages.requires_grad)
-        self.prep_delay = torch.nn.Parameter(prep_delay, requires_grad=prep_delay.requires_grad)
-        self.pulse_duration = torch.nn.Parameter(pulse_duration, requires_grad=pulse_duration.requires_grad)
+        voltages_ = torch.as_tensor(voltages) * n_tx**0.5
+        prep_delay_ = torch.as_tensor(prep_delay)
+        pulse_duration_ = torch.as_tensor(pulse_duration)
+        self.voltages = torch.nn.Parameter(voltages_, requires_grad=voltages_.requires_grad)
+        self.prep_delay = torch.nn.Parameter(prep_delay_, requires_grad=prep_delay_.requires_grad)
+        self.pulse_duration = torch.nn.Parameter(pulse_duration_, requires_grad=pulse_duration_.requires_grad)
 
     def forward(self, a: torch.tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply PEX signal model.
