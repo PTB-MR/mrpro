@@ -13,7 +13,7 @@ from mrpro.data.Dataclass import Dataclass
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.reshape import unsqueeze_at, unsqueeze_right
-from mrpro.utils.unit_conversion import micrometer_to_m, mm_to_m, m_to_mm, mm_to_m
+from mrpro.utils.unit_conversion import m_to_mm, micrometer_to_m, mm_to_m
 
 _convert_time_stamp_type: TypeAlias = Callable[
     [
