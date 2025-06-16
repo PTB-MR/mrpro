@@ -57,12 +57,25 @@ class RandomGenerator:
             float32_tuple, float64_tuple, complex64_tuple, complex128_tuple
     """
 
-    def __init__(self, seed: int):
-        """Initialize the random generator with a fixed seed."""
-        self.generator = torch.Generator().manual_seed(seed)
+    def __init__(self, seed: int | None = None):
+        """Initialize the random generator with a fixed seed.
+
+        Parameters
+        ----------
+        seed
+            Seed for the random generator. If `None`, default torch seeding is used.
+        """
+        self.generator = torch.Generator()
+        if seed is not None:
+            self.generator.manual_seed(seed)
 
     def _randint(
-        self, size: Sequence[int] | int, low: int, high: int, dtype: torch.dtype = torch.int64
+        self,
+        size: Sequence[int] | int,
+        low: int,
+        high: int,
+        dtype: torch.dtype = torch.int64,
+        device: torch.device | None = None,
     ) -> torch.Tensor:
         """Generate uniform random integers in [low, high).
 
@@ -76,6 +89,8 @@ class RandomGenerator:
             Upper bound (exclusive).
         dtype
             Data type of the output tensor.
+        device
+            Device of the output tensor. If `None`, the tensor is created on the default device.
 
         Returns
         -------
@@ -83,7 +98,7 @@ class RandomGenerator:
         """
         check_bounds(low, high, dtype)
         size_ = (size,) if isinstance(size, int) else size
-        return torch.randint(low, high, size_, generator=self.generator, dtype=dtype)
+        return torch.randint(low, high, size_, generator=self.generator, dtype=dtype, device=device)
 
     def _rand(
         self,
@@ -91,6 +106,7 @@ class RandomGenerator:
         low: float | torch.Tensor,
         high: float | torch.Tensor,
         dtype: torch.dtype = torch.float32,
+        device: torch.device | None = None,
     ) -> torch.Tensor:
         """Generate uniform random floats in [low, high).
 
@@ -104,13 +120,15 @@ class RandomGenerator:
             Upper bound.
         dtype
             Data type of the output tensor.
+        device
+            Device of the output tensor. If `None`, the tensor is created on the default device.
 
         Returns
         -------
             Tensor of random floats.
         """
         check_bounds(low, high, dtype)
-        return (torch.rand(size, generator=self.generator, dtype=dtype) * (high - low)) + low
+        return (torch.rand(size, generator=self.generator, dtype=dtype, device=device) * (high - low)) + low
 
     def float32_tensor(self, size: Sequence[int] | int = (1,), low: float = 0.0, high: float = 1.0) -> torch.Tensor:
         """Generate a float32 tensor with uniform distribution in [low, high).
@@ -749,7 +767,7 @@ class RandomGenerator:
         return ''.join([chr(self.uint8(32, 127)) for _ in range(size)])
 
     def rand_like(self, x: torch.Tensor, low: float = 0.0, high: float = 1.0) -> torch.Tensor:
-        """Generate a tensor with the same shape and dtype as `x`, filled with uniform random numbers.
+        """Generate a tensor with the same shape, device, and dtype as `x`, filled with uniform random numbers.
 
         Parameters
         ----------
@@ -764,10 +782,28 @@ class RandomGenerator:
         -------
             Random tensor with the same shape and dtype as `x`.
         """
-        return self.rand_tensor(x.shape, x.dtype, low=low, high=high)
+        return self.rand_tensor(x.shape, x.dtype, low=low, high=high).to(x.device)
+
+    def randn_like(self, x: torch.Tensor) -> torch.Tensor:
+        """Generate a tensor with the same shape, device, and dtype as `x`, filled with standard normal random numbers.
+
+        Parameters
+        ----------
+        x
+            Reference tensor.
+
+        Returns
+        -------
+            Random tensor with the same shape and dtype as `x`.
+        """
+        return self.randn_tensor(x.shape, x.dtype).to(x.device)
 
     def rand_tensor(
-        self, size: Sequence[int], dtype: torch.dtype, low: float | int = 0, high: int | float = 1
+        self,
+        size: Sequence[int],
+        dtype: torch.dtype,
+        low: float | int = 0,
+        high: int | float = 1,
     ) -> torch.Tensor:
         """Generate a tensor of given shape and dtype with uniform random numbers in [low, high).
 

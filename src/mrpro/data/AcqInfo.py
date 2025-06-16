@@ -13,7 +13,7 @@ from mrpro.data.Dataclass import Dataclass
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.reshape import unsqueeze_at, unsqueeze_right
-from mrpro.utils.unit_conversion import mm_to_m
+from mrpro.utils.unit_conversion import micrometer_to_m, mm_to_m
 
 _convert_time_stamp_type: TypeAlias = Callable[
     [
@@ -245,9 +245,9 @@ class AcqInfo(Dataclass):
             # we use int32 for uint16 and int64 for uint32 to fit largest values.
             match data.dtype:
                 case np.uint16:
-                    data = data.astype(np.int32)
+                    data = data.astype(np.int32)  # type: ignore[unreachable]
                 case np.uint32 | np.uint64:
-                    data = data.astype(np.int64)
+                    data = data.astype(np.int64)  # type: ignore[unreachable]
             # Remove any unnecessary dimensions
             return torch.tensor(np.squeeze(data))
 
@@ -315,7 +315,7 @@ class AcqInfo(Dataclass):
                 spatialdimension_5d(headers['phase_dir']),
                 spatialdimension_5d(headers['read_dir']),
             ),
-            patient_table_position=spatialdimension_5d(headers['patient_table_position']).apply_(mm_to_m),
+            patient_table_position=spatialdimension_5d(headers['patient_table_position']).apply_(micrometer_to_m),
             position=spatialdimension_5d(headers['position']).apply_(mm_to_m),
             sample_time_us=tensor_5d(headers['sample_time_us']),
             user=user,
