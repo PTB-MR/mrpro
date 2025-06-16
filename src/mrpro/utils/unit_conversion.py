@@ -115,7 +115,7 @@ def volt_to_sqrt_kwatt(volt: T) -> T:
 def sqrt_kwatt_to_volt(sqrt_kwatt: T) -> T:
     """Convert kilo Watt to Volt for 50 Ohm."""
     if isinstance(sqrt_kwatt, list):
-        return [sqrt_kwatt_to_volt(x) for x in kwatt]
+        return [sqrt_kwatt_to_volt(x) for x in sqrt_kwatt]
     if isinstance(sqrt_kwatt, tuple):
         return tuple([sqrt_kwatt_to_volt(x) for x in sqrt_kwatt])
     return sqrt_kwatt * 50e3 ** (0.5)
