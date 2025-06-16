@@ -40,7 +40,7 @@ class PEX(SignalModel[torch.Tensor, torch.Tensor]):
         self.prep_delay = torch.nn.Parameter(prep_delay_, requires_grad=prep_delay_.requires_grad)
         self.pulse_duration = torch.nn.Parameter(pulse_duration_, requires_grad=pulse_duration_.requires_grad)
 
-    def forward(self, a: torch.tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
+    def __call__(self, a: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply PEX signal model.
 
         Parameters
@@ -51,10 +51,18 @@ class PEX(SignalModel[torch.Tensor, torch.Tensor]):
         t1
             Longitudinal relaxation time.
 
-
         Returns
         -------
             signal with shape `(voltage, *other, coils, z, y, x)`
+        """
+        return super().__call__(a, t1)
+
+    def forward(self, a: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply PEX signal model.
+
+        .. note::
+            Prefer calling the instance of the PEX operator as ``operator(a, t1)`` over
+            directly calling this method.
         """
         ndim = a.ndim
         voltages = unsqueeze_right(self.voltages, ndim - self.voltages.ndim + 1)  # +1 are voltages
