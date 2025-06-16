@@ -1,9 +1,11 @@
 """MR raw data / k-space data class."""
 
 import copy
+import dataclasses
 import datetime
 import warnings
 from collections.abc import Callable, Mapping, Sequence
+from importlib.metadata import version
 from types import EllipsisType
 from typing import Literal, cast
 
@@ -15,9 +17,16 @@ from einops import rearrange
 from typing_extensions import Self, TypeVar
 
 from mrpro.data.acq_filters import has_n_coils, is_image_acquisition
-from mrpro.data.AcqInfo import AcqInfo, convert_time_stamp_osi2, convert_time_stamp_siemens
+from mrpro.data.AcqInfo import (
+    AcqInfo,
+    convert_time_stamp_from_osi2,
+    convert_time_stamp_from_siemens,
+    convert_time_stamp_to_osi2,
+    convert_time_stamp_to_siemens,
+    write_acqinfo_to_ismrmrd_acquisition_,
+)
 from mrpro.data.Dataclass import Dataclass
-from mrpro.data.EncodingLimits import EncodingLimits
+from mrpro.data.EncodingLimits import EncodingLimits, Limits
 from mrpro.data.enums import AcqFlags
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KTrajectory import KTrajectory
@@ -75,7 +84,7 @@ class KData(Dataclass):
     """K-space data. Shape `(*other coils k2 k1 k0)`"""
 
     traj: KTrajectory
-    """K-space trajectory along kz, ky and kx. Shape `(*other k2 k1 k0)`"""
+    """K-space trajectory along kz, ky and kx. Shape `(*other 1 k2 k1 k0)`"""
 
     @classmethod
     def from_file(
@@ -143,19 +152,19 @@ class KData(Dataclass):
         ):
             match ismrmrd_header.acquisitionSystemInformation.systemVendor.lower():
                 case 'siemens':
-                    convert_time_stamp = convert_time_stamp_siemens  # 2.5ms time steps
+                    convert_time_stamp = convert_time_stamp_from_siemens  # 2.5ms time steps
                 case 'osi2':
-                    convert_time_stamp = convert_time_stamp_osi2  # 1ms time steps
+                    convert_time_stamp = convert_time_stamp_from_osi2  # 1ms time steps
                 case str(vendor):
                     warnings.warn(
                         f'Unknown vendor {vendor}. '
                         'Assuming Siemens time stamp format. If this is wrong, consider opening an Issue.',
                         stacklevel=1,
                     )
-                    convert_time_stamp = convert_time_stamp_siemens  # 2.5ms time steps
+                    convert_time_stamp = convert_time_stamp_from_siemens  # 2.5ms time steps
         else:
             warnings.warn('No vendor information found. Assuming Siemens time stamp format.', stacklevel=1)
-            convert_time_stamp = convert_time_stamp_siemens
+            convert_time_stamp = convert_time_stamp_from_siemens
 
         acq_info, (k0_center, n_k0_tensor, discard_pre, discard_post) = AcqInfo.from_ismrmrd_acquisitions(
             acquisitions,
@@ -332,6 +341,61 @@ class KData(Dataclass):
         kz, ky, kx = (sort(t) for t in (self.traj.kz, self.traj.ky, self.traj.kx))
         traj = KTrajectory(kz, ky, kx, self.traj.grid_detection_tolerance, self.traj.repeat_detection_tolerance)
         return type(self)(header=header._reduce_repeats_(), data=data, traj=traj._reduce_repeats_())
+
+    def to_file(self, filename: FileOrPath) -> None:
+        """Save KData as ISMRMRD dataset to file.
+
+        Parameters
+        ----------
+        filename
+            path to the ISMRMRD file
+        """
+        ismrmrd_version = int(version('ismrmrd').split('.')[0])
+        header = self.header.to_ismrmrd()
+        header.acquisitionSystemInformation.receiverChannels = self.data.shape[-4]
+
+        # Calculate the encoding limits as min/max of the acquisition indices
+        def limits_from_acq_idx(acq_idx_tensor: torch.Tensor) -> Limits:
+            return Limits(int(acq_idx_tensor.min().item()), int(acq_idx_tensor.max().item()), 0)
+
+        encoding_limits = EncodingLimits(
+            **{
+                field.name: limits_from_acq_idx(getattr(self.header.acq_info.idx, field.name))
+                for field in dataclasses.fields(self.header.acq_info.idx)
+            }
+        )
+
+        # For the k-space center of k1 and k2 we can only make an educated guess on where it is:
+        # k-space point closest to 0
+        center_idx = self.traj.as_tensor(-1).abs().sum(dim=-1).argmin()
+        encoding_limits.k1.center = int(self.header.acq_info.idx.k1.broadcast_to(self.traj.shape).flatten()[center_idx])
+        encoding_limits.k2.center = int(self.header.acq_info.idx.k2.broadcast_to(self.traj.shape).flatten()[center_idx])
+        header.encoding[0].encodingLimits = encoding_limits.to_ismrmrd_encoding_limits_type()
+
+        # Vendors use different units for time stamps
+        if self.header.vendor.lower() == 'osi2':
+            convert_time_stamp = convert_time_stamp_to_osi2  # 1ms time steps
+        else:
+            convert_time_stamp = convert_time_stamp_to_siemens  # 2.5ms time steps
+
+        with ismrmrd.Dataset(filename, 'dataset', create_if_needed=True) as dataset:
+            dataset.write_xml_header(header.toXML('utf-8'))
+
+            flattened = self.rearrange('... coils k2 k1 k0 -> (... k2 k1) coils 1 1 k0')
+            for scan_counter, acq in enumerate(flattened):
+                ismrmrd_acq = ismrmrd.Acquisition()
+                ismrmrd_acq.resize(
+                    number_of_samples=acq.shape[-1], active_channels=acq.shape[-4], trajectory_dimensions=3
+                )
+                ismrmrd_acq.available_channels = acq.shape[-4]
+                ismrmrd_acq.version = ismrmrd_version
+                ismrmrd_acq.scan_counter = 0
+                write_acqinfo_to_ismrmrd_acquisition_(acq.header.acq_info, ismrmrd_acq, convert_time_stamp)
+                ismrmrd_acq.traj[:] = acq.traj.as_tensor(-1).squeeze().cpu().numpy()[:, ::-1]  # zyx -> xyz
+                ismrmrd_acq.center_sample = np.argmin(np.abs(ismrmrd_acq.traj[:, 0]))
+                ismrmrd_acq.data[:] = acq.data.squeeze().cpu().numpy()
+                ismrmrd_acq.scan_counter = scan_counter
+                dataset.append_acquisition(ismrmrd_acq)
 
     def __repr__(self):
         """Representation method for KData class."""
