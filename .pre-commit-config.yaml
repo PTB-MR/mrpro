@@ -89,7 +89,7 @@ repos:
         always_run: true
         args: [src, tests, examples]
         additional_dependencies:
-          - numpy
+          - numpy>=2.3
           - torch>=2.6.0
           - pytorch-finufft
           - types-requests
