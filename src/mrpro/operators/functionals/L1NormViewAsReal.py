@@ -39,7 +39,7 @@ class L1NormViewAsReal(ElementaryProximableFunctional):
 
         Returns
         -------
-            The L1 norm. If `keepdim` is true, the dimensions `dim` are retained
+            The L1 norm. If `keepdim` is `True`, the dimensions `dim` are retained
             with size 1; otherwise, they are reduced.
         """
         return super().__call__(x)
