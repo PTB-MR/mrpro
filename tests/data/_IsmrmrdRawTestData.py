@@ -247,22 +247,25 @@ class IsmrmrdRawTestData:
         acq.version = 1
         acq.available_channels = self.n_coils
         acq.center_sample = round(n_freq_encoding / 2)
-        acq.read_dir[0] = 1.0
-        acq.phase_dir[1] = 1.0
-        acq.slice_dir[2] = 1.0
+        acq.read_dir = (-0.33, 0.38, -0.86)
+        acq.phase_dir = (0.75, 0.66, 0.0)
+        acq.slice_dir = (-0.57, 0.65, 0.5)
 
         scan_counter = 0
+        time_stamp = 10000
 
         # Write out a few noise scans
         for _ in range(self.n_noise_samples):
             noise = self.noise_level * rng.randn_tensor((self.n_coils, n_freq_encoding), dtype=torch.complex64)
             # here's where we would make the noise correlated
             acq.scan_counter = scan_counter
+            acq.acquisition_time_stamp = time_stamp
             acq.clearAllFlags()
             acq.setFlag(ismrmrd.ACQ_IS_NOISE_MEASUREMENT)
             acq.data[:] = noise.numpy()
             dataset.append_acquisition(acq)
             scan_counter += 1
+            time_stamp += 2
 
         # Add acquisitions obtained with a 2-element body coil (e.g. used for adjustment scans)
         if add_bodycoil_acquisitions:
@@ -270,10 +273,12 @@ class IsmrmrdRawTestData:
             for _ in range(8):
                 data = rng.randn_tensor((2, n_freq_encoding), dtype=torch.complex64)
                 acq.scan_counter = scan_counter
+                acq.acquisition_time_stamp = time_stamp
                 acq.clearAllFlags()
                 acq.data[:] = data.numpy()
                 dataset.append_acquisition(acq)
                 scan_counter += 1
+                time_stamp += 2
             acq.resize(n_freq_encoding, self.n_coils, trajectory_dimensions=2)
 
         # Calibration lines
@@ -296,6 +301,7 @@ class IsmrmrdRawTestData:
             for pe_idx, pe_pos in enumerate(kpe_calibration):
                 # Set some fields in the header
                 acq.scan_counter = scan_counter
+                acq.acquisition_time_stamp = time_stamp
 
                 # kpe is in the range [-npe//2, npe//2), the ismrmrd kspace_encoding_step_1 is in the range [0, npe)
                 kspace_encoding_step_1 = pe_pos + n_phase_encoding // 2
@@ -307,6 +313,7 @@ class IsmrmrdRawTestData:
                 acq.data[:] = kspace_calibration[:, :, pe_idx].numpy()
                 dataset.append_acquisition(acq)
                 scan_counter += 1
+                time_stamp += 2
 
         # Loop over the repetitions, add noise and write to disk
         for rep in range(self.repetitions):
@@ -325,6 +332,7 @@ class IsmrmrdRawTestData:
                 if not self.flag_invalid_reps or rep == 0 or pe_idx < len(kpe[rep]) // 2:  # fewer lines for rep > 0
                     # Set some fields in the header
                     acq.scan_counter = scan_counter
+                    acq.acquisition_time_stamp = time_stamp
 
                     # kpe is in the range [-npe//2, npe//2), the ismrmrd kspace_encoding_step_1 is in the range [0, npe)
                     kspace_encoding_step_1 = pe_pos + n_phase_encoding // 2
@@ -366,6 +374,7 @@ class IsmrmrdRawTestData:
                         acq.discard_post = 0
                     dataset.append_acquisition(acq)
                     scan_counter += 1
+                    time_stamp += 3
 
         # Clean up
         dataset.close()

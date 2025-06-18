@@ -129,16 +129,14 @@ from cmap import Colormap
 
 def show_image(t1: torch.Tensor, t2: torch.Tensor) -> None:
     """Show the cMRF $T_1$ and $T_2$ maps."""
-    cmap_t1 = Colormap('lipari')
-    cmap_t2 = Colormap('navia')
     fig, ax = plt.subplots(2, 1)
 
-    im = ax[0].imshow(t1.numpy(force=True), vmin=0, vmax=2, cmap=cmap_t1.to_mpl())
+    im = ax[0].imshow(t1.numpy(force=True), vmin=0, vmax=2, cmap=Colormap('lipari').to_mpl())
     ax[0].set_title('cMRF T1 (s)')
     ax[0].set_axis_off()
     plt.colorbar(im)
 
-    im = ax[1].imshow(t2.numpy(force=True), vmin=0, vmax=0.2, cmap=cmap_t2.to_mpl())
+    im = ax[1].imshow(t2.numpy(force=True), vmin=0, vmax=0.2, cmap=Colormap('navia').to_mpl())
     ax[1].set_title('cMRF T2 (s)')
     ax[1].set_axis_off()
     plt.colorbar(im)
