@@ -91,7 +91,7 @@ def test_fourier_l2_l1_() -> None:
     l2 = 0.5 * L2NormSquared(target=data, divide_by_n=False)
     l1 = regularization_parameter * L1NormViewAsReal(divide_by_n=False)
 
-    f = ProximableFunctionalSeparableSum(l2, l1)
+    f = l2 | l1
     g = ZeroFunctional()
     operator = LinearOperatorMatrix(((fourier_op,), (IdentityOp(),)))
 
