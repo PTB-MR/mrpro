@@ -232,3 +232,6 @@ extend-exclude = [
 
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]
+
+[tool.coverage.run]
+disable_warnings = ["module-not-measured"]
