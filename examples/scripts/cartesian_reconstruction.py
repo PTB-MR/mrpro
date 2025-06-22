@@ -17,11 +17,9 @@ from pathlib import Path
 
 import zenodo_get
 
-dataset = '15223816'
-
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
-zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder, '-g', '*.mrd'])  # r: retries
+zenodo_get.download(record='15223816', retry_attempts=5, output_dir=data_folder, file_glob=('*.mrd',))
 
 # %% [markdown]
 # We have three different scans obtained from the same object with the same FOV and resolution, saved as ISMRMRD
@@ -416,7 +414,7 @@ show_images(idat_us_sense.rss().squeeze(), titles=['Iterative SENSE'])
 
 # %%
 # Download dicom image
-zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder, '-g', '*.dcm'])  # r: retries
+zenodo_get.download(record='15223816', retry_attempts=5, output_dir=data_folder, file_glob=('*.dcm',))
 
 idat_dcm = mrpro.data.IData.from_dicom_files(data_folder / 'cart_t1_msense_integrated.dcm')
 show_images(idat_us_sense.rss().squeeze(), idat_dcm.rss().squeeze(), titles=['MRpro', 'Scanner'])

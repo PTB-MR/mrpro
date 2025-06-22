@@ -2,9 +2,11 @@
 
 from dataclasses import field
 
+import einops
 import pytest
 import torch
-from mrpro.data import Dataclass, Rotation
+from mrpro.data import Dataclass, Rotation, SpatialDimension
+from mrpro.utils import RandomGenerator
 from typing_extensions import Any
 
 
@@ -21,13 +23,12 @@ class SharedModule(torch.nn.Module):
 class A(Dataclass):
     """Test class A."""
 
-    floattensor: torch.Tensor = field(default_factory=lambda: torch.ones(1, 20))
-    floattensor2: torch.Tensor = field(default_factory=lambda: torch.zeros(10, 1))
-    complextensor: torch.Tensor = field(default_factory=lambda: torch.ones(1, 1, dtype=torch.complex64))
-    inttensor: torch.Tensor = field(default_factory=lambda: torch.ones(10, 20, dtype=torch.int32))
-    booltensor: torch.Tensor = field(default_factory=lambda: torch.ones(1, 1, dtype=torch.bool))
-    module: torch.nn.Module = field(default_factory=lambda: torch.nn.Linear(1, 1))
-    rotation: Rotation = field(default_factory=lambda: Rotation.identity((10, 20)))
+    floattensor: torch.Tensor = field(default_factory=lambda: RandomGenerator(0).float32_tensor((1, 20)))
+    floattensor2: torch.Tensor = field(default_factory=lambda: RandomGenerator(1).float32_tensor((10, 1)))
+    complextensor: torch.Tensor = field(default_factory=lambda: RandomGenerator(2).complex64_tensor((1, 1)))
+    inttensor: torch.Tensor = field(default_factory=lambda: RandomGenerator(3).int32_tensor((10, 20)))
+    booltensor: torch.Tensor = field(default_factory=lambda: RandomGenerator(4).bool_tensor((10, 20)))
+    rotation: Rotation = field(default_factory=lambda: Rotation.random((10, 20), 0))
 
 
 class B(Dataclass):
@@ -35,11 +36,11 @@ class B(Dataclass):
 
     child: A = field(default_factory=A)
     module: SharedModule = field(default_factory=SharedModule)
-    floattensor: torch.Tensor = field(default_factory=lambda: torch.ones(10, 20))
-    complextensor: torch.Tensor = field(default_factory=lambda: torch.ones(1, 1, dtype=torch.complex64))
-    inttensor: torch.Tensor = field(default_factory=lambda: torch.ones(10, 20, dtype=torch.int32))
-    booltensor: torch.Tensor = field(default_factory=lambda: torch.ones(10, 1, dtype=torch.bool))
-    doubletensor: torch.Tensor = field(default_factory=lambda: torch.ones(1, 20, dtype=torch.float64))
+    floattensor: torch.Tensor = field(default_factory=lambda: RandomGenerator(0).float32_tensor((10, 20)))
+    complextensor: torch.Tensor = field(default_factory=lambda: RandomGenerator(1).complex64_tensor((1, 1)))
+    inttensor: torch.Tensor = field(default_factory=lambda: RandomGenerator(2).int32_tensor((10, 20)))
+    booltensor: torch.Tensor = field(default_factory=lambda: RandomGenerator(3).bool_tensor((10, 1)))
+    doubletensor: torch.Tensor = field(default_factory=lambda: RandomGenerator(4).float64_tensor((1, 20)))
 
 
 def _assert_attribute_properties(
@@ -103,7 +104,7 @@ def test_dataclass_to(copy: bool, dtype: torch.dtype) -> None:
 
     # Module attribute
     _assert_attribute_properties(
-        original.child.module, new.child.module, 'weight', copy, dtype.to_real(), torch.device('cpu')
+        original.module.module1, new.module.module1, 'weight', copy, dtype.to_real(), torch.device('cpu')
     )
 
     # No-copy required for these
@@ -150,7 +151,7 @@ def test_dataclass_convert(copy: bool, dtype: torch.dtype, attribute: str) -> No
 
     # Module attribute
     _assert_attribute_properties(
-        original.child.module, new.child.module, 'weight', copy, dtype.to_real(), torch.device('cpu')
+        original.module.module1, new.module.module1, 'weight', copy, dtype.to_real(), torch.device('cpu')
     )
 
     # No-copy required for these
@@ -199,7 +200,7 @@ def test_dataclass_cuda(already_moved: bool, copy: bool) -> None:
 
     # Module attribute
     _assert_attribute_properties(
-        original.child.module, new.child.module, 'weight', copy, torch.float32, expected_device
+        original.module.module1, new.module.module1, 'weight', copy, torch.float32, expected_device
     )
 
     # No-copy required for these
@@ -264,17 +265,22 @@ def test_dataclass_no_new_attributes() -> None:
 
 def test_dataclass_repr() -> None:
     """Test the repr method of the dataclass."""
-    data = B()
+    data = B(
+        floattensor=torch.arange(10)[:, None],
+        complextensor=torch.tensor([[2j]]),
+        booltensor=torch.tensor([[False]]),
+        inttensor=torch.tensor([-10000000]),
+        doubletensor=torch.linspace(-1, 1, 20).double(),
+    )
     actual = repr(data)
-    expected = """B with (broadcasted) shape [10, 20] on device "cpu".
-Fields:
-   child <A>
-   module <SharedModule>
-   floattensor <Tensor>
-   complextensor <Tensor>
-   inttensor <Tensor>
-   booltensor <Tensor>
-   doubletensor <Tensor>"""
+    expected = """B on device "cpu" with (broadcasted) shape [10, 20].
+  child: A<10, 20>
+  module: SharedModule(...)
+  floattensor: Tensor<10, 1>, x ∈ [0, 9], μ=4.5, [0, 1,  ..., 8, 9]
+  complextensor: Tensor<1, 1>, constant 0+2j
+  inttensor: Tensor<1>, constant -1e+07
+  booltensor: Tensor<1, 1>, constant False
+  doubletensor: Tensor<20>, x ∈ [-1, 1], μ=0, [-1.0000, -0.8947,  ...,  0.8947,  1.0000]"""
     assert actual == expected
 
 
@@ -303,3 +309,132 @@ def test_dataclass_getitem(index, expected_shape: tuple[int, ...]) -> None:
     check_broadcastable(indexed.child.rotation.shape, expected_shape)
     check_broadcastable(indexed.child.shape, expected_shape)
     check_broadcastable(indexed.shape, expected_shape)
+
+
+def test_dataclass_reduce_repeat() -> None:
+    """Test reduction of repeated dimensions."""
+
+    class Container(Dataclass):
+        a: torch.Tensor
+        b: SpatialDimension
+        c: Rotation
+
+    rng = RandomGenerator(10)
+
+    a = rng.float32_tensor((5, 1, 1, 1))
+    a_expanded = a.expand(5, 2, 3, 1)
+
+    b = SpatialDimension(*rng.float32_tensor((3, 1, 1, 3)))
+    b_expanded = SpatialDimension(*[x.expand(1, 2, 3) for x in b.zyx])
+
+    c_matrix = torch.eye(3).reshape(1, 1, 3, 3)
+    c_expanded = Rotation.from_matrix(c_matrix.expand(5, 2, 3, 3))
+
+    test = Container(a_expanded, b_expanded, c_expanded)
+
+    torch.testing.assert_close(test.a, a)
+    torch.testing.assert_close(test.b.z, b.z)
+    torch.testing.assert_close(test.b.y, b.y)
+    torch.testing.assert_close(test.b.x, b.x)
+    torch.testing.assert_close(test.c.as_matrix(), c_matrix)
+
+
+def test_dataclass_split() -> None:
+    """Test splitting of dataclasses."""
+    a = A()
+
+    split = a.split(dim=0, size=2, overlap=1, dilation=2)
+    # 0 2, 1 3,..., 7,9
+    assert len(split) == 8
+    assert split[0].shape == (2, 20)
+    assert split[1] == a[(1, 3), ...]
+    assert split[-1] == a[(7, 9), ...]
+
+    split = a.split(dim=0, size=2, overlap=0, dilation=1)
+    # 0 1, 2 3, 4 5, 6 7, 8 9
+    assert len(split) == 5
+    assert split[0].shape == (2, 20)
+    assert split[1] == a[(2, 3), ...]
+    assert split[-1] == a[(8, 9), ...]
+
+    split = a.split(dim=-1, size=4, overlap=-4, dilation=1)
+    # 0 1 2 3, 8 9 10 11, 16 17 18 19
+    assert len(split) == 3
+    assert split[0].shape == (10, 4)
+    assert split[1] == a[..., (8, 9, 10, 11)]
+    assert split[-1] == a[..., (16, 17, 18, 19)]
+
+
+def test_dataclass_split_invalid() -> None:
+    """Test invalid arguments passed to split."""
+    a = A()
+    with pytest.raises(ValueError):
+        a.split(dim=0, size=2, dilation=0)
+    with pytest.raises(ValueError):
+        a.split(dim=-3, size=2, overlap=-1)
+    with pytest.raises(ValueError):
+        a.split(dim=3, size=2)
+    with pytest.raises(ValueError):
+        a.split(dim=-4, size=2, overlap=3)
+    with pytest.raises(ValueError):
+        a.split(dim=0, size=-2)
+
+
+def test_dataclass_concatenate() -> None:
+    """Test concatenation of dataclasses."""
+    a = A()
+    b = A()
+    c = A()
+    concatenated = a.concatenate(b, c, dim=0)
+    assert concatenated.shape == (30, 20)
+    assert concatenated.floattensor.shape == (1, 20)  # broadcasted
+    assert concatenated.floattensor2.shape == (30, 1)  # not broadcasted in concatenation dimension
+    assert concatenated.split(dim=0, size=10) == (a, b, c)
+
+
+def test_dataclass_equal() -> None:
+    """Test __eq__ method of the dataclass."""
+    a = A()
+    assert a == a  # same instance
+    b = A()
+    assert b == a  # same shape and values
+    a.floattensor = a.floattensor.expand(b.shape)  # broadcasting does not change equality
+    assert b == a
+    b.floattensor[0, 0] = 123
+    assert b != a  # different values
+
+
+def test_dataclass_rearrange_permute() -> None:
+    """Test rearrange method of the dataclass."""
+    a = A()
+    b = a.rearrange('dim1 dim2 -> dim2 dim1')
+    assert b.shape == a.shape[::-1]
+
+
+def test_dataclass_rearrange_flatten() -> None:
+    """Test rearrange method of the dataclass."""
+    a = A()
+    b = a.rearrange('dim1 dim2 -> (dim1 dim2)')
+    assert b.shape == (a.shape.numel(),)
+
+
+def test_dataclass_rearrange_split() -> None:
+    """Test rearrange method of the dataclass."""
+    a = A()
+    assert a.shape == (10, 20)
+    b = a.rearrange('(block1 dim1) (dim2 block2) -> (block1 block2) dim1 dim2', block1=2, block2=4)
+    assert b.shape == (8, 5, 5)
+
+
+def test_dataclass_rearrange_einops() -> None:
+    """Using einops with dataclass should raise an error."""
+    a = A()
+    with pytest.raises(NotImplementedError, match='rearrange method'):
+        einops.rearrange(a, 'dim1 dim2 -> dim2 dim1')
+
+
+def test_dataclass_shape() -> None:
+    """Test shape property of the dataclass."""
+    a = A()
+    assert a.shape == (10, 20)
+    assert len(a) == 10

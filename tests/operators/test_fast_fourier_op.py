@@ -146,3 +146,40 @@ def test_fast_fourier_op_repr():
 
     # Check if __repr__ contains expected information
     assert 'Dimension(s) along which FFT is applied' in repr_str
+
+
+@pytest.mark.cuda
+def test_fast_fourier_op_cuda() -> None:
+    """Test fast Fourier operator works on CUDA devices."""
+
+    # Generate data
+    recon_matrix = SpatialDimension(z=101, y=201, x=61)
+    encoding_matrix = SpatialDimension(z=14, y=220, x=61)
+    generator = RandomGenerator(seed=0)
+    x = generator.complex64_tensor(size=(3, 2, recon_matrix.z, recon_matrix.y, recon_matrix.x))
+
+    # Create on CPU, transfer to GPU, run on GPU
+    ff_op = FastFourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, dim=(-2, -3))
+    operator = ff_op.H @ ff_op
+    operator.cuda()
+    (y,) = operator(x.cuda())
+    assert y.is_cuda
+
+    # Create on CPU, run on CPU
+    ff_op = FastFourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, dim=(-2, -3))
+    operator = ff_op.H @ ff_op
+    (y,) = operator(x)
+    assert y.is_cpu
+
+    # Create on GPU, run on GPU
+    ff_op = FastFourierOp(recon_matrix=recon_matrix.cuda(), encoding_matrix=encoding_matrix.cuda(), dim=(-2, -3))
+    operator = ff_op.H @ ff_op
+    (y,) = operator(x.cuda())
+    assert y.is_cuda
+
+    # Create on GPU, transfer to CPU, run on CPU
+    ff_op = FastFourierOp(recon_matrix=recon_matrix.cuda(), encoding_matrix=encoding_matrix.cuda(), dim=(-2, -3))
+    operator = ff_op.H @ ff_op
+    operator.cpu()
+    (y,) = operator(x)
+    assert y.is_cpu
