@@ -9,7 +9,7 @@ from mrpro.nn.CondMixin import CondMixin
 from mrpro.operators import Operator
 
 
-class Sequential(torch.nn.Sequential):
+class Sequential(CondMixin,torch.nn.Sequential):
     """Sequential container with support for conditioning and Operators.
 
     Allows multiple input tensors and a single output tensor of the sequential block.

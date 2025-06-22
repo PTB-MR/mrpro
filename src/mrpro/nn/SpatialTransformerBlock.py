@@ -69,22 +69,22 @@ class BasicTransformerBlock(CondMixin, Module):
             Dropout(p_dropout),
             Linear(hidden_dim, channels),
         )
-        self.crossattention = (
-            Sequential(
-                LayerNorm(channels, features_last=True),
-                MultiHeadAttention(
-                    channels_in=channels,
-                    channels_out=channels,
-                    n_heads=n_heads,
-                    p_dropout=p_dropout,
-                    channels_cross=cond_dim,
-                    features_last=True,
-                ),
-            )
-            if cond_dim > 0
-            else None
-        )
-        self.cond_dim = cond_dim
+        # self.crossattention = (
+        #    Sequential(
+        #        LayerNorm(channels, features_last=True),
+        #        MultiHeadAttention(
+        #            channels_in=channels,
+        #            channels_out=channels,
+        #            n_heads=n_heads,
+        #            p_dropout=p_dropout,
+        #            channels_cross=cond_dim,
+        #            features_last=True,
+        #        ),
+        #    )
+        #    if cond_dim > 0
+        #    else None
+        # )
+        # self.cond_dim = cond_dim
 
     def __call__(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the basic transformer block.
@@ -101,14 +101,14 @@ class BasicTransformerBlock(CondMixin, Module):
     def forward(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the basic transformer block."""
         if not self.features_last:
-            x = x.moveaxis(1, -1)
+            x = x.moveaxis(1, -1).contiguous()
         x = self.selfattention(x) + x
-        if cond is not None and self.crossattention is not None:
-            cond = cond.unflatten(-1, (-1, self.cond_dim))
-            x = self.crossattention(x, cond=cond) + x
+        # if cond is not None and self.crossattention is not None:
+        #     cond = cond.unflatten(-1, (-1, self.cond_dim))
+        #     x = self.crossattention(x, cond=cond) + x
         x = self.ff(x) + x
         if not self.features_last:
-            x = x.moveaxis(-1, 1)
+            x = x.moveaxis(-1, 1).contiguous()
         return x
 
 
@@ -155,7 +155,7 @@ class SpatialTransformerBlock(CondMixin, Module):
         ]
         self.transformer_blocks = Sequential(*blocks)
 
-        self.proj_out = zero_init(ConvND(dim)(hidden_dim, channels, kernel_size=1, stride=1, padding=0))
+        self.proj_out = ConvND(dim)(hidden_dim, channels, kernel_size=1, stride=1, padding=0)
 
     def __call__(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the spatial transformer block.

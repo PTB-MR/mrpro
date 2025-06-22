@@ -42,8 +42,6 @@ class FiLM(CondMixin, Module):
         cond
             The conditioning tensor.
         """
-        if len(x) != 1:
-            raise ValueError('FiLM expects a single input tensor')
         return super().__call__(x, cond=cond)
 
     def forward(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:

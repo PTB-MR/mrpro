@@ -30,7 +30,7 @@ class ResBlock(CondMixin, Module):
 
         """
         super().__init__()
-        self.rezero = torch.nn.Parameter(torch.tensor(1e-2))
+        self.rezero = torch.nn.Parameter(torch.tensor(0.1))
         self.block = Sequential(
             GroupNorm(channels_in),
             SiLU(),
