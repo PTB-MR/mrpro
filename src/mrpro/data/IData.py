@@ -11,6 +11,7 @@ import torch
 from einops import rearrange, repeat
 from pydicom import dcmread
 from pydicom.dataset import Dataset
+from pydicom.pixels import set_pixel_data
 from typing_extensions import Self
 
 from mrpro.data.Dataclass import Dataclass
@@ -218,25 +219,12 @@ class IData(Dataclass):
             dataset.ProtocolName = series_description
         dataset.SeriesInstanceUID = pydicom.uid.generate_uid()
 
-        # When accessing the data using dataset.pixel_array pydicom will return an image with dimensions (rows columns).
-        # According to the dicom standard rows corresponds to the vertical dimension (i.e. y) and columns corresponds
-        # to the horizontal dimension (i.e. x)
-        dataset.Rows = self.data.shape[-1]
-        dataset.Columns = self.data.shape[-2]
-
-        dataset.BitsAllocated = 16
-        dataset.PixelRepresentation = 0  # uint
-        dataset.SamplesPerPixel = 1
-        dataset.PhotometricInterpretation = 'MONOCHROME2'
-        dataset.BitsStored = 16
-
         dataset.PatientPosition = 'HFS'
 
         for file_index, other in enumerate(np.ndindex(dcm_idata.shape[:-3])):
             dcm_file_idata = dcm_idata[(*other, slice(None), slice(None), slice(None))]
 
             dataset.MRAcquisitionType = mr_acquisition_type
-            dataset.NumberOfFrames = number_of_frames
             dataset.PerFrameFunctionalGroupsSequence = pydicom.Sequence()
 
             plane_position_sequence = pydicom.Sequence()
@@ -282,13 +270,13 @@ class IData(Dataclass):
                 plane_position_sequence[0].ImagePositionPatient = m_to_mm(image_position_patient.tolist())
                 dataset.PerFrameFunctionalGroupsSequence[-1].PlanePositionSequence = deepcopy(plane_position_sequence)
 
-                # The direction cosines of the first row (y) and the first column (x) with respect to the patient
+                # The direction cosines of the first row and the first column with respect to the patient
                 plane_orientation_sequence[0].ImageOrientationPatient = [*phase_direction, *readout_direction]
                 dataset.PerFrameFunctionalGroupsSequence[-1].PlaneOrientationSequence = deepcopy(
                     plane_orientation_sequence
                 )
 
-                def unique_parameter(parameter: torch.Tensor | list[float], parameter_name: str) -> float:
+                def unique_parameter(parameter: torch.Tensor | list[float], parameter_name: str) -> float | None:
                     """Return unique value of parameter tensor or list. Raise warning if not unique."""
                     unique_parameter = torch.unique(torch.as_tensor(parameter))
                     if unique_parameter.numel() > 1:
@@ -297,9 +285,10 @@ class IData(Dataclass):
                             'split data into correct subsets first.',
                             stacklevel=2,
                         )
-                    return unique_parameter[0].item()
+                    return unique_parameter[0].item() if len(unique_parameter) > 0 else None
 
-                mr_echo_sequence[0].EffectiveEchoTime = s_to_ms(unique_parameter(dcm_frame_idata.header.te, 'te'))
+                if echo_time := unique_parameter(dcm_frame_idata.header.te, 'te'):
+                    mr_echo_sequence[0].EchoTime = s_to_ms(echo_time)
 
                 dataset.PerFrameFunctionalGroupsSequence[-1].MREchoSequence = deepcopy(mr_echo_sequence)
 
@@ -309,24 +298,25 @@ class IData(Dataclass):
                 )
                 dataset.PerFrameFunctionalGroupsSequence[-1].PixelMeasuresSequence = deepcopy(pixel_measure_sequence)
 
-                mr_timing_parameters_sequence[0].FlipAngle = s_to_ms(unique_parameter(dcm_frame_idata.header.fa, 'fa'))
-                mr_timing_parameters_sequence[0].RepetitionTime = s_to_ms(
-                    unique_parameter(dcm_frame_idata.header.tr, 'tr')
-                )
+                if flip_angle := unique_parameter(dcm_frame_idata.header.fa, 'fa'):
+                    mr_timing_parameters_sequence[0].FlipAngle = s_to_ms(flip_angle)
+                if inversion_time := unique_parameter(dcm_frame_idata.header.ti, 'ti'):
+                    mr_timing_parameters_sequence[0].InversionTime = s_to_ms(inversion_time)
+                if repetition_time := unique_parameter(dcm_frame_idata.header.tr, 'tr'):
+                    mr_timing_parameters_sequence[0].RepetitionTime = s_to_ms(repetition_time)
                 dataset.PerFrameFunctionalGroupsSequence[-1].MRTimingAndRelatedParametersSequence = deepcopy(
                     mr_timing_parameters_sequence
                 )
 
-            pixel_data = dcm_file_idata.data.abs()
-            pixel_data /= pixel_data.max()
-            dataset.PixelData = (
-                (rearrange(pixel_data[0, 0, ...], 'frames y x -> frames x y') * 2**16)
-                .numpy()
-                .astype(np.uint16)
-                .tobytes()
-            )
+            # (frames, rows, columns) for multi-frame grayscale data
+            pixel_data = dcm_file_idata.data.abs().cpu().numpy()
+            pixel_data = pixel_data / pixel_data.max() * 2**16
+            pixel_data = rearrange(pixel_data[0, 0, ...], 'frames y x -> frames x y')
 
-            dataset['PixelData'].VR = 'OB'
+            # 'MONOCHROME2' means smallest value is black, largest value is white
+            set_pixel_data(
+                ds=dataset, arr=pixel_data.astype(np.uint16), photometric_interpretation='MONOCHROME2', bits_stored=16
+            )
 
             # Save
             dataset.save_as(foldername / f'im_mrpro_{np.prod(file_index)}.dcm', enforce_file_format=True)
