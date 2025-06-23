@@ -1,5 +1,7 @@
 """Spatial transformer block."""
 
+from collections.abc import Sequence
+
 import torch
 from torch.nn import Dropout, Linear, Module
 
@@ -8,7 +10,7 @@ from mrpro.nn.GEGLU import GEGLU
 from mrpro.nn.GroupNorm import GroupNorm
 from mrpro.nn.LayerNorm import LayerNorm
 from mrpro.nn.MultiHeadAttention import MultiHeadAttention
-from mrpro.nn.ndmodules import ConvND
+from mrpro.nn.PermutedBlock import PermutedBlock
 from mrpro.nn.Sequential import Sequential
 
 
@@ -64,27 +66,11 @@ class BasicTransformerBlock(CondMixin, Module):
         )
         hidden_dim = int(channels * mlp_ratio)
         self.ff = Sequential(
-            LayerNorm(channels, features_last=True),
+            LayerNorm(channels, features_last=True, cond_dim=cond_dim),
             GEGLU(channels, hidden_dim, features_last=True),
             Dropout(p_dropout),
             Linear(hidden_dim, channels),
         )
-        # self.crossattention = (
-        #    Sequential(
-        #        LayerNorm(channels, features_last=True),
-        #        MultiHeadAttention(
-        #            channels_in=channels,
-        #            channels_out=channels,
-        #            n_heads=n_heads,
-        #            p_dropout=p_dropout,
-        #            channels_cross=cond_dim,
-        #            features_last=True,
-        #        ),
-        #    )
-        #    if cond_dim > 0
-        #    else None
-        # )
-        # self.cond_dim = cond_dim
 
     def __call__(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the basic transformer block.
@@ -103,10 +89,7 @@ class BasicTransformerBlock(CondMixin, Module):
         if not self.features_last:
             x = x.moveaxis(1, -1).contiguous()
         x = self.selfattention(x) + x
-        # if cond is not None and self.crossattention is not None:
-        #     cond = cond.unflatten(-1, (-1, self.cond_dim))
-        #     x = self.crossattention(x, cond=cond) + x
-        x = self.ff(x) + x
+        x = self.ff(x, cond=cond) + x
         if not self.features_last:
             x = x.moveaxis(-1, 1).contiguous()
         return x
@@ -117,67 +100,49 @@ class SpatialTransformerBlock(CondMixin, Module):
 
     def __init__(
         self,
-        dim: int,
+        dim_groups: Sequence[tuple[int, ...]],
         channels: int,
         n_heads: int,
-        channels_per_head: int,
         depth: int = 1,
         dropout: float = 0.0,
         cond_dim: int = 0,
     ):
-        """Initialize the spatial transformer block.
-
+        """
         Parameters
         ----------
-        dim
-            Spatial dimension of the input tensor.
+        dim_groups
+            Groups of spatial dimensions for separate attention mechanisms.
         channels
             Number of channels in the input and output.
         n_heads
-            Number of attention heads.
-        channels_per_head
-            Number of channels per attention head.
+            Number of attention heads for each group.
         depth
-            Number of transformer blocks.
+            Number of transformer blocks for each group.
         dropout
             Dropout probability.
         cond_dim
-            Number of channels in the conditioning tensor. If 0, no conditioning is applied.
+            Dimension of the conditioning tensor.
         """
         super().__init__()
-        self.in_channels = channels
-        hidden_dim = n_heads * channels_per_head
+        hidden_dim = n_heads * (channels // n_heads)
         self.norm = GroupNorm(channels)
-
-        self.proj_in = ConvND(dim)(channels, hidden_dim, kernel_size=1, stride=1, padding=0)
-        blocks = [
-            BasicTransformerBlock(hidden_dim, n_heads, p_dropout=dropout, cond_dim=cond_dim) for _ in range(depth)
-        ]
-        self.transformer_blocks = Sequential(*blocks)
-
-        self.proj_out = ConvND(dim)(hidden_dim, channels, kernel_size=1, stride=1, padding=0)
-
-    def __call__(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
-        """Apply the spatial transformer block.
-
-        Parameters
-        ----------
-        x
-            Input tensor
-        cond
-            Conditioning tensor. If None, no conditioning is applied.
-
-        Returns
-        -------
-            Output tensor after spatial transformer
-        """
-        return super().__call__(x, cond=cond)
+        self.proj_in = Linear(channels, hidden_dim)
+        self.transformer_blocks = Sequential()
+        for group in (g for _ in range(depth) for g in dim_groups):
+            block = BasicTransformerBlock(hidden_dim, n_heads, p_dropout=dropout, cond_dim=cond_dim, features_last=True)
+            self.transformer_blocks.append(PermutedBlock(group, block, features_last=True))
+        self.proj_out = Linear(hidden_dim, channels)
 
     def forward(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the spatial transformer block."""
         skip = x
-        x = self.norm(x)
-        x = self.proj_in(x)
-        x = self.transformer_blocks(x, cond=cond)
-        x = self.proj_out(x)
-        return x + skip
+        h = self.norm(x)
+        h = h.movedim(1, -1)
+        h = self.proj_in(h)
+        h = self.transformer_blocks(h, cond=cond)
+        h = self.proj_out(h)
+        h = h.movedim(-1, 1)
+        return skip + h
+
+    def __call__(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
+        return super().__call__(x, cond=cond)

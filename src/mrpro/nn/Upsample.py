@@ -1,21 +1,26 @@
 """Upsampling by interpolation."""
 
+from collections.abc import Sequence
 from typing import Literal
 
 import torch
-from torch.nn import Module
+from torch.nn import Module, Sequential
+
+from mrpro.nn.PermutedBlock import PermutedBlock
 
 
 class Upsample(Module):
     """Upsampling by interpolation."""
 
-    def __init__(self, dim: int, scale_factor: int = 2, mode: Literal['nearest', 'linear', 'cubic'] = 'linear'):
+    def __init__(
+        self, dim: Sequence[int], scale_factor: int = 2, mode: Literal['nearest', 'linear', 'cubic'] = 'linear'
+    ):
         """Initialize the upsampling layer.
 
         Parameters
         ----------
         dim
-            Spatial dimensions of the input tensor, i.e. 2 for 2D, 3 for 3D, etc.
+            Dimensions which to upsample
         scale_factor
             Factor by which to upsample
         mode
@@ -24,17 +29,23 @@ class Upsample(Module):
         super().__init__()
         self.scale_factor = scale_factor
         if mode == 'nearest':
-            self.mode = 'nearest'
-        elif dim == 1 and mode == 'linear':
-            self.mode = 'linear'
-        elif dim == 2 and mode == 'cubic':
-            self.mode = 'bicubic'
-        elif dim == 2 and mode == 'linear':
-            self.mode = 'bilinear'
-        elif dim == 3 and mode == 'linear':
-            self.mode = 'trilinear'
-        else:
-            raise ValueError(f'Invalid mode for dimension {dim}: {mode}')
+            dims = [tuple(d) for d in torch.tensor(dim).split(3)]
+            modes = ['nearest'] * len(self.dim)
+        elif mode == 'linear':
+            dims = [tuple(d) for d in torch.tensor(dim).split(3)]
+            modes = [{1: 'linear', 2: 'bilinear', 3: 'trilinear'}[len(d)] for d in dims]
+        elif mode == 'cubic':
+            if not len(dim) == 2:
+                raise ValueError('Cubic interpolation is only supported for 2D images.')
+            dims = [tuple(dim)]
+            modes = ['bicubic']
+
+        self.blocks = Sequential(
+            *[
+                PermutedBlock(d, Upsample(d, scale_factor=scale_factor, mode=m))
+                for d, m in zip(dims, modes, strict=False)
+            ]
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Upsample the input tensor."""
