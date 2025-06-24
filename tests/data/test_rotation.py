@@ -1371,10 +1371,10 @@ def test_quaternion_properties_single() -> None:
     assert r.quaternion_y == quat[AXIS_ORDER.index('y')]
     assert r.quaternion_z == quat[AXIS_ORDER.index('z')]
     assert r.quaternion_w == quat[-1]
-    r.quaternion_x = 1.0  # type: ignore[assignment]
+    r.quaternion_x = 1.0
     r.quaternion_y = torch.tensor(2.0)
-    r.quaternion_z = 3  # type: ignore[assignment]
-    r.quaternion_w = 4.0  # type: ignore[assignment]
+    r.quaternion_z = 3
+    r.quaternion_w = 4.0
     torch.testing.assert_close(r.quaternion_x, torch.tensor(1.0))
     torch.testing.assert_close(r.quaternion_y, torch.tensor(2.0))
     torch.testing.assert_close(r.quaternion_z, torch.tensor(3.0))
