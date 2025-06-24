@@ -7,17 +7,20 @@ if [ -z ${1+x} ]; then
     exit 1
 fi
 
-# if the 2nd argument for the script is given: run in ephemeral mode (one runner takes one job)
+# the 2nd argument must be the github organization
+# for example PTB-MR
+
+# if the 3d argument for the script is given: run in ephemeral mode (one runner takes one job)
 # constructing the unique name for the runner (see .github/slurm_dispatcher.py)
 ./config.sh \
-    --name $(hostname)-${2:-default} \
     --token $1 \
+    --url https://github.com/$2 \
+    --name $(hostname)-${3:-default} \
     --labels my-runner \
-    --url https://github.com/${GITHUB_OWNER} \
     --work "/work" \
     --unattended \
     --replace \
-    ${2:+--ephemeral}
+    ${3:+--ephemeral}
 
 remove() {
     ./config.sh remove --token "$1"

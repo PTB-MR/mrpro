@@ -1,8 +1,35 @@
+"""Cron-scheduled slurm test dispatcher."""
+
 import logging
 import os
 import subprocess
 
 import requests as r
+
+"""
+This script is intended to run periodically by the cron.
+
+Add the following line into the list of cron jobs:
+*/5 * * * * . /path/to/mrpro.rc; /path/to/python /path/to/slurm_cronjob.py >> /path/to/err.log 2>&1
+
+Example of the mrpro.rc file content with the required environmental variables:
+
+# name of the organization
+export GITHUB_OWNER="PTB-MR"
+# name of the repository
+export GITHUB_REPOSITORY="mrpro"
+# name of the system user
+export USER_NAME="XXX"
+# id of the GitHub workflow to be periodically checked
+# (see the number in the URL field at https://docs.github.com/en/rest/actions/workflows?apiVersion=2022-11-28#list-repository-workflows)
+export WORKFLOW_ID="XXX"
+# GitHub personal token (see pytest_selfhosted.yml)
+export GITHUB_PERSONAL_TOKEN="XXX"
+
+# specify any other required environmental variables as http(s)_proxy
+export https_proxy="XXX"
+export http_proxy="XXX"
+"""
 
 logger = logging.getLogger('SlurmDispatcher')
 
@@ -29,8 +56,8 @@ SBATCH_SUBMIT_COMMAND = """#!/bin/bash
 #SBATCH -p equipment_typeG # Request GPU
 
 # display the config file
-singularity exec --nv --env-file=mrpro.env --pwd=/actions-runner --writable-tmpfs --contain mrpro-runner.sif\
-    /actions-runner/entrypoint.sh {RUNNER_TOKEN} {RUN_ID}
+singularity exec --nv --pwd /actions-runner --writable-tmpfs --contain mrpro-runner.sif\
+    /actions-runner/entrypoint.sh {RUNNER_TOKEN} {GITHUB_OWNER} {RUN_ID}
 sleep 15"""
 
 
@@ -76,7 +103,12 @@ def dispatch_run(runner_token: str, run_id: int) -> None:
     process = subprocess.run(
         # pass the run_id as a unique identifier for the runner name
         ['/usr/bin/sbatch'],
-        input=SBATCH_SUBMIT_COMMAND.format(RUNNER_TOKEN=runner_token, RUN_ID=run_id, USER_NAME=ENV_VARS['USER_NAME']),
+        input=SBATCH_SUBMIT_COMMAND.format(
+            RUNNER_TOKEN=runner_token,
+            RUN_ID=run_id,
+            GITHUB_OWNER=ENV_VARS['GITHUB_OWNER'],
+            USER_NAME=ENV_VARS['USER_NAME'],
+        ),
         text=True,
         capture_output=True,
     )

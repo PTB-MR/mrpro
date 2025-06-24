@@ -4,18 +4,18 @@
 # For automated self-hosted runner registration you need to create an organization fine-granted token
 # with the "Administration:write" and "Self-hosted runners:write".
 #
-# The following environmental variables need to be set:
-# GITHUB_OWNER - the organization (PTB-MR) in this particular case.
-# The following start arguments need to be specified for entrypoint:
+# The following variables need to be provided to the runner:
 # the 1st positional argument -
 # RUNNER_TOKEN - the runner registration token,
 # (see https://docs.github.com/en/rest/actions/self-hosted-runners?apiVersion=2022-11-28#create-a-registration-token-for-an-organization)
-# the 2nd positional argument (optional)
-# RUN_ID - if the runner should run in ephemeral mode (one workflow run - one runner)
+# the 2nd positional argument -
+# GITHUB_OWNER - the organization (PTB-MR) in this particular case.
+# the 3d positional argument (optional)
+# RUN_ID - if set - the runner starts in ephemeral mode and terminates after run is finished, otherwise - runs in continuous mode.
 #
 #
 # Run with docker:
-# docker run --gpus <GPU_ID> --env-file runner.env ghcr.io/ptb-mr/mrpro_runner:latest (and pass the arguments here)
+# docker run --gpus <GPU_ID> ghcr.io/ptb-mr/mrpro_runner:latest RUNNER_TOKEN GITHUB_OWNER [RUN_ID]
 #
 # Run with singularity:
 # You can convert the existing docker container to the singularity container via:
@@ -23,13 +23,11 @@
 # Hint: use SINGULARITY_CACHE=... environmental variable for cache
 #
 # When build is ready you can launch this singularity container via:
-# NVIDIA_VISIBLE_DEVICES=<GPU_ID> singularity run --nv --env-file runner.env --pwd /actions-runner --writable-tmpfs --contain mrpro-runner.sif
+# NVIDIA_VISIBLE_DEVICES=<GPU_ID> singularity run --nv --pwd /actions-runner --writable-tmpfs --contain mrpro-runner.sif\
+# /actions-runner/entrypoint.sh RUNNER_TOKEN GITHUB_OWNER [RUN_ID]
 #
-# If you want to run the singularity container in ephemeral mode (one runner - one job) you need to specify a unique id for each runner
-# as an extra argument to the singularity command:
-# NVIDIA_VISIBLE_DEVICES=<GPU_ID> singularity exec --nv --env-file runner.env --pwd /actions-runner --writable-tmpfs --contain mrpro-runner.sif /actions-runner/entrypoint.sh "RUNNER_TOKEN" "RUN_ID"
 #
-# Use the ./github/slurm_dispatcher.py to dispatch each job to the isolated singularity container
+# Schedule the cron job for ./github/slurm_cronjob.py to dispatch each job to the isolated singularity container.
 name: PyTest-selfhosted
 
 on:

@@ -1,8 +1,0 @@
-extend = "../../pyproject.toml"
-
-lint.extend-select = ["PT"] # flake8-pytest-style
-
-lint.extend-ignore = [
-    "RUF006", # store a reference to the return value of `asyncio.create_task`
-    "D100", # Missing docstring in public module
-]
