@@ -45,7 +45,8 @@ import zenodo_get
 
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
-zenodo_get.download(record='15182376', retry_attempts=5, output_dir=data_folder)
+zenodo_get.zenodo_get(['15726937', '-r', 5, '-o', data_folder])
+
 
 # %% [markdown]
 # ## Reconstruct qualitative images
@@ -92,7 +93,7 @@ img = recon(kdata_split)
 # %%
 model = mrpro.operators.AveragingOp(dim=0, idx=split_indices) @ mrpro.operators.models.CardiacFingerprinting(
     kdata.header.acq_info.acquisition_time_stamp.squeeze(),
-    echo_time=0.00155,
+    echo_time=0.001555,
     repetition_time=0.01,
     t2_prep_echo_times=(0.03, 0.05, 0.1),
 )
