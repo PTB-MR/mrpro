@@ -45,7 +45,7 @@ import zenodo_get
 
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
-zenodo_get.zenodo_get(['15726937', '-r', 5, '-o', data_folder])
+zenodo_get.download(record='15726937', retry_attempts=5, output_dir=data_folder)
 
 
 # %% [markdown]
