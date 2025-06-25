@@ -92,19 +92,22 @@ def rf_matrix(
     sina2 = 1 - cosa2
     ejp = torch.polar(torch.ones_like(phase), phase)
     inv_ejp = 1 / ejp
+    # we need to stack the same dtype. +0j does not work in torchscript on cuda
+    cosa2_complex = torch.complex(cosa2, torch.zeros_like(cosa2))
+    cosa_complex = torch.complex(sina2, torch.zeros_like(sina2))
     new_shape = flip_angle.shape + (3, 3)  # noqa: RUF005 # not supported in torchscript
 
     return torch.stack(
         [
-            cosa2 + 0.0j,
+            cosa2_complex,
             ejp**2 * sina2,
             -1.0j * ejp * sina,
             inv_ejp**2 * sina2,
-            cosa2 + 0.0j,
+            cosa2_complex,
             1.0j * inv_ejp * sina,
             -0.5j * inv_ejp * sina,
             0.5j * ejp * sina,
-            cosa + 0.0j,
+            cosa_complex,
         ],
         -1,
     ).reshape(new_shape)
