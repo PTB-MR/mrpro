@@ -67,7 +67,7 @@ dependencies = [
     "pydicom>=3.0.1",
     "pypulseq>=1.4.2",
     "pytorch-finufft>=0.1.0",
-    "cufinufft>=2.3.1; platform_system=='Linux'",
+    "cufinufft==2.3.1; platform_system=='Linux'",
     "scipy>=1.12",
     "ptwt>=0.1.8",
     "torchvision>=0.18.1",
