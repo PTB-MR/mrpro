@@ -18,7 +18,7 @@ from mrpro.data.Dataclass import Dataclass
 from mrpro.data.IHeader import IHeader
 from mrpro.data.KHeader import KHeader
 from mrpro.data.SpatialDimension import SpatialDimension
-from mrpro.utils.unit_conversion import m_to_mm, s_to_ms
+from mrpro.utils.unit_conversion import m_to_mm, rad_to_deg, s_to_ms
 
 
 def _dcm_pixelarray_to_tensor(dataset: Dataset) -> torch.Tensor:
@@ -134,11 +134,11 @@ class IData(Dataclass):
             mr_acquisition_type = [item.value for item in datasets[0].iterall() if item.tag == 0x00180023]
 
             if len(mr_acquisition_type) > 0 and mr_acquisition_type[0] == '3D':  # multi-frame 3D data
-                data = repeat(data, 'other z y x -> other coils z y x', coils=1)
+                data = repeat(data, 'other z x y -> other coils z y x', coils=1)
             else:  # multi-frame 2D data
-                data = repeat(data, 'other frame y x -> other frame coils z y x', coils=1, z=1)
+                data = repeat(data, 'other frame x y -> other frame coils z y x', coils=1, z=1)
         else:  # single-frame data
-            data = repeat(data, 'other y x -> other coils z y x', coils=1, z=1)
+            data = repeat(data, 'other x y -> other coils z y x', coils=1, z=1)
 
         return cls(data=data, header=header)
 
@@ -287,7 +287,7 @@ class IData(Dataclass):
                         )
                     return unique_parameter[0].item() if len(unique_parameter) > 0 else None
 
-                if echo_time := unique_parameter(dcm_frame_idata.header.te, 'te'):
+                if (echo_time := unique_parameter(dcm_frame_idata.header.te, 'te')) is not None:
                     mr_echo_sequence[0].EchoTime = s_to_ms(echo_time)
 
                 dataset.PerFrameFunctionalGroupsSequence[-1].MREchoSequence = deepcopy(mr_echo_sequence)
@@ -298,11 +298,11 @@ class IData(Dataclass):
                 )
                 dataset.PerFrameFunctionalGroupsSequence[-1].PixelMeasuresSequence = deepcopy(pixel_measure_sequence)
 
-                if flip_angle := unique_parameter(dcm_frame_idata.header.fa, 'fa'):
-                    mr_timing_parameters_sequence[0].FlipAngle = s_to_ms(flip_angle)
-                if inversion_time := unique_parameter(dcm_frame_idata.header.ti, 'ti'):
+                if (flip_angle := unique_parameter(dcm_frame_idata.header.fa, 'fa')) is not None:
+                    mr_timing_parameters_sequence[0].FlipAngle = rad_to_deg(flip_angle)
+                if (inversion_time := unique_parameter(dcm_frame_idata.header.ti, 'ti')) is not None:
                     mr_timing_parameters_sequence[0].InversionTime = s_to_ms(inversion_time)
-                if repetition_time := unique_parameter(dcm_frame_idata.header.tr, 'tr'):
+                if (repetition_time := unique_parameter(dcm_frame_idata.header.tr, 'tr')) is not None:
                     mr_timing_parameters_sequence[0].RepetitionTime = s_to_ms(repetition_time)
                 dataset.PerFrameFunctionalGroupsSequence[-1].MRTimingAndRelatedParametersSequence = deepcopy(
                     mr_timing_parameters_sequence
@@ -310,7 +310,7 @@ class IData(Dataclass):
 
             # (frames, rows, columns) for multi-frame grayscale data
             pixel_data = dcm_file_idata.data.abs().cpu().numpy()
-            pixel_data = pixel_data / pixel_data.max() * 2**16
+            pixel_data = pixel_data / pixel_data.max() * (2**16 - 1)
             pixel_data = rearrange(pixel_data[0, 0, ...], 'frames y x -> frames x y')
 
             # 'MONOCHROME2' means smallest value is black, largest value is white

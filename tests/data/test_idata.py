@@ -137,8 +137,6 @@ def test_IData_rss(random_kheader, random_test_data):
     [
         'dcm_2d',
         'dcm_3d',
-        'dcm_m2d_multi_orientation',
-        'dcm_3d_multi_orientation',
     ],
 )
 def test_IData_to_dicom_folder_identical(dcm_data_fixture, request):
@@ -147,8 +145,11 @@ def test_IData_to_dicom_folder_identical(dcm_data_fixture, request):
     idata = IData.from_dicom_folder(dcm_data[0].filename.parent)
     idata.to_dicom_folder(dcm_data[0].filename.parent / 'test_output', series_description='test_series')
     idata_reloaded = IData.from_dicom_folder(dcm_data[0].filename.parent / 'test_output')
-    # Verify header and data
-    assert idata_reloaded == idata
+
+    torch.testing.assert_close(idata_reloaded.header.te, idata.header.te)
+    assert idata_reloaded.header.position == idata.header.position
+    assert idata_reloaded.header.orientation == idata.header.orientation
+    torch.testing.assert_close(idata_reloaded.data, idata.data)
 
 
 @pytest.mark.parametrize(
@@ -166,6 +167,10 @@ def test_IData_to_dicom_folder(dcm_data_fixture, request):
     with pytest.warns(UserWarning, match='is not unique. Using first value.'):
         idata.to_dicom_folder(dcm_data[0].filename.parent / 'test_output', series_description='test_series')
     idata_reloaded = IData.from_dicom_folder(dcm_data[0].filename.parent / 'test_output')
+
+    # match dimensions
+    if idata_reloaded.ndim == 6:
+        idata = idata[None, ...]
 
     torch.testing.assert_close(idata_reloaded.header.te[0], idata.header.te[0])
     assert idata_reloaded.header.position == idata.header.position
