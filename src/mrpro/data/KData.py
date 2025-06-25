@@ -393,7 +393,9 @@ class KData(Dataclass):
                 write_acqinfo_to_ismrmrd_acquisition_(acq.header.acq_info, ismrmrd_acq, convert_time_stamp)
                 ismrmrd_acq.traj[:] = acq.traj.as_tensor(-1).squeeze().cpu().numpy()[:, ::-1]  # zyx -> xyz
                 ismrmrd_acq.center_sample = np.argmin(np.abs(ismrmrd_acq.traj[:, 0]))
-                ismrmrd_acq.data[:] = acq.data.squeeze().cpu().numpy()
+                acq_data = acq.data.squeeze().cpu().numpy()
+                # Siemens assumes a fft to go from k-space to image space
+                ismrmrd_acq.data[:] = acq_data.conj() if self.header.vendor.lower() == 'siemens' else acq_data
                 ismrmrd_acq.scan_counter = scan_counter
                 dataset.append_acquisition(ismrmrd_acq)
 
