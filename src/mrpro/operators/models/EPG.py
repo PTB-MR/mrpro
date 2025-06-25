@@ -94,7 +94,7 @@ def rf_matrix(
     inv_ejp = 1 / ejp
     # we need to stack the same dtype. +0j does not work in torchscript on cuda
     cosa2_complex = torch.complex(cosa2, torch.zeros_like(cosa2))
-    cosa_complex = torch.complex(sina2, torch.zeros_like(sina2))
+    cosa_complex = torch.complex(cosa, torch.zeros_like(sina2))
     new_shape = flip_angle.shape + (3, 3)  # noqa: RUF005 # not supported in torchscript
 
     return torch.stack(
