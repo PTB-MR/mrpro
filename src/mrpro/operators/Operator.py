@@ -137,7 +137,7 @@ class OperatorComposition(Operator[Unpack[Tin2], Tout]):
 
         .. note::
             Prefer calling the instance of the OperatorComposition operator as ``operator(x)`` over
-            directly calling this method.
+            directly calling this method. See <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         return self._operator1(*self._operator2(*args))
 
@@ -191,7 +191,7 @@ class OperatorSum(Operator[Unpack[Tin], Tout]):
 
         .. note::
             Prefer calling the instance of the OperatorSum operator as ``operator(x)`` over
-            directly calling this method.
+            directly calling this method. See <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
 
         def _add(a: tuple[torch.Tensor, ...], b: tuple[torch.Tensor, ...]) -> Tout:
@@ -243,7 +243,7 @@ class OperatorElementwiseProductRight(Operator[Unpack[Tin], Tout]):
 
         .. note::
             Prefer calling the instance of the OperatorElementwiseProductRight operator as ``operator(x)`` over
-            directly calling this method.
+            directly calling this method. See <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         out = self._operator(*args)
         return cast(Tout, tuple(a * self._scalar for a in out))
@@ -283,7 +283,7 @@ class OperatorElementwiseProductLeft(Operator[Unpack[Tin], Tout]):
 
         .. note::
             Prefer calling the instance of the OperatorElementwiseProductLeft operator as ``operator(x)`` over
-            directly calling this method.
+            directly calling this method. See <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         multiplied = cast(tuple[Unpack[Tin]], tuple(a * self._scalar for a in args if isinstance(a, torch.Tensor)))
         out = self._operator(*multiplied)

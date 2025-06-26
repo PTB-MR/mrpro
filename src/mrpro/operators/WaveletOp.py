@@ -158,7 +158,9 @@ class WaveletOp(LinearOperator):
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply forward of WaveletOp.
 
-        Note: Do not use. Instead, call the instance of the Operator as operator(x)
+        .. note::
+            Prefer calling the instance of the WaveletOp operator as ``operator(x)`` over
+            directly calling this method. See <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         # normalize axes to allow negative indexing in input
         dim = tuple(d % x.ndim for d in self._dim)

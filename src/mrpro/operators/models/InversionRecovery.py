@@ -52,7 +52,7 @@ class InversionRecovery(SignalModel[torch.Tensor, torch.Tensor]):
         """Apply forward of InversionRecovery.
 
         .. note::
-            Prefer calling the instance of the InversionRecovery as ``operator(x)`` over directly calling this method.
+            Prefer calling the instance of the InversionRecovery as ``operator(x)`` over directly calling this method. See <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         ndim = max(m0.ndim, t1.ndim)
         ti = unsqueeze_right(self.ti, ndim - self.ti.ndim + 1)  # leftmost is time

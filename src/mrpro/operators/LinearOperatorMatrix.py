@@ -92,7 +92,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
 
         .. note::
             Prefer calling the instance of the LinearOperatorMatrix operator as ``operator(x)`` over
-            directly calling this method.
+            directly calling this method. See <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         if len(x) != self.shape[1]:
             raise ValueError('Input should be the same number of tensors as the LinearOperatorMatrix has columns.')

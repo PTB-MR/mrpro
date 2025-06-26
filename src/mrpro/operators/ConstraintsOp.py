@@ -164,7 +164,7 @@ class ConstraintsOp(EndomorphOperator):
 
         .. note::
             Prefer calling the instance of the ConstraintsOp operator as ``operator(x)`` over
-            directly calling this method.
+            directly calling this method. See <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         x_constrained = [
             self._apply_forward(item, lb, ub)
@@ -240,7 +240,7 @@ class InverseConstraintOp(EndomorphOperator):
 
         .. note::
             Prefer calling the instance of the InverseConstraintOp operator as ``operator(x)`` over
-            directly calling this method.
+            directly calling this method. See <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         return self.constraints_op.invert(*x)
 

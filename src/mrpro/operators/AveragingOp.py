@@ -66,7 +66,7 @@ class AveragingOp(LinearOperator):
 
         .. note::
             Prefer calling the instance of the AveragingOp operator as ``operator(x)`` over
-            directly calling this method.
+            directly calling this method. See <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         if self.domain_size and self.domain_size != x.shape[self.dim]:
             raise ValueError(f'Expected domain size {self.domain_size}, got {x.shape[self.dim]}')

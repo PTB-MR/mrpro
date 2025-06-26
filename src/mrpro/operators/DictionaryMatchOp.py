@@ -131,7 +131,7 @@ class DictionaryMatchOp(Operator[torch.Tensor, tuple[Unpack[Tin]]]):
 
         .. note::
             Prefer calling the instance of the DictionaryMatchOp operator as ``operator(x)`` over
-            directly calling this method.
+            directly calling this method. See <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         if not self.x:
             raise KeyError('No keys in the dictionary. Please first add some x values using `append`.')

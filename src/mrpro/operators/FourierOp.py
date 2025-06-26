@@ -143,7 +143,7 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
 
         .. note::
             Prefer calling the instance of the FourierOp operator as ``operator(x)`` over
-            directly calling this method.
+            directly calling this method. See <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         # NUFFT Type 2 followed by FFT
         if self._non_uniform_fast_fourier_op:
@@ -285,7 +285,7 @@ class FourierGramOp(LinearOperator):
 
         .. note::
             Prefer calling the instance of the FourierGramOp operator as ``operator(x)`` over
-            directly calling this method.
+            directly calling this method. See <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         if self.nufft_gram:
             (x,) = self.nufft_gram(x)

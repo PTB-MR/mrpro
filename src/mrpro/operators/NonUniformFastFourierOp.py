@@ -209,7 +209,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
 
         .. note::
             Prefer calling the instance of the NonUniformFastFourierOp operator as ``operator(x)`` over
-            directly calling this method.
+            directly calling this method. See <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         if len(self._direction_zyx):
             if x.device.type == 'cpu' and self.oversampling not in (0.0, 1.25, 2.0):
@@ -442,7 +442,7 @@ class NonUniformFastFourierOpGramOp(LinearOperator):
 
         .. note::
             Prefer calling the instance of the NonUniformFastFourierOpGramOp operator as ``operator(x)`` over
-            directly calling this method.
+            directly calling this method. See <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         if self.nufft_gram is not None:
             (x,) = self.nufft_gram(x)
