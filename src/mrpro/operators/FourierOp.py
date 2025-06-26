@@ -256,7 +256,7 @@ class FourierGramOp(LinearOperator):
             )
         else:
             self.fast_fourier_gram = None
-            
+
         if fourier_op._non_uniform_fast_fourier_op:
             self.nufft_gram: None | LinearOperator = fourier_op._non_uniform_fast_fourier_op.gram
         else:
