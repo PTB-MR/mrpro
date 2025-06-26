@@ -10,6 +10,7 @@ from mrpro.data.enums import TrajType
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators.LinearOperator import LinearOperator
+from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.reshape import unsqueeze_left
 
 
@@ -293,7 +294,7 @@ class CartesianMaskingOp(LinearOperator):
 
         """
         super().__init__()
-        self.mask = None if mask is None else mask.float()
+        self.mask = None if mask is None else reduce_repeat(mask.float())
 
     def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the Gram operator (Cartesian Masking).
