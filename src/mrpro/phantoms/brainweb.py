@@ -4,6 +4,7 @@ import concurrent.futures
 import gzip
 import io
 import re
+import time
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from os import PathLike
@@ -242,7 +243,7 @@ VALUES_3T_RANDOMIZED: Mapping[TClassNames, BrainwebTissue] = MappingProxyType(
 )
 """Tissue values for 3T with wide randomization ranges."""
 
-DEFAULT_VALUES = {'r1': 0.0, 'm0': 0.0, 'r2': 0.0, 'mask': 0, 'tissueclass': -1}
+DEFAULT_VALUES = {'r1': 0.0, 'm0': 0.0, 'r2': 0.0, 'mask': 0, 'tissueclass': -1, 't1': torch.inf, 't2': torch.inf}
 """Default values for masked out regions."""
 
 
@@ -264,11 +265,22 @@ def download_brainweb(
         depending on the system and access pattern.
     """
 
-    def load_file(url: str, timeout: float = 60) -> bytes:
-        """Load url content."""
-        response = requests.get(url, timeout=timeout)
-        response.raise_for_status()
-        return response.content
+    def load_file(
+        url: str,
+        timeout: float = 60,
+        max_retries: int = 3,
+        retry_delay: float = 30,
+    ) -> bytes:
+        """Load url content with retries for network errors."""
+        for attempt in range(max_retries):
+            try:
+                response = requests.get(url, timeout=timeout)
+                response.raise_for_status()
+                return response.content
+            except requests.exceptions.RequestException:
+                if attempt == max_retries - 1:
+                    raise
+                time.sleep(retry_delay)
 
     def unpack(data: bytes, dtype: np.typing.DTypeLike, shape: Sequence[int]) -> np.ndarray:
         """Unpack gzipped data."""
