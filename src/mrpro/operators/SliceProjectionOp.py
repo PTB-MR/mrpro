@@ -13,7 +13,7 @@ from torch import Tensor
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators.LinearOperator import LinearOperator
-from mrpro.utils import ravel_multi_index
+from mrpro.utils.reshape import ravel_multi_index
 from mrpro.utils.slice_profiles import SliceSmoothedRectangular
 from mrpro.utils.typing import NestedSequence
 

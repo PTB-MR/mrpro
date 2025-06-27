@@ -26,33 +26,6 @@ class IsmrmrdRawTestData:
 
     This is based on
     https://github.com/ismrmrd/ismrmrd-python-tools/blob/master/generate_cartesian_shepp_logan_dataset.py
-
-    Parameters
-    ----------
-    filename
-        full path and filename
-    matrix_size
-        size of image matrix
-    n_coils
-        number of coils
-    oversampling
-        oversampling along readout (k0) direction
-    repetitions
-        number of repetitions,
-    flag_invalid_reps
-        flag to indicate that number of phase encoding steps are different for repetitions
-    acceleration
-        undersampling along phase encoding (k1)
-    noise_level
-        scaling factor for noise level
-    trajectory_type
-        cartesian
-    sampling_order
-        order how phase encoding points (k1) are obtained
-    phantom
-        phantom with different ellipses
-    n_separate_calibration_lines
-        number of additional calibration lines, linear Cartesian sampled
     """
 
     def __init__(
@@ -70,7 +43,42 @@ class IsmrmrdRawTestData:
         phantom: EllipsePhantom | None = None,
         add_bodycoil_acquisitions: bool = False,
         n_separate_calibration_lines: int = 0,
+        discard_pre: int = 0,
+        discard_post: int = 0,
     ):
+        """Initialize IsmrmrdRawTestData.
+
+        Parameters
+        ----------
+        filename
+            full path and filename
+        matrix_size
+            size of image matrix
+        n_coils
+            number of coils
+        oversampling
+            oversampling along readout (k0) direction
+        repetitions
+            number of repetitions,
+        flag_invalid_reps
+            flag to indicate that number of phase encoding steps are different for repetitions
+        acceleration
+            undersampling along phase encoding (k1)
+        noise_level
+            scaling factor for noise level
+        trajectory_type
+            cartesian
+        sampling_order
+            order how phase encoding points (k1) are obtained
+        phantom
+            phantom with different ellipses
+        n_separate_calibration_lines
+            number of additional calibration lines, linear Cartesian sampled
+        discard_pre
+            data points to discard at the beginning of the first five readouts
+        discard_post
+            data points to discard at the end of the first five readouts
+        """
         if not phantom:
             phantom = EllipsePhantom()
 
@@ -236,22 +244,25 @@ class IsmrmrdRawTestData:
         acq.version = 1
         acq.available_channels = self.n_coils
         acq.center_sample = round(n_freq_encoding / 2)
-        acq.read_dir[0] = 1.0
-        acq.phase_dir[1] = 1.0
-        acq.slice_dir[2] = 1.0
+        acq.read_dir = (-0.33, 0.38, -0.86)
+        acq.phase_dir = (0.75, 0.66, 0.0)
+        acq.slice_dir = (-0.57, 0.65, 0.5)
 
         scan_counter = 0
+        time_stamp = 10000
 
         # Write out a few noise scans
         for _ in range(self.n_noise_samples):
             noise = self.noise_level * rng.randn_tensor((self.n_coils, n_freq_encoding), dtype=torch.complex64)
             # here's where we would make the noise correlated
             acq.scan_counter = scan_counter
+            acq.acquisition_time_stamp = time_stamp
             acq.clearAllFlags()
             acq.setFlag(ismrmrd.ACQ_IS_NOISE_MEASUREMENT)
             acq.data[:] = noise.numpy()
             dataset.append_acquisition(acq)
             scan_counter += 1
+            time_stamp += 2
 
         # Add acquisitions obtained with a 2-element body coil (e.g. used for adjustment scans)
         if add_bodycoil_acquisitions:
@@ -259,10 +270,12 @@ class IsmrmrdRawTestData:
             for _ in range(8):
                 data = rng.randn_tensor((2, n_freq_encoding), dtype=torch.complex64)
                 acq.scan_counter = scan_counter
+                acq.acquisition_time_stamp = time_stamp
                 acq.clearAllFlags()
                 acq.data[:] = data.numpy()
                 dataset.append_acquisition(acq)
                 scan_counter += 1
+                time_stamp += 2
             acq.resize(n_freq_encoding, self.n_coils, trajectory_dimensions=2)
 
         # Calibration lines
@@ -282,6 +295,7 @@ class IsmrmrdRawTestData:
             for pe_idx, pe_pos in enumerate(kpe_calibration):
                 # Set some fields in the header
                 acq.scan_counter = scan_counter
+                acq.acquisition_time_stamp = time_stamp
 
                 # kpe is in the range [-npe//2, npe//2), the ismrmrd kspace_encoding_step_1 is in the range [0, npe)
                 kspace_encoding_step_1 = pe_pos + n_phase_encoding // 2
@@ -293,6 +307,7 @@ class IsmrmrdRawTestData:
                 acq.data[:] = kspace_calibration[:, :, pe_idx].numpy()
                 dataset.append_acquisition(acq)
                 scan_counter += 1
+                time_stamp += 2
 
         # Loop over the repetitions, add noise and write to disk
         for rep in range(self.repetitions):
@@ -306,6 +321,7 @@ class IsmrmrdRawTestData:
                 if not self.flag_invalid_reps or rep == 0 or pe_idx < len(kpe[rep]) // 2:  # fewer lines for rep > 0
                     # Set some fields in the header
                     acq.scan_counter = scan_counter
+                    acq.acquisition_time_stamp = time_stamp
 
                     # kpe is in the range [-npe//2, npe//2), the ismrmrd kspace_encoding_step_1 is in the range [0, npe)
                     kspace_encoding_step_1 = pe_pos + n_phase_encoding // 2
@@ -320,15 +336,34 @@ class IsmrmrdRawTestData:
                         acq.setFlag(ismrmrd.ACQ_LAST_IN_SLICE)
                         acq.setFlag(ismrmrd.ACQ_LAST_IN_REPETITION)
 
-                    # Set trajectory.
-                    acq.traj[:] = (
-                        torch.stack((traj_kx[rep][:, pe_idx], traj_ky[rep][:, pe_idx]), dim=1).numpy().astype(float)
-                    )
-
-                    # Set the data and append
-                    acq.data[:] = kspace_with_noise[:, :, pe_idx].numpy()
+                    # Set trajectory and data
+                    traj = torch.stack((traj_kx[rep][:, pe_idx], traj_ky[rep][:, pe_idx]), dim=1)
+                    if pe_idx < 5:  # add readouts with elements to be discarded
+                        acq.resize(n_freq_encoding + discard_pre + discard_post, self.n_coils, trajectory_dimensions=2)
+                        acq.traj[:] = (
+                            torch.cat((torch.zeros((discard_pre, 2)), traj, torch.zeros((discard_post, 2))))
+                            .numpy()
+                            .astype(float)
+                        )
+                        acq.data[:] = torch.cat(
+                            (
+                                torch.zeros((self.n_coils, discard_pre)),
+                                kspace_with_noise[:, :, pe_idx],
+                                torch.zeros((self.n_coils, discard_post)),
+                            ),
+                            dim=1,
+                        ).numpy()
+                        acq.discard_pre = discard_pre
+                        acq.discard_post = discard_post
+                    else:
+                        acq.resize(n_freq_encoding, self.n_coils, trajectory_dimensions=2)
+                        acq.traj[:] = traj.numpy().astype(float)
+                        acq.data[:] = kspace_with_noise[:, :, pe_idx].numpy()
+                        acq.discard_pre = 0
+                        acq.discard_post = 0
                     dataset.append_acquisition(acq)
                     scan_counter += 1
+                    time_stamp += 3
 
         # Clean up
         dataset.close()

@@ -22,7 +22,7 @@ def normalize_index(ndim: int, index: int) -> int:
     `IndexError`
         if index is outside ``[-ndim,ndim)``
     """
-    if 0 < index < ndim:
+    if 0 <= index < ndim:
         return index
     elif -ndim <= index < 0:
         return ndim + index
