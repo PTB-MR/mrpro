@@ -52,7 +52,7 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         self.b1_nominal = nn.Parameter(b1_nominal_tensor, requires_grad=b1_nominal_tensor.requires_grad)
         self.gamma = gamma
 
-    def forward(
+    def __call__(
         self,
         b0_shift: torch.Tensor,
         relative_b1: torch.Tensor,
@@ -81,6 +81,20 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
             Signal calculated for each frequency offset.
             Shape `offsets ...`. For example `offsets, *other, coils, z, y, x`, or `offsets, samples`
             where `offsets` is the number of frequency offsets.
+        """
+        return super().__call__(b0_shift, relative_b1, c, a)
+
+    def forward(
+        self,
+        b0_shift: torch.Tensor,
+        relative_b1: torch.Tensor,
+        c: torch.Tensor,
+        a: torch.Tensor,
+    ) -> tuple[torch.Tensor,]:
+        """Apply forward of WASABI.
+
+        .. note::
+            Prefer calling the instance of the WASABI as ``operator(x)`` over directly calling this method.
         """
         ndim = max(b0_shift.ndim, relative_b1.ndim, c.ndim, a.ndim)
         offsets = unsqueeze_right(self.offsets, ndim - self.offsets.ndim + 1)  # leftmost is offsets
