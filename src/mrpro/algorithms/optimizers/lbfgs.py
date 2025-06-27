@@ -5,6 +5,7 @@ from typing import Literal
 
 import torch
 from torch.optim import LBFGS
+from typing_extensions import Unpack
 
 from mrpro.algorithms.optimizers.OptimizerStatus import OptimizerStatus
 from mrpro.operators.Operator import OperatorType
@@ -18,7 +19,7 @@ class LBFGSStatus(OptimizerStatus):
 
 
 def lbfgs(
-    f: OperatorType,
+    f: OperatorType | Callable[[Unpack[tuple[torch.Tensor, ...]]], tuple[torch.Tensor]],
     initial_parameters: Sequence[torch.Tensor],
     learning_rate: float = 1.0,
     max_iterations: int = 100,
