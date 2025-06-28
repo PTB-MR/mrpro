@@ -13,7 +13,9 @@ from mrpro.nn.FiLM import FiLM
 from mrpro.nn.GroupNorm import GroupNorm
 from mrpro.nn.join import Concat
 from mrpro.nn.ndmodules import ConvND, MaxPoolND
+from mrpro.nn.PermutedBlock import PermutedBlock
 from mrpro.nn.ResBlock import ResBlock
+from mrpro.nn.SeparableResBlock import SeparableResBlock  # Assuming SeparableResBlock is here
 from mrpro.nn.Sequential import Sequential
 from mrpro.nn.SpatialTransformerBlock import SpatialTransformerBlock
 from mrpro.nn.Upsample import Upsample
@@ -411,44 +413,12 @@ class AttentionGatedUNet(UNetBase):
         super().__init__(encoder, decoder)
 
 
-from collections.abc import Sequence
-
-from mrpro.nn.PermutedBlock import PermutedBlock
-from mrpro.nn.SeparableResBlock import SeparableResBlock  # Assuming SeparableResBlock is here
-from mrpro.nn.UNet import UNetBase, UNetDecoder, UNetEncoder
-
-
 class SeparableUNet(UNetBase):
-    """
-    UNet with separable convolutions and controlled downsampling.
-    """
+    """UNet with separable convolutions and attention, and grouped downsampling."""
 
     def __init__(
         self,
-        dim: int,  # Total number of spatial dimensions (e.g., 2 for 2D, 3 for 3D)
-        dim_groups: Sequence[tuple[int, ...]],
-        channels_in: int,
-        channels_out: int,
-        n_features: Sequence[int],
-        cond_dim: int,
-        downsample_dims: Sequence[Sequence[int]] | None = None,
-        encoder_blocks_per_scale: int = 2,
-    ) -> None:
-        """
-        Initialize the SeparableUNet.
-
-        Parameters
-        ----------
-
-        """
-  class SeparableUNet(UNetBase):
-    """
-    UNet with separable convolutions and attention, and grouped downsampling.
-    """
-
-    def __init__(
-        self,
-        dim:int,
+        dim: int,
         dim_groups: Sequence[tuple[int, ...]],
         channels_in: int,
         channels_out: int,
@@ -497,35 +467,33 @@ class SeparableUNet(UNetBase):
         """
         depth = len(n_features)
         for group in dim_groups:
-            if len(group)>3:
-                raise ValueError(f"dim_group {group} can at most contain 3 dimensions. Split it into multiple groups.")
-            if any(d>dim+2 or d<-dim for d in group):
-                raise ValueError(f"dim_group {group} contains dimensions that are out of range for dim={dim}")
+            if len(group) > 3:
+                raise ValueError(f'dim_group {group} can at most contain 3 dimensions. Split it into multiple groups.')
+            if any(d > dim + 2 or d < -dim for d in group):
+                raise ValueError(f'dim_group {group} contains dimensions that are out of range for dim={dim}')
 
         attention_depths = tuple(d % depth for d in attention_depths)
         if downsample_dims is None:
             all_spatial_dims = tuple(
-                sorted(list(set(d if d<0 else d-dim-2 for group in dim_groups for d in group)))
+                sorted(list(set(d if d < 0 else d - dim - 2 for group in dim_groups for d in group)))
             )
             downsample_dims = (all_spatial_dims,) * (depth - 1)
 
-
         def downsampler(level_dims, c_in, c_out) -> Module:
-                if len(level_dims)>3:
-                    sequence=Sequence(downsampler(d[0], c_in, c_out) for d in level_dims)
-                    for d in level_dims[1:]:
-                        sequence.append(downsampler(d, c_out, c_out))
-                    return sequence
-                return PermutedBlock(
-                    level_dims, ConvND(len(level_dims))(c_in, c_out, 3, stride=2, padding=1))
+            if len(level_dims) > 3:
+                sequence = Sequence(downsampler(d[0], c_in, c_out) for d in level_dims)
+                for d in level_dims[1:]:
+                    sequence.append(downsampler(d, c_out, c_out))
+                return sequence
+            return PermutedBlock(level_dims, ConvND(len(level_dims))(c_in, c_out, 3, stride=2, padding=1))
 
         def upsampler(level_dims, c_in, c_out) -> Module:
-            if len(level_dims)>3:
-                sequence=Sequence(upsampler(d[0], c_in, c_out) for d in level_dims)
+            if len(level_dims) > 3:
+                sequence = Sequence(upsampler(d[0], c_in, c_out) for d in level_dims)
                 for d in level_dims[1:]:
                     sequence.append(upsampler(d, c_out, c_out))
                 return sequence
-            return PermutedBlock(level_dims, Upsample(len(level_dims), scale_factor=2, mode="nearest"))
+            return PermutedBlock(level_dims, Upsample(len(level_dims), scale_factor=2, mode='nearest'))
 
         def block(c_in: int, c_out: int, apply_attention: bool) -> Module:
             res_block = SeparableResBlock(dim_groups, c_in, c_out, cond_dim)
@@ -548,7 +516,9 @@ class SeparableUNet(UNetBase):
                 c_feat = n_feat_level
                 skip_features.append(c_feat)
             if i_level < depth - 1:
-                down_blocks.append(_create_downsampler(downsample_dims_per_level[i_level], c_feat, n_features[i_level + 1]))
+                down_blocks.append(
+                    _create_downsampler(downsample_dims_per_level[i_level], c_feat, n_features[i_level + 1])
+                )
                 c_feat = n_features[i_level + 1]
 
         # -- Middle & Encoder Finalization --
@@ -575,12 +545,14 @@ class SeparableUNet(UNetBase):
         # -- Decoder Finalization --
         concat_blocks = [Concat()] * len(decoder_blocks)
         last_block = Sequential(
-            GroupNorm(n_features[0]), SiLU(),
-            PermutedBlock(all_spatial_dims, ConvND(len(all_spatial_dims))(n_features[0], channels_out, 3, padding=1))
+            GroupNorm(n_features[0]),
+            SiLU(),
+            PermutedBlock(all_spatial_dims, ConvND(len(all_spatial_dims))(n_features[0], channels_out, 3, padding=1)),
         )
         decoder = UNetDecoder(decoder_blocks, up_blocks, concat_blocks, last_block)
 
         super().__init__(encoder, decoder)
+
 
 # class SpatioTemporalUNet(UNetBase):
 #     """UNet where blocks apply separable convolutions in different dimensions.
