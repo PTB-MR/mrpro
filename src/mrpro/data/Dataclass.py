@@ -100,6 +100,7 @@ class Dataclass:
         cls,
         no_new_attributes: bool = True,
         auto_reduce_repeats: bool = True,
+        init: bool = True,
         *args,
         **kwargs,
     ) -> None:
@@ -113,7 +114,7 @@ class Dataclass:
             If `True`, try to reduce dimensions only containing repeats to singleton.
             This will be done after init and post_init.
         """
-        dataclasses.dataclass(cls, repr=False, eq=False)  # type: ignore[call-overload]
+        dataclasses.dataclass(cls, repr=False, eq=False, init=init)  # type: ignore[call-overload]
         super().__init_subclass__(**kwargs)
         child_post_init = vars(cls).get('__post_init__')
 
