@@ -825,7 +825,7 @@ class Dataclass:
         return new
 
     def stack(self, *others: Self) -> Self:
-        """Stack other along new first dimension
+        """Stack other along new first dimension.
 
         Parameters
         ----------
