@@ -15,6 +15,6 @@ __all__ = [
     "FastMRIKDataDataset",
     "M4RawDataset",
     "brainweb",
-    "mdcnn",
-    "coils"
+    "coils",
+    "mdcnn"
 ]
