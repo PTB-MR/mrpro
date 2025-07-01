@@ -131,8 +131,8 @@ class ConjugateGradientOp(torch.nn.Module):
         operator_factory: Callable[..., LinearOperatorMatrix | LinearOperator],
         rhs_factory: Callable[..., tuple[torch.Tensor, ...]],
         implicit_backward: bool = True,
-        tolerance: float = 1e-8,
-        max_iterations: int = 10000,
+        tolerance: float = 1e-6,
+        max_iterations: int = 100,
     ):
         r"""Initialize a conjugate gradient operator.
 
