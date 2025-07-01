@@ -1,9 +1,10 @@
-# %%
+# ruff: noqa: D102, ANN201
+
 import collections
 from collections.abc import Sequence
 from copy import deepcopy
 from pathlib import Path
-from typing import cast
+from typing import TypedDict, cast
 
 import einops
 import matplotlib.pyplot as plt
@@ -17,6 +18,14 @@ from pytorch_lightning.loggers import NeptuneLogger
 from pytorch_lightning.strategies import DDPStrategy
 
 # mrpro.phantoms.brainweb.download_brainweb(workers=2, progress=True)
+
+
+class BatchType(TypedDict):
+    kdata: mrpro.data.KData
+    csm: mrpro.data.CsmData
+    m0: torch.Tensor
+    t1: torch.Tensor
+    mask: torch.Tensor
 
 
 class Dataset(torch.utils.data.Dataset):
@@ -195,9 +204,9 @@ class PINQI(torch.nn.Module):
     def forward(self, kdata: mrpro.data.KData, csm: mrpro.data.CsmData):
         csm_op = csm.as_operator()
         fourier_op = mrpro.operators.FourierOp.from_kdata(kdata)
-        aquisition_op = fourier_op @ csm_op
-        gram = aquisition_op.gram
-        (zero_filled_image,) = aquisition_op.H(kdata.data)
+        acquisition_op = fourier_op @ csm_op
+        gram = acquisition_op.gram
+        (zero_filled_image,) = acquisition_op.H(kdata.data)
         images = list(mrpro.algorithms.optimizers.cg(gram, zero_filled_image, max_iterations=2))
         parameters = [self.get_parameter_reg(images[-1])]
         linear_solver = self.get_linear_solver(gram)
@@ -315,7 +324,7 @@ class Module(pl.LightningModule):
         )
         return loss
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch: BatchType, batch_idx: int) -> None:
         images, parameters = self(batch['kdata'], batch['csm'])
         loss = self.loss(parameters, batch)
 
@@ -388,7 +397,7 @@ class Module(pl.LightningModule):
         axes[2].colorbar(im3)
         return axes
 
-    def configure_optimizers(self):
+    def configure_optimizers(self) -> dict[str, torch.optim.Optimizer | torch.optim.lr_scheduler.LRScheduler]:
         optimizer = torch.optim.AdamW(
             self.parameters(),
             lr=self.hparams.lr,
