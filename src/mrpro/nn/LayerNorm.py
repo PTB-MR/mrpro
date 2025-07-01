@@ -41,7 +41,7 @@ class LayerNorm(CondMixin, Module):
 
         self.features_last = features_last
 
-    def __call__(self, x: torch.Tensor) -> torch.Tensor:
+    def __call__(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply layer normalization to the input tensor.
 
         Parameters
@@ -53,7 +53,7 @@ class LayerNorm(CondMixin, Module):
         -------
             Normalized output tensor
         """
-        return super().__call__(x)
+        return super().__call__(x, cond=cond)
 
     def forward(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply layer normalization to the input tensor."""

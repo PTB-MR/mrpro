@@ -29,10 +29,10 @@ class Upsample(Module):
         super().__init__()
         self.scale_factor = scale_factor
         if mode == 'nearest':
-            dims = [tuple(d) for d in torch.tensor(dim).split(3)]
-            modes = ['nearest'] * len(self.dim)
+            dims = [d.tolist() for d in torch.tensor(dim).split(3)]
+            modes = ['nearest'] * len(dim)
         elif mode == 'linear':
-            dims = [tuple(d) for d in torch.tensor(dim).split(3)]
+            dims = [d.tolist() for d in torch.tensor(dim).split(3)]
             modes = [{1: 'linear', 2: 'bilinear', 3: 'trilinear'}[len(d)] for d in dims]
         elif mode == 'cubic':
             if not len(dim) == 2:
@@ -42,18 +42,14 @@ class Upsample(Module):
 
         self.blocks = Sequential(
             *[
-                PermutedBlock(d, Upsample(d, scale_factor=scale_factor, mode=m))
+                PermutedBlock(d, torch.nn.Upsample(scale_factor=len(d) * (scale_factor,), mode=m))
                 for d, m in zip(dims, modes, strict=False)
             ]
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Upsample the input tensor."""
-        return torch.nn.functional.interpolate(
-            x,
-            mode=self.mode,
-            scale_factor=self.scale_factor,
-        )
+        return self.blocks(x)
 
     def __call__(self, x: torch.Tensor) -> torch.Tensor:
         """Upsample the input tensor.

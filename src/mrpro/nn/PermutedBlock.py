@@ -38,9 +38,8 @@ class PermutedBlock(CondMixin, nn.Module):
         if self.features_last:
             if x.ndim - 1 in keep:
                 raise ValueError('Features dimension should not be in apply_along_dim.')
-            keep = tuple(d % (x.ndim - 1) for d in self.apply_along_dim)
-            batch_dim = tuple(d for d in range(x.ndim - 1) if d not in keep)
-            permute = (0, *batch_dim, *keep, -1)
+            batch_dim = tuple(d for d in range(1, x.ndim - 1) if d not in keep)
+            permute = (0, *batch_dim, *keep, x.ndim - 1)
         else:
             if 1 in keep:
                 raise ValueError('Features dimension should not be in apply_along_dim.')
@@ -48,8 +47,10 @@ class PermutedBlock(CondMixin, nn.Module):
             permute = (0, *batch_dim, 1, *keep)
         h = x.permute(permute)
         batch_shape = h.shape[: 1 + len(batch_dim)]
-        h = h.flatten(0, len(batch_dim) + 1)
+        h = h.flatten(0, len(batch_dim))
         h = call_with_cond(self.module, h, cond=cond)
         h = h.unflatten(0, batch_shape)
-        permute_back = torch.tensor(permute).argsort().tolist()
-        return h.permute(permute_back)
+        permute_back = [0] * x.ndim
+        for i, p in enumerate(permute):
+            permute_back[p] = i
+        return h.permute(tuple(permute_back))

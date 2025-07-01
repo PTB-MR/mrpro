@@ -219,7 +219,11 @@ class BasicUNet(UNetBase):
             encoder_blocks.append(ResBlock(dim, n_feat, n_feat, cond_dim))
             decoder_blocks.append(ResBlock(dim, 2 * n_feat, n_feat, cond_dim))
             down_blocks.append(ConvND(dim)(n_feat, n_feat_next, 3, stride=2, padding=1))
-            up_blocks.append(Sequential(Upsample(dim, scale_factor=2), ConvND(dim)(n_feat_next, n_feat, 3, padding=1)))
+            up_blocks.append(
+                Sequential(
+                    Upsample(tuple(range(-dim, 0)), scale_factor=2), ConvND(dim)(n_feat_next, n_feat, 3, padding=1)
+                )
+            )
             concat_blocks.append(Concat())
         up_blocks = up_blocks[::-1]
         decoder_blocks = decoder_blocks[::-1]
@@ -256,9 +260,9 @@ class UNet(UNetBase):
         dim: int,
         channels_in: int,
         channels_out: int,
-        attention_depths: Sequence[int] = (-1, -2),
+        attention_depths: Sequence[int] = (-1,),
         n_features: Sequence[int] = (64, 128, 192, 256),
-        n_heads: int = 4,
+        n_heads: int = 8,
         cond_dim: int = 0,
         encoder_blocks_per_scale: int = 2,
     ) -> None:
@@ -294,9 +298,7 @@ class UNet(UNetBase):
 
         def attention_block(channels: int) -> Module:
             dim_groups = (tuple(range(-dim, 0)),)
-            return SpatialTransformerBlock(
-                dim_groups, channels, n_heads, channels_per_head=channels // n_heads, cond_dim=cond_dim
-            )
+            return SpatialTransformerBlock(dim_groups, channels, n_heads, cond_dim=cond_dim)
 
         def block(channels_in: int, channels_out: int, attention: bool) -> Module:
             if not attention:
@@ -338,7 +340,7 @@ class UNet(UNetBase):
                     block(n_feat_old + skip_features.pop(), n_feat, attention=i_level in attention_depths)
                 )
                 up_blocks.append(Identity())
-            up_blocks.append(Upsample(dim, scale_factor=2))
+            up_blocks.append(Upsample(tuple(range(-dim, 0)), scale_factor=2))
         up_blocks.pop()  # no upsampling after the last resolution level
         concat_blocks = [Concat() for _ in range(len(decoder_blocks))]
         last_block = Sequential(
