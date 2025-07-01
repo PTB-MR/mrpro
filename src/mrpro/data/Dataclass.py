@@ -823,6 +823,16 @@ class Dataclass:
         new._reduce_repeats_(recurse=True)
         return new
 
+    def stack(self, *others: Self) -> Self:
+        """Stack other along new first dimension.
+
+        Parameters
+        ----------
+        others
+            other instance to stack.
+        """
+        return self[None].concatenate(*[o[None] for o in others], dim=0)
+
     def __eq__(self, other: object) -> bool:
         """Check deep equality of two dataclasses.
 

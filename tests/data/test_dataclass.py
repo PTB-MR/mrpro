@@ -380,16 +380,32 @@ def test_dataclass_split_invalid() -> None:
         a.split(dim=0, size=-2)
 
 
+def test_dataclass_stack() -> None:
+    """Test stacking of dataclasses."""
+    a = A()
+    b = A()
+    c = A()
+
+    stacked1 = a.stack(b, c)
+    assert stacked1.shape == (1, 10, 20)  # repeats get reduced.
+
+    a.floattensor = torch.ones(10, 20) * 1
+    b.floattensor = torch.ones(10, 20) * 2
+    c.floattensor = torch.ones(10, 20) * 3
+    stacked2 = a.stack(b, c)
+    assert stacked2.shape == (3, 10, 20)  # different values, no reduction.
+
+
 def test_dataclass_concatenate() -> None:
     """Test concatenation of dataclasses."""
     a = A()
     b = A()
     c = A()
-    concatenated = a.concatenate(b, c, dim=0)
-    assert concatenated.shape == (30, 20)
-    assert concatenated.floattensor.shape == (1, 20)  # broadcasted
-    assert concatenated.floattensor2.shape == (30, 1)  # not broadcasted in concatenation dimension
-    assert concatenated.split(dim=0, size=10) == (a, b, c)
+    stacked = a.stack(b, c)
+    assert stacked.shape == (3, 10, 20)
+    assert stacked.floattensor.shape == (1, 10, 20)  # broadcasted
+    assert stacked.floattensor2.shape == (3, 10, 1)  # not broadcasted in concatenation dimension
+    assert stacked.split(dim=0, size=1) == (a, b, c)
 
 
 def test_dataclass_equal() -> None:
