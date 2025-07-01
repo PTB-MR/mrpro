@@ -21,8 +21,8 @@ default_lbfgs = functools.partial(
     lbfgs,
     learning_rate=1.0,
     max_iterations=40,
-    tolerance_change=1e-8,
-    tolerance_grad=1e-7,
+    tolerance_change=1e-6,
+    tolerance_grad=1e-6,
     history_size=20,
     line_search_fn='strong_wolfe',
 )
@@ -81,9 +81,9 @@ class OptimizerFunction(torch.autograd.Function):
         """Optimize."""
         ctx.factory = factory
 
-        parameters_ = tuple(p.detach().clone() for p in parameters if isinstance(p, torch.Tensor))
-        initial_values_ = tuple(x.detach().requires_grad_(True) for x in initial_values if isinstance(x, torch.Tensor))
-        objective = factory(*parameters)
+        parameters_ = tuple(p.detach().clone() for p in parameters)
+        initial_values_ = tuple(x.detach().requires_grad_(True) for x in initial_values)
+        objective = factory(*parameters_)
         solution = optimize(objective, initial_values)
         ctx.save_for_backward(*solution, *parameters_)
         ctx.len_x = len(initial_values_)
@@ -105,7 +105,7 @@ class OptimizerFunction(torch.autograd.Function):
         def hvp(*v: torch.Tensor) -> tuple[torch.Tensor, ...]:
             return torch.autograd.functional.vhp(lambda *x: objective(*x)[0], solution, v=v)[1]
 
-        hessian_inverse_grad = cg(hvp, grad_outputs, max_iterations=100, tolerance=1e-7)
+        hessian_inverse_grad = cg(hvp, grad_outputs, max_iterations=50, tolerance=1e-6)
         with torch.enable_grad():
             dobjective_dsolution = torch.autograd.grad(objective(*solution), solution, create_graph=True)
             # - d^2_obective / d_solution d_params Hessian^-1 * grad
