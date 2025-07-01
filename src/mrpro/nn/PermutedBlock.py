@@ -1,3 +1,5 @@
+"""Block that applies a submodule along selected spatial dimensions."""
+
 from collections.abc import Sequence
 
 import torch

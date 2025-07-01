@@ -7,8 +7,10 @@ from mrpro.nn.nets.SwinIR import SwinIR
 
 __all__ = [
     "AttentionGatedUNet",
+    "BasicUNet",
     "DCVAE",
     "Restormer",
+    "SeparableUNet",
     "SwinIR",
     "UNet",
     "Uformer",

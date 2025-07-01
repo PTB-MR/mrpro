@@ -34,10 +34,12 @@ class LayerNorm(CondMixin, Module):
             self.weight = Parameter(torch.ones(channels))
             self.bias = Parameter(torch.zeros(channels))
             self.cond_proj = None
-        else:
+        elif channels is not None:
             self.weight = None
             self.bias = None
             self.cond_proj = Linear(cond_dim, 2 * channels)
+        else:
+            raise ValueError('cond_dim must be zero or positive.')
 
         self.features_last = features_last
 
@@ -48,6 +50,8 @@ class LayerNorm(CondMixin, Module):
         ----------
         x
             Input tensor
+        cond
+            Conditioning tensor. If `None`, no conditioning is applied.
 
         Returns
         -------
