@@ -40,7 +40,7 @@ jobs:
         run: |
           # docker_tasks is a list of pairs (dictionaries) with keys 'filepath' and 'image_name' like:
           # [{"filepath": "docker/Dockerfile_x1", "image_name": "ghcr.io/ptb-mr/mrpro_x1"}, ...]
-          docker_tasks=$(find docker -type f -name 'Dockerfile_py*' | jq -R -s -c 'split("\n")[:-1]' | \
+          docker_tasks=$(find docker -type f -name 'Dockerfile_*' | jq -R -s -c 'split("\n")[:-1]' | \
           jq -r -c 'map({filepath: ., image_name:  . | sub("docker/Dockerfile"; "ghcr.io\/ptb-mr\/mrpro")})')
           echo "docker_tasks: $docker_tasks"
           echo "docker_tasks=$docker_tasks" >> $GITHUB_OUTPUT
@@ -117,6 +117,8 @@ jobs:
           image_url="${{ matrix.docker_task.image_name }}"
           if [ "${image_url##*/}" = "mrpro_py310_minimal" ]; then
             pip install .[tests]
+          elif [ "${image_url##*/}" = "mrpro_runner" ]; then
+            pip install --upgrade --upgrade-strategy eager .[tests]
           else
             pip install --index-url=https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple/ --upgrade --upgrade-strategy eager .[tests]
           fi
