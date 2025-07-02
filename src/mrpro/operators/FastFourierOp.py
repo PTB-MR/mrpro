@@ -129,7 +129,7 @@ class FastFourierOp(LinearOperator):
 
         .. note::
             Prefer calling the instance of the FastFourierOp operator as ``operator(x)`` over
-            directly calling this method. See <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         y = torch.fft.fftshift(
             torch.fft.fftn(torch.fft.ifftshift(*self._pad_op(x), dim=self._dim), dim=self._dim, norm='ortho'),

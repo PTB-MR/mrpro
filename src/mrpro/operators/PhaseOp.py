@@ -30,6 +30,6 @@ class PhaseOp(EndomorphOperator):
 
         .. note::
             Prefer calling the instance of the PhaseOp operator as ``operator(x)`` over
-            directly calling this method. See <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         return tuple([torch.angle(xi) for xi in x])

@@ -404,7 +404,7 @@ class LinearOperatorComposition(LinearOperator):
 
         .. note::
             Prefer calling the instance of the LinearOperatorComposition operator as ``operator(x)`` over
-            directly calling this method. See <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         return self._operator1(*self._operator2(x))
 
@@ -467,7 +467,7 @@ class LinearOperatorSum(LinearOperator):
 
         .. note::
             Prefer calling the instance of the LinearOperatorSum operator as ``operator(x)`` over
-            directly calling this method. See <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         return (functools.reduce(operator.add, (op(x)[0] for op in self._operators)),)
 
@@ -522,7 +522,7 @@ class LinearOperatorElementwiseProductRight(LinearOperator):
 
         .. note::
             Prefer calling the instance of the LinearOperatorElementwiseProductRight operator as ``operator(x)`` over
-            directly calling this method. See <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         (out,) = self._operator(x)
         return (out * self._scalar,)
@@ -590,7 +590,7 @@ class LinearOperatorElementwiseProductLeft(LinearOperator):
 
         .. note::
             Prefer calling the instance of the LinearOperatorElementwiseProductLeft operator as ``operator(x)`` over
-            directly calling this method. See <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         return self._operator(x * self._scalar)
 
@@ -645,7 +645,7 @@ class AdjointLinearOperator(LinearOperator):
 
         .. note::
             Prefer calling the instance of the AdjointLinearOperator operator as ``operator(x)`` over
-            directly calling this method. See <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         return self._operator.adjoint(x)
 

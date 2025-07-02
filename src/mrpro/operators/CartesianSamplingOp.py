@@ -146,7 +146,7 @@ class CartesianSamplingOp(LinearOperator):
 
         .. note::
             Prefer calling the instance of the CartesianSamplingOp operator as ``operator(x)`` over
-            directly calling this method. See <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         if self._sorted_grid_shape != SpatialDimension(*x.shape[-3:]):
             raise ValueError('k-space data shape mismatch')
@@ -352,7 +352,7 @@ class CartesianMaskingOp(LinearOperator):
 
         .. note::
             Prefer calling the instance of the CartesianMaskingOp operator as ``operator(x)`` over
-            directly calling this method. See <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         if self.mask is None:
             return (x,)

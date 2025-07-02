@@ -60,7 +60,7 @@ class RearrangeOp(LinearOperator):
 
         .. note::
             Prefer calling the instance of the RearrangeOp operator as ``operator(x)`` over
-            directly calling this method. See <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         y = rearrange(x, self._forward_pattern, **self.additional_info)
         return (y,)

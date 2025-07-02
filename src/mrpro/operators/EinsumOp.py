@@ -82,7 +82,7 @@ class EinsumOp(LinearOperator):
 
         .. note::
             Prefer calling the instance of the EinsumOp operator as ``operator(x)`` over
-            directly calling this method. See <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         y = einsum(self.matrix, x, self._forward_pattern)
         return (y,)
