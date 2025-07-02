@@ -25,6 +25,8 @@ export USER_NAME="XXX"
 export WORKFLOW_ID="XXX"
 # GitHub personal token (see pytest_selfhosted.yml)
 export GITHUB_PERSONAL_TOKEN="XXX"
+# Runner group
+export RUNNER_GROUP="XXX"
 
 # specify any other required environmental variables as http(s)_proxy
 export https_proxy="XXX"
@@ -34,7 +36,14 @@ export http_proxy="XXX"
 logger = logging.getLogger('SlurmDispatcher')
 
 
-REQUIRED_ENV_VARS = ('GITHUB_OWNER', 'GITHUB_REPOSITORY', 'GITHUB_PERSONAL_TOKEN', 'WORKFLOW_ID', 'USER_NAME')
+REQUIRED_ENV_VARS = (
+    'GITHUB_OWNER',
+    'GITHUB_REPOSITORY',
+    'GITHUB_PERSONAL_TOKEN',
+    'WORKFLOW_ID',
+    'USER_NAME',
+    'RUNNER_GROUP',
+)
 ENV_VARS = {var_name: os.environ.get(var_name) for var_name in REQUIRED_ENV_VARS}
 
 UNSET_VARS = [key for key, value in ENV_VARS.items() if value is None]
@@ -57,7 +66,7 @@ SBATCH_SUBMIT_COMMAND = """#!/bin/bash
 
 # display the config file
 singularity exec --nv --pwd /actions-runner --writable-tmpfs --contain mrpro-runner.sif\
-    /actions-runner/entrypoint.sh {RUNNER_TOKEN} {GITHUB_OWNER} {RUN_ID}
+    /actions-runner/entrypoint.sh {RUNNER_TOKEN} {GITHUB_OWNER} {RUN_ID} {RUNNER_GROUP}
 sleep 15"""
 
 
@@ -108,6 +117,7 @@ def dispatch_run(runner_token: str, run_id: int) -> None:
             RUN_ID=run_id,
             GITHUB_OWNER=ENV_VARS['GITHUB_OWNER'],
             USER_NAME=ENV_VARS['USER_NAME'],
+            RUNNER_GROUP=ENV_VARS['RUNNER_GROUP'],
         ),
         text=True,
         capture_output=True,
