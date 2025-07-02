@@ -4,6 +4,7 @@ from mrpro.nn.nets.DCAE import DCVAE
 from mrpro.nn.nets.VAE import VAE
 from mrpro.nn.nets.UNet import UNet, AttentionGatedUNet, BasicUNet, SeparableUNet
 from mrpro.nn.nets.SwinIR import SwinIR
+from mrpro.nn.nets.BasicCNN import BasicCNN
 
 __all__ = [
     "AttentionGatedUNet",
@@ -14,5 +15,6 @@ __all__ = [
     "SwinIR",
     "UNet",
     "Uformer",
-    "VAE"
+    "VAE",
+    "BasicCNN",
 ]

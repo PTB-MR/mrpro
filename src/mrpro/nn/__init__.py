@@ -20,8 +20,13 @@ from mrpro.nn.ShiftedWindowAttention import ShiftedWindowAttention
 from mrpro.nn.SqueezeExcitation import SqueezeExcitation
 from mrpro.nn.TransposedAttention import TransposedAttention
 from mrpro.nn.DropPath import DropPath
+from mrpro.nn.Residual import Residual
+from mrpro.nn.ComplexAsChannel import ComplexAsChannel
 from mrpro.nn import nets
+from mrpro.nn.PermutedBlock import PermutedBlock
+
 __all__ = [
+    "ComplexAsChannel",
     "AdaptiveAvgPoolND",
     "AttentionGate",
     "AvgPoolND",
@@ -30,6 +35,7 @@ __all__ = [
     "ConvND",
     "ConvTransposeND",
     "DropPath",
+    "ComplexAsChannel",
     "FiLM",
     "GroupNorm",
     "InstanceNormND",
@@ -40,5 +46,6 @@ __all__ = [
     "ShiftedWindowAttention",
     "SqueezeExcitation",
     "TransposedAttention",
-    "nets"
+    "nets",
+    "PermutedBlock",
 ]
