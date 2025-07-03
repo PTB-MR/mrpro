@@ -83,6 +83,7 @@ class ConjugateGradientFunction(torch.autograd.Function):
             ctx.saved_tensors[: ctx.len_solution],
             ctx.saved_tensors[ctx.len_solution :],
         )
+        inputs = tuple(x.detach().clone().requires_grad_(x.requires_grad) for x in inputs)
         with torch.enable_grad():
             rhs = ctx.rhs_factory(*inputs)
             operator = ctx.operator_factory(*inputs)
