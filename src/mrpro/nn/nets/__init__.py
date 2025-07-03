@@ -8,6 +8,7 @@ from mrpro.nn.nets.BasicCNN import BasicCNN
 
 __all__ = [
     "AttentionGatedUNet",
+    "BasicCNN",
     "BasicUNet",
     "DCVAE",
     "Restormer",
@@ -15,6 +16,5 @@ __all__ = [
     "SwinIR",
     "UNet",
     "Uformer",
-    "VAE",
-    "BasicCNN",
+    "VAE"
 ]

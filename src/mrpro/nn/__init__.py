@@ -26,26 +26,26 @@ from mrpro.nn import nets
 from mrpro.nn.PermutedBlock import PermutedBlock
 
 __all__ = [
-    "ComplexAsChannel",
     "AdaptiveAvgPoolND",
     "AttentionGate",
     "AvgPoolND",
     "BatchNormND",
+    "ComplexAsChannel",
     "CondMixin",
     "ConvND",
     "ConvTransposeND",
     "DropPath",
-    "ComplexAsChannel",
     "FiLM",
     "GroupNorm",
     "InstanceNormND",
     "MaxPoolND",
     "NeighborhoodSelfAttention",
+    "PermutedBlock",
     "ResBlock",
+    "Residual",
     "Sequential",
     "ShiftedWindowAttention",
     "SqueezeExcitation",
     "TransposedAttention",
-    "nets",
-    "PermutedBlock",
+    "nets"
 ]
