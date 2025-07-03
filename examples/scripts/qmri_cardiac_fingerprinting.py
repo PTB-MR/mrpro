@@ -11,8 +11,9 @@
 # $T_1$ and $T_2$ maps are estimated. This example uses data from [Schuenke et al., 2024](in submission) of a phantom
 # consisting of 9 tubes. Average $T_1$ and $T_2$ are calculated for each tube.
 #
-# The fingerprinting sequence, as described by [Hamilton et al., 2017](https://doi.org/10.1002/mrm.26668) and
-# [Schuenke et al., 2024](in submission), consists of three repetitions of the following 5-block structure:
+# The fingerprinting sequence, as described by [Hamilton et al., 2017](https://doi.org/10.1002/mrm.26216) and
+# [Schuenke et al., 2024](https://doi.org/10.1007/s10334-025-01269-9), consists of three repetitions of the following
+# 5-block structure:
 # %%
 # Block 0          Block 1          Block 2          Block 3          Block 4
 # R-peak           R-peak           R-peak           R-peak           R-peak
