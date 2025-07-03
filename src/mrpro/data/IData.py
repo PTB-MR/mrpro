@@ -243,10 +243,10 @@ class IData(Dataclass):
                 if dcm_frame_idata.header.shape.numel() != 1:
                     raise ValueError('Only single image can be saved as a frame.')
                 directions = dcm_frame_idata.header.orientation[0].as_directions()
-                readout_direction = np.squeeze(np.asarray(directions[2].zyx[::-1]))
-                phase_direction = np.squeeze(np.asarray(directions[1].zyx[::-1]))
-                slice_direction = np.squeeze(np.asarray(directions[0].zyx[::-1]))
-                position = np.squeeze(np.asarray(dcm_frame_idata.header.position.zyx[::-1]))
+                readout_direction = np.squeeze(np.array(directions[2].zyx[::-1]))
+                phase_direction = np.squeeze(np.array(directions[1].zyx[::-1]))
+                slice_direction = np.squeeze(np.array(directions[0].zyx[::-1]))
+                position = np.squeeze(np.array(dcm_frame_idata.header.position.zyx[::-1]))
 
                 dataset.PerFrameFunctionalGroupsSequence.append(Dataset())
 
@@ -261,7 +261,7 @@ class IData(Dataclass):
                         + slice_direction * dcm_frame_idata.header.resolution.z * (-number_of_frames / 2 + frame)
                     )
                 if reference_patient_table_position:
-                    image_position_patient += np.asarray(
+                    image_position_patient += np.array(
                         np.squeeze(
                             (dcm_frame_idata.header.patient_table_position - reference_patient_table_position).zyx[::-1]
                         )
@@ -270,7 +270,11 @@ class IData(Dataclass):
                 plane_position_sequence[0].ImagePositionPatient = m_to_mm(image_position_patient.tolist())
                 dataset.PerFrameFunctionalGroupsSequence[-1].PlanePositionSequence = deepcopy(plane_position_sequence)
 
-                # The direction cosines of the first row and the first column with respect to the patient
+                # According to the dicom manual, ImageOrientationPatient describes:
+                # "The direction cosines of the first row and the first column with respect to the patient."
+                # This would suggest that the first direction should be the readout direction, the second the
+                # phase direction. Nevertheless, for all our data the two directions have to be swapped to achieve
+                # the correct orientation. Any help welcome in solving this!
                 plane_orientation_sequence[0].ImageOrientationPatient = [*phase_direction, *readout_direction]
                 dataset.PerFrameFunctionalGroupsSequence[-1].PlaneOrientationSequence = deepcopy(
                     plane_orientation_sequence
