@@ -128,7 +128,7 @@ def show_images(*images: torch.Tensor, titles: list[str] | None = None) -> None:
     n_images = len(images)
     _, axes = plt.subplots(1, n_images, squeeze=False, figsize=(n_images * 3, 3))
     for i in range(n_images):
-        axes[0][i].imshow(images[i], cmap='gray')
+        axes[0][i].imshow(images[i], cmap='gray', vmin=0, vmax=images[i].max() * 0.6)
         axes[0][i].axis('off')
         if titles:
             axes[0][i].set_title(titles[i])
@@ -417,4 +417,9 @@ show_images(idat_us_sense.rss().squeeze(), titles=['Iterative SENSE'])
 zenodo_get.download(record='15223816', retry_attempts=5, output_dir=data_folder, file_glob=('*.dcm',))
 
 idat_dcm = mrpro.data.IData.from_dicom_files(data_folder / 'cart_t1_msense_integrated.dcm')
-show_images(idat_us_sense.rss().squeeze(), idat_dcm.rss().squeeze(), titles=['MRpro', 'Scanner'])
+show_images(idat_us_sense.rss().squeeze(), torch.fliplr(idat_dcm.rss().squeeze()), titles=['MRpro', 'Scanner'])
+
+# %% [markdown]
+# The MRpro reconstruction shows some residual intensity variations due to the multi-coil acquisition. For the vendor
+# reconstruction this has been compensated for by using an additional scan with the body coil. This is not yet available
+# in MRpro but all the building blocks are there to implement it. We look forward to your contribution!
