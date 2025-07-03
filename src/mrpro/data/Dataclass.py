@@ -41,7 +41,7 @@ class HasConcatenate(Protocol):
         """Concatenate other instances to self."""
 
 
-class InconsistentDeviceError(ValueError):
+class InconsistentDeviceError(RuntimeError):
     """Raised if the devices of different fields differ.
 
     There is no single device that all fields are on, thus
