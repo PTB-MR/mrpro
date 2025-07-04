@@ -18,9 +18,10 @@ class BatchType(TypedDict):
 
 
 class AcceleratedFastMRI(torch.utils.data.Dataset):
-    def __init__(self, path: Path, acceleration: float = 16, noise_level: float = 0.2):
+    def __init__(self, path: Path, acceleration: float = 12, noise_level: float = 0.1):
         self.acceleration = acceleration
-        self.dataset = mrpro.phantoms.FastMRIKDataDataset(path)
+        files = list(path.glob('*AXT1*'))
+        self.dataset = mrpro.phantoms.FastMRIKDataDataset(files)
         self.noise_level = noise_level
 
     def __len__(self):
@@ -31,8 +32,7 @@ class AcceleratedFastMRI(torch.utils.data.Dataset):
         data = data.remove_readout_os()
         data.data /= data.data.std()
         reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction(
-            data,
-            csm=lambda data: mrpro.data.CsmData.from_idata_inati(data, downsampled_size=64),
+            data, csm=lambda data: mrpro.data.CsmData.from_idata_inati(data, downsampled_size=64)
         )
         csm = reconstruction.csm
         target = reconstruction(data)
@@ -52,29 +52,19 @@ class AcceleratedFastMRI(torch.utils.data.Dataset):
 
 
 class MODL(torch.nn.Module):
-    def __init__(self, iterations: int = 10, n_features: Sequence[int] = (64, 64, 64, 64)):
+    def __init__(self, iterations: int = 8, n_features: Sequence[int] = (64, 64, 64, 64)):
         super().__init__()
         cnn = mrpro.nn.nets.BasicCNN(
             dim=2,
             channels_in=2,
             channels_out=2,
             n_features=n_features,
+            batch_norm=True,
         )
         self.network = mrpro.nn.Residual(mrpro.nn.ComplexAsChannel(mrpro.nn.PermutedBlock((-1, -2), cnn)))
         self.network = torch.compile(self.network, dynamic=True, fullgraph=True)
         self.iterations = iterations
-        self.regularization_weight = torch.nn.Parameter(torch.tensor(1.0))
-
-    def _prepare_dataconsistency(
-        self,
-        gram: mrpro.operators.LinearOperator,
-        zero_filled_image: torch.Tensor,
-    ) -> mrpro.operators.ConjugateGradientOp:
-        return mrpro.operators.ConjugateGradientOp(
-            operator_factory=lambda _: gram + self.regularization_weight,
-            rhs_factory=lambda regularization_image: zero_filled_image
-            + self.regularization_weight * regularization_image,
-        )
+        self.regularization_weights = torch.nn.Parameter(0.2 * torch.ones(iterations))
 
     def __call__(self, kdata: mrpro.data.KData, csm: mrpro.data.CsmData) -> mrpro.data.IData:
         return super().__call__(kdata, csm)
@@ -82,18 +72,23 @@ class MODL(torch.nn.Module):
     def forward(self, kdata: mrpro.data.KData, csm: mrpro.data.CsmData) -> mrpro.data.IData:
         fourier_op = mrpro.operators.FourierOp.from_kdata(kdata)
         acquisition_op = fourier_op @ csm.as_operator()
+        (zero_filled_image,) = acquisition_op.H(kdata.data)
+        gram = acquisition_op.gram
+        data_consistency_op = mrpro.operators.ConjugateGradientOp(
+            operator_factory=lambda _image, weight: gram + weight,
+            rhs_factory=lambda image, weight: zero_filled_image + weight * image,
+        )
 
-        (image,) = acquisition_op.H(kdata.data)
-        data_consistency_op = self._prepare_dataconsistency(acquisition_op.gram, image)
-
-        for _ in range(self.iterations):
+        (image,) = mrpro.algorithms.optimizers.cg(gram, zero_filled_image, max_iterations=5)
+        for iteration in range(self.iterations):
             regularization = self.network(image)
-            (image,) = data_consistency_op(regularization)
+            (image,) = data_consistency_op(regularization, self.regularization_weights[iteration])
 
         return mrpro.data.IData(image, header=mrpro.data.IHeader.from_kheader(kdata.header))
 
 
-def plot(batch: BatchType, prediction: mrpro.data.IData):
+def plot(batch: BatchType, prediction: mrpro.data.IData, step: int):
+    """Plot the direct, sense, and modl reconstructions."""
     target = batch['target'].rss().cpu().squeeze()
     direct = mrpro.algorithms.reconstruction.DirectReconstruction(batch['data'], csm=batch['csm'])(batch['data'])
     direct = direct.rss().cpu().squeeze()
@@ -112,7 +107,7 @@ def plot(batch: BatchType, prediction: mrpro.data.IData):
             ax.text(
                 0.98,
                 0.1,
-                f'{ssim_value.item():.2f}',
+                f'SSIM: {ssim_value.item():.2f}',
                 color='white',
                 horizontalalignment='right',
                 verticalalignment='top',
@@ -127,31 +122,31 @@ def plot(batch: BatchType, prediction: mrpro.data.IData):
     show(ax[2], prediction_, 'MODL')
     show(ax[3], target, 'Ground Truth')
     fig.tight_layout()
-    plt.show()
+    fig.savefig(f'modl_{step}.pdf', bbox_inches='tight', pad_inches=0)
 
 
-# %%
-
+# %%.
 path = Path('/echo/allgemein/resources/publicTrainingData/fastmri/brain_multicoil_train/')
 dataset = AcceleratedFastMRI(path)
-dataloader = torch.utils.data.DataLoader(dataset, num_workers=8, shuffle=True, collate_fn=lambda batch: batch[0])
+dataloader = torch.utils.data.DataLoader(dataset, num_workers=16, shuffle=True, collate_fn=lambda batch: batch[0])
 modl = MODL().cuda()
-optimizer = torch.optim.Adam(modl.parameters(), lr=1e-4)
+optimizer = torch.optim.Adam(modl.parameters(), lr=1e-3)
 pbar = tqdm(dataloader)
 for i, batch in enumerate(pbar):
-    kdata, csm, target = batch['data'].cuda(), batch['csm'].cuda(), batch['target'].cuda()
+    optimizer.zero_grad()
+    kdata, csm, target = (batch['data'].cuda(), batch['csm'].cuda(), batch['target'].cuda())
     prediction = modl(kdata, csm)
-    objective = mrpro.operators.functionals.MSE(target.data) - mrpro.operators.functionals.SSIM(target.data)
+    objective = 0.5 * mrpro.operators.functionals.MSE(target.data) - mrpro.operators.functionals.SSIM(target.data)
     (loss,) = objective(prediction.data)
     loss.backward()
-
-    if i % 4 == 0:
-        optimizer.step()
-        optimizer.zero_grad()
+    torch.nn.utils.clip_grad_norm_(modl.parameters(), 5.0)
+    optimizer.step()
 
     pbar.set_postfix(loss=loss.item())
-
-    if i % 100 == 0:
-        plot(batch, prediction)
+    if i % 200 == 0:
+        plot(batch, prediction, i)
+        print(modl.regularization_weights)
+        state = {'modl': modl.state_dict(), 'optimizer': optimizer.state_dict()}
+        torch.save(state, f'modl_{i}.pt')
 
 # %%
