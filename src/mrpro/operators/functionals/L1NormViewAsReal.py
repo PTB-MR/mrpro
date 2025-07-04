@@ -2,7 +2,7 @@
 
 import torch
 
-from mrpro.operators.Functional import ElementaryProximableFunctional
+from mrpro.operators.Functional import ElementaryProximableFunctional, throw_if_negative_or_complex
 
 
 class L1NormViewAsReal(ElementaryProximableFunctional):
@@ -69,7 +69,7 @@ class L1NormViewAsReal(ElementaryProximableFunctional):
         -------
             Proximal mapping applied to the input tensor
         """
-        self._throw_if_negative_or_complex(sigma)
+        throw_if_negative_or_complex(sigma)
         diff = x - self.target
         threshold = self._divide_by_n(self.weight * sigma, torch.broadcast_shapes(x.shape, self.weight.shape))
         out = torch.sgn(diff.real) * torch.relu(diff.real.abs() - threshold.real.abs())
