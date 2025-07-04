@@ -6,6 +6,7 @@ from mrpro.phantoms import brainweb
 from mrpro.phantoms.m4raw import M4RawDataset
 from mrpro.phantoms import mdcnn
 from mrpro.phantoms.fastmri import FastMRIKDataDataset, FastMRIImageDataset
+from mrpro.phantoms import coils
 
 __all__ = [
     "EllipseParameters",
@@ -14,5 +15,6 @@ __all__ = [
     "FastMRIKDataDataset",
     "M4RawDataset",
     "brainweb",
+    "coils",
     "mdcnn"
 ]
