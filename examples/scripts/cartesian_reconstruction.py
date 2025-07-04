@@ -6,7 +6,7 @@
 # %% [markdown]
 # ## Overview
 # In this notebook, we are going to explore the `~mrpro.data.KData` object and the included header parameters.
-# We will then use a FFT-operator in order to reconstruct data acquired with a Cartesian sampling scheme.
+# We will then use an FFT-operator in order to reconstruct data acquired with a Cartesian sampling scheme.
 # We will also reconstruct data  acquired on a Cartesian grid but with partial echo and partial Fourier acceleration.
 # Finally, we will reconstruct a Cartesian scan with regular undersampling.
 
