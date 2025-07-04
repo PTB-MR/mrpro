@@ -247,8 +247,8 @@ show_images(magnitude_fully_sampled, magnitude_pe_pf, titles=['fully sampled', '
 # That was easy!
 # But wait a second — what about all these nice receiver elements of our coil?
 #
-# Here we used a root-sum-of-squares approach which is simple, but it's not the ideal method.
-# Typically, coil sensitivity maps are calculated to combine the data rom different coils. In MRpro, you can do this
+# Here we used a simple root-sum-of-squares approach, which is not the ideal method.
+# Typically, coil sensitivity maps are calculated to combine the data from different coils. In MRpro, you can do this
 # by calculating coil sensitivity data and then creating a `~mrpro.operators.SensitivityOp` to combine the data after
 # image reconstruction.
 
@@ -369,7 +369,7 @@ show_images(
 # %% [markdown]
 # ```{note}
 # There are already some other filter criteria available, see `mrpro.data.acq_filters`. You can also implement your own
-# function returning whether to include an acquisition.
+# function describing which acquisitions to include.
 # ```
 
 # %% [markdown]
@@ -402,9 +402,9 @@ show_images(idat_us_sense.rss().squeeze(), titles=['Iterative SENSE'])
 # can be found in the examples <project:iterative_sense_reconstruction_radial2D.ipynb> and
 # <project:iterative_sense_reconstruction_with_regularization.ipynb>.
 # ```{note}
-# In this example we used an "integrated" calibration scan, which means that the data used for calibration are acquired
+# In this example, we used an "integrated" calibration scan, which means that the data used for calibration are acquired
 # with the same parameters (e.g. FOV and resolution) as the image data. There is also the option to use separately
-# acquired calibration lines. Most of the time they are acquired with a different resolution and hence have a different
+# acquired calibration lines. Usually, they are acquired with a different resolution and hence have a different
 # k-space range than the image data. To utilize them, the encoding limits have to be adapted manually.
 # ```
 
