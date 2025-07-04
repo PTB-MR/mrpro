@@ -22,12 +22,12 @@ class RearrangeOp(LinearOperator):
         pattern
             Pattern describing the forward of the operator.
             Also see `einops.rearrange` for more information.
-            Example: "... h w -> ... (w h)"
+            Example: `(... h w) -> (... (w h))`
         additional_info
             Additional information passed to the rearrange function,
             describing the size of certain dimensions.
             Might be required for the adjoint rule.
-            Example: {'h': 2, 'w': 2}
+            Example: `{'h': 2, 'w': 2}`
         """
         super().__init__()
         if (match := re.match('(.+)->(.+)', pattern)) is None:
@@ -38,34 +38,47 @@ class RearrangeOp(LinearOperator):
         self._forward_pattern = pattern
         self.additional_info = {} if additional_info is None else additional_info
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Rearrange input.
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Rearrange input tensor.
 
         The rule used to perform the rearranging is set at initialization.
+        This operator uses `einops.rearrange` to perform the rearrangement.
 
         Parameters
         ----------
         x
-            input tensor to be rearranged
+            Input tensor to be rearranged.
 
         Returns
         -------
-            rearranged tensor
+            The rearranged tensor.
+        """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply forward of RearrangeOp.
+
+        .. note::
+            Prefer calling the instance of the RearrangeOp operator as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         y = rearrange(x, self._forward_pattern, **self.additional_info)
         return (y,)
 
     def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor]:
-        """Rearrange input with the adjoint rule.
+        """Rearrange input tensor using the adjoint rule.
+
+        The rule used to perform the rearranging is set at initialization.
+        This operator uses `einops.rearrange` to perform the rearrangement.
 
         Parameters
         ----------
         y
-            tensor to be rearranged
+            Input tensor to be rearranged (typically the output of the forward pass).
 
         Returns
         -------
-            rearranged tensor
+            The rearranged tensor.
         """
         x = rearrange(y, self._adjoint_pattern, **self.additional_info)
         return (x,)

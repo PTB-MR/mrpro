@@ -16,18 +16,16 @@ class FastFourierOp(LinearOperator):
     Applies a Fast Fourier Transformation along selected dimensions with cropping/zero-padding
     along these selected dimensions
 
-    The transformation is done with 'ortho' normalization, i.e. the normalization constant is split between
+    The transformation is done with ``'ortho'`` normalization, i.e. the normalization constant is split between
     forward and adjoint [FFT]_.
 
-    Remark regarding the fftshift/ifftshift:
-
-    fftshift shifts the zero-frequency point to the center of the data, ifftshift undoes this operation.
-    The input to both `~FastFourierOp.forward` and `~FastFourierOp.adjoint`
-    are assumed to have the zero-frequency in the center of the data. `torch.fft.fftn`
-    and `torch.fft.ifftn` expect the zero-frequency to be the first entry in the tensor.
-    Therefore in `~FastFourierOp.forward` and `~FastFourierOp.adjoint`,
-    first `torch.fft.ifftshift`, then `torch.fft.fftn` or `torch.fft.ifftn`,
-    finally `torch.fft.ifftshift` are applied.
+    .. note::
+        The input to both `~FastFourierOp.forward` and `~FastFourierOp.adjoint`
+        are assumed to have the zero-frequency in the center of the data. `torch.fft.fftn`
+        and `torch.fft.ifftn` expect the zero-frequency to be the first entry in the tensor.
+        Therefore in `~FastFourierOp.forward` and `~FastFourierOp.adjoint`,
+        first `torch.fft.ifftshift`, then `torch.fft.fftn` or `torch.fft.ifftn`,
+        finally `torch.fft.fftshift` are applied.
 
     .. note::
        See also `~mrpro.operators.FourierOp` for a Fourier operator that handles
@@ -52,7 +50,7 @@ class FastFourierOp(LinearOperator):
         after the transforms to match the shape in image space (`recon_matrix`) and k-shape (`encoding_matrix`).
         If both are set to `None`, no padding or cropping will be performed.
         If these are `~mrpro.data.SpatialDimension`, the transform dimensions must be within the last three dimensions,
-        typically corresponding to the `(k2,k1,k0)` and `(z,y,x)` axes of `~mrpro.data.KData`
+        typically corresponding to the `(k2, k1, k0)` and `(z, y, x)` axes of `~mrpro.data.KData`
         and `~mrpro.data.IData`, respectively.
 
 
@@ -112,17 +110,26 @@ class FastFourierOp(LinearOperator):
                 f'{encoding_matrix=} and {recon_matrix=}'
             )
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """FFT from image space to k-space.
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply Fast Fourier Transform (FFT) from image space to k-space.
 
         Parameters
         ----------
         x
-            image data on Cartesian grid
+            (image-space) data on a Cartesian grid.
 
         Returns
         -------
             FFT of `x`
+        """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply forward of FastFourierOp.
+
+        .. note::
+            Prefer calling the instance of the FastFourierOp operator as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         y = torch.fft.fftshift(
             torch.fft.fftn(torch.fft.ifftshift(*self._pad_op(x), dim=self._dim), dim=self._dim, norm='ortho'),
@@ -131,12 +138,12 @@ class FastFourierOp(LinearOperator):
         return (y,)
 
     def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
-        """IFFT from k-space to image space.
+        """Apply Inverse Fast Fourier Transform (IFFT) from k-space to image space.
 
         Parameters
         ----------
         y
-            k-space data on Cartesian grid
+            (k-space) data on a Cartesian grid.
 
         Returns
         -------
