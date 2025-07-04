@@ -243,10 +243,10 @@ class IData(Dataclass):
                 if dcm_frame_idata.header.shape.numel() != 1:
                     raise ValueError('Only single image can be saved as a frame.')
                 directions = dcm_frame_idata.header.orientation[0].as_directions()
-                readout_direction = np.squeeze(np.asarray(directions[2].zyx[::-1]))
-                phase_direction = np.squeeze(np.asarray(directions[1].zyx[::-1]))
-                slice_direction = np.squeeze(np.asarray(directions[0].zyx[::-1]))
-                position = np.squeeze(np.asarray(dcm_frame_idata.header.position.zyx[::-1]))
+                readout_direction = np.squeeze(torch.stack(directions[2].zyx[::-1]).numpy())
+                phase_direction = np.squeeze(torch.stack(directions[1].zyx[::-1]).numpy())
+                slice_direction = np.squeeze(torch.stack(directions[0].zyx[::-1]).numpy())
+                position = np.squeeze(torch.stack(dcm_frame_idata.header.position.zyx[::-1]).numpy())
 
                 dataset.PerFrameFunctionalGroupsSequence.append(Dataset())
 
@@ -261,10 +261,10 @@ class IData(Dataclass):
                         + slice_direction * dcm_frame_idata.header.resolution.z * (-number_of_frames / 2 + frame)
                     )
                 if reference_patient_table_position:
-                    image_position_patient += np.asarray(
-                        np.squeeze(
+                    image_position_patient += np.squeeze(
+                        torch.stack(
                             (dcm_frame_idata.header.patient_table_position - reference_patient_table_position).zyx[::-1]
-                        )
+                        ).numpy()
                     )
 
                 plane_position_sequence[0].ImagePositionPatient = m_to_mm(image_position_patient.tolist())
