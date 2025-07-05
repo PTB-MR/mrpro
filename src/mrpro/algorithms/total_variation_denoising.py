@@ -13,13 +13,14 @@ from mrpro.operators import LinearOperatorMatrix, ProximableFunctionalSeparableS
 from mrpro.operators.FiniteDifferenceOp import FiniteDifferenceOp
 from mrpro.operators.functionals import L1NormViewAsReal, L2NormSquared
 from mrpro.operators.IdentityOp import IdentityOp
-from mrpro.utils import unsqueeze_right
+from mrpro.utils import normalize_index, unsqueeze_right
 
 
 @overload
 def total_variation_denoising(
     idata: IData,
-    regularization_weights: Sequence[float] | Sequence[torch.Tensor],
+    regularization_dim: Sequence[int],
+    regularization_weight: float | Sequence[float] | Sequence[torch.Tensor],
     initial_image: torch.Tensor | None = None,
     max_iterations: int = 100,
     tolerance: float = 0,
@@ -29,7 +30,8 @@ def total_variation_denoising(
 @overload
 def total_variation_denoising(
     idata: torch.Tensor,
-    regularization_weights: Sequence[float] | Sequence[torch.Tensor],
+    regularization_dim: Sequence[int],
+    regularization_weight: float | Sequence[float] | Sequence[torch.Tensor],
     initial_image: torch.Tensor | None = None,
     max_iterations: int = 100,
     tolerance: float = 0,
@@ -38,7 +40,8 @@ def total_variation_denoising(
 
 def total_variation_denoising(
     idata: IData | torch.Tensor,
-    regularization_weights: float | Sequence[float] | Sequence[torch.Tensor],
+    regularization_dim: Sequence[int],
+    regularization_weight: float | Sequence[float] | Sequence[torch.Tensor],
     initial_image: torch.Tensor | None = None,
     max_iterations: int = 100,
     tolerance: float = 0,
@@ -54,11 +57,11 @@ def total_variation_denoising(
     ----------
     idata
         input image
-    regularization_weights
-        Strengths of the regularization (:math:`l_i`). Each entry is the regularization weight along a dimension of
-        the reconstructed image starting at the back. E.g. (1,) will apply TV with l=1 along dimension (-1.).
-        (3,0,2) will apply TV with l=2 along dimension (-1) and TV with l=3 along (-3). Single float will be applied
-        along dimension -1.
+    regularization_dim
+        Dimensions along which the total variation reguarization is applied (:math:`i`).
+    regularization_weight
+        Strengths of the regularization (:math:`l_i`). If a single values is given, it is applied to all dimensions.
+        If a sequence is given, it must have the same length as `regularization_dim`.
     initial_image
         Initial image. If `None` then the target image :math:`y` will be used.
     max_iterations
@@ -70,23 +73,30 @@ def total_variation_denoising(
     -------
         the denoised image.
     """
-    regularization_weights_ = torch.as_tensor(regularization_weights)
+    regularization_weight_ = torch.as_tensor(
+        regularization_weight
+        if isinstance(regularization_weight, Sequence)
+        else [regularization_weight] * len(regularization_dim)
+    )
     img_tensor = idata if isinstance(idata, torch.Tensor) else idata.data
+
+    if len(regularization_dim) != len(regularization_weight_):
+        raise ValueError('Regularization dimensions and weights must have the same length')
+    regularization_dim = tuple(normalize_index(img_tensor.ndim, idx) for idx in regularization_dim)
+    if len(regularization_dim) != len(set(regularization_dim)):
+        raise ValueError('Repeated values are not allowed in regularization_dim')
 
     l2_norm_squared = L2NormSquared(target=img_tensor)
 
     # TV regularization
-    finite_difference_dim = [
-        dim - len(regularization_weights_) for dim, weight in enumerate(regularization_weights_) if (weight != 0).any()
-    ]
-    nabla_operator = FiniteDifferenceOp(dim=finite_difference_dim, mode='forward')
-    l1_norm = L1NormViewAsReal(weight=unsqueeze_right(regularization_weights_[finite_difference_dim], img_tensor.ndim))
+    nabla_operator = FiniteDifferenceOp(dim=regularization_dim, mode='forward')
+    l1_norm = L1NormViewAsReal(weight=unsqueeze_right(regularization_weight_, img_tensor.ndim))
     operator = LinearOperatorMatrix(((IdentityOp(),), (nabla_operator,)))
 
     initial_image = initial_image if initial_image is not None else img_tensor
 
     (img_tensor,) = pdhg(
-        f=ProximableFunctionalSeparableSum(data_consistency, total_variation),
+        f=ProximableFunctionalSeparableSum(l2_norm_squared, l1_norm),
         g=None,
         operator=operator,
         initial_values=(initial_image,),

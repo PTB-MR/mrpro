@@ -236,7 +236,8 @@ tv_reconstruction = mrpro.algorithms.reconstruction.TotalVariationRegularizedRec
     kdata_24spokes,
     csm=direct_reconstruction_24.csm,
     max_iterations=257,
-    regularization_weights=(regularization_lambda, regularization_lambda),
+    regularization_dim=(-2, -1),
+    regularization_weight=regularization_lambda,
 )
 img_tv_algo_24 = tv_reconstruction(kdata_24spokes)
 

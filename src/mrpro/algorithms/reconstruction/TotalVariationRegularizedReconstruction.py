@@ -18,7 +18,7 @@ from mrpro.operators import LinearOperatorMatrix, ProximableFunctionalSeparableS
 from mrpro.operators.FiniteDifferenceOp import FiniteDifferenceOp
 from mrpro.operators.functionals import L1NormViewAsReal, L2NormSquared
 from mrpro.operators.LinearOperator import LinearOperator
-from mrpro.utils import unsqueeze_right
+from mrpro.utils import normalize_index, unsqueeze_right
 
 
 class TotalVariationRegularizedReconstruction(DirectReconstruction):
@@ -37,7 +37,10 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
     tolerance: float
     """Tolerance of PDHG for relative change of the primal solution."""
 
-    regularization_weights: torch.Tensor
+    regularization_dim: Sequence[int]
+    """Dimensions along which the total variation reguarization is applied :math:`i`."""
+
+    regularization_weight: torch.Tensor
     """Strengths of the regularization along different dimensions :math:`l_i`."""
 
     def __init__(
@@ -50,7 +53,8 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
         *,
         max_iterations: int = 100,
         tolerance: float = 0,
-        regularization_weights: float | Sequence[float] | Sequence[torch.Tensor],
+        regularization_dim: Sequence[int],
+        regularization_weight: float | Sequence[float] | Sequence[torch.Tensor],
     ) -> None:
         """Initialize TotalVariationRegularizedReconstruction.
 
@@ -77,21 +81,34 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
             Maximum number of PDHG iterations
         tolerance
             Tolerance of PDHG for relative change of the primal solution; if zero, `max_iterations` of PDHG are run.
-        regularization_weights
-            Strengths of the regularization (:math:`l_i`). Each entry is the regularization weight along a dimension of
-            the reconstructed image starting at the back. E.g. (1,) will apply TV with l=1 along dimension (-1,).
-            (3,0,2) will apply TV with l=2 along dimension (-1) and TV with l=3 along (-3). Single float will be applied
-            along dimension -1.
+        regularization_dim
+            Dimensions along which the total variation reguarization is applied (:math:`i`).
+        regularization_weight
+            Strengths of the regularization (:math:`l_i`). If a single values is given, it is applied to all dimensions.
+            If a sequence is given, it must have the same length as `regularization_dim`.
 
         Raises
         ------
         ValueError
             If the `kdata` and `fourier_op` are `None` or if `csm` is a `Callable` but `kdata` is `None`.
+        ValueError
+            If `regularization_dim` contains repeated values.
+        ValueError
+            If the length of `regularization_dim` and `regularization_weight` do not match
         """
         super().__init__(kdata, fourier_op, csm, noise, dcf)
         self.max_iterations = max_iterations
         self.tolerance = tolerance
-        self.regularization_weights = torch.as_tensor(regularization_weights)
+
+        if len(regularization_dim) != len(set(regularization_dim)):
+            raise ValueError('Repeated values are not allowed in regularization_dim')
+        self.regularization_dim = regularization_dim
+
+        if isinstance(regularization_weight, float):
+            regularization_weight = [regularization_weight] * len(regularization_dim)
+        if len(regularization_dim) != len(regularization_weight):
+            raise ValueError('Regularization dimensions and weights must have the same length')
+        self.regularization_weight = torch.as_tensor(regularization_weight)
 
     def forward(self, kdata: KData) -> IData:
         """Apply the reconstruction.
@@ -105,22 +122,19 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
         -------
             the reconstruced image.
         """
+        regularization_dim = tuple(normalize_index(kdata.ndim, idx) for idx in self.regularization_dim)
+        if len(regularization_dim) != len(set(regularization_dim)):
+            raise ValueError('Repeated values are not allowed in regularization_dim')
+
         if self.noise is not None:
             kdata = prewhiten_kspace(kdata, self.noise)
 
         acquisition_operator = self.fourier_op @ self.csm.as_operator() if self.csm is not None else self.fourier_op
-        data_consistency = L2NormSquared(target=kdata.data)
+        l2_norm_squared = L2NormSquared(target=kdata.data)
 
         # TV regularization
-        finite_difference_dim = [
-            dim - len(self.regularization_weights)
-            for dim, weight in enumerate(self.regularization_weights)
-            if weight != 0
-        ]
-        nabla_operator = FiniteDifferenceOp(dim=finite_difference_dim, mode='forward')
-        total_variation = L1NormViewAsReal(
-            weight=unsqueeze_right(self.regularization_weights[finite_difference_dim], kdata.data.ndim)
-        )
+        nabla_operator = FiniteDifferenceOp(dim=regularization_dim, mode='forward')
+        l1_norm = L1NormViewAsReal(weight=unsqueeze_right(self.regularization_weight, kdata.data.ndim))
         operator = LinearOperatorMatrix(((acquisition_operator,), (nabla_operator,)))
 
         initial_value = acquisition_operator.H(
@@ -128,7 +142,7 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
         )[0]
 
         (img_tensor,) = pdhg(
-            f=ProximableFunctionalSeparableSum(data_consistency, total_variation),
+            f=ProximableFunctionalSeparableSum(l2_norm_squared, l1_norm),
             g=None,
             operator=operator,
             initial_values=(initial_value,),
