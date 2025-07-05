@@ -67,7 +67,7 @@ dependencies = [
     "pydicom>=3.0.1",
     "pypulseq>=1.4.2",
     "pytorch-finufft>=0.1.0",
-    "cufinufft>=2.3.1; platform_system=='Linux'",
+    "cufinufft==2.3.1; platform_system=='Linux'",
     "scipy>=1.12",
     "ptwt>=0.1.8",
     "torchvision>=0.18.1",
@@ -97,7 +97,7 @@ docs = [
     "sphinx-last-updated-by-git>=0.3, <0.4",
 ]
 notebooks = [
-    "zenodo_get",
+    "zenodo_get>=2.0",
     "ipykernel",
     "ipywidgets",
     "jupytext",
@@ -232,3 +232,6 @@ extend-exclude = [
 
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]
+
+[tool.coverage.run]
+disable_warnings = ["module-not-measured"]
