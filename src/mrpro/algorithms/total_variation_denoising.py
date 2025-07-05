@@ -73,16 +73,14 @@ def total_variation_denoising(
     regularization_weights_ = torch.as_tensor(regularization_weights)
     img_tensor = idata if isinstance(idata, torch.Tensor) else idata.data
 
-    l2_norm_squared= L2NormSquared(target=img_tensor)
+    l2_norm_squared = L2NormSquared(target=img_tensor)
 
     # TV regularization
     finite_difference_dim = [
         dim - len(regularization_weights_) for dim, weight in enumerate(regularization_weights_) if (weight != 0).any()
     ]
     nabla_operator = FiniteDifferenceOp(dim=finite_difference_dim, mode='forward')
-    l1_norm= L1NormViewAsReal(
-        weight=unsqueeze_right(regularization_weights_[finite_difference_dim], img_tensor.ndim)
-    )
+    l1_norm = L1NormViewAsReal(weight=unsqueeze_right(regularization_weights_[finite_difference_dim], img_tensor.ndim))
     operator = LinearOperatorMatrix(((IdentityOp(),), (nabla_operator,)))
 
     initial_image = initial_image if initial_image is not None else img_tensor
