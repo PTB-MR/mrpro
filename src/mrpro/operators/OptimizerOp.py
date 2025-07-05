@@ -50,13 +50,7 @@ class OptimizerFunction(torch.autograd.Function):
             cls,
             factory: Callable[..., Callable[..., tuple[torch.Tensor]]],
             initial_values: tuple[torch.Tensor, ...],
-            optimize: Callable[
-                [
-                    Callable[[Unpack[tuple[Unpack[tuple[torch.Tensor, ...]]]]], tuple[torch.Tensor]],
-                    tuple[torch.Tensor, ...],
-                ],
-                tuple[torch.Tensor, ...],
-            ] = default_lbfgs,
+            optimize: Callable[..., tuple[torch.Tensor, ...]] = default_lbfgs,
             *parameters: torch.Tensor,
         ) -> tuple[torch.Tensor, ...]:
             """Apply the function. Only used for type hinting."""
@@ -69,20 +63,16 @@ class OptimizerFunction(torch.autograd.Function):
             [Unpack[tuple[torch.Tensor, ...]]], Callable[[Unpack[tuple[torch.Tensor, ...]]], tuple[torch.Tensor]]
         ],
         initial_values: tuple[torch.Tensor, ...],
-        optimize: Callable[
-            [
-                Callable[[Unpack[tuple[Unpack[tuple[torch.Tensor, ...]]]]], tuple[torch.Tensor]],
-                tuple[torch.Tensor, ...],
-            ],
-            tuple[torch.Tensor, ...],
-        ] = default_lbfgs,
+        optimize: Callable[..., tuple[torch.Tensor, ...]] = default_lbfgs,
         *parameters: torch.Tensor,
     ) -> tuple[torch.Tensor, ...]:
         """Optimize."""
         ctx.factory = factory
 
-        parameters_ = tuple(p.detach().clone() for p in parameters)
-        initial_values_ = tuple(x.detach().requires_grad_(True) for x in initial_values)
+        parameters_ = tuple(p.detach().clone() if isinstance(p, torch.Tensor) else p for p in parameters)
+        initial_values_ = tuple(
+            x.detach().requires_grad_(True) if isinstance(x, torch.Tensor) else x for x in initial_values
+        )
         objective = factory(*parameters_)
         solution = optimize(objective, initial_values)
         ctx.save_for_backward(*solution, *parameters_)
