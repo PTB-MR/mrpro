@@ -246,8 +246,8 @@ class ScaledProximableFunctional(ProximableFunctional):
         """Apply the functional.
 
         .. note::
-            Prefer calling the instance of the ScaledProximableFunctional as ``operator(x)`` over directly calling this method.
-            See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
+            Prefer calling the instance of the ScaledProximableFunctional as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         return (self.scale * self.functional(x)[0],)
 
