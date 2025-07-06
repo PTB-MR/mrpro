@@ -48,7 +48,7 @@ class Jacobian(LinearOperator):
         assert self._vjp is not None  # noqa: S101 (hint for mypy)
         return (self._vjp(x)[0],)
 
-    def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:  # type:ignore[override]
+    def __call__(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:  # type:ignore[override]
         """Apply the operator.
 
         Parameters
@@ -59,6 +59,15 @@ class Jacobian(LinearOperator):
         Returns
         -------
             output tensor
+        """
+        return super().__call__(*x)
+
+    def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:  # type:ignore[override]
+        """Apply the operator.
+
+        .. note::
+            Prefer calling the instance of the Jacobian as ``operator(x)`` over directly calling this method.
+            See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         self._f_x0, jvp = torch.func.jvp(self._operator, self._x0, x)
         return jvp
