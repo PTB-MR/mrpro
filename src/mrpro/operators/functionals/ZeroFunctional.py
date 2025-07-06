@@ -4,7 +4,7 @@ from collections.abc import Sequence
 
 import torch
 
-from mrpro.operators import ElementaryProximableFunctional
+from mrpro.operators.Functional import ElementaryProximableFunctional, throw_if_negative_or_complex
 
 
 class ZeroFunctional(ElementaryProximableFunctional):
@@ -70,7 +70,7 @@ class ZeroFunctional(ElementaryProximableFunctional):
         -------
             Result of the proximal operator applied to x
         """
-        self._throw_if_negative_or_complex(sigma)
+        throw_if_negative_or_complex(sigma)
         dtype = torch.promote_types(torch.promote_types(x.dtype, self.weight.dtype), self.target.dtype)
         return (x.to(dtype=dtype),)
 
@@ -93,7 +93,7 @@ class ZeroFunctional(ElementaryProximableFunctional):
         -------
             Result of the proximal operator of the convex conjugate applied to x
         """
-        self._throw_if_negative_or_complex(sigma)
+        throw_if_negative_or_complex(sigma)
         sigma = torch.as_tensor(sigma)
         dtype = torch.promote_types(torch.promote_types(x.dtype, self.weight.dtype), self.target.dtype)
         result = torch.where(sigma == 0, x, torch.zeros_like(x)).to(dtype=dtype)

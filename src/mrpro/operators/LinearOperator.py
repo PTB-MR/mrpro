@@ -223,13 +223,17 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
 
     @overload
     def __matmul__(
-        self, other: Operator[Unpack[Tin2], tuple[torch.Tensor,]]
+        self, other: Operator[Unpack[Tin2], tuple[torch.Tensor,]] | Operator[Unpack[Tin2], tuple[torch.Tensor, ...]]
     ) -> Operator[Unpack[Tin2], tuple[torch.Tensor,]]: ...
 
     def __matmul__(
         self,
-        other: Operator[Unpack[Tin2], tuple[torch.Tensor,]] | LinearOperator,
-    ) -> Operator[Unpack[Tin2], tuple[torch.Tensor,]] | LinearOperator:
+        other: Operator[Unpack[Tin2], tuple[torch.Tensor,]]
+        | LinearOperator
+        | Operator[Unpack[Tin2], tuple[torch.Tensor, ...]],
+    ) -> (
+        Operator[Unpack[Tin2], tuple[torch.Tensor,]] | LinearOperator | Operator[Unpack[Tin2], tuple[torch.Tensor, ...]]
+    ):
         """Operator composition.
 
         Returns ``lambda x: self(other(x))``
