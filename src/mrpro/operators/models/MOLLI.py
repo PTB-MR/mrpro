@@ -41,24 +41,24 @@ class MOLLI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         """Apply the Modified Look-Locker Inversion recovery (MOLLI) signal model.
 
         Calculates the signal based on the formula:
-        :math:`S(TI) = a * (1 - (1 + c) * exp(-TI * c / T1))`,
+        :math:`S(TI) = a(1 - (1 + c) e^{-TI c / T1})`,
         where `TI` are the inversion times.
 
         Parameters
         ----------
         a
             Parameter 'a' in the MOLLI signal model.
-            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
         c
             Parameter 'c = b/a' in the MOLLI signal model.
-            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
         t1
             Longitudinal relaxation time T1.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
 
         Returns
         -------
-            Signal calculated for each inversion time.
-            Shape `times ...`. For example `times, *other, coils, z, y, x`, or `times, samples`
+            Shape `(times ...)`, for example `(times, *other, coils, z, y, x)`, or `(times, samples)`
             where `times` is the number of inversion times.
         """
         return super().__call__(a, c, t1)
@@ -68,6 +68,7 @@ class MOLLI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
 
         .. note::
             Prefer calling the instance of the MOLLI as ``operator(x)`` over directly calling this method.
+            See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         ndim = max(a.ndim, c.ndim, t1.ndim)
         ti = unsqueeze_right(self.ti, ndim - self.ti.ndim + 1)  # leftmost is time

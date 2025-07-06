@@ -43,19 +43,19 @@ class SpoiledGRE(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         Parameters
         ----------
         m0
-            Equilibrium magnetization.
-            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
+            Equilibrium signal / proton density.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
         t1
             Longitudinal (T1) relaxation time.
-            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
         t2star
             Effective transverse (T2*) relaxation time.
-            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
 
         Returns
         -------
             Signal
-            Shape `1 ...`, for example `1, *other, coils, z, y, x` or `1, samples`, respectively.
+            Shape `(1 ...)`, for example `(1, *other, coils, z, y, x)` or `(1, samples)`.
         """
         return super().__call__(m0, t1, t2star)
 
@@ -64,6 +64,7 @@ class SpoiledGRE(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
 
         .. note::
             Prefer calling the instance of the SpoiledGRE as ``operator(x)`` over directly calling this method.
+            See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         ndim = max(m0.ndim, t1.ndim, t2star.ndim) + 1
         flip_angle = unsqueeze_right(self.flip_angle, ndim - self.flip_angle.ndim)
