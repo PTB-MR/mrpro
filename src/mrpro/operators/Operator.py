@@ -121,24 +121,13 @@ class Operator(Generic[Unpack[Tin], Tout], ABC, TensorAttributeMixin, torch.nn.M
             return self
         return self + (-1.0) * other
 
-    @overload
-    def __rsub__(self, other: Operator[Unpack[Tin], Tout]) -> Operator[Unpack[Tin], Tout]: ...
-
-    @overload
     def __rsub__(
         self: Operator[Unpack[Tin], tuple[Unpack[Tin]]], other: torch.Tensor | complex
-    ) -> Operator[Unpack[Tin], tuple[Unpack[Tin]]]: ...
+    ) -> Operator[Unpack[Tin], tuple[Unpack[Tin]]]:
+        """Operator right subtraction.
 
-    def __rsub__(
-        self, other: Operator[Unpack[Tin], Tout] | torch.Tensor | complex | mrpro.operators.ZeroOp
-    ) -> Operator[Unpack[Tin], Tout] | Operator[Unpack[Tin], tuple[Unpack[Tin]]]:
-        """Operator subtraction.
-
-        Returns ``lambda x: self(x) - other(x)`` if other is a operator,
-        ``lambda x: self(x) - other*x`` if other is a tensor
+        Returns ``lambda x: other*x + self(x)``
         """
-        if isinstance(other, mrpro.operators.ZeroOp):
-            return self
         return (-1.0) * self + other
 
 
