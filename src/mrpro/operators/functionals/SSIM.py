@@ -4,7 +4,7 @@ from typing import Literal, cast
 
 import torch
 
-from mrpro.operators.Functional import Functional
+from mrpro.operators.Operator import Operator
 from mrpro.utils.sliding_window import sliding_window
 
 
@@ -152,7 +152,7 @@ def ssim3d(
         return ssim_map
 
 
-class SSIM(Functional):
+class SSIM(Operator[torch.Tensor, tuple[torch.Tensor]]):
     """(masked) SSIM functional."""
 
     def __init__(
