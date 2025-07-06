@@ -65,21 +65,21 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         ----------
         b0_shift
             B0 field in homogeneity or off-resonance shift in Hz.
-            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
         relative_b1
             Relative B1 amplitude scaling factor (actual B1 / nominal B1).
-            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
         c
             Signal amplitude parameter (related to M0).
-            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
         a
             Signal modulation scaling parameter, corresponds to `d/c` in the original model.
-            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
 
         Returns
         -------
             Signal calculated for each frequency offset.
-            Shape `offsets ...`. For example `offsets, *other, coils, z, y, x`, or `offsets, samples`
+            Shape `(offsets ...)`, for example `(offsets, *other, coils, z, y, x)`, or `(offsets, samples)`
             where `offsets` is the number of frequency offsets.
         """
         return super().__call__(b0_shift, relative_b1, c, a)
@@ -95,6 +95,7 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
 
         .. note::
             Prefer calling the instance of the WASABI as ``operator(x)`` over directly calling this method.
+            See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         ndim = max(b0_shift.ndim, relative_b1.ndim, c.ndim, a.ndim)
         offsets = unsqueeze_right(self.offsets, ndim - self.offsets.ndim + 1)  # leftmost is offsets

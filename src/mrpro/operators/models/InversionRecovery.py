@@ -28,22 +28,22 @@ class InversionRecovery(SignalModel[torch.Tensor, torch.Tensor]):
         """Apply the inversion recovery signal model.
 
         Calculates the signal based on the formula:
-        :math:`S(TI) = M_0 * (1 - 2 * exp(-TI / T_1))`,
+        :math:`S(TI) = M_0 (1 - 2 * e^{-TI / T_1})`,
         where `TI` are the inversion times.
 
         Parameters
         ----------
         m0
             Equilibrium signal / proton density.
-            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
         t1
             Longitudinal relaxation time T1.
-            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
 
         Returns
         -------
             Signal calculated for each inversion time.
-            Shape `times ...`. For example `times, *other, coils, z, y, x`, or `times, samples`
+            Shape `(times ...)`, for example `(times, *other, coils, z, y, x)`, or `(times, samples)`
             where `times` is the number of inversion times.
         """
         return super().__call__(m0, t1)

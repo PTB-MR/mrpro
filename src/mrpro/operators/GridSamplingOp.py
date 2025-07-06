@@ -196,10 +196,10 @@ class GridSamplingOp(LinearOperator):
             Z-component of sampling grid. Shape `(*batchdim, z,y,x)`. Values should be in ``[-1, 1.]``. Use `None` for a
             2D interpolation along `y` and `x`.
         grid_y
-            Y-component of sampling grid. Shape `(*batchdim, z,y,x)` or `*batchdim, y,x` if `grid_z` is `None`.
+            Y-component of sampling grid. Shape `(*batchdim, z, y, x)` or `(*batchdim, y, x)` if `grid_z` is `None`.
             Values should be in ``[-1, 1.]``.
         grid_x
-            X-component of sampling grid. Shape `(*batchdim, z,y,x)` or `*batchdim, y,x` if `grid_z` is `None`.
+            X-component of sampling grid. Shape `(*batchdim, z, y, x)` or `(*batchdim, y, x)` if `grid_z` is `None`.
             Values should be in ``[-1, 1.]``.
         input_shape
             Used in the adjoint. The z, y, x shape of the domain of the operator.

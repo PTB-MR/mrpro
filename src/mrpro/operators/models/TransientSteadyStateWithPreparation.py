@@ -105,18 +105,18 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
         ----------
         m0
             Equilibrium signal / proton density.
-            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
         t1
             Longitudinal relaxation time T1.
-            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
         flip_angle
             Flip angle of data acquisition rf pulses in radians.
-            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
 
         Returns
         -------
             Signal calculated for each sampling time.
-            Shape `times ...`. For example `times, *other, coils, z, y, x`, or `times, samples`
+            Shape `(times ...)`, for example `(times, *other, coils, z, y, x)`, or `(times, samples)`
             where `times` is the number of sampling times.
         """
         return super().__call__(m0, t1, flip_angle)
@@ -126,7 +126,7 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
 
         .. note::
             Prefer calling the instance of the TransientSteadyStateWithPreparation as ``operator(x)`` over
-            directly calling this method.
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         ndim = max(m0.ndim, t1.ndim, flip_angle.ndim)
         repetition_time = unsqueeze_right(self.repetition_time, ndim - self.repetition_time.ndim)

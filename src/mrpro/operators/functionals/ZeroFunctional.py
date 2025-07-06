@@ -35,6 +35,7 @@ class ZeroFunctional(ElementaryProximableFunctional):
 
         .. note::
             Prefer calling the instance of the ZeroFunctional as ``operator(x)`` over directly calling this method.
+            See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         # To ensure that the dtype matches what it would be if we were to apply the weight and target
         dtype = torch.promote_types(torch.promote_types(x.dtype, self.weight.dtype), self.target.dtype).to_real()

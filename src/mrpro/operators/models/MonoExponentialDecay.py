@@ -30,22 +30,22 @@ class MonoExponentialDecay(SignalModel[torch.Tensor, torch.Tensor]):
         """Apply the mono-exponential decay signal model.
 
         Calculates the signal based on the formula:
-        :math:`S(t) = M_0 * exp(-t / T)`,
+        :math:`S(t) = M_0 e^{-t / T}`,
         where `t` are the decay times and `T` is the decay constant.
 
         Parameters
         ----------
         m0
             Equilibrium signal / proton density.
-            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
         decay_constant
             Exponential decay constant (e.g., T2, T2*, T1rho).
-            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
 
         Returns
         -------
             Signal calculated for each decay time.
-            Shape `times ...`. For example `times, *other, coils, z, y, x`, or `times, samples`
+            Shape `(times ...)`, for example `(times, *other, coils, z, y, x)`, or `(times, samples)`
             where `times` is the number of decay times.
         """
         return super().__call__(m0, decay_constant)
@@ -54,8 +54,8 @@ class MonoExponentialDecay(SignalModel[torch.Tensor, torch.Tensor]):
         """Apply forward of MonoExponentialDecay.
 
         .. note::
-            Prefer calling the instance of the MonoExponentialDecay as ``operator(x)`` over
-            directly calling this method.
+            Prefer calling the instance of the MonoExponentialDecay as ``operator(x)`` over directly calling this
+            method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         ndim = max(m0.ndim, decay_constant.ndim)
         decay_time = unsqueeze_right(self.decay_time, ndim - self.decay_time.ndim + 1)  # leftmost is time

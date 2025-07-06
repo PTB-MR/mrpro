@@ -27,22 +27,22 @@ class SaturationRecovery(SignalModel[torch.Tensor, torch.Tensor]):
         """Apply the saturation recovery signal model.
 
         Calculates the signal based on the formula:
-        :math:`S(t_{sat}) = M_0 * (1 - exp(-t_{sat} / T_1))`,
+        :math:`S(t_{sat}) = M_0 (1 - e^{-t_{sat} / T_1})`,
         where `t_{sat}` are the saturation times.
 
         Parameters
         ----------
         m0
             Equilibrium signal / proton density.
-            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
         t1
             Longitudinal relaxation time T1.
-            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
 
         Returns
         -------
             Signal calculated for each saturation time.
-            Shape `times ...`. For example `times, *other, coils, z, y, x`, or `times, samples`
+            Shape `(times ...)`, for example `(times, *other, coils, z, y, x)`, or `(times, samples)`
             where `times` is the number of saturation times.
         """
         return super().__call__(m0, t1)
@@ -52,6 +52,7 @@ class SaturationRecovery(SignalModel[torch.Tensor, torch.Tensor]):
 
         .. note::
             Prefer calling the instance of the SaturationRecovery as ``operator(x)`` over directly calling this method.
+            See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         ndim = max(m0.ndim, t1.ndim)
         saturation_time = unsqueeze_right(

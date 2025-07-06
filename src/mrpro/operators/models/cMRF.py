@@ -100,19 +100,20 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
         Parameters
         ----------
         m0
-            Steady state magnetization (complex).
-            Shape `(...)`, for example `(*other, coils, z, y, x)` or `samples`.
+            Equilibrium signal / proton density. (complex).
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
         t1
             Longitudinal (T1) relaxation time in seconds.
-            Shape `(...)`, for example `(*other, coils, z, y, x)` or `samples`.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
         t2
             Transversal (T2) relaxation time in seconds.
-            Shape `(...)`, for example `(*other, coils, z, y, x)` or `samples`.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
 
         Returns
         -------
             Simulated Cardiac MR Fingerprinting signal.
-            The first dimension of the tensor corresponds to the different acquisitions
+            Shape `(acquisitions ...)`, for example `(acquisitions, *other, coils, z, y, x)` or
+            `(acquisitions, samples)` where `acquisitions` corresponds to the different acquisitions
             in the sequence.
         """
         return super().__call__(m0, t1, t2)
@@ -123,7 +124,7 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
         Note
         ----
         Prefer calling the instance of the CardiacFingerprinting as ``operator(x)`` over
-        directly calling this method.
+        directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         parameters = Parameters(m0, t1, t2)
         _, signals = self.sequence(parameters, states=20)
