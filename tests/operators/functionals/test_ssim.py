@@ -1,5 +1,8 @@
 """Test the SSIM functional."""
 
+from collections.abc import Sequence
+
+import pytest
 import torch
 from mrpro.operators.functionals.SSIM import SSIM
 from mrpro.utils import RandomGenerator
@@ -16,11 +19,12 @@ def test_ssim() -> None:
     assert ssim(bad)[0] < 0.1
 
 
-def test_ssim_mask() -> None:
+@pytest.mark.parametrize('shape', [(2, 1, 32, 32), (2, 12, 32, 32)])
+def test_ssim_mask(shape: Sequence[int]) -> None:
     """Test masking in the SSIM functional"""
     rng = RandomGenerator(0)
-    target = rng.float32_tensor((2, 12, 32, 32), low=0.0, high=1.0)
-    mask = torch.zeros(2, 12, 32, 32, dtype=torch.bool)
+    target = rng.float32_tensor(shape, low=0.0, high=1.0)
+    mask = torch.zeros(shape, dtype=torch.bool)
     mask[..., 4:-4, 4:-4] = True
     test = rng.rand_like(target) + 0.5 * target + rng.rand_like(target, high=100) * (~mask).float()
     (masked,) = SSIM(target, mask)(test)
