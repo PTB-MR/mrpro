@@ -227,8 +227,8 @@ class ScaledFunctional(Functional):
         self.functional = functional
         self.scale = torch.as_tensor(scale)
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Forward method.
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply the functional.
 
         Parameters
         ----------
@@ -238,6 +238,15 @@ class ScaledFunctional(Functional):
         Returns
         -------
             scaled output of the functional
+        """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply the functional.
+
+        .. note::
+            Prefer calling the instance of the ScaledFunctional as ``operator(x)`` over directly calling this method.
+            See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         return (self.scale * self.functional(x)[0],)
 
@@ -262,8 +271,8 @@ class ScaledProximableFunctional(ProximableFunctional):
         self.functional = functional
         self.scale = torch.as_tensor(scale)
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Forward method.
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply the functional.
 
         Parameters
         ----------
@@ -273,6 +282,15 @@ class ScaledProximableFunctional(ProximableFunctional):
         Returns
         -------
             scaled output of the functional
+        """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply the functional.
+
+        .. note::
+            Prefer calling the instance of the ScaledProximableFunctional as ``operator(x)`` over directly calling this method.
+            See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         return (self.scale * self.functional(x)[0],)
 
