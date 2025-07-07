@@ -11,8 +11,9 @@
 # $T_1$ and $T_2$ maps are estimated. This example uses data from [Schuenke et al., 2024](in submission) of a phantom
 # consisting of 9 tubes. Average $T_1$ and $T_2$ are calculated for each tube.
 #
-# The fingerprinting sequence, as described by [Hamilton et al., 2017](https://doi.org/10.1002/mrm.26668) and
-# [Schuenke et al., 2024](in submission), consists of three repetitions of the following 5-block structure:
+# The fingerprinting sequence, as described by [Hamilton et al., 2017](https://doi.org/10.1002/mrm.26216) and
+# [Schuenke et al., 2024](https://doi.org/10.1007/s10334-025-01269-9), consists of three repetitions of the following
+# 5-block structure:
 # %%
 # Block 0          Block 1          Block 2          Block 3          Block 4
 # R-peak           R-peak           R-peak           R-peak           R-peak
@@ -45,7 +46,8 @@ import zenodo_get
 
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
-zenodo_get.download(record='15182376', retry_attempts=5, output_dir=data_folder)
+zenodo_get.download(record='15726937', retry_attempts=5, output_dir=data_folder)
+
 
 # %% [markdown]
 # ## Reconstruct qualitative images
@@ -92,7 +94,7 @@ img = recon(kdata_split)
 # %%
 model = mrpro.operators.AveragingOp(dim=0, idx=split_indices) @ mrpro.operators.models.CardiacFingerprinting(
     kdata.header.acq_info.acquisition_time_stamp.squeeze(),
-    echo_time=0.00155,
+    echo_time=0.001555,
     repetition_time=0.01,
     t2_prep_echo_times=(0.03, 0.05, 0.1),
 )

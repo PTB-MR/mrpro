@@ -32,6 +32,7 @@ def inati(
     """
     # After 10 power iterations we will have a very good estimate of the singular vector
     n_power_iterations = 10
+    eps = 1e-8  # for numerical stability
 
     if isinstance(smoothing_width, int):
         smoothing_width = SpatialDimension(
@@ -50,16 +51,20 @@ def inati(
     # Get the voxels in an ROI defined by the smoothing_width around each voxel leading to shape
     # (z y x coils window=prod(smoothing_width))
     coil_img_roi = sliding_window(padded_coil_img, smoothing_width.zyx, dim=(-3, -2, -1)).flatten(-3)
-    coil_img_cov = einsum(coil_img_roi.conj(), coil_img_roi, '... coils1 window,... coils2 window->... coils1 coils2')
+    coil_img_cov = einsum(
+        coil_img_roi.conj(),
+        coil_img_roi,
+        '... coils1 window,... coils2 window->... coils1 coils2',
+    )
 
     singular_vector = torch.sum(coil_img_roi, dim=-1)  # z y x coils
-    singular_vector /= singular_vector.norm(dim=-1, keepdim=True)
+    singular_vector /= singular_vector.norm(dim=-1, keepdim=True) + eps
     for _ in range(n_power_iterations):
         singular_vector = einsum(coil_img_cov, singular_vector, '... coils1 coils2,... coils2->... coils1')
-        singular_vector /= singular_vector.norm(dim=-1, keepdim=True)
+        singular_vector /= singular_vector.norm(dim=-1, keepdim=True) + eps
 
     singular_value = einsum(coil_img_roi, singular_vector, '... coils window,... coils->... window')
     phase = singular_value.sum(-1)
-    phase /= phase.abs()
+    phase /= phase.abs() + eps
     csm = einsum(singular_vector.conj(), phase, '... coils,...->coils ...')  # coils z y x
     return csm
