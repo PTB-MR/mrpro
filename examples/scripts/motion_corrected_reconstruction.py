@@ -139,10 +139,10 @@ import matplotlib.pyplot as plt
 def show_views(image: torch.Tensor) -> None:
     """Plot coronal, transversal and sagittal view."""
     image = torch.squeeze(image / image.max())
-    image_views = [image[:, 92, :], torch.fliplr(image[:, :, 90]), image[100, :, :]]
+    image_views = [image[:, 92, :], torch.fliplr(image[:, :, 92]), image[100, :, :]]
     _, axes = plt.subplots(1, 3, squeeze=False, figsize=(12, 6))
     for idx, (view, title) in enumerate(zip(image_views, ['Coronal', 'Transversal', 'Sagittal'], strict=False)):
-        axes[0, idx].imshow(torch.rot90(view), vmin=0, vmax=0.25, cmap='grey')
+        axes[0, idx].imshow(torch.rot90(view), vmin=0, vmax=0.4 if idx == 1 else 0.25, cmap='grey')
         axes[0, idx].set_title(title, fontsize=18)
         axes[0, idx].set_xticks([])
         axes[0, idx].set_yticks([])
