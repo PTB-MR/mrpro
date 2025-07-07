@@ -54,64 +54,27 @@ n_iterations_tv = 100
 
 # %%
 # ### Imports
-# %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show download details"}
+# %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show import and download details"}
 # Download raw data and pre-calculated motion fields from zenodo into a temporary directory
 import tempfile
+from collections.abc import Sequence
 from pathlib import Path
 
 import numpy as np
 import torch
 import zenodo_get
 from einops import rearrange
-from mrpro.algorithms.optimizers import cg, pdhg
-from mrpro.algorithms.reconstruction import IterativeSENSEReconstruction
-from mrpro.data import CsmData, IData, KData
+from mrpro.algorithms.optimizers import cg
+from mrpro.algorithms.reconstruction import IterativeSENSEReconstruction, TotalVariationRegularizedReconstruction
+from mrpro.data import CsmData, KData
 from mrpro.data.traj_calculators import KTrajectoryRpe
-from mrpro.operators import (
-    AveragingOp,
-    FastFourierOp,
-    FiniteDifferenceOp,
-    FourierOp,
-    GridSamplingOp,
-    LinearOperatorMatrix,
-    ProximableFunctionalSeparableSum,
-    SensitivityOp,
-)
-from mrpro.operators.functionals import L1NormViewAsReal, L2NormSquared, ZeroFunctional
-from mrpro.utils import unsqueeze_right
+from mrpro.operators import AveragingOp, FastFourierOp, GridSamplingOp, SensitivityOp
 
 dataset = '15288250'
 
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
 zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
-
-
-# %%
-def tv_reg_reco(kdata, csm, img_initial, reg_weight=0.1, reg_weight_t=0.1, n_iterations=100):
-    fourier_operator = FourierOp.from_kdata(kdata)
-    csm_operator = SensitivityOp(csm)
-    acquisition_operator = fourier_operator @ csm_operator
-
-    if img_initial.data.shape[0] == 1:
-        tv_dim = (-3, -2, -1)
-        regularization_weight = torch.tensor([reg_weight, reg_weight, reg_weight])
-    else:
-        tv_dim = (-5, -3, -2, -1)
-        regularization_weight = torch.tensor([reg_weight_t, reg_weight, reg_weight, reg_weight])
-
-    nabla_operator = FiniteDifferenceOp(dim=tv_dim, mode='forward')
-    l2 = 0.5 * L2NormSquared(target=kdata.data)
-    l1 = L1NormViewAsReal(weight=unsqueeze_right(regularization_weight, kdata.data.ndim))
-
-    f = ProximableFunctionalSeparableSum(l2, l1)
-    g = ZeroFunctional()
-    K = LinearOperatorMatrix(((acquisition_operator,), (nabla_operator,)))
-
-    initial_values = (img_initial.data.clone(),)
-
-    (img_pdhg,) = pdhg(f=f, g=g, operator=K, initial_values=initial_values, max_iterations=n_iterations)
-    return IData(data=img_pdhg, header=img_initial.header)
 
 
 # %% [markdown]
@@ -130,7 +93,7 @@ csm_maps = CsmData.from_kdata_inati(kdata, smoothing_width=3, downsampled_size=6
 
 #  SENSE reconstruction
 iterative_sense = IterativeSENSEReconstruction(kdata, csm=csm_maps)
-img = iterative_sense.forward(kdata)
+img = iterative_sense(kdata)
 
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show plotting details"}
 import matplotlib.pyplot as plt
@@ -139,10 +102,10 @@ import matplotlib.pyplot as plt
 def show_views(image: torch.Tensor) -> None:
     """Plot coronal, transversal and sagittal view."""
     image = torch.squeeze(image / image.max())
-    image_views = [image[:, 92, :], torch.fliplr(image[:, :, 92]), image[100, :, :]]
+    image_views = [image[:, 61, :], torch.fliplr(image[:, :, 61]), image[54, :, :]]
     _, axes = plt.subplots(1, 3, squeeze=False, figsize=(12, 6))
     for idx, (view, title) in enumerate(zip(image_views, ['Coronal', 'Transversal', 'Sagittal'], strict=False)):
-        axes[0, idx].imshow(torch.rot90(view), vmin=0, vmax=0.4 if idx == 1 else 0.25, cmap='grey')
+        axes[0, idx].imshow(torch.rot90(view, -1), vmin=0, vmax=0.4 if idx == 1 else 0.25, cmap='grey')
         axes[0, idx].set_title(title, fontsize=18)
         axes[0, idx].set_xticks([])
         axes[0, idx].set_yticks([])
@@ -226,46 +189,43 @@ kdata_resp_resolved = kdata[..., navigator_idx, :]
 
 # %%
 recon_resp_resolved = IterativeSENSEReconstruction(kdata_resp_resolved, csm=csm_maps)
-img_resp_resolved = recon_resp_resolved.forward(kdata_resp_resolved)
+img_resp_resolved = recon_resp_resolved(kdata_resp_resolved)
 
-img_resp_resolved_tv = tv_reg_reco(
+recon_tv_resp_respolved = TotalVariationRegularizedReconstruction(
     kdata_resp_resolved,
-    csm_maps,
-    img_initial=img_resp_resolved,
-    reg_weight=1e-7,
-    reg_weight_t=2e-6,
-    n_iterations=n_iterations_tv,
+    csm=csm_maps,
+    regularization_dim=(0, -3, -2, -1),
+    regularization_weight=(2e-6, 1e-7, 1e-7, 1e-7),
+    max_iterations=n_iterations_tv,
 )
+img_resp_resolved_tv = recon_tv_resp_respolved(kdata_resp_resolved)
 
 
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show plotting details"}
-def show_motion_states(*images: torch.Tensor, ylabels: list[str] | None = None, slice_idx: int = 92) -> None:
+def show_motion_states(image: torch.Tensor, ylabel: str | None = None, slice_idx: int = 61, vmax: float = 0.3) -> None:
     """Plot first and last motion state and difference image."""
-    n_images = len(images)
-    _, axes = plt.subplots(n_images, 3, squeeze=False, figsize=(n_images * 6, 8))
+    _, axes = plt.subplots(1, 3, squeeze=False, figsize=(12, 16))
     [a.set_xticks([]) for a in axes.flatten()]
     [a.set_yticks([]) for a in axes.flatten()]
-    for i in range(n_images):
-        image = torch.squeeze(images[i] / images[i].max())
-        axes[i, 0].imshow(torch.rot90(image[0, :, slice_idx, :]), vmin=0, vmax=0.2, cmap='grey')
-        axes[i, 0].set_title('MS 1', fontsize=18)
-        axes[i, 0].set_ylabel(ylabels[i], fontsize=18)
-        axes[i, 1].imshow(torch.rot90(image[-1, :, slice_idx, :]), vmin=0, vmax=0.2, cmap='grey')
-        axes[i, 1].set_title(f'MS {image.shape[0]}', fontsize=18)
-        axes[i, 2].imshow(
-            torch.rot90(torch.abs(image[0, :, slice_idx, :] - image[-1, :, slice_idx, :])),
-            vmin=0,
-            vmax=0.2,
-            cmap='grey',
-        )
-        axes[i, 2].set_title(f'|MS 1 - MS {image.shape[0]}|', fontsize=18)
+    image = torch.squeeze(image / image.max())
+    axes[0, 0].imshow(torch.rot90(image[0, :, slice_idx, :], -1), vmin=0, vmax=vmax, cmap='grey')
+    axes[0, 0].set_title('MS 1', fontsize=18)
+    axes[0, 0].set_ylabel(ylabel, fontsize=18)
+    axes[0, 1].imshow(torch.rot90(image[-1, :, slice_idx, :], -1), vmin=0, vmax=vmax, cmap='grey')
+    axes[0, 1].set_title(f'MS {image.shape[0]}', fontsize=18)
+    axes[0, 2].imshow(
+        torch.rot90(torch.abs(image[0, :, slice_idx, :] - image[-1, :, slice_idx, :]), -1),
+        vmin=0,
+        vmax=0.2,
+        cmap='grey',
+    )
+    axes[0, 2].set_title(f'|MS 1 - MS {image.shape[0]}|', fontsize=18)
     plt.show()
 
 
 # %%
-show_motion_states(
-    img_resp_resolved.rss(), img_resp_resolved_tv.rss(), ylabels=('Iterative SENSE', 'TV-regularization')
-)
+show_motion_states(img_resp_resolved.rss(), ylabel='Iterative SENSE')
+show_motion_states(img_resp_resolved_tv.rss(), ylabel='TV-regularization', vmax=0.1)
 
 # %% [markdown]
 # ### 4. Estimate the motion fields from the dynamic images
@@ -296,12 +256,15 @@ motion_op = GridSamplingOp.from_displacement(mf[..., 2], mf[..., 1], mf[..., 0])
 # %%
 # Create acquisition operator
 fourier_op = recon_resp_resolved.fourier_op
-dcf_op = recon_resp_resolved.dcf.as_operator()
 csm_op = SensitivityOp(csm_maps)
 averaging_op = AveragingOp(dim=0)
 acquisition_operator = fourier_op @ motion_op @ csm_op @ averaging_op.H
 
-(initial_value,) = acquisition_operator.H(dcf_op(kdata_resp_resolved.data)[0])
+if recon_resp_resolved.dcf is None:
+    (initial_value,) = acquisition_operator.H(kdata_resp_resolved.data)
+else:
+    dcf_op = recon_resp_resolved.dcf.as_operator()
+    (initial_value,) = acquisition_operator.H(dcf_op(kdata_resp_resolved.data)[0])
 (right_hand_side,) = acquisition_operator.H(kdata_resp_resolved.data)
 operator = acquisition_operator.H @ acquisition_operator
 
@@ -310,13 +273,13 @@ operator = acquisition_operator.H @ acquisition_operator
 
 
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show plotting details"}
-def show_images(*images: torch.Tensor, titles: list[str] | None = None) -> None:
+def show_images(*images: torch.Tensor, titles: Sequence[str] | None = None) -> None:
     """Plot images."""
     n_images = len(images)
     _, axes = plt.subplots(1, n_images, squeeze=False, figsize=(n_images * 3, 3))
     for i in range(n_images):
         image = torch.squeeze(images[i] / images[i].max())
-        axes[0][i].imshow(torch.rot90(image[:, 93, :]), cmap='gray', vmin=0, vmax=0.18)
+        axes[0][i].imshow(torch.rot90(image[:, 61, :], -1), cmap='gray', vmin=0, vmax=0.18)
         axes[0][i].axis('off')
         if titles:
             axes[0][i].set_title(titles[i])
