@@ -43,13 +43,14 @@ class Operator(Generic[Unpack[Tin], Tout], ABC, TensorAttributeMixin, torch.nn.M
         return super().__call__(*args)
 
     def __matmul__(
-        self: Operator[Unpack[Tin], Tout], other: Operator[Unpack[Tin2], tuple[Unpack[Tin]]]
+        self: Operator[Unpack[Tin], Tout],
+        other: Operator[Unpack[Tin2], tuple[Unpack[Tin]]] | Operator[Unpack[Tin2], tuple[torch.Tensor, ...]],
     ) -> Operator[Unpack[Tin2], Tout]:
         """Operator composition.
 
         Returns ``lambda x: self(other(x))``
         """
-        return OperatorComposition(self, other)
+        return OperatorComposition(self, cast(Operator[Unpack[Tin2], tuple[Unpack[Tin]]], other))
 
     def __radd__(
         self: Operator[Unpack[Tin], tuple[Unpack[Tin]]], other: torch.Tensor
