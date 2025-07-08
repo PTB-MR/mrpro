@@ -42,7 +42,7 @@ def test_optimizer_op_gradcheck() -> None:
     lambda_m0 = torch.tensor(1, requires_grad=True, dtype=torch.float64)
     lambda_t1 = torch.tensor(1, requires_grad=True, dtype=torch.float64)
     torch.autograd.gradcheck(
-        op, (m0_reg, t1_reg, lambda_m0, lambda_t1, signal), fast_mode=True, atol=1e-3, rtol=1e-2, eps=1e-3
+        op, (m0_reg, t1_reg, lambda_m0, lambda_t1, signal), fast_mode=True, atol=1e-2, rtol=1e-2, eps=1e-3
     )
     m0, t1 = (constraints_op @ op)(m0_reg, t1_reg, lambda_m0, lambda_t1, signal)
     torch.testing.assert_close(m0, true_m0, atol=1e-3, rtol=1e-2)

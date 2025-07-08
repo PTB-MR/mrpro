@@ -113,6 +113,8 @@ class Dataclass:
         auto_reduce_repeats
             If `True`, try to reduce dimensions only containing repeats to singleton.
             This will be done after init and post_init.
+        init
+            If `True`, an automatic init function will be added. Set to `False` to use a custom init.
         """
         dataclasses.dataclass(cls, repr=False, eq=False, init=init)  # type: ignore[call-overload]
         super().__init_subclass__(**kwargs)

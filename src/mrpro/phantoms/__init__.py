@@ -7,6 +7,7 @@ from mrpro.phantoms import coils
 from mrpro.phantoms.m4raw import M4RawDataset
 from mrpro.phantoms import mdcnn
 from mrpro.phantoms.fastmri import FastMRIKDataDataset, FastMRIImageDataset
+from mrpro.phantoms import coils
 
 __all__ = [
     "EllipseParameters",
