@@ -62,3 +62,8 @@ class ZeroOp(LinearOperator):
             return (torch.zeros_like(x),)
         else:
             return (torch.tensor(0),)
+
+    @property
+    def H(self) -> LinearOperator:  # noqa: N802
+        """Adjoint of the Zero Operator."""
+        return self
