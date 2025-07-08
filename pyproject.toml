@@ -194,7 +194,6 @@ ignore = [
     "COM812", #  missing-trailing-comma (conflict with formatter)
     "SIM108", #  if-else-block-instead-of-if-exp
     "A005",   #  stdlib-module-shadowing
-    "PT028",  #  parameters of test functions with default arguments
 ]
 
 [tool.ruff.lint.isort]
