@@ -2,7 +2,7 @@
 
 import torch
 
-from mrpro.operators.Functional import ElementaryProximableFunctional
+from mrpro.operators.Functional import ElementaryProximableFunctional, throw_if_negative_or_complex
 
 
 class L2NormSquared(ElementaryProximableFunctional):
@@ -65,7 +65,7 @@ class L2NormSquared(ElementaryProximableFunctional):
         -------
             Proximal mapping applied to the input tensor
         """
-        self._throw_if_negative_or_complex(sigma)
+        throw_if_negative_or_complex(sigma)
         weight_square_2_sigma = self._divide_by_n(
             self.weight.conj() * self.weight * 2 * sigma,
             torch.broadcast_shapes(x.shape, self.target.shape, self.weight.shape),
@@ -94,7 +94,7 @@ class L2NormSquared(ElementaryProximableFunctional):
         -------
             Proximal of convex conjugate applied to the input tensor
         """
-        self._throw_if_negative_or_complex(sigma)
+        throw_if_negative_or_complex(sigma)
         weight_square = self._divide_by_n(
             self.weight.conj() * self.weight, torch.broadcast_shapes(x.shape, self.target.shape, self.weight.shape)
         )
