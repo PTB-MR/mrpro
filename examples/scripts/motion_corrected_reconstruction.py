@@ -35,7 +35,7 @@
 # iterations. Increase 'n_iterations_tv' in the code to 100 to get a better image quality.
 
 # %%
-n_iterations_tv = 10
+n_iterations_tv = 100
 
 # %% [markdown]
 # ### Data acquisition
@@ -72,7 +72,7 @@ from mrpro.operators import AveragingOp, FastFourierOp, GridSamplingOp, Sensitiv
 
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
-zenodo_get.zenodo_get(['15849308', '-r', 5, '-o', data_folder])  # r: retries
+zenodo_get.download(record='15849308', retry_attempts=5, output_dir=data_folder)
 
 # %% [markdown]
 # ### Motion-corrupted image reconstruction
