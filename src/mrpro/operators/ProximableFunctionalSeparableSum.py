@@ -111,7 +111,7 @@ class ProximableFunctionalSeparableSum(Operator[Unpack[T], tuple[torch.Tensor]])
 
         .. note::
             Prefer calling the instance of the ProximableFunctionalSeparableSum operator as ``operator(x)`` over
-            directly calling this method.
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         if len(x) != len(self.functionals):
             raise ValueError('The number of inputs must match the number of functionals.')
