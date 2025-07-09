@@ -35,7 +35,7 @@
 # iterations. Increase 'n_iterations_tv' in the code to 100 to get a better image quality.
 
 # %%
-n_iterations_tv = 100
+n_iterations_tv = 10
 
 # %% [markdown]
 # ### Data acquisition
@@ -70,12 +70,9 @@ from mrpro.data import CsmData, KData
 from mrpro.data.traj_calculators import KTrajectoryRpe
 from mrpro.operators import AveragingOp, FastFourierOp, GridSamplingOp, SensitivityOp
 
-dataset = '15288250'
-
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
-zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
-
+zenodo_get.zenodo_get(['15849308', '-r', 5, '-o', data_folder])  # r: retries
 
 # %% [markdown]
 # ### Motion-corrupted image reconstruction
@@ -99,16 +96,22 @@ img = iterative_sense(kdata)
 import matplotlib.pyplot as plt
 
 
-def show_views(image: torch.Tensor) -> None:
+def show_views(*images: torch.Tensor, ylabels: Sequence[str] | None = None) -> None:
     """Plot coronal, transversal and sagittal view."""
-    image = torch.squeeze(image / image.max())
-    image_views = [image[:, 61, :], torch.fliplr(image[:, :, 61]), image[54, :, :]]
-    _, axes = plt.subplots(1, 3, squeeze=False, figsize=(12, 6))
-    for idx, (view, title) in enumerate(zip(image_views, ['Coronal', 'Transversal', 'Sagittal'], strict=False)):
-        axes[0, idx].imshow(torch.rot90(view, -1), vmin=0, vmax=0.4 if idx == 1 else 0.25, cmap='grey')
-        axes[0, idx].set_title(title, fontsize=18)
-        axes[0, idx].set_xticks([])
-        axes[0, idx].set_yticks([])
+    if ylabels is not None and len(ylabels) != len(images):
+        raise ValueError(f'Expected {len(images)} ylabels, got {len(ylabels)}')
+    _, axes = plt.subplots(len(images), 3, squeeze=False, figsize=(12, 4 * len(images)))
+    for idx, (image, ylabel) in enumerate(zip(images, ylabels or [''] * len(images), strict=True)):
+        image = torch.squeeze(image / image.flatten().sort()[0][int(image.numel() * 0.98)])
+        image_views = [image[:, 61, :], torch.fliplr(image[:, :, 63]), image[54, :, :]]
+
+        for vdx, (view, title) in enumerate(zip(image_views, ['Coronal', 'Transversal', 'Sagittal'], strict=True)):
+            axes[idx, vdx].imshow(torch.rot90(view, -1), vmin=0, vmax=1.0 if idx == 1 else 0.8, cmap='grey')
+            if idx == 0:
+                axes[idx, vdx].set_title(title, fontsize=18)
+            axes[idx, vdx].set_xticks([])
+            axes[idx, vdx].set_yticks([])
+        axes[idx, 0].set_ylabel(ylabel, fontsize=18)
     plt.show()
 
 
@@ -225,7 +228,7 @@ def show_motion_states(image: torch.Tensor, ylabel: str | None = None, slice_idx
 
 # %%
 show_motion_states(img_resp_resolved.rss(), ylabel='Iterative SENSE')
-show_motion_states(img_resp_resolved_tv.rss(), ylabel='TV-regularization', vmax=0.1)
+show_motion_states(img_resp_resolved_tv.rss(), ylabel='TV-regularization', vmax=0.2)
 
 # %% [markdown]
 # ### 4. Estimate the motion fields from the dynamic images
@@ -272,21 +275,7 @@ operator = acquisition_operator.H @ acquisition_operator
 (img_mcir,) = cg(operator, right_hand_side, initial_value=initial_value, max_iterations=30, tolerance=0.0)
 
 
-# %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show plotting details"}
-def show_images(*images: torch.Tensor, titles: Sequence[str] | None = None) -> None:
-    """Plot images."""
-    n_images = len(images)
-    _, axes = plt.subplots(1, n_images, squeeze=False, figsize=(n_images * 3, 3))
-    for i in range(n_images):
-        image = torch.squeeze(images[i] / images[i].max())
-        axes[0][i].imshow(torch.rot90(image[:, 61, :], -1), cmap='gray', vmin=0, vmax=0.18)
-        axes[0][i].axis('off')
-        if titles:
-            axes[0][i].set_title(titles[i])
-    plt.show()
-
-
 # %%
-show_images(img.rss(), img_mcir.abs(), titles=('Uncorrected', 'MCIR'))
+show_views(img.rss(), img_mcir.abs(), ylabels=('Uncorrected', 'MCIR'))
 
 # %%
