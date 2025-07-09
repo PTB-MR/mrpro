@@ -455,3 +455,19 @@ def test_dataclass_shape() -> None:
     a = A()
     assert a.shape == (10, 20)
     assert len(a) == 10
+
+
+def test_dataclass_detach() -> None:
+    """Test detach method of the dataclass."""
+    b = B()
+    original = b.child.floattensor.clone()
+    parameter1 = torch.tensor(2.0, requires_grad=True)
+    parameter2 = torch.tensor(3.0, requires_grad=True)
+    b.child.floattensor = b.child.floattensor * parameter1
+    detached = b.detach()
+    detached.child.floattensor = detached.child.floattensor * parameter2
+    detached.child.floattensor.sum().backward()
+
+    torch.testing.assert_close(b.child.floattensor, original * parameter1 * parameter2, msg='data is not shared.')
+    assert parameter1.grad is None, 'detached after multiplication -> no gradient should be computed'
+    assert parameter2.grad is not None, 'used after the detach -> gradient should be computed'
