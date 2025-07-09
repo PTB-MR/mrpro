@@ -35,7 +35,7 @@
 # iterations. Increase 'n_iterations_tv' in the code to 100 to get a better image quality.
 
 # %%
-n_iterations_tv = 100
+n_iterations_tv = 10
 
 # %% [markdown]
 # ### Data acquisition
