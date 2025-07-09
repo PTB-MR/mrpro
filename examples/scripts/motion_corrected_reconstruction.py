@@ -31,12 +31,13 @@
 # 4. Estimate non-rigid motion fields from the dynamic images
 # 5. Use the motion fields to obtain a motion-corrected image
 #
-# To achieve high image quality a TV-regularized image reconstruction is used here. To safe time we will use only a few
-# iterations. Increase 'n_iterations_tv' to 100 and 'n_iterations_mcir' to 30 to get a better image quality.
+# To achieve high image quality for the different respiratory motion states, a TV-regularized image reconstruction
+# should be used. To safe time we will skip this per default and only use the iterative SENSE reconstruction.
+# The TV-regularized reconstruction can be activated by setting `n_iterations_tv` to a value larger than 0 (100  yields
+# good results).
 
 # %%
-n_iterations_tv = 5
-n_iterations_mcir = 10
+n_iterations_tv = 0
 
 # %% [markdown]
 # ### Data acquisition
@@ -193,14 +194,15 @@ kdata_resp_resolved = kdata[..., navigator_idx, :]
 recon_resp_resolved = IterativeSENSEReconstruction(kdata_resp_resolved, csm=csm_maps)
 img_resp_resolved = recon_resp_resolved(kdata_resp_resolved)
 
-recon_tv_resp_respolved = TotalVariationRegularizedReconstruction(
-    kdata_resp_resolved,
-    csm=csm_maps,
-    regularization_dim=(0, -3, -2, -1),
-    regularization_weight=(2e-6, 1e-7, 1e-7, 1e-7),
-    max_iterations=n_iterations_tv,
-)
-img_resp_resolved_tv = recon_tv_resp_respolved(kdata_resp_resolved)
+if n_iterations_tv > 0:
+    recon_tv_resp_respolved = TotalVariationRegularizedReconstruction(
+        kdata_resp_resolved,
+        csm=csm_maps,
+        regularization_dim=(0, -3, -2, -1),
+        regularization_weight=(2e-6, 1e-7, 1e-7, 1e-7),
+        max_iterations=n_iterations_tv,
+    )
+    img_resp_resolved_tv = recon_tv_resp_respolved(kdata_resp_resolved)
 
 
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show plotting details"}
@@ -227,7 +229,8 @@ def show_motion_states(image: torch.Tensor, ylabel: str | None = None, slice_idx
 
 # %%
 show_motion_states(img_resp_resolved.rss(), ylabel='Iterative SENSE')
-show_motion_states(img_resp_resolved_tv.rss(), ylabel='TV-regularization', vmax=0.2)
+if n_iterations_tv > 0:
+    show_motion_states(img_resp_resolved_tv.rss(), ylabel='TV-regularization', vmax=0.2)
 
 # %% [markdown]
 # ### 4. Estimate the motion fields from the dynamic images
@@ -271,9 +274,7 @@ else:
 operator = acquisition_operator.H @ acquisition_operator
 
 # Minimize the functional
-(img_mcir,) = cg(
-    operator, right_hand_side, initial_value=initial_value, max_iterations=n_iterations_mcir, tolerance=0.0
-)
+(img_mcir,) = cg(operator, right_hand_side, initial_value=initial_value, max_iterations=30, tolerance=0.0)
 
 
 # %%
