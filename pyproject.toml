@@ -73,6 +73,7 @@ dependencies = [
     "torchvision>=0.18.1",
     "tqdm>=4.60.0",
     "typing-extensions>=4.12",
+    "platformdirs>=4.0",
 ]
 
 [project.optional-dependencies]
