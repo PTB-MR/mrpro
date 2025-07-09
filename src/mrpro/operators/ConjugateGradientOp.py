@@ -140,6 +140,10 @@ class ConjugateGradientOp(torch.nn.Module):
         Both the operator and the right-hand side are given as factory functions.
         The arguments given to the operator when calling it are passed to the factory functions.
 
+        .. warning::
+            If implicit_backward is `True`, `tolerance` and `max_iterations` should be chosen such that the cg algorithm
+            converges, otherwise the backward will be wrong.
+
         **Example: Regularized Least Squares**
 
         Consider the regularized least squares problem:
@@ -174,11 +178,6 @@ class ConjugateGradientOp(torch.nn.Module):
             The maximum number of iterations for the conjugate gradient method.
             The same maximum number of iterations is used in the backward pass if using
             implicit differentiation.
-
-        .. warning::
-            If implicit_backward is `True`, `tolerance` and `max_iterations` should be chosen such that the cg algorithm
-            converges, otherwise the backward will be wrong.
-
         """
         super().__init__()
         self.operator_factory = operator_factory
