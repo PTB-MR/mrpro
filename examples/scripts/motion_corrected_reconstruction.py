@@ -32,10 +32,11 @@
 # 5. Use the motion fields to obtain a motion-corrected image
 #
 # To achieve high image quality a TV-regularized image reconstruction is used here. To safe time we will use only a few
-# iterations. Increase 'n_iterations_tv' in the code to 100 to get a better image quality.
+# iterations. Increase 'n_iterations_tv' to 100 and 'n_iterations_mcir' to 30 to get a better image quality.
 
 # %%
-n_iterations_tv = 10
+n_iterations_tv = 5
+n_iterations_mcir = 10
 
 # %% [markdown]
 # ### Data acquisition
@@ -52,8 +53,6 @@ n_iterations_tv = 10
 # ```
 
 
-# %%
-# ### Imports
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show import and download details"}
 # Download raw data and pre-calculated motion fields from zenodo into a temporary directory
 import tempfile
@@ -253,8 +252,8 @@ motion_op = GridSamplingOp.from_displacement(mf[..., 2], mf[..., 1], mf[..., 0])
 # describes the Fourier transform of all of the k-space points obtained in motion state $m$.
 #
 # One way to solve this problem with MRpro is to use the respiratory-resolved k-space data from above. Because we used a
-# sliding window approach to split the data into different motion states, this computationally a bit more demanding than
-# it needs to be.
+# sliding window approach to split the data into different motion states, this is computationally a bit more demanding
+# than it needs to be but it also doesn't hurt.
 
 # %%
 # Create acquisition operator
@@ -272,7 +271,9 @@ else:
 operator = acquisition_operator.H @ acquisition_operator
 
 # Minimize the functional
-(img_mcir,) = cg(operator, right_hand_side, initial_value=initial_value, max_iterations=30, tolerance=0.0)
+(img_mcir,) = cg(
+    operator, right_hand_side, initial_value=initial_value, max_iterations=n_iterations_mcir, tolerance=0.0
+)
 
 
 # %%
