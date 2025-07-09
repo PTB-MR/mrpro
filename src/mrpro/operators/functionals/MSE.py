@@ -74,7 +74,7 @@ class MSE(L2NormSquared):
     ) -> tuple[torch.Tensor]:
         """Apply forward of MSE.
 
-        ..note::
+        .. note::
             Prefer calling the instance of the MSE as ``operator(x)`` over directly calling this method.
             See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """

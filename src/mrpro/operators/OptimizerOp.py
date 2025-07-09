@@ -180,7 +180,7 @@ class OptimizerOp(Operator[Unpack[ArgumentType], VariableType]):
     def forward(self, *parameters: Unpack[ArgumentType]) -> VariableType:
         """Find the argmin.
 
-        ..note::
+        .. note::
             Prefer calling the instance of the OptimizerOp as ``operator(x)`` over directly calling this method.
             See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """

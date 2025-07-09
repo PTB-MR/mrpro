@@ -149,6 +149,7 @@ class ConjugateGradientOp(torch.nn.Module):
         This can be solved using the ConjugateGradientOp as follows:
 
         .. code-block:: python
+
             operator_factory = lambda alpha, x0, b: A.gram + alpha
             rhs_factory = lambda alpha, x0, b: A.H(b)[0] + alpha * x0
             op = ConjugateGradientOp(operator_factory, rhs_factory)
@@ -174,7 +175,7 @@ class ConjugateGradientOp(torch.nn.Module):
             The same maximum number of iterations is used in the backward pass if using
             implicit differentiation.
 
-        ..warning::
+        .. warning::
             If implicit_backward is `True`, `tolerance` and `max_iterations` should be chosen such that the cg algorithm
             converges, otherwise the backward will be wrong.
         """
@@ -211,7 +212,7 @@ class ConjugateGradientOp(torch.nn.Module):
     ) -> tuple[torch.Tensor, ...]:
         """Solve the linear system using the conjugate gradient method.
 
-        ..note::
+        .. note::
             Prefer calling the instance of the ConjugateGradientOp as ``operator(x)`` over directly calling this method.
             See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
