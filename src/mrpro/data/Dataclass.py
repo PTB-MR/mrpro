@@ -524,18 +524,6 @@ class Dataclass:
 
     # endregion Move to device/dtype
 
-    def detach(self) -> Self:
-        """Detach the data from the autograd graph.
-
-        Returns
-        -------
-            A new dataclass with the data detached from the autograd graph.
-            The data is shared between the original and the new object.
-        """
-        new = shallowcopy(self)
-        new.apply_(lambda data: data.detach() if isinstance(data, torch.Tensor) else data, recurse=True)
-        return new
-
     # region Properties
     @property
     def device(self) -> torch.device | None:
