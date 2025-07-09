@@ -178,6 +178,7 @@ class ConjugateGradientOp(torch.nn.Module):
         .. warning::
             If implicit_backward is `True`, `tolerance` and `max_iterations` should be chosen such that the cg algorithm
             converges, otherwise the backward will be wrong.
+
         """
         super().__init__()
         self.operator_factory = operator_factory
