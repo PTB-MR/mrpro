@@ -112,7 +112,7 @@ class ConjugateGradientFunction(torch.autograd.Function):
 class ConjugateGradientOp(torch.nn.Module):
     r"""Solves a linear positive semidefinite system with the conjugate gradient method.
 
-    Solves :math: `A x = b` where :math:`A` is a linear operator or a matrix of linear operators ,
+    Solves :math:`A x = b` where :math:`A` is a linear operator or a matrix of linear operators ,
     :math:`b` is a  tensor or a tuple of tensors.
 
     The operator is autograd differentiable using implicit differentiation. This is useful for including CG within a
@@ -147,6 +147,7 @@ class ConjugateGradientOp(torch.nn.Module):
 
         The normal equations are :math:`(A^H A + \alpha I) x = A^H y + \alpha x_0`.
         This can be solved using the ConjugateGradientOp as follows:
+
         .. code-block:: python
             operator_factory = lambda alpha, x0, b: A.gram + alpha
             rhs_factory = lambda alpha, x0, b: A.H(b)[0] + alpha * x0
@@ -173,7 +174,7 @@ class ConjugateGradientOp(torch.nn.Module):
             The same maximum number of iterations is used in the backward pass if using
             implicit differentiation.
 
-        .. warning::
+        ..warning::
             If implicit_backward is `True`, `tolerance` and `max_iterations` should be chosen such that the cg algorithm
             converges, otherwise the backward will be wrong.
         """
@@ -184,12 +185,10 @@ class ConjugateGradientOp(torch.nn.Module):
         self.tolerance = tolerance
         self.max_iterations = max_iterations
 
-    def forward(
-        self,
-        *parameters: torch.Tensor,
-        initial_value: tuple[torch.Tensor, ...] | None = None,
+    def __call__(
+        self, *parameters: torch.Tensor, initial_value: tuple[torch.Tensor, ...] | None = None
     ) -> tuple[torch.Tensor, ...]:
-        r"""Solve the linear system using the conjugate gradient method.
+        """Solve the linear system using the conjugate gradient method.
 
         Parameters
         ----------
@@ -198,6 +197,23 @@ class ConjugateGradientOp(torch.nn.Module):
         initial_value
             The initial value for the conjugate gradient method.
             If `None`, the initial value is set to zero.
+
+        Returns
+        -------
+            The solution of the linear system.
+        """
+        return super().__call__(*parameters, initial_value=initial_value)
+
+    def forward(
+        self,
+        *parameters: torch.Tensor,
+        initial_value: tuple[torch.Tensor, ...] | None = None,
+    ) -> tuple[torch.Tensor, ...]:
+        """Solve the linear system using the conjugate gradient method.
+
+        ..note::
+            Prefer calling the instance of the ConjugateGradientOp as ``operator(x)`` over directly calling this method.
+            See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         if self.implicit_backward:
             solution = ConjugateGradientFunction.apply(self.operator_factory, self.rhs_factory, *parameters)

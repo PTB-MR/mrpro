@@ -113,7 +113,7 @@ class OptimizerFunction(torch.autograd.Function):
 class OptimizerOp(Operator[Unpack[ArgumentType], VariableType]):
     """Differentiable Optimization Operator.
 
-    Finds :math:`x^*=argmin_x f_p(x).
+    Finds :math:`x^*=argmin_x f_p(x)`.
     The solution :math:`x^*`  will be differentiable with respect to some parameters :math:`p`
     of the functional :math:`f`.
 
@@ -157,23 +157,32 @@ class OptimizerOp(Operator[Unpack[ArgumentType], VariableType]):
                     return L2squared(y)@q+alpha*L2squared(x_reg)
                 def initializer(_y, _alpha, _xreg):
                     return (x_reg,)
-
-        Returns
-        -------
-            The argmin `x^*`
         """
         super().__init__()
         self.factory = factory
         self.optimize = optimize
         self.initializer = initializer
 
-    def forward(self, *parameters: Unpack[ArgumentType]) -> VariableType:
+    def __call__(self, *parameters: Unpack[ArgumentType]) -> VariableType:
         """Find the argmin.
 
         Parameters
         ----------
         parameters
-            Parameters of the argmin problem.
+            Parameters of the argmin problem. These will be passed to the factory functions defined in the initializer.
+
+        Returns
+        -------
+            The solution of the argmin problem.
+        """
+        return super().__call__(*parameters)
+
+    def forward(self, *parameters: Unpack[ArgumentType]) -> VariableType:
+        """Find the argmin.
+
+        ..note::
+            Prefer calling the instance of the OptimizerOp as ``operator(x)`` over directly calling this method.
+            See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         initial_values = self.initializer(*parameters)
         initial_values_ = tuple(x.clone() if any(x is p for p in parameters) else x for x in initial_values)
