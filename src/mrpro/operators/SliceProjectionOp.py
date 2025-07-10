@@ -245,7 +245,7 @@ class SliceProjectionOp(LinearOperator):
 
         .. note::
             Prefer calling the instance of the SliceProjectionOp operator as ``operator(x)`` over
-            directly calling this method.
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         match (self.matrix, self.matrix_adjoint):
             # selection based on the optimize_for setting
