@@ -231,122 +231,6 @@ class PINQI(torch.nn.Module):
         return images, parameters
 
 
-# def validation_step(self, batch: BatchType, batch_idx: int) -> None:
-#     """Validate.
-
-#     Needs to be adapted for other signal models than Saturation Recovery.
-#     """
-#     images, parameters = self(batch['kdata'], batch['csm'])
-#     loss = self.loss(parameters, batch)
-
-#     pred_m0, pred_t1 = parameters[-1]
-#     target_t1, target_m0 = batch['t1'], batch['m0']
-#     mask = batch['mask']
-#     batch_size = len(batch['mask'])
-#     (ssim_t1,) = mrpro.operators.functionals.SSIM(target_t1, mask)(pred_t1)
-#     (l1_t1,) = mrpro.operators.functionals.L1Norm(target_t1, mask)(pred_t1)
-#     (l1_m0,) = mrpro.operators.functionals.L1Norm(target_m0, mask)(pred_m0)
-#     self.log('val/ssim_t1', ssim_t1, on_epoch=True, sync_dist=True, batch_size=batch_size)
-#     self.log('val/l1_t1', l1_t1, on_epoch=True, sync_dist=True, batch_size=batch_size)
-#     self.log('val/l1_m0', l1_m0, on_epoch=True, sync_dist=True, batch_size=batch_size)
-#     self.log('val/loss', loss, on_epoch=True, sync_dist=True, batch_size=batch_size)
-
-#     if batch_idx == 0:
-#         self.validation_step_outputs['target_t1'].append(batch['t1'])
-#         self.validation_step_outputs['pred_t1'].append(pred_t1)
-#         self.validation_step_outputs['pred_m0'].append(pred_m0)
-#         self.validation_step_outputs['target_m0'].append(target_m0)
-#         self.validation_step_outputs['mask'].append(batch['mask'])
-#         baseline_m0, baseline_t1 = self.baseline(batch['kdata'], batch['csm'])
-#         self.validation_step_outputs['baseline_t1'].append(baseline_t1)
-#         self.validation_step_outputs['baseline_m0'].append(baseline_m0)
-
-# def on_validation_epoch_end(self):
-#     """Validate.
-
-#     Needs to be adapted for other signal models than Saturation Recovery.
-#     """
-#     outputs = {k: torch.cat(v) for k, v in self.validation_step_outputs.items()}
-#     self.validation_step_outputs.clear()
-#     outputs = cast(dict[str, torch.Tensor], self.all_gather(outputs))
-
-#     if not self.trainer.is_global_zero:
-#         return
-#     outputs = {k: v.flatten(0, 1).cpu() for k, v in outputs.items()}
-
-#     samples = len(outputs['mask'])
-#     fig, axes = plt.subplots(4, samples, figsize=(4 * samples, 16))
-
-#     for i in range(samples):
-#         self.result_plot(
-#             outputs['target_t1'][i],
-#             outputs['pred_t1'][i],
-#             outputs['mask'][i],
-#             axes[:, i],
-#             outputs['baseline_t1'][i],
-#             '$T_1$ (s)',
-#         )
-#     fig.suptitle(f'$T_1$ Epoch {self.current_epoch}')
-#     self.logger.run['val/images/t1'].log(fig)
-#     plt.close(fig)
-
-#     fig, axes = plt.subplots(4, samples, figsize=(4 * samples, 12))
-#     for i in range(samples):
-#         self.result_plot(
-#             outputs['target_m0'][i].abs(),
-#             outputs['pred_m0'][i].abs(),
-#             outputs['mask'][i],
-#             axes[:, i],
-#             outputs['baseline_m0'][i].abs(),
-#             '$|M_0|$ (a.u.)',
-#         )
-#     fig.suptitle(f'$|M_0|$ Epoch {self.current_epoch}')
-#     self.logger.run['val/images/m0'].log(fig)
-#     plt.close(fig)
-
-# def result_plot(
-#     self,
-#     target: torch.Tensor,
-#     pred: torch.Tensor,
-#     mask: torch.Tensor,
-#     axes: Sequence[plt.Axes],
-#     baseline: torch.Tensor,
-#     label: str,
-# ) -> None:
-#     """Plot the results."""
-#     target = target.squeeze().numpy()
-#     pred = pred.squeeze().detach().numpy()
-#     mask = mask.squeeze().detach().numpy().astype(bool)
-#     baseline = baseline.squeeze().detach().numpy()
-
-#     target[~mask] = np.nan
-#     pred[~mask] = np.nan
-#     baseline[~mask] = np.nan
-#     difference = (target - pred) / target * 100
-#     vmax = np.nanmax(target)
-
-#     im0 = axes[0].imshow(target, vmin=0, vmax=vmax)
-#     axes[0].set_title('Ground Truth')
-#     axes[0].axis('off')
-#     plt.colorbar(im0, ax=axes[0], fraction=0.046, pad=0.04, label=label)
-
-#     im1 = axes[1].imshow(baseline, vmin=0, vmax=vmax)
-#     axes[1].set_title('SENSE + Regression')
-#     axes[1].axis('off')
-#     plt.colorbar(im1, ax=axes[1], fraction=0.046, pad=0.04, label=label)
-
-#     im2 = axes[2].imshow(pred, vmin=0, vmax=vmax)
-#     axes[2].set_title('PINQI')
-#     axes[2].axis('off')
-#     plt.colorbar(im2, ax=axes[2], fraction=0.046, pad=0.04, label=label)
-
-#     diff_vmax = np.nanpercentile(np.abs(difference), 90)
-#     im3 = axes[3].imshow(difference, cmap='coolwarm', vmin=-diff_vmax, vmax=diff_vmax)
-#     axes[3].set_title('rel. Error')
-#     axes[3].axis('off')
-#     plt.colorbar(im3, ax=axes[3], fraction=0.046, pad=0.04, label='%')
-
-
 # %%
 # As a baseline methods for comparision, we use a simple non-learned approach. We reconstruct the qualitative images at different saturation times using iterative SENSE.
 # We then perform a  constrained non-linear least squares regression usingL-BFGS to obtain the parameter maps.
@@ -448,7 +332,7 @@ print(f'SSIM: {ssim_baseline.item():.4f}, NRMSE: {nrmse_baseline.item():.4f}')
 print(f'SSIM: {ssim_t1.item():.4f}, NRMSE: {nrmse_t1.item():.4f}')
 
 
-fig, ax = plt.subplots(1, 4, gridspec_kw={'width_ratios': [1, 1, 1, 0.075]}, figsize=(6, 2))
+fig, ax = plt.subplots(1, 5, gridspec_kw={'width_ratios': [1, 1, 1, 0.01, 0.075], 'wspace': 0.0}, figsize=(5, 2))
 baseline_t1 = baseline_t1.squeeze()
 baseline_t1[~batch['mask']] = torch.nan
 ax[0].imshow(baseline_t1, vmin=0, vmax=2, cmap=cmap)
@@ -456,7 +340,7 @@ ax[0].axis('off')
 ax[0].set_title('SENSE + Regression')
 ax[0].text(
     0.5,
-    -0.05,
+    -0.00,
     f'SSIM: {ssim_baseline.item():.2f}',
     color='black',
     horizontalalignment='center',
@@ -470,12 +354,13 @@ ax[1].axis('off')
 ax[1].set_title('PINQI')
 ax[1].text(
     0.5,
-    -0.05,
+    -0.0,
     f'SSIM: {ssim_t1.item():.2f}',
     color='black',
     horizontalalignment='center',
     verticalalignment='top',
     transform=ax[1].transAxes,
+    size=10,
 )
 
 target_t1 = batch['t1'].squeeze()
@@ -483,10 +368,10 @@ target_t1[~batch['mask']] = torch.nan
 im = ax[2].imshow(target_t1, vmin=0, vmax=2, cmap=cmap)
 ax[2].axis('off')
 ax[2].set_title('Ground Truth')
-
-plt.colorbar(im, cax=ax[3], label='$T_1$ (s)')
-plt.savefig('/home/zimmer08/code/mrpro/examples/scripts/pinqi_t1.pdf', bbox_inches='tight')
-plt.show()
+fig.tight_layout()
+ax[-2].axis('off')
+plt.colorbar(im, cax=ax[-1], label='$T_1$ (s)')
+fig.savefig('/home/zimmer08/code/mrpro/examples/scripts/pinqi_t1_2.pdf', bbox_inches='tight')
 
 
 # %%
