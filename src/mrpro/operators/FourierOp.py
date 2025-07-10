@@ -1,6 +1,7 @@
 """Fourier Operator."""
 
 from collections.abc import Sequence
+from functools import cached_property
 
 import torch
 from typing_extensions import Self
@@ -160,10 +161,13 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
             (x,) = self._non_uniform_fast_fourier_op.adjoint(x)
         return (x,)
 
-    @property
+    @cached_property
     def gram(self) -> LinearOperator:
         """Return the gram operator."""
-        return FourierGramOp(self)
+        try:
+            return FourierGramOp(self)
+        except NotImplementedError:
+            return self.H @ self
 
     def __repr__(self) -> str:
         """Representation method for Fourier Operator."""
@@ -219,17 +223,28 @@ class FourierGramOp(LinearOperator):
 
         """
         super().__init__()
-        if fourier_op._non_uniform_fast_fourier_op:
-            self.nufft_gram: None | LinearOperator = fourier_op._non_uniform_fast_fourier_op.gram
-        else:
-            self.nufft_gram = None
 
         if fourier_op._fast_fourier_op and fourier_op._cart_sampling_op:
+            sampling_gram = fourier_op._cart_sampling_op.gram
+            if (
+                fourier_op._non_uniform_fast_fourier_op
+                and sampling_gram.mask is not None
+                and any(sampling_gram.mask.shape[d] != 1 for d in fourier_op._nufft_dims)
+            ):
+                raise NotImplementedError(
+                    'FourierGramOp does not support non-uniform FFTs combined with Cartesian sampling '
+                    'that differs along the NUFFT dimensions.'
+                )
             self.fast_fourier_gram: None | LinearOperator = (
                 fourier_op._fast_fourier_op.H @ fourier_op._cart_sampling_op.gram @ fourier_op._fast_fourier_op
             )
         else:
             self.fast_fourier_gram = None
+
+        if fourier_op._non_uniform_fast_fourier_op:
+            self.nufft_gram: None | LinearOperator = fourier_op._non_uniform_fast_fourier_op.gram
+        else:
+            self.nufft_gram = None
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the operator to the input tensor.

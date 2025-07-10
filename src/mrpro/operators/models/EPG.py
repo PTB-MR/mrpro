@@ -92,19 +92,22 @@ def rf_matrix(
     sina2 = 1 - cosa2
     ejp = torch.polar(torch.ones_like(phase), phase)
     inv_ejp = 1 / ejp
+    # we need to stack the same dtype. +0j does not work in torchscript on cuda
+    cosa2_complex = torch.complex(cosa2, torch.zeros_like(cosa2))
+    cosa_complex = torch.complex(cosa, torch.zeros_like(cosa))
     new_shape = flip_angle.shape + (3, 3)  # noqa: RUF005 # not supported in torchscript
 
     return torch.stack(
         [
-            cosa2 + 0.0j,
+            cosa2_complex,
             ejp**2 * sina2,
             -1.0j * ejp * sina,
             inv_ejp**2 * sina2,
-            cosa2 + 0.0j,
+            cosa2_complex,
             1.0j * inv_ejp * sina,
             -0.5j * inv_ejp * sina,
             0.5j * ejp * sina,
-            cosa + 0.0j,
+            cosa_complex,
         ],
         -1,
     ).reshape(new_shape)
@@ -142,7 +145,7 @@ def gradient_dephasing(state: torch.Tensor) -> torch.Tensor:
     -------
         EPG configuration states after gradient. Shape `..., 3 (f_plus, f_minus, z), n`
     """
-    zero = state.new_zeros(state.shape[:-2] + (1,))
+    zero = state.new_zeros(state.shape[:-2] + (1,))  # noqa: RUF005 # not supported in torchscript
     f_plus = torch.cat((state[..., 1, 1:2].conj(), state[..., 0, :-1]), dim=-1)
     f_minus = torch.cat((state[..., 1, 1:], zero), -1)
     z = state[..., 2, :]

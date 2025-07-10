@@ -22,7 +22,7 @@ jobs:
         id: set-matrix
         run: |
           # search for Dockerfile* in the docker directory, replace "Dockerfile" prefix with "mrpro" and to imagenames
-          imagenames=$(find docker -type f -name 'Dockerfile*' -exec basename {} \; | sed 's/^Dockerfile/mrpro/')
+          imagenames=$(find docker -type f -name 'Dockerfile_py*' -exec basename {} \; | sed 's/^Dockerfile/mrpro/')
           echo "image names: $imagenames"
 
           # if imagenames is empty - fail the workflow
@@ -66,7 +66,13 @@ jobs:
 
       - name: Install MRpro and Dependencies
         # use cpu version of torch
-        run: pip install --index-url=https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple/ --upgrade --upgrade-strategy eager .[tests]
+        run: |
+          # for the test of minimal requirements we do not want to update dependencies
+          if [ "${{ matrix.imagename }}" = "mrpro_py310_minimal" ]; then
+            pip install .[tests]
+          else
+            pip install --index-url=https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple/ --upgrade --upgrade-strategy eager .[tests]
+          fi
 
       - name: Install PyTest GitHub Annotation Plugin
         run: pip install pytest-github-actions-annotate-failures
@@ -74,8 +80,13 @@ jobs:
       - name: Run PyTest and Generate Coverage Report
         # shell bash sets the -o pipefail
         run: |
-          pytest -n 4 -m "not cuda" --junitxml=pytest.xml \
-          --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt
+          # for the test of minimal requirements we do not want to update dependencies
+          if [ "${{ matrix.imagename }}" = "mrpro_py310_minimal" ]; then
+            pytest -n 4 -m "not cuda"
+          else
+            pytest -n 4 -m "not cuda" --junitxml=pytest.xml \
+            --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt
+          fi
         shell: bash
 
       - name: Upload PyTest Coverage Report

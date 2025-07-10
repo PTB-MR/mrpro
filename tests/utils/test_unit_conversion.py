@@ -6,8 +6,10 @@ from mrpro.utils import RandomGenerator
 from mrpro.utils.unit_conversion import (
     deg_to_rad,
     lamor_frequency_to_magnetic_field,
+    m_to_micrometer,
     m_to_mm,
     magnetic_field_to_lamor_frequency,
+    micrometer_to_m,
     mm_to_m,
     ms_to_s,
     rad_to_deg,
@@ -27,6 +29,20 @@ def test_m_to_mm():
     rng = RandomGenerator(seed=0)
     m_input = rng.float32_tensor((3, 4, 5))
     torch.testing.assert_close(m_to_mm(m_input), m_input * 1000.0)
+
+
+def test_micrometer_to_m():
+    """Verify micrometer to m conversion."""
+    rng = RandomGenerator(seed=0)
+    micrometer_input = rng.float32_tensor((3, 4, 5))
+    torch.testing.assert_close(micrometer_to_m(micrometer_input), micrometer_input / 1.0e6)
+
+
+def test_m_to_micrometer():
+    """Verify m to micrometer conversion."""
+    rng = RandomGenerator(seed=0)
+    m_input = rng.float32_tensor((3, 4, 5))
+    torch.testing.assert_close(m_to_micrometer(m_input), m_input * 1.0e6)
 
 
 def test_ms_to_s():

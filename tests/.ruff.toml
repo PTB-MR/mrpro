@@ -9,4 +9,5 @@ lint.extend-ignore = [
     "N802",   # function name should be lowercase
     "S101",   # use of assert detected
     "PT011",  # pytest-raises-too-broad
+    "PT028",  # parameters of test functions with default arguments
 ]

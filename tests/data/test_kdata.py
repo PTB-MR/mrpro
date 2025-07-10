@@ -10,6 +10,8 @@ import torch
 from einops import repeat
 from mrpro.data import KData, KHeader, KTrajectory, SpatialDimension
 from mrpro.data.acq_filters import has_n_coils, is_coil_calibration_acquisition, is_image_acquisition
+from mrpro.data.Dataclass import InconsistentDeviceError
+from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
 from mrpro.utils import RandomGenerator
@@ -247,7 +249,7 @@ def test_KData_inconsistentdevice(ismrmrd_cart) -> None:
     kdata_mix = KData(data=kdata_cuda.data, header=kdata_cpu.header, traj=kdata_cpu.traj)
     assert not kdata_mix.is_cuda
     assert not kdata_mix.is_cpu
-    with pytest.raises(ValueError):
+    with pytest.raises(InconsistentDeviceError):
         _ = kdata_mix.device
 
 
@@ -410,6 +412,33 @@ def test_KData_compress_coils_error_n_coils(consistently_shaped_kdata: KData) ->
     existing_coils = consistently_shaped_kdata.data.shape[-4]
     with pytest.raises(ValueError, match='greater'):
         consistently_shaped_kdata.compress_coils(existing_coils + 1)
+
+
+def test_KData_to_file(ismrmrd_cart, tmp_path_factory):
+    """Read in data to file."""
+    kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    # We need to make sure that the trajectory fits to the data
+    random_generator = RandomGenerator(seed=0)
+    traj = random_generator.float32_tensor(size=(3, kdata.data.shape[0], 1, *kdata.data.shape[2:]))
+    kdata = KData(header=kdata.header, data=kdata.data, traj=KTrajectory.from_tensor(traj))
+
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_saved_from_mrpro.h5'
+    kdata.to_file(ismrmrd_filename)
+    kdata_reload = KData.from_file(ismrmrd_filename, KTrajectoryIsmrmrd())
+
+    torch.testing.assert_close(kdata.data, kdata_reload.data)
+    torch.testing.assert_close(kdata.traj.as_tensor(), kdata_reload.traj.as_tensor())
+    torch.testing.assert_close(
+        kdata.header.acq_info.orientation.as_matrix(), kdata_reload.header.acq_info.orientation.as_matrix()
+    )
+    torch.testing.assert_close(kdata.header.acq_info.position.z, kdata_reload.header.acq_info.position.z)
+    torch.testing.assert_close(kdata.header.acq_info.position.y, kdata_reload.header.acq_info.position.y)
+    torch.testing.assert_close(kdata.header.acq_info.position.x, kdata_reload.header.acq_info.position.x)
+    torch.testing.assert_close(
+        kdata.header.acq_info.acquisition_time_stamp, kdata_reload.header.acq_info.acquisition_time_stamp
+    )
+    assert kdata.header.encoding_fov.x == kdata_reload.header.encoding_fov.x
+    assert kdata.header.recon_matrix == kdata_reload.header.recon_matrix
 
 
 def test_KData_repr(consistently_shaped_kdata: KData) -> None:

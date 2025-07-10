@@ -89,7 +89,7 @@ class FastMRIKDataDataset(torch.utils.data.Dataset):
                 n_k0=n_k0,
                 k0_center=n_k0 // 2,
                 k1_idx=info.idx.k1,
-                k1_center=n_k1 // 2,
+                k1_center=first + n_k1 // 2,
                 k2_idx=torch.tensor(0),
                 k2_center=0,
             )
@@ -212,4 +212,4 @@ class FastMRIImageDataset(torch.utils.data.Dataset):
                 img = (img * csm.conj()).sum(dim=0, keepdim=True)
             if self.augment is not None:
                 img = self.augment(img, idx)
-            return rearrange(img, 'coils y x -> 1 coils 1 y x')  # , rearrange(csm, 'coils y x -> 1 coils 1 y x')
+            return rearrange(img, 'coils y x -> 1 coils 1 y x')

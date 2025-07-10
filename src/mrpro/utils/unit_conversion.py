@@ -9,8 +9,10 @@ __all__ = [
     'GYROMAGNETIC_RATIO_PROTON',
     'deg_to_rad',
     'lamor_frequency_to_magnetic_field',
+    'm_to_micrometer',
     'm_to_mm',
     'magnetic_field_to_lamor_frequency',
+    'micrometer_to_m',
     'mm_to_m',
     'ms_to_s',
     'rad_to_deg',
@@ -59,6 +61,24 @@ def m_to_mm(m: T) -> T:
     if isinstance(m, tuple):
         return tuple([m_to_mm(x) for x in m])
     return m * 1000
+
+
+def micrometer_to_m(micrometer: T) -> T:
+    """Convert micrometer to m."""
+    if isinstance(micrometer, list):
+        return [micrometer_to_m(x) for x in micrometer]
+    if isinstance(micrometer, tuple):
+        return tuple([micrometer_to_m(x) for x in micrometer])
+    return micrometer / 1e6
+
+
+def m_to_micrometer(m: T) -> T:
+    """Convert m to micrometer."""
+    if isinstance(m, list):
+        return [m_to_micrometer(x) for x in m]
+    if isinstance(m, tuple):
+        return tuple([m_to_micrometer(x) for x in m])
+    return m * 1e6
 
 
 def deg_to_rad(deg: T) -> T:
