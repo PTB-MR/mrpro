@@ -22,20 +22,20 @@ class EinsumOp(LinearOperator):
 
     Examples are:
 
-    - matrix-vector multiplication of :math:`A` and the batched vector :math:`x = [x1, ..., xN]` consisting
-      of :math:`N` vectors :math:`x1, x2, ..., xN`. Then, the operation defined by
-      :math:`A @ x := \mathrm{diag}(A, A, ..., A) * [x1, x2, ..., xN]^T` = :math:`[A*x1, A*x2, ..., A*xN]^T`
+    - matrix-vector multiplication of :math:`A` and the batched vector :math:`x = [x_1, ..., x_N]` consisting
+      of :math:`N` vectors :math:`x_1, x_2, ..., x_N`. Then, the operation defined by
+      :math:`A @ x := \mathrm{diag}(A, A, ..., A) [x_1, x_2, ..., x_N]^T` = :math:`[A x_1, A x_2, ..., A x_N]^T`
       can be implemented by the einsum rule ``'i j, ... j -> ... i'``.
 
     - matrix-vector multiplication of a matrix :math:`A` consisting of :math:`N` different matrices
-      :math:`A1, A2, ... AN` with one vector :math:`x`. Then, the operation defined by
-      :math:`A @ x: = \mathrm{diag}(A1, A2,..., AN) * [x, x, ..., x]^T`
+      :math:`A_1, A_2, ... A_N` with one vector :math:`x`. Then, the operation defined by
+      :math:`A @ x := \mathrm{diag}(A_1, A_2,..., A_N) [x, x, ..., x]^T`
       can be implemented by the einsum rule ``'... i j, j -> ... i'``.
 
     - matrix-vector multiplication of a matrix :math:`A` consisting of :math:`N` different matrices
-      :math:`A1, A2, ... AN` with a vector :math:`x = [x1,...,xN]` consisting
-      of :math:`N` vectors :math:`x1, x2, ..., xN`. Then, the operation defined by
-      :math:`A @ x: = \mathrm{diag}(A1, A2,..., AN) * [x1, x2, ..., xN]^T`
+      :math:`A_1, A_2, ... A_N` with a vector :math:`x = [x_1,...,x_N]` consisting
+      of :math:`N` vectors :math:`x_1, x_2, ..., x_N`. Then, the operation defined by
+      :math:`A @ x := \mathrm{diag}(A_1, A_2,..., A_N) [x_1, x_2, ..., x_N]^T`
       can be implemented by the einsum rule ``'... i j, ... j -> ... i'``.
       This is the default behavior of the operator.
     """
