@@ -37,25 +37,34 @@ class SpoiledGRE(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         self.echo_time = torch.nn.Parameter(torch.as_tensor(echo_time))
         self.repetition_time = torch.nn.Parameter(torch.as_tensor(repetition_time))
 
-    def forward(self, m0: torch.Tensor, t1: torch.Tensor, t2star: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Calculate Signal.
+    def __call__(self, m0: torch.Tensor, t1: torch.Tensor, t2star: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Calculate the Spoiled Gradient Echo signal.
 
         Parameters
         ----------
         m0
-            Equilibrium signal.
-            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
+            Equilibrium signal / proton density.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
         t1
-            T1 relaxation time.
-            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
+            Longitudinal (T1) relaxation time.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
         t2star
-            T2* relaxation time.
-            Shape `...`, for example `*other, coils, z, y, x` or `samples`.
+            Effective transverse (T2*) relaxation time.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
 
         Returns
         -------
             Signal
-            Shape `1 ...`, for example `1, *other, coils, z, y, x` or `1, samples`, respectively.
+            Shape `(1 ...)`, for example `(1, *other, coils, z, y, x)` or `(1, samples)`.
+        """
+        return super().__call__(m0, t1, t2star)
+
+    def forward(self, m0: torch.Tensor, t1: torch.Tensor, t2star: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply forward of SpoiledGRE.
+
+        .. note::
+            Prefer calling the instance of the SpoiledGRE as ``operator(x)`` over directly calling this method.
+            See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         ndim = max(m0.ndim, t1.ndim, t2star.ndim) + 1
         flip_angle = unsqueeze_right(self.flip_angle, ndim - self.flip_angle.ndim)

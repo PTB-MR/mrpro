@@ -58,7 +58,7 @@ class ElementaryFunctional(Operator[torch.Tensor, tuple[torch.Tensor]], ABC):
         r"""Initialize a Functional.
 
         We assume that functionals are given in the form
-        :math:`f(x) = \phi ( weight ( x - target))`
+        :math:`f(x) = \phi ( \mathrm{weight} ( x - \mathrm{target}))`
         for some functional :math:`\phi`.
 
         Parameters
@@ -133,7 +133,7 @@ class ProximableFunctional(Operator[torch.Tensor, tuple[torch.Tensor]], ABC):
     def prox(self, x: torch.Tensor, sigma: torch.Tensor | float = 1.0) -> tuple[torch.Tensor]:
         r"""Apply proximal operator.
 
-        Yields :math:`\mathrm{prox}_{\sigma f}(x) = \mathrm{argmin}_{p} (\sigma f(p) + 1/2 \|x-p\|_2^2` given :math:`x`
+        Yields :math:`\mathrm{prox}_{\sigma f}(x) = \mathrm{argmin}_{p} \sigma f(p) + 1/2 \|x-p\|_2^2` given :math:`x`
         and :math:`\sigma`.
 
         Parameters
@@ -151,7 +151,7 @@ class ProximableFunctional(Operator[torch.Tensor, tuple[torch.Tensor]], ABC):
     def prox_convex_conj(self, x: torch.Tensor, sigma: torch.Tensor | float = 1.0) -> tuple[torch.Tensor]:
         r"""Apply proximal operator of convex conjugate of functional.
 
-        Yields :math:`\mathrm{prox}_{\sigma f^*}(x) = \mathrm{argmin}_{p} (\sigma f^*(p) + 1/2 \|x-p\|_2^2`,
+        Yields :math:`\mathrm{prox}_{\sigma f^*}(x) = \mathrm{argmin}_{p} \sigma f^*(p) + 1/2 \|x-p\|_2^2`,
         where :math:`f^*` denotes the convex conjugate of :math:`f`, given :math:`x` and :math:`\sigma`.
 
         Parameters
@@ -228,8 +228,8 @@ class ScaledProximableFunctional(ProximableFunctional):
         self.functional = functional
         self.scale = torch.as_tensor(scale)
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Forward method.
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply the functional.
 
         Parameters
         ----------
@@ -239,6 +239,15 @@ class ScaledProximableFunctional(ProximableFunctional):
         Returns
         -------
             scaled output of the functional
+        """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply the functional.
+
+        .. note::
+            Prefer calling the instance of the ScaledProximableFunctional as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         return (self.scale * self.functional(x)[0],)
 

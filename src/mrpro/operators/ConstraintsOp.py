@@ -46,16 +46,16 @@ class ConstraintsOp(EndomorphOperator):
         If an input tensor is bounded from below OR above, a softplus transformation is applied.
 
         If an input is complex valued, the bounds are to the real and imaginary parts separately,
-        i.e., for bounds (a,b), the complex number is constrained to a rectangle in the complex plane
-        with corners a+ai, a+bi, b+ai, b+bi.
+        i.e., for bounds :math:`(a, b)`, the complex number is constrained to a rectangle in the complex plane
+        with corners :math:`(a+ai, a+bi, b+ai, b+bi)`.
 
         Parameters
         ----------
         bounds
-            Sequence of (lower_bound, upper_bound) values. If a bound is None, the value is not constrained.
-            If a lower bound is -inf, the value is not constrained from below. If an upper bound is inf,
+            Sequence of `(lower_bound, upper_bound)` values. If a bound is `None`, the value is not constrained.
+            If a lower bound is `-inf`, the value is not constrained from below. If an upper bound is `+inf`,
             the value is not constrained from above.
-            If the bounds are set to (None, None) or (-inf, inf), the value is not constrained at all.
+            If the bounds are set to `(None, None)` or `(-inf, +inf)`, the value is not constrained at all.
         beta_sigmoid
             beta parameter for the sigmoid transformation (used if an input has two bounds).
             A higher value leads to a steeper sigmoid.
@@ -138,17 +138,33 @@ class ConstraintsOp(EndomorphOperator):
         return item  # unconstrained case
 
     @endomorph
-    def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+    def __call__(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Transform tensors to chosen range.
+
+        Applies element-wise transformations to map input tensors to specified bounds.
+        - If bounded below and above: uses a sigmoid transformation.
+        - If bounded below or above: uses a softplus transformation.
+        - If complex: applies transformation to real and imaginary parts separately.
+        - If more input tensors than bounds: remaining tensors pass through unchanged.
 
         Parameters
         ----------
-        x
-            tensors to be transformed
+        *x
+            One or more input tensors to be transformed.
 
         Returns
         -------
-            tensors transformed to the range defined by the chosen bounds
+            Transformed tensors, with values mapped to the ranges defined by the bounds.
+        """
+        return super().__call__(*x)
+
+    @endomorph
+    def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        """Apply forward of ConstraintsOp.
+
+        .. note::
+            Prefer calling the instance of the ConstraintsOp operator as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         x_constrained = [
             self._apply_forward(item, lb, ub)
@@ -201,8 +217,31 @@ class InverseConstraintOp(EndomorphOperator):
         self.constraints_op = constraints_op
 
     @endomorph
+    def __call__(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        """Apply the inverse of the constraint operator.
+
+        This reverses the transformation applied by the corresponding `ConstraintsOp`,
+        mapping values from their constrained ranges back to the unbounded domain.
+
+        Parameters
+        ----------
+        *x
+            One or more input tensors, assumed to be in the constrained ranges.
+
+        Returns
+        -------
+            Tensors with the inverse transformation applied, mapped back to the unbounded domain.
+        """
+        return super().__call__(*x)
+
+    @endomorph
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
-        """Apply the inverse of the constraint operator."""
+        """Apply forward of InverseConstraintOp.
+
+        .. note::
+            Prefer calling the instance of the InverseConstraintOp operator as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
+        """
         return self.constraints_op.invert(*x)
 
     @endomorph
