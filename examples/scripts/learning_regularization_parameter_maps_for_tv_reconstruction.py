@@ -425,7 +425,7 @@ def show_images(
 
 
 # %% [markdown]
-# ## Ultra Low Field MR
+# ## Ultra Low Field MRI
 
 # %% [markdown]
 # In this notebook, we consider an ultra low field MR reconstruction problem, where the forward operator is given by
@@ -497,10 +497,6 @@ if torch.cuda.is_available():
 # Let us see how we could train the unrolled PDHG network. We set up the optimizer with an appropriate learning rate,
 # number of epochs and write a simple training loop, in which we present the network input-target pairs and update
 # the network's parameters by gradient-descent.
-# Training neural networks, especially those based on algorithm unrolling, is time consuming. We therefore
-# only perform a few weight updates here to showcase that the MSE is reduced during training. If you want to train the
-# network on some on other data, you can use the following code snippet as a template and increase the number of images
-# used for training as well as the number of epochs.
 
 # %%
 optimizer = torch.optim.Adam(
@@ -510,16 +506,21 @@ optimizer = torch.optim.Adam(
     ],
 )
 lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.95)
-n_epochs = 4
+
+# %% [markdown]
+# Training neural networks, especially those based on algorithm unrolling, is time consuming. We therefore
+# only perform a few weight updates here to showcase that the MSE is reduced during training. If you want to train the
+# network on some on other data, you can use the following code snippet as a template and increase the number of images
+# used for training as well as the number of epochs.
 
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show network training details"}
 import copy
 import datetime
-import itertools
 from time import time
 
 from tqdm import tqdm
 
+n_epochs = 4
 validation_loss_values = []
 best_model = None
 
@@ -583,6 +584,7 @@ for epoch in outer_bar:
 time_end = time() - time_start
 print(f'training time: {datetime.timedelta(seconds=time_end)}')
 
+# %%
 fig, ax = plt.subplots()
 ax.plot(range(1, n_epochs + 1), validation_loss_values, label='Validation Loss')
 ax.set_xlabel('Epochs')
@@ -590,7 +592,7 @@ ax.set_ylabel('Mean Squared Error')
 ax.legend()
 
 # %% [markdown]
-# Voilà! As you we can see, the loss decreases and the network seems to learn something.
+# Voilà! As we can see, the loss decreases and the network seems to learn something.
 # A proper exhaustive training would take too long. Therefore, we here also provide a pre-trained model that we
 # can load and use for the reconstruction.
 
@@ -605,10 +607,13 @@ pdhg_recon_regularization_parameter_trained = (
 )
 
 # %% [markdown]
-# Let us also perform a quick line search to see what the best possible TV-reconstruction using a
-# scalar regularization parameter would be. Note that in practice, you would obviously not be able
-# to obtain this reconstruction since the target image is not available. However, the comparison
-# is useful to assess how much improvement one can expect to obtain when employing
+# ## Evaluating the results
+
+# %% [markdown]
+# Before visualizing the results, let us perform a line search to see what the best possible
+# TV-reconstruction using a scalar regularization parameter would be. Note that in practice, you would
+# obviously not be able to obtain this reconstruction since the target image is not available.
+# However, the comparison is useful to assess how much improvement one can expect to obtain when employing
 # spatially adaptive regularization parameter maps.
 
 
@@ -635,6 +640,7 @@ def line_search(
     return mse_values, reconstructions_list[torch.argmin(torch.tensor(mse_values))]
 
 
+# %%
 regularization_parameters = torch.linspace(1e-1, 3e-1, 16)
 
 mse_values, pdhg_recon_best_scalar = line_search(
@@ -645,7 +651,6 @@ mse_values, pdhg_recon_best_scalar = line_search(
     (image).cuda() if torch.cuda.is_available() else image,
 )
 
-# %%
 from matplotlib.ticker import FormatStrFormatter
 
 fig, ax = plt.subplots()
@@ -668,7 +673,8 @@ plt.show()
 
 # %% [markdown]
 # Below, you can see the adjoint reconstruction, the PDHG reconstruction with the best scalar regularization
-# parameter, the PDHG reconstruction with the spatially adaptive as well as the target image.
+# parameter, the PDHG reconstruction with the spatially adaptive regularization parameter map, as well as the
+# target image.
 
 # %%
 show_images(
@@ -783,14 +789,14 @@ show_images(
 )
 
 # %% [markdown]
-# Well done, we have successfully reconstructed an image with spatially varying regularization parameter
-# maps for TV. 🎉
+# Well done, we have successfully learned how to learn to estimate spatially varying regularization parameter
+# maps for TV using neural networks. 🎉
 
 
 # ## Next steps
-# As previously mentioned, you can also change network architecture to something more sophisticated.
+# As previously mentioned, you can also change network architecture to something more sophisticated, e.g. a U-Net.
 # Do deeper/wider networks give more accurate results?
 # Further, you can play around with the number of iterations used for unrolling PDHG at training time. How does this
-# number of iterations influence the obtained lambda maps and the final reconstruction?
+# number of iterations influence the obtained lambda maps and the final reconstructions?
 # Further, since PDHG is a convergent method, you can also let the number of iterations of PDHG go to
 # infinity at test time.
