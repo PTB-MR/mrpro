@@ -745,6 +745,7 @@ show_images(
 # Finally, let us download some ultra low field scanner data, apply the pre-trained network and
 # visualize the results to see if the network generalizes well to in-vivo data.
 
+# %%
 kdata_scanner = mrpro.data.KData.from_file(
     data_folder_tv / 't2_data_2d.mrd',
     mrpro.data.traj_calculators.KTrajectoryCartesian(),
