@@ -25,7 +25,7 @@
 #
 # $ y = Ax_{\mathrm{true}} + n, $
 #
-# where $A$ contains the Fourier transform and the coil sensitivity maps operator, etc, and $n$ is complex-valued
+# where $A$ contains the Fourier transform, the coil sensitivity maps operator, etc, and $n$ is complex-valued
 # Gaussian noise, the TV-minimization problem is given by
 #
 # $\mathcal{F}_{\lambda}(x) = \frac{1}{2}||Ax - y||_2^2 + \lambda \| \nabla x \|_1, \quad \quad \quad (1)$
@@ -278,6 +278,7 @@ zenodo_get.download(
         'training_images_part.pt',
         'validation_images_part.pt',
         'test_images_part.pt',
+        't2_data_2d.mrd',
     ),
 )  # r: retries
 
@@ -333,8 +334,7 @@ def prepare_data(
     Returns
     -------
     tuple
-        A tuple containing k-space data, forward operator adjoint reconstruction,
-        possibly the pseudo-inverse solution (if n_coils>1) and the target image.
+        A tuple containing k-space data, forward operator adjoint reconstruction.
     """
     # randomly choose trajectories to define the fourier operator
     ny, nx = target_image.shape[-2:]
@@ -628,7 +628,7 @@ show_images(
     regularization_parameter_map_trained[0, 0].cpu(),
     titles=[
         'Regularization  Map \n (Before Training)',
-        'Regularization  Map \n (After Training)',
+        'Regularization  Map \n (Trained)',
     ],
     cmap='inferno',
     rotation_k=-1,
@@ -745,12 +745,8 @@ show_images(
 # Finally, let us download some ultra low field scanner data, apply the pre-trained network and
 # visualize the results to see if the network generalizes well to in-vivo data.
 
-pname = '/echo/kofler01/lowfield_data/'
-# fname = 'pd_data_2d.mrd'
-fname = 't2_data_2d.mrd'
-
 kdata_scanner = mrpro.data.KData.from_file(
-    pname + fname,
+    data_folder_tv / 't2_data_2d.mrd',
     mrpro.data.traj_calculators.KTrajectoryCartesian(),
 )
 
@@ -830,4 +826,15 @@ show_images(
     clim=(0.0, 0.6 * super_resolution_adjoint_reco.abs().max().item()),
 )
 
-# %%
+# %% [markdown]
+# Well done, we have successfully reconstructed an image with spatially varying regularization parameter
+# maps for TV. 🎉
+
+
+# ## Next steps
+# As previously mentioned, you can also change network architecture to something more sophisticated.
+# Do deeper/wider networks give more accurate results?
+# Further, you can play around with the number of iterations used for unrolling PDHG at training time. How does this
+# number of iterations influence the obtained lambda maps and the final reconstruction?
+# Further, since PDHG is a convergent method, you can also let the number of iterations of PDHG go to
+# infinity at test time.
