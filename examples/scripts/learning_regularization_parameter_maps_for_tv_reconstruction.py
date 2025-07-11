@@ -425,7 +425,7 @@ def show_images(
 
 
 # %% [markdown]
-# ## Ultra low field MRI
+# ## Ultra-low field MRI
 
 # %% [markdown]
 # In this notebook, we consider an ultra low field MR reconstruction problem, where the forward operator is given by
