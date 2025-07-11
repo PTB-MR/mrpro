@@ -34,26 +34,30 @@ class LayerNorm(CondMixin, Module):
             self.weight = Parameter(torch.ones(channels))
             self.bias = Parameter(torch.zeros(channels))
             self.cond_proj = None
-        else:
+        elif channels is not None:
             self.weight = None
             self.bias = None
             self.cond_proj = Linear(cond_dim, 2 * channels)
+        else:
+            raise ValueError('cond_dim must be zero or positive.')
 
         self.features_last = features_last
 
-    def __call__(self, x: torch.Tensor) -> torch.Tensor:
+    def __call__(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply layer normalization to the input tensor.
 
         Parameters
         ----------
         x
             Input tensor
+        cond
+            Conditioning tensor. If `None`, no conditioning is applied.
 
         Returns
         -------
             Normalized output tensor
         """
-        return super().__call__(x)
+        return super().__call__(x, cond=cond)
 
     def forward(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply layer normalization to the input tensor."""

@@ -13,7 +13,9 @@ from mrpro.nn.FiLM import FiLM
 from mrpro.nn.GroupNorm import GroupNorm
 from mrpro.nn.join import Concat
 from mrpro.nn.ndmodules import ConvND, MaxPoolND
+from mrpro.nn.PermutedBlock import PermutedBlock
 from mrpro.nn.ResBlock import ResBlock
+from mrpro.nn.SeparableResBlock import SeparableResBlock  # Assuming SeparableResBlock is here
 from mrpro.nn.Sequential import Sequential
 from mrpro.nn.SpatialTransformerBlock import SpatialTransformerBlock
 from mrpro.nn.Upsample import Upsample
@@ -217,7 +219,11 @@ class BasicUNet(UNetBase):
             encoder_blocks.append(ResBlock(dim, n_feat, n_feat, cond_dim))
             decoder_blocks.append(ResBlock(dim, 2 * n_feat, n_feat, cond_dim))
             down_blocks.append(ConvND(dim)(n_feat, n_feat_next, 3, stride=2, padding=1))
-            up_blocks.append(Sequential(Upsample(dim, scale_factor=2), ConvND(dim)(n_feat_next, n_feat, 3, padding=1)))
+            up_blocks.append(
+                Sequential(
+                    Upsample(tuple(range(-dim, 0)), scale_factor=2), ConvND(dim)(n_feat_next, n_feat, 3, padding=1)
+                )
+            )
             concat_blocks.append(Concat())
         up_blocks = up_blocks[::-1]
         decoder_blocks = decoder_blocks[::-1]
@@ -254,9 +260,9 @@ class UNet(UNetBase):
         dim: int,
         channels_in: int,
         channels_out: int,
-        attention_depths: Sequence[int] = (-1, -2),
+        attention_depths: Sequence[int] = (-1,),
         n_features: Sequence[int] = (64, 128, 192, 256),
-        n_heads: int = 4,
+        n_heads: int = 8,
         cond_dim: int = 0,
         encoder_blocks_per_scale: int = 2,
     ) -> None:
@@ -292,9 +298,7 @@ class UNet(UNetBase):
 
         def attention_block(channels: int) -> Module:
             dim_groups = (tuple(range(-dim, 0)),)
-            return SpatialTransformerBlock(
-                dim_groups, channels, n_heads, channels_per_head=channels // n_heads, cond_dim=cond_dim
-            )
+            return SpatialTransformerBlock(dim_groups, channels, n_heads, cond_dim=cond_dim)
 
         def block(channels_in: int, channels_out: int, attention: bool) -> Module:
             if not attention:
@@ -336,7 +340,7 @@ class UNet(UNetBase):
                     block(n_feat_old + skip_features.pop(), n_feat, attention=i_level in attention_depths)
                 )
                 up_blocks.append(Identity())
-            up_blocks.append(Upsample(dim, scale_factor=2))
+            up_blocks.append(Upsample(tuple(range(-dim, 0)), scale_factor=2))
         up_blocks.pop()  # no upsampling after the last resolution level
         concat_blocks = [Concat() for _ in range(len(decoder_blocks))]
         last_block = Sequential(
@@ -411,44 +415,12 @@ class AttentionGatedUNet(UNetBase):
         super().__init__(encoder, decoder)
 
 
-from collections.abc import Sequence
-
-from mrpro.nn.PermutedBlock import PermutedBlock
-from mrpro.nn.SeparableResBlock import SeparableResBlock  # Assuming SeparableResBlock is here
-from mrpro.nn.UNet import UNetBase, UNetDecoder, UNetEncoder
-
-
 class SeparableUNet(UNetBase):
-    """
-    UNet with separable convolutions and controlled downsampling.
-    """
+    """UNet with separable convolutions and attention, and grouped downsampling."""
 
     def __init__(
         self,
-        dim: int,  # Total number of spatial dimensions (e.g., 2 for 2D, 3 for 3D)
-        dim_groups: Sequence[tuple[int, ...]],
-        channels_in: int,
-        channels_out: int,
-        n_features: Sequence[int],
-        cond_dim: int,
-        downsample_dims: Sequence[Sequence[int]] | None = None,
-        encoder_blocks_per_scale: int = 2,
-    ) -> None:
-        """
-        Initialize the SeparableUNet.
-
-        Parameters
-        ----------
-
-        """
-  class SeparableUNet(UNetBase):
-    """
-    UNet with separable convolutions and attention, and grouped downsampling.
-    """
-
-    def __init__(
-        self,
-        dim:int,
+        dim: int,
         dim_groups: Sequence[tuple[int, ...]],
         channels_in: int,
         channels_out: int,
@@ -488,7 +460,7 @@ class SeparableUNet(UNetBase):
             Sequence specifying which absolute spatial dimensions to downsample
             at each encoder level. If None, all dimensions in `dim_groups` are combined
             and downsampled at each level.
-            If a downsampling step contains more than 3 dimensions, downsampling is performed separatly for each
+            If a downsampling step contains more than 3 dimensions, downsampling is performed separately for each
             dimension. If the length of the sequence is less than the number of resolution levels, the sequence is
             repeated. E.g., ``((-1,-2), (-1,-2,-3))`` for 3D data: first level downsamples x,y; second level x,y,z;
             third level x,y.
@@ -497,35 +469,31 @@ class SeparableUNet(UNetBase):
         """
         depth = len(n_features)
         for group in dim_groups:
-            if len(group)>3:
-                raise ValueError(f"dim_group {group} can at most contain 3 dimensions. Split it into multiple groups.")
-            if any(d>dim+2 or d<-dim for d in group):
-                raise ValueError(f"dim_group {group} contains dimensions that are out of range for dim={dim}")
+            if len(group) > 3:
+                raise ValueError(f'dim_group {group} can at most contain 3 dimensions. Split it into multiple groups.')
+            if any(d > dim + 2 or d < -dim for d in group):
+                raise ValueError(f'dim_group {group} contains dimensions that are out of range for dim={dim}')
 
         attention_depths = tuple(d % depth for d in attention_depths)
         if downsample_dims is None:
-            all_spatial_dims = tuple(
-                sorted(list(set(d if d<0 else d-dim-2 for group in dim_groups for d in group)))
-            )
+            all_spatial_dims = tuple(sorted(set(d if d < 0 else d - dim - 2 for group in dim_groups for d in group)))
             downsample_dims = (all_spatial_dims,) * (depth - 1)
 
-
         def downsampler(level_dims, c_in, c_out) -> Module:
-                if len(level_dims)>3:
-                    sequence=Sequence(downsampler(d[0], c_in, c_out) for d in level_dims)
-                    for d in level_dims[1:]:
-                        sequence.append(downsampler(d, c_out, c_out))
-                    return sequence
-                return PermutedBlock(
-                    level_dims, ConvND(len(level_dims))(c_in, c_out, 3, stride=2, padding=1))
+            if len(level_dims) > 3:
+                sequence = Sequence(downsampler(d[0], c_in, c_out) for d in level_dims)
+                for d in level_dims[1:]:
+                    sequence.append(downsampler(d, c_out, c_out))
+                return sequence
+            return PermutedBlock(level_dims, ConvND(len(level_dims))(c_in, c_out, 3, stride=2, padding=1))
 
         def upsampler(level_dims, c_in, c_out) -> Module:
-            if len(level_dims)>3:
-                sequence=Sequence(upsampler(d[0], c_in, c_out) for d in level_dims)
+            if len(level_dims) > 3:
+                sequence = Sequence(upsampler(d[0], c_in, c_out) for d in level_dims)
                 for d in level_dims[1:]:
                     sequence.append(upsampler(d, c_out, c_out))
                 return sequence
-            return PermutedBlock(level_dims, Upsample(len(level_dims), scale_factor=2, mode="nearest"))
+            return PermutedBlock(level_dims, Upsample(len(level_dims), scale_factor=2, mode='nearest'))
 
         def block(c_in: int, c_out: int, apply_attention: bool) -> Module:
             res_block = SeparableResBlock(dim_groups, c_in, c_out, cond_dim)
@@ -548,7 +516,9 @@ class SeparableUNet(UNetBase):
                 c_feat = n_feat_level
                 skip_features.append(c_feat)
             if i_level < depth - 1:
-                down_blocks.append(_create_downsampler(downsample_dims_per_level[i_level], c_feat, n_features[i_level + 1]))
+                down_blocks.append(
+                    _create_downsampler(downsample_dims_per_level[i_level], c_feat, n_features[i_level + 1])
+                )
                 c_feat = n_features[i_level + 1]
 
         # -- Middle & Encoder Finalization --
@@ -575,132 +545,10 @@ class SeparableUNet(UNetBase):
         # -- Decoder Finalization --
         concat_blocks = [Concat()] * len(decoder_blocks)
         last_block = Sequential(
-            GroupNorm(n_features[0]), SiLU(),
-            PermutedBlock(all_spatial_dims, ConvND(len(all_spatial_dims))(n_features[0], channels_out, 3, padding=1))
+            GroupNorm(n_features[0]),
+            SiLU(),
+            PermutedBlock(all_spatial_dims, ConvND(len(all_spatial_dims))(n_features[0], channels_out, 3, padding=1)),
         )
         decoder = UNetDecoder(decoder_blocks, up_blocks, concat_blocks, last_block)
 
         super().__init__(encoder, decoder)
-
-# class SpatioTemporalUNet(UNetBase):
-#     """UNet where blocks apply separable convolutions in different dimensions.
-#     U-shaped convolutional network with optional patch attention.
-#     Inspired by the OpenAi DDPM UNet/Latent Diffusion UNet [UNET]_, [LDM]_,
-#     Based on the pseudo-3D residual network of [QUI]_, [TRAN]_, [HO]_, and the residual blocks of [ZIM]_.
-
-#     References
-#     ----------
-#     .. [UNET] Ronneberger, Olaf, Philipp Fischer, and Thomas Brox. "U-net: Convolutional networks for biomedical image
-#        segmentation MICCAI 2015. https://arxiv.org/abs/1505.04597
-#     .. [LDM] https://github.com/CompVis/stable-diffusion/blob/main/ldm/modules/diffusionmodules/openaimodel.py
-#     .. [TRAN] Tran, D., Wang, H., Torresani, L., Ray, J., LeCun, Y., & Paluri, M. A closer look at spatiotemporal
-#        convolutions for action recognition. CVPR 2018. https://arxiv.org/abs/1711.11248
-#     .. [QUI] Qiu, Z., Yao, T., & Mei, T. Learning spatio-temporal representation with pseudo-3d residual networks.
-#        ICCV 2017. https://arxiv.org/abs/1711.10305
-#     .. [HO] Ho, J., Salimans, T., Gritsenko, A., Chan, W., Norouzi, M., & Fleet, D. J. Video diffusion models.
-#        NeurIPS 2022. https://arxiv.org/abs/2209.11168
-#     .. [ZIM] Zimmermann, F. F., & Kofler, A. (2023, October). NoSENSE: Learned unrolled cardiac MRI reconstruction
-#        without explicit sensitivity maps. STACOM MICCAI 2023. https://arxiv.org/abs/2309.15608
-#     """
-
-
-#     def __init__(
-#         self,
-#         dim: int,
-#         in_channels: int,
-#         out_channels: int,
-#         attention_depths: Sequence[int] = (-1, -2),
-#         n_features: Sequence[int] = (64, 128, 192, 256),
-#         n_heads: int = 4,
-#         cond_dim: int = 0,
-#         encoder_blocks_per_scale: int = 2,
-#         temporal_downsampling: bool = False,
-#     ) -> None:
-#         """Initialize the UNet.
-
-#         Parameters
-#         ----------
-#         dim
-#             Spatial dimension of the input tensor.
-#         channels_in
-#             Number of channels in the input tensor.
-#         channels_out
-#             Number of channels in the output tensor.
-#         attention_depths
-#             The depths at which to apply attention.
-#         n_features
-#             Number of features at each resolution level. The length determines the number of resolution levels.
-#         n_heads
-#             Number of attention heads.
-#         cond_dim
-#             Number of channels in the conditioning tensor. If 0, no conditioning is applied.
-#         encoder_blocks_per_scale
-#             Number of encoder blocks per resolution level. The number of decoder blocks is one more.
-#         temporal_downsampling
-#             Whether to downsample the temporal dimension.
-#         """
-#         depth = len(n_features)
-#         if not all(-depth <= d < depth for d in attention_depths):
-#             raise ValueError(
-#                 f'attention_depths must be in the range [-depth, depth], got {attention_depths=} for {depth=}'
-#             )
-#         attention_depths = tuple(d % depth for d in attention_depths)
-#         if len(attention_depths) != len(set(attention_depths)):
-#             raise ValueError(f'attention_depths must be unique, got {attention_depths=}')
-
-#         def attention_block(channels: int) -> Module:
-#             SpatioTemporalBlock(SpatialTransformerBlock(
-#                 dim, channels, n_heads, channels_per_head=channels // n_heads, cond_dim=cond_dim
-#             )
-
-#         def block(channels_in: int, channels_out: int, attention: bool) -> Module:
-#             if not attention:
-#                 return ResBlock(dim, channels_in, channels_out, cond_dim)
-#             return Sequential(ResBlock(dim, channels_in, channels_out, cond_dim), attention_block(channels_out))
-
-#         first_block = ConvND(dim)(in_channels, n_features[0], 3, padding=1)
-#         encoder_blocks: list[Module] = []
-#         down_blocks: list[Module] = []
-#         skip_features = []
-#         n_feat_old = n_features[0]
-#         for i_level, n_feat in enumerate(n_features):
-#             encoder_blocks.append(Identity())
-#             skip_features.append(n_feat_old)
-#             for _ in range(encoder_blocks_per_scale):
-#                 encoder_blocks.append(block(n_feat_old, n_feat, attention=i_level in attention_depths))
-#                 n_feat_old = n_feat
-#                 down_blocks.append(Identity())
-#                 skip_features.append(n_feat_old)
-#             down_blocks.append(ConvND(dim)(n_feat, n_feat, 3, stride=2, padding=1))
-#         down_blocks[-1] = Identity()  # no downsampling after the last resolution level
-#         middle_block = Sequential(
-#             ResBlock(dim, n_features[-1], n_features[-1], cond_dim),
-#             ResBlock(dim, n_features[-1], n_features[-1], cond_dim),
-#         )
-#         if i_level in attention_depths:
-#             middle_block.insert(1, attention_block(n_features[-1]))
-#         encoder = UNetEncoder(first_block, encoder_blocks, down_blocks, middle_block)
-
-#         decoder_blocks: list[Module] = []
-#         up_blocks: list[Module] = [Identity()]
-#         for i_level, n_feat in reversed(list(enumerate(n_features))):
-#             decoder_blocks.append(
-#                 block(n_feat_old + skip_features.pop(), n_feat, attention=i_level in attention_depths)
-#             )
-#             n_feat_old = n_feat
-#             for _ in range(encoder_blocks_per_scale):
-#                 decoder_blocks.append(
-#                     block(n_feat_old + skip_features.pop(), n_feat, attention=i_level in attention_depths)
-#                 )
-#                 up_blocks.append(Identity())
-#             up_blocks.append(Upsample(dim, scale_factor=2))
-#         up_blocks.pop()  # no upsampling after the last resolution level
-#         concat_blocks = [Concat()] * len(decoder_blocks)
-#         last_block = Sequential(
-#             GroupNorm(n_features[0]),
-#             SiLU(),
-#             ConvND(dim)(n_features[0], out_channels, 3, padding=1),
-#         )
-#         decoder = UNetDecoder(decoder_blocks, up_blocks, concat_blocks, last_block)
-
-#         super().__init__(encoder, decoder)
