@@ -53,7 +53,7 @@ class Operator(Generic[Unpack[Tin], Tout], ABC, TensorAttributeMixin, torch.nn.M
         return OperatorComposition(self, cast(Operator[Unpack[Tin2], tuple[Unpack[Tin]]], other))
 
     def __radd__(
-        self: Operator[Unpack[Tin], tuple[Unpack[Tin]]], other: torch.Tensor
+        self: Operator[Unpack[Tin], tuple[Unpack[Tin]]], other: torch.Tensor | complex
     ) -> Operator[Unpack[Tin], tuple[Unpack[Tin]]]:
         """Operator right addition.
 
@@ -65,18 +65,18 @@ class Operator(Generic[Unpack[Tin], Tout], ABC, TensorAttributeMixin, torch.nn.M
     def __add__(self, other: Operator[Unpack[Tin], Tout]) -> Operator[Unpack[Tin], Tout]: ...
     @overload
     def __add__(
-        self: Operator[Unpack[Tin], tuple[Unpack[Tin]]], other: torch.Tensor
+        self: Operator[Unpack[Tin], tuple[Unpack[Tin]]], other: torch.Tensor | complex
     ) -> Operator[Unpack[Tin], tuple[Unpack[Tin]]]: ...
 
     def __add__(
-        self, other: Operator[Unpack[Tin], Tout] | torch.Tensor | mrpro.operators.ZeroOp
+        self, other: Operator[Unpack[Tin], Tout] | torch.Tensor | complex | mrpro.operators.ZeroOp
     ) -> Operator[Unpack[Tin], Tout] | Operator[Unpack[Tin], tuple[Unpack[Tin]]]:
         """Operator addition.
 
         Returns ``lambda x: self(x) + other(x)`` if other is a operator,
         ``lambda x: self(x) + other*x`` if other is a tensor
         """
-        if isinstance(other, torch.Tensor):
+        if isinstance(other, torch.Tensor | complex | int | float):
             s = cast(Operator[Unpack[Tin], tuple[Unpack[Tin]]], self)
             o = cast(Operator[Unpack[Tin], tuple[Unpack[Tin]]], mrpro.operators.MultiIdentityOp() * other)
             return OperatorSum(s, o)
@@ -101,6 +101,46 @@ class Operator(Generic[Unpack[Tin], Tout], ABC, TensorAttributeMixin, torch.nn.M
         Returns ``lambda x: other*self(x)``
         """
         return OperatorElementwiseProductRight(self, other)
+
+    @overload
+    def __sub__(self, other: Operator[Unpack[Tin], Tout]) -> Operator[Unpack[Tin], Tout]: ...
+
+    @overload
+    def __sub__(
+        self: Operator[Unpack[Tin], tuple[Unpack[Tin]]], other: torch.Tensor | complex
+    ) -> Operator[Unpack[Tin], tuple[Unpack[Tin]]]: ...
+
+    def __sub__(
+        self, other: Operator[Unpack[Tin], Tout] | torch.Tensor | complex | mrpro.operators.ZeroOp
+    ) -> Operator[Unpack[Tin], Tout] | Operator[Unpack[Tin], tuple[Unpack[Tin]]]:
+        """Operator subtraction.
+
+        Returns ``lambda x: self(x) - other(x)`` if other is a operator,
+        ``lambda x: self(x) - other*x`` if other is a tensor
+        """
+        if isinstance(other, mrpro.operators.ZeroOp):
+            return self
+        return self + (-1.0) * other
+
+    @overload
+    def __rsub__(self, other: Operator[Unpack[Tin], Tout]) -> Operator[Unpack[Tin], Tout]: ...
+
+    @overload
+    def __rsub__(
+        self: Operator[Unpack[Tin], tuple[Unpack[Tin]]], other: torch.Tensor | complex
+    ) -> Operator[Unpack[Tin], tuple[Unpack[Tin]]]: ...
+
+    def __rsub__(
+        self, other: Operator[Unpack[Tin], Tout] | torch.Tensor | complex | mrpro.operators.ZeroOp
+    ) -> Operator[Unpack[Tin], Tout] | Operator[Unpack[Tin], tuple[Unpack[Tin]]]:
+        """Operator subtraction.
+
+        Returns ``lambda x: self(x) - other(x)`` if other is a operator,
+        ``lambda x: self(x) - other*x`` if other is a tensor
+        """
+        if isinstance(other, mrpro.operators.ZeroOp):
+            return self
+        return (-1.0) * self + other
 
 
 class OperatorComposition(Operator[Unpack[Tin2], Tout]):

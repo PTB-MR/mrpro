@@ -51,7 +51,7 @@ def pad_or_crop(
     mode
         Mode to use for padding.
     value
-        Value to use for constant padding.
+        value to use for constant padding.
 
     Returns
     -------

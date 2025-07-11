@@ -144,7 +144,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
         return f'LinearOperatorMatrix(shape={self._shape}, operators={self._operators})'
 
     # Note: The type ignores are needed because we currently cannot do arithmetic operations with non-linear operators.
-    def __add__(self, other: Self | LinearOperator | torch.Tensor) -> Self:  # type: ignore[override]
+    def __add__(self, other: Self | LinearOperator | torch.Tensor | complex) -> Self:  # type: ignore[override]
         """Addition."""
         operators: list[list[LinearOperator]] = []
         if isinstance(other, LinearOperatorMatrix):
@@ -152,7 +152,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
                 raise ValueError('OperatorMatrix shapes do not match.')
             for self_row, other_row in zip(self._operators, other._operators, strict=False):
                 operators.append([s + o for s, o in zip(self_row, other_row, strict=False)])
-        elif isinstance(other, LinearOperator | torch.Tensor):
+        elif isinstance(other, LinearOperator | torch.Tensor | complex):
             if not self.shape[0] == self.shape[1]:
                 raise NotImplementedError('Cannot add a LinearOperator to a non-square OperatorMatrix.')
             for i, self_row in enumerate(self._operators):
@@ -161,7 +161,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
             return NotImplemented  # type: ignore[unreachable]
         return self.__class__(operators)
 
-    def __radd__(self, other: Self | LinearOperator | torch.Tensor) -> Self:
+    def __radd__(self, other: Self | LinearOperator | torch.Tensor | complex) -> Self:
         """Right addition."""
         return self.__add__(other)
 

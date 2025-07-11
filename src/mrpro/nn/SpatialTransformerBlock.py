@@ -129,6 +129,7 @@ class SpatialTransformerBlock(CondMixin, Module):
         self.proj_in = Linear(channels, hidden_dim)
         self.transformer_blocks = Sequential()
         for group in (g for _ in range(depth) for g in dim_groups):
+            group = tuple(g - 1 if g < 0 else g for g in group)
             block = BasicTransformerBlock(hidden_dim, n_heads, p_dropout=dropout, cond_dim=cond_dim, features_last=True)
             self.transformer_blocks.append(PermutedBlock(group, block, features_last=True))
         self.proj_out = Linear(hidden_dim, channels)
