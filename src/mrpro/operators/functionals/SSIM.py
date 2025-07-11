@@ -4,7 +4,7 @@ from typing import Literal, cast
 
 import torch
 
-from mrpro.operators.Functional import Functional
+from mrpro.operators.Operator import Operator
 from mrpro.utils.sliding_window import sliding_window
 
 
@@ -80,14 +80,14 @@ def ssim3d(
         return (real_ssim + imag_ssim) / 2
     if target.ndim < 3:
         raise ValueError('Input must be at least 3D (z, y, x)')
-
+    window = tuple(window_size if s > 1 else 1 for s in target.shape[-3:])  # To support 1D and 2D uses
     if weight is not None:
         if (weight < 0).any():
             raise ValueError('Mask contains negative values')
         target, prediction, weight = cast(
             tuple[torch.Tensor, torch.Tensor, torch.Tensor], torch.broadcast_tensors(target, prediction, weight)
         )
-        weight = sliding_window(weight, window_shape=window_size, dim=(-3, -2, -1))
+        weight = sliding_window(weight, window_shape=window, dim=(-3, -2, -1))
         # Set weights to 0 for windows that are not fully inside the mask
         weight = weight * ~torch.isclose(weight, torch.tensor(0, dtype=weight.dtype)).any((-3, -2, -1), keepdim=True)
         weight = weight.mean((-1, -2, -3), dtype=torch.float32).moveaxis((0, 1, 2), (-3, -2, -1))
@@ -96,7 +96,6 @@ def ssim3d(
     else:
         target, prediction = cast(tuple[torch.Tensor, torch.Tensor], torch.broadcast_tensors(target, prediction))
 
-    window = tuple(window_size if s > 1 else 1 for s in target.shape[-3:])  # To support 1D and 2D uses
     target_window = sliding_window(target, window_shape=window, dim=(-3, -2, -1)).movedim((0, 1, 2), (-6, -5, -4))
 
     if data_range is None:
@@ -152,7 +151,7 @@ def ssim3d(
         return ssim_map
 
 
-class SSIM(Functional):
+class SSIM(Operator[torch.Tensor, tuple[torch.Tensor]]):
     """(masked) SSIM functional."""
 
     def __init__(

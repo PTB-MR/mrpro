@@ -9,9 +9,7 @@
 # data can be divided into different dynamic time frames, each corresponding to a different inversion time. A signal
 # model can then be fitted to this data to obtain a $T_1$ map.
 #
-# More information can be found in:\
-# Kerkering KM, Schulz-Menger J, Schaeffter T, Kolbitsch C (2023). Motion-corrected model-based reconstruction for 2D
-# myocardial $T_1$ mapping. *Magnetic Resonance in Medicine*, 90(3):1086-1100, [10.1002/mrm.29699](https://doi.org/10.1002/mrm.29699)
+# More information can be found in [Kerkering KM et al. 2023](https://doi.org/10.1002/mrm.29699)
 
 
 # %% [markdown]
@@ -63,11 +61,9 @@ from pathlib import Path
 
 import zenodo_get
 
-dataset = '13207352'
-
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
-zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
+zenodo_get.download(record='13207352', retry_attempts=5, output_dir=data_folder)
 # %% [markdown]
 # We will use the following libraries:
 # %%
@@ -241,6 +237,8 @@ m0, t1, flip_angle = (p.detach().cpu().squeeze() for p in constraints_op(*result
 # Finally, we can take a look at the estimated $M_0$, $T_1$, and flip angle maps:
 # %%
 # Visualize parametric maps
+from cmap import Colormap
+
 fig, axes = plt.subplots(1, 3, figsize=(10, 2), squeeze=False)
 
 im = axes[0, 0].imshow(m0.abs(), cmap='gray')
@@ -248,7 +246,7 @@ axes[0, 0].set_title('$|M_0|$')
 axes[0, 0].set_axis_off()
 fig.colorbar(im, ax=axes[0, 0])
 
-im = axes[0, 1].imshow(t1, vmin=0, vmax=2, cmap='magma')
+im = axes[0, 1].imshow(t1, vmin=0, vmax=2, cmap=Colormap('lipari').to_mpl())
 axes[0, 1].set_title('$T_1$ (s)')
 axes[0, 1].set_axis_off()
 fig.colorbar(im, ax=axes[0, 1])

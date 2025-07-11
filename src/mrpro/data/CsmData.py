@@ -48,7 +48,7 @@ def get_downsampled_size(
     )
 
 
-class CsmData(QData):
+class CsmData(QData, init=False):
     """Coil sensitivity map class."""
 
     @classmethod
@@ -135,6 +135,8 @@ class CsmData(QData):
             chunk_size=chunk_size_otherdim,
         )
         csm_tensor = csm_fun(idata.data.flatten(end_dim=-5)).reshape(idata.data.shape)
+        # upsampled csm requires normalization
+        csm_tensor = torch.nn.functional.normalize(csm_tensor, p=2, dim=-4, eps=1e-9)
         csm = cls(header=QHeader.from_iheader(idata.header), data=csm_tensor)
         return csm
 
@@ -221,6 +223,8 @@ class CsmData(QData):
             chunk_size=chunk_size_otherdim,
         )
         csm_tensor = csm_fun(idata.data.flatten(end_dim=-5)).reshape(idata.data.shape)
+        # upsampled csm requires normalization
+        csm_tensor = torch.nn.functional.normalize(csm_tensor, p=2, dim=-4, eps=1e-9)
         csm = cls(header=QHeader.from_iheader(idata.header), data=csm_tensor)
         return csm
 
