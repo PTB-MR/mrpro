@@ -1,18 +1,24 @@
 """MR image data (IData) class."""
 
+import warnings
 from collections.abc import Generator, Sequence
+from copy import deepcopy
 from pathlib import Path
 
 import numpy as np
+import pydicom
 import torch
-from einops import repeat
+from einops import rearrange, repeat
 from pydicom import dcmread
 from pydicom.dataset import Dataset
+from pydicom.pixels import set_pixel_data
 from typing_extensions import Self
 
 from mrpro.data.Dataclass import Dataclass
 from mrpro.data.IHeader import IHeader
 from mrpro.data.KHeader import KHeader
+from mrpro.data.SpatialDimension import SpatialDimension
+from mrpro.utils.unit_conversion import m_to_mm, rad_to_deg, s_to_ms
 
 
 def _dcm_pixelarray_to_tensor(dataset: Dataset) -> torch.Tensor:
@@ -128,11 +134,11 @@ class IData(Dataclass):
             mr_acquisition_type = [item.value for item in datasets[0].iterall() if item.tag == 0x00180023]
 
             if len(mr_acquisition_type) > 0 and mr_acquisition_type[0] == '3D':  # multi-frame 3D data
-                data = repeat(data, 'other z y x -> other coils z y x', coils=1)
+                data = repeat(data, 'other z x y -> other coils z y x', coils=1)
             else:  # multi-frame 2D data
-                data = repeat(data, 'other frame y x -> other frame coils z y x', coils=1, z=1)
+                data = repeat(data, 'other frame x y -> other frame coils z y x', coils=1, z=1)
         else:  # single-frame data
-            data = repeat(data, 'other y x -> other coils z y x', coils=1, z=1)
+            data = repeat(data, 'other x y -> other coils z y x', coils=1, z=1)
 
         return cls(data=data, header=header)
 
@@ -154,3 +160,167 @@ class IData(Dataclass):
 
         # Pass on sorted file list as order of dicom files is often the same as the required order
         return cls.from_dicom_files(filenames=sorted(file_paths))
+
+    def to_dicom_folder(
+        self,
+        foldername: str | Path,
+        series_description: str | None = None,
+        reference_patient_table_position: SpatialDimension | None = None,
+    ) -> None:
+        """Write the image data to DICOM files in a folder.
+
+        The data is always saved in a multi-frame DICOM files.
+
+        Parameters
+        ----------
+        foldername
+            Path to folder for DICOM files.
+        series_description
+            String to be saved as the series description in the DICOM files.
+        reference_patient_table_position
+            If provided, the image position is calculated relative to this table positiion. This ensures that the
+            image position is consistent across different scans even if the patient table has moved.
+        """
+        if not isinstance(foldername, Path):
+            foldername = Path(foldername)
+        foldername.mkdir(parents=True, exist_ok=False)
+
+        # We save 3D image data in each dicom file. This can either be a full 3D volume, multiple slices (M2D) or
+        # a combination of y and x image dimensions an one other dimension, e.g. multiple cardiac phases of a 2D image.
+        mr_acquisition_type = '3D' if self.data.shape[-3] > 1 else '2D'
+        frame_dimension = next((i for i in range(-3, -len(self.data.shape) - 1, -1) if self.data.shape[i] > 1), -3)
+        number_of_frames = self.data.shape[frame_dimension]
+        pattern_in = ['d' + str(i) for i in range(self.data.ndim)]
+        pattern_out = pattern_in.copy()
+        pattern_out[frame_dimension], pattern_out[-3] = pattern_out[-3], pattern_out[frame_dimension]
+        dcm_idata = self.rearrange(' '.join(pattern_in) + '->' + ' '.join(pattern_out))
+
+        # Metadata
+        file_meta = pydicom.dataset.FileMetaDataset()
+        file_meta.MediaStorageSOPClassUID = pydicom.uid.MRImageStorage
+        file_meta.MediaStorageSOPInstanceUID = pydicom.uid.generate_uid()
+        file_meta.TransferSyntaxUID = pydicom.uid.ExplicitVRLittleEndian
+
+        # Dataset
+        dataset = pydicom.Dataset()
+        dataset.file_meta = file_meta
+
+        dataset.PatientName = 'Unknown'
+        dataset.PatientID = 'Unknown'
+        dataset.PatientSex = 'O'
+        dataset.Modality = 'MR'
+        dataset.StudyDescription = 'MRpro'
+        import datetime
+
+        dataset.SeriesDate = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%d')
+        dataset.SeriesTime = datetime.datetime.now(datetime.timezone.utc).strftime('%H%M%S.%f')
+        if series_description:
+            dataset.SeriesDescription = series_description
+            dataset.ProtocolName = series_description
+        dataset.SeriesInstanceUID = pydicom.uid.generate_uid()
+
+        dataset.PatientPosition = 'HFS'
+
+        for file_index, other in enumerate(np.ndindex(dcm_idata.shape[:-3])):
+            dcm_file_idata = dcm_idata[(*other, slice(None), slice(None), slice(None))]
+
+            dataset.MRAcquisitionType = mr_acquisition_type
+            dataset.PerFrameFunctionalGroupsSequence = pydicom.Sequence()
+
+            plane_position_sequence = pydicom.Sequence()
+            plane_position_sequence.append(Dataset())
+            plane_orientation_sequence = pydicom.Sequence()
+            plane_orientation_sequence.append(Dataset())
+            mr_echo_sequence = pydicom.Sequence()
+            mr_echo_sequence.append(Dataset())
+            pixel_measure_sequence = pydicom.Sequence()
+            pixel_measure_sequence.append(Dataset())
+            mr_timing_parameters_sequence = pydicom.Sequence()
+            mr_timing_parameters_sequence.append(Dataset())
+
+            for frame in range(number_of_frames):
+                dcm_frame_idata = dcm_file_idata[..., frame, :, :]
+                if dcm_frame_idata.header.shape.numel() != 1:
+                    raise ValueError('Only single image can be saved as a frame.')
+                directions = dcm_frame_idata.header.orientation[0].as_directions()
+                readout_direction = np.squeeze(torch.stack(directions[2].zyx[::-1]).numpy())
+                phase_direction = np.squeeze(torch.stack(directions[1].zyx[::-1]).numpy())
+                slice_direction = np.squeeze(torch.stack(directions[0].zyx[::-1]).numpy())
+                position = np.squeeze(torch.stack(dcm_frame_idata.header.position.zyx[::-1]).numpy())
+
+                dataset.PerFrameFunctionalGroupsSequence.append(Dataset())
+
+                image_position_patient = (
+                    position
+                    - readout_direction * dcm_frame_idata.header.resolution.x * dcm_frame_idata.data.shape[-1] / 2
+                    - phase_direction * dcm_frame_idata.header.resolution.y * dcm_frame_idata.data.shape[-2] / 2
+                )
+                if mr_acquisition_type == '3D':
+                    image_position_patient = (
+                        image_position_patient
+                        + slice_direction * dcm_frame_idata.header.resolution.z * (-number_of_frames / 2 + frame)
+                    )
+                if reference_patient_table_position:
+                    image_position_patient += np.squeeze(
+                        torch.stack(
+                            (dcm_frame_idata.header.patient_table_position - reference_patient_table_position).zyx[::-1]
+                        ).numpy()
+                    )
+
+                plane_position_sequence[0].ImagePositionPatient = m_to_mm(image_position_patient.tolist())
+                dataset.PerFrameFunctionalGroupsSequence[-1].PlanePositionSequence = deepcopy(plane_position_sequence)
+
+                # According to the dicom manual, ImageOrientationPatient describes:
+                # "The direction cosines of the first row and the first column with respect to the patient."
+                # This would suggest that the first direction should be the readout direction, the second the
+                # phase direction. Nevertheless, for all our data the two directions have to be swapped to achieve
+                # the correct orientation. Any help welcome in solving this!
+                plane_orientation_sequence[0].ImageOrientationPatient = [*phase_direction, *readout_direction]
+                dataset.PerFrameFunctionalGroupsSequence[-1].PlaneOrientationSequence = deepcopy(
+                    plane_orientation_sequence
+                )
+
+                def unique_parameter(parameter: torch.Tensor | list[float], parameter_name: str) -> float | None:
+                    """Return unique value of parameter tensor or list. Raise warning if not unique."""
+                    unique_parameter = torch.unique(torch.as_tensor(parameter))
+                    if unique_parameter.numel() > 1:
+                        warnings.warn(
+                            f'{parameter_name} is not unique. Using first value. To ensure all values are saved, '
+                            'split data into correct subsets first.',
+                            stacklevel=2,
+                        )
+                    return unique_parameter[0].item() if len(unique_parameter) > 0 else None
+
+                if (echo_time := unique_parameter(dcm_frame_idata.header.te, 'te')) is not None:
+                    mr_echo_sequence[0].EchoTime = s_to_ms(echo_time)
+
+                dataset.PerFrameFunctionalGroupsSequence[-1].MREchoSequence = deepcopy(mr_echo_sequence)
+
+                pixel_measure_sequence[0].SliceThickness = m_to_mm(dcm_frame_idata.header.resolution[0].z)
+                pixel_measure_sequence[0].PixelSpacing = m_to_mm(
+                    [dcm_frame_idata.header.resolution[0].x, dcm_frame_idata.header.resolution[0].y]
+                )
+                dataset.PerFrameFunctionalGroupsSequence[-1].PixelMeasuresSequence = deepcopy(pixel_measure_sequence)
+
+                if (flip_angle := unique_parameter(dcm_frame_idata.header.fa, 'fa')) is not None:
+                    mr_timing_parameters_sequence[0].FlipAngle = rad_to_deg(flip_angle)
+                if (inversion_time := unique_parameter(dcm_frame_idata.header.ti, 'ti')) is not None:
+                    mr_timing_parameters_sequence[0].InversionTime = s_to_ms(inversion_time)
+                if (repetition_time := unique_parameter(dcm_frame_idata.header.tr, 'tr')) is not None:
+                    mr_timing_parameters_sequence[0].RepetitionTime = s_to_ms(repetition_time)
+                dataset.PerFrameFunctionalGroupsSequence[-1].MRTimingAndRelatedParametersSequence = deepcopy(
+                    mr_timing_parameters_sequence
+                )
+
+            # (frames, rows, columns) for multi-frame grayscale data
+            pixel_data = dcm_file_idata.data.abs().cpu().numpy()
+            pixel_data = pixel_data / pixel_data.max() * (2**16 - 1)
+            pixel_data = rearrange(pixel_data[0, 0, ...], 'frames y x -> frames x y')
+
+            # 'MONOCHROME2' means smallest value is black, largest value is white
+            set_pixel_data(
+                ds=dataset, arr=pixel_data.astype(np.uint16), photometric_interpretation='MONOCHROME2', bits_stored=16
+            )
+
+            # Save
+            dataset.save_as(foldername / f'im_mrpro_{np.prod(file_index)}.dcm', enforce_file_format=True)
