@@ -127,7 +127,7 @@ class Operator(Generic[Unpack[Tin], Tout], ABC, TensorAttributeMixin, torch.nn.M
     ) -> Operator[Unpack[Tin], tuple[Unpack[Tin]]]:
         """Operator right subtraction.
 
-        Returns ``lambda x: other*x + self(x)``
+        Returns ``lambda x: other*x - self(x)``
         """
         return (-1.0) * self + other
 
