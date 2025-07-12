@@ -344,9 +344,9 @@ class PinqiModule(pl.LightningModule):
         parameter_is_complex: Sequence[bool],
         n_images: int,
         n_iterations: int = 4,
-        n_features_parameter_net: Sequence[int] = (64, 128, 192, 224, 256),
-        n_features_image_net: Sequence[int] = (16, 32, 48, 64),
-        lr: float = 4e-4,  # noqa: ARG002
+        n_features_parameter_net: Sequence[int] = (64, 128, 192, 256),
+        n_features_image_net: Sequence[int] = (32, 48, 64, 96),
+        lr: float = 3e-4,  # noqa: ARG002
         weight_decay: float = 1e-3,  # noqa: ARG002
         loss_weights: Sequence[float] = (0.2, 0.1, 0.1, 0.1, 0.8),
     ):
@@ -542,7 +542,7 @@ class PinqiModule(pl.LightningModule):
             max_lr=[self.hparams.lr, 10 * self.hparams.lr],
             total_steps=self.trainer.estimated_stepping_batches,
             pct_start=0.1,
-            div_factor=30,
+            div_factor=20,
             final_div_factor=300,
         )
         return {
@@ -606,6 +606,7 @@ class LogLambdasCallback(pl.Callback):
 
 
 if __name__ == '__main__':
+    torch.multiprocessing.set_sharing_strategy('file_system')
     torch.set_float32_matmul_precision('high')
     torch._inductor.config.compile_threads = 4
     torch._inductor.config.worker_start_method = 'fork'
