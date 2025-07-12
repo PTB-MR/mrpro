@@ -142,7 +142,12 @@ class UNetDecoder(Module):
 class UNetBase(Module):
     """Base class for U-shaped networks."""
 
-    def __init__(self, encoder: UNetEncoder, decoder: UNetDecoder, skip_blocks: Sequence[Module] | None = None) -> None:
+    def __init__(
+        self,
+        encoder: UNetEncoder,
+        decoder: UNetDecoder,
+        skip_blocks: Sequence[Module] | None = None,
+    ) -> None:
         """Initialize the UNetBase."""
         super().__init__()
         self.encoder = encoder
@@ -208,7 +213,14 @@ class BasicUNet(UNetBase):
        segmentation MICCAI 2015. https://arxiv.org/abs/1505.04597
     """
 
-    def __init__(self, dim: int, channels_in: int, channels_out: int, n_features: Sequence[int], cond_dim: int):
+    def __init__(
+        self,
+        dim: int,
+        channels_in: int,
+        channels_out: int,
+        n_features: Sequence[int],
+        cond_dim: int,
+    ):
         """Initialize the BasicUNet."""
         encoder_blocks: list[Module] = []
         decoder_blocks: list[Module] = []
@@ -221,7 +233,8 @@ class BasicUNet(UNetBase):
             down_blocks.append(ConvND(dim)(n_feat, n_feat_next, 3, stride=2, padding=1))
             up_blocks.append(
                 Sequential(
-                    Upsample(tuple(range(-dim, 0)), scale_factor=2), ConvND(dim)(n_feat_next, n_feat, 3, padding=1)
+                    Upsample(tuple(range(-dim, 0)), scale_factor=2),
+                    ConvND(dim)(n_feat_next, n_feat, 3, padding=1),
                 )
             )
             concat_blocks.append(Concat())
@@ -229,7 +242,9 @@ class BasicUNet(UNetBase):
         decoder_blocks = decoder_blocks[::-1]
         first_block = ConvND(dim)(channels_in, n_features[0], 3, padding=1)
         last_block = Sequential(
-            GroupNorm(n_features[0]), SiLU(), ConvND(dim)(n_features[0], channels_out, 3, padding=1)
+            GroupNorm(n_features[0]),
+            SiLU(),
+            ConvND(dim)(n_features[0], channels_out, 3, padding=1),
         )
         middle_block = ResBlock(dim, n_features[-1], n_features[-1], cond_dim)
         encoder = UNetEncoder(first_block, encoder_blocks, down_blocks, middle_block)
@@ -308,8 +323,8 @@ class UNet(UNetBase):
                 channels_in = channels_out
             return blocks
 
-        encoder_blocks: list[Module] = [ConvND(dim)(channels_in, n_features[0], 3, padding=1)]
-        down_blocks: list[Module] = [Identity()]
+        encoder_blocks: list[Module] = []
+        down_blocks: list[Module] = []
         decoder_blocks: list[Module] = []
         up_blocks: list[Module] = []
 
@@ -350,7 +365,14 @@ class AttentionGatedUNet(UNetBase):
       https://arxiv.org/abs/1804.03999
     """
 
-    def __init__(self, dim: int, channels_in: int, channels_out: int, n_features: Sequence[int], cond_dim: int = 0):
+    def __init__(
+        self,
+        dim: int,
+        channels_in: int,
+        channels_out: int,
+        n_features: Sequence[int],
+        cond_dim: int = 0,
+    ):
         """Initialize the AttentionGatedUNet.
 
         Parameters
@@ -490,7 +512,8 @@ class SeparableUNet(UNetBase):
 
         # --- Module Construction ---
         first_block = PermutedBlock(
-            all_spatial_dims, ConvND(len(all_spatial_dims))(channels_in, n_features[0], 3, padding=1)
+            all_spatial_dims,
+            ConvND(len(all_spatial_dims))(channels_in, n_features[0], 3, padding=1),
         )
 
         # -- Encoder --
@@ -503,7 +526,11 @@ class SeparableUNet(UNetBase):
                 skip_features.append(c_feat)
             if i_level < depth - 1:
                 down_blocks.append(
-                    _create_downsampler(downsample_dims_per_level[i_level], c_feat, n_features[i_level + 1])
+                    _create_downsampler(
+                        downsample_dims_per_level[i_level],
+                        c_feat,
+                        n_features[i_level + 1],
+                    )
                 )
                 c_feat = n_features[i_level + 1]
 
