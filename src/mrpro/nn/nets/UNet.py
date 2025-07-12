@@ -154,11 +154,11 @@ class UNetBase(Module):
         self.skip_blocks = ModuleList()
         """Modifications of the skip connections."""
 
-        if len(decoder) != len(encoder):
-            raise ValueError(
-                'The number of resolutions in the encoder and decoder must be the same, '
-                f'got {len(decoder)} and {len(encoder)}'
-            )
+        # if len(decoder) != len(encoder):
+        #    raise ValueError(
+        #        'The number of resolutions in the encoder and decoder must be the same, '
+        #        f'got {len(decoder)} and {len(encoder)}'
+        #    )
 
         if skip_blocks is None:
             self.skip_blocks.extend(Identity() for _ in range(len(decoder)))
@@ -244,9 +244,8 @@ class UNet(UNetBase):
     Inspired by the OpenAi DDPM UNet/Latent Diffusion UNet [LDM]_,
     significant differences to the vanilla UNet [UNET]_ include:
        - Spatial transformer blocks
-       - Multiple skip connections per resolution
        - Convolutional downsampling, nearest neighbor upsampling
-       - Residual convolution blocks with group normalization and SiLU activation
+       - Residual convolution blocks with pre-act group normalization and SiLU activation
 
     References
     ----------
@@ -300,54 +299,38 @@ class UNet(UNetBase):
             dim_groups = (tuple(range(-dim, 0)),)
             return SpatialTransformerBlock(dim_groups, channels, n_heads, cond_dim=cond_dim)
 
-        def block(channels_in: int, channels_out: int, attention: bool) -> Module:
-            if not attention:
-                return ResBlock(dim, channels_in, channels_out, cond_dim)
-            return Sequential(ResBlock(dim, channels_in, channels_out, cond_dim), attention_block(channels_out))
-
-        first_block = ConvND(dim)(channels_in, n_features[0], 3, padding=1)
-        encoder_blocks: list[Module] = []
-        down_blocks: list[Module] = []
-        skip_features = []
-        n_feat_old = n_features[0]
-        for i_level, n_feat in enumerate(n_features):
-            encoder_blocks.append(Identity())
-            skip_features.append(n_feat_old)
+        def blocks(channels_in: int, channels_out: int, attention: bool) -> Module:
+            blocks = Sequential()
             for _ in range(encoder_blocks_per_scale):
-                encoder_blocks.append(block(n_feat_old, n_feat, attention=i_level in attention_depths))
-                n_feat_old = n_feat
-                down_blocks.append(Identity())
-                skip_features.append(n_feat_old)
-            down_blocks.append(ConvND(dim)(n_feat, n_feat, 3, stride=2, padding=1))
-        down_blocks[-1] = Identity()  # no downsampling after the last resolution level
-        middle_block = Sequential(
-            ResBlock(dim, n_features[-1], n_features[-1], cond_dim),
-            ResBlock(dim, n_features[-1], n_features[-1], cond_dim),
-        )
-        if i_level in attention_depths:
-            middle_block.insert(1, attention_block(n_features[-1]))
-        encoder = UNetEncoder(first_block, encoder_blocks, down_blocks, middle_block)
+                blocks.append(ResBlock(dim, channels_in, channels_out, cond_dim))
+                if attention:
+                    blocks.append(attention_block(channels_out))
+                channels_in = channels_out
+            return blocks
 
+        encoder_blocks: list[Module] = [ConvND(dim)(channels_in, n_features[0], 3, padding=1)]
+        down_blocks: list[Module] = [Identity()]
         decoder_blocks: list[Module] = []
         up_blocks: list[Module] = [Identity()]
-        for i_level, n_feat in reversed(list(enumerate(n_features))):
-            decoder_blocks.append(
-                block(n_feat_old + skip_features.pop(), n_feat, attention=i_level in attention_depths)
-            )
-            n_feat_old = n_feat
-            for _ in range(encoder_blocks_per_scale):
-                decoder_blocks.append(
-                    block(n_feat_old + skip_features.pop(), n_feat, attention=i_level in attention_depths)
-                )
-                up_blocks.append(Identity())
+
+        for i_level, (n_feat, n_feat_next) in enumerate(pairwise(n_features)):
+            encoder_blocks.append(blocks(n_feat, n_feat, i_level in attention_depths))
+            down_blocks.append(ConvND(dim)(n_feat, n_feat_next, 3, stride=2, padding=1))
+            decoder_blocks.append(blocks(n_feat_next + n_feat, n_feat, i_level in attention_depths))
             up_blocks.append(Upsample(tuple(range(-dim, 0)), scale_factor=2))
-        up_blocks.pop()  # no upsampling after the last resolution level
-        concat_blocks = [Concat() for _ in range(len(decoder_blocks))]
-        last_block = Sequential(
-            GroupNorm(n_features[0]),
-            SiLU(),
-            ConvND(dim)(n_features[0], channels_out, 3, padding=1),
+
+        middle_block = Sequential(
+            ResBlock(dim, n_feat_next, n_feat_next, cond_dim),
+            ResBlock(dim, n_feat_next, n_feat_next, cond_dim),
         )
+        if i_level in attention_depths:
+            middle_block.insert(1, attention_block(n_feat))
+        encoder = UNetEncoder(Identity(), encoder_blocks, down_blocks, middle_block)
+
+        decoder_blocks, up_blocks = decoder_blocks[::-1], up_blocks[::-1]
+        decoder_blocks.append(ResBlock(dim, 2 * n_features[0], n_features[0], cond_dim))
+        last_block = ConvND(dim)(n_features[0], channels_out, 1)
+        concat_blocks = [Concat() for _ in range(len(decoder_blocks))]
         decoder = UNetDecoder(decoder_blocks, up_blocks, concat_blocks, last_block)
 
         super().__init__(encoder, decoder)

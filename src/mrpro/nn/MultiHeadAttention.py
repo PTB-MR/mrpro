@@ -1,6 +1,7 @@
 """Multi-head Attention."""
 
 import torch
+from einops import rearrange
 from torch.nn import Linear, Module
 
 
@@ -41,16 +42,14 @@ class MultiHeadAttention(Module):
             Number of channels for cross-attention. If `None`, use `channels_in`.
         """
         super().__init__()
-        self.mha = torch.nn.MultiheadAttention(
-            embed_dim=channels_in,
-            num_heads=n_heads,
-            batch_first=True,
-            dropout=p_dropout,
-            kdim=channels_cross,
-            vdim=channels_cross,
-        )
+        channels_per_head_q = channels_in // n_heads
+        channels_per_head_kv = channels_cross // n_heads if channels_cross is not None else channels_in // n_heads
+        self.to_q = Linear(channels_in, channels_per_head_q * n_heads)
+        self.to_kv = Linear(channels_in, channels_per_head_kv * n_heads * 2)
+        self.p_dropout = p_dropout
         self.features_last = features_last
         self.to_out = Linear(channels_in, channels_out)
+        self.n_heads = n_heads
 
     def __call__(self, x: torch.Tensor, cross_attention: torch.Tensor | None = None) -> torch.Tensor:
         """Apply multi-head attention.
@@ -78,8 +77,16 @@ class MultiHeadAttention(Module):
         reshaped_x = self._reshape(x)
         reshaped_cross_attention = self._reshape(cross_attention) if cross_attention is not None else reshaped_x
 
-        y = self.mha(reshaped_cross_attention, reshaped_cross_attention, reshaped_x, need_weights=False)[0]
-        out: torch.Tensor = self.to_out(y)
+        q = rearrange(self.to_q(reshaped_x), '... L (heads dim) -> ... heads L dim ', heads=self.n_heads)
+        k, v = rearrange(
+            self.to_kv(reshaped_cross_attention),
+            '... S (kv heads dim) -> kv ... heads S dim ',
+            heads=self.n_heads,
+            kv=2,
+        )
+        y = torch.nn.functional.scaled_dot_product_attention(q, k, v, dropout_p=self.p_dropout, is_causal=False)
+        y = rearrange(y, '... heads L dim -> ... L (heads dim)')
+        out = self.to_out(y)
 
         if not self.features_last:
             out = out.moveaxis(-1, 1)
