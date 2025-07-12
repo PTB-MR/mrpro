@@ -1,0 +1,375 @@
+# %%
+import einops
+import matplotlib.pyplot as plt
+import mrpro
+import torch
+
+# %matplotlib inline
+
+# %%
+# mrpro.phantoms.brainweb.download_brainweb(workers=2, progress=True)
+# %%
+
+
+class Dataset(torch.utils.data.Dataset):
+    def __init__(self, size=192, acceleration=10, n_coils=8, random=True, max_noise=0.1):
+        self.phantom = mrpro.phantoms.brainweb.BrainwebSlices(
+            what=('m0', 't1', 'mask'),
+            seed='index' if not random else 'random',
+            slice_preparation=mrpro.phantoms.brainweb.augment(size=size),
+        )
+        self.signalmodel = mrpro.operators.models.SaturationRecovery((0.5, 1.0, 1.5, 2, 6))
+        self.constraints_op = mrpro.operators.ConstraintsOp(
+            bounds=(
+                (-1, 1),  # M0 in [-1, 1]
+                (0.001, 4.0),  # T1 is constrained between 1 ms and 4 s
+            )
+        )
+
+        self.encoding_matrix = mrpro.data.SpatialDimension(1, size, size)
+        self.fov = mrpro.data.SpatialDimension(0.01, 0.25, 0.25)
+        self.acceleration = acceleration
+        self.n_coils = n_coils
+        self._random = random
+        self.max_noise = max_noise
+
+    @property
+    def n_images(self):
+        return 5
+
+    @property
+    def complex_parameters(self):
+        return [True, False]
+
+    @property
+    def n_parameters(self):
+        return len(self.complex_parameters)
+
+    def __len__(self):
+        return len(self.phantom)
+
+    def __getitem__(self, index):
+        phantom = self.phantom[index]
+        (images,) = self.signalmodel(phantom['m0'], phantom['t1'])
+        seed = torch.randint(0, 1000000, (1,)).item() if self._random else index
+        traj = mrpro.data.traj_calculators.KTrajectoryCartesian.gaussian_variable_density(
+            encoding_matrix=self.encoding_matrix,
+            seed=seed,
+            acceleration=self.acceleration,
+            fwhm_ratio=2,
+            n_center=8,
+            n_other=(self.n_images,),
+        )
+        header = mrpro.data.KHeader(
+            encoding_matrix=self.encoding_matrix,
+            recon_matrix=self.encoding_matrix,
+            recon_fov=self.fov,
+            encoding_fov=self.fov,
+        )
+        header.ti = self.signalmodel.saturation_time.tolist()
+        fourier_op = mrpro.operators.FourierOp(self.encoding_matrix, self.encoding_matrix, traj)
+        csm = mrpro.data.CsmData(mrpro.phantoms.coils.birdcage_2d(self.n_coils, self.encoding_matrix), header)
+        images = einops.rearrange(images, 't y x -> t 1 1 y x')
+        (data,) = (fourier_op @ csm.as_operator())(images)
+        data = data + torch.randn_like(data) * torch.rand(1) * self.max_noise * data.std()
+        kdata = mrpro.data.KData(header, data, traj)
+        return {'kdata': kdata, 'csm': csm, **phantom}
+
+    @staticmethod
+    def collate_fn(batch):
+        return torch.utils.data._utils.collate.collate(
+            batch,
+            collate_fn_map={
+                mrpro.data.Dataclass: lambda batch, *, collate_fn_map: batch[0].stack(*batch[1:]),
+                **torch.utils.data._utils.collate.default_collate_fn_map,
+            },
+        )
+
+
+# %%
+ds = Dataset()
+dl = torch.utils.data.DataLoader(
+    ds,
+    batch_size=8,
+    collate_fn=ds.collate_fn,
+    num_workers=16,
+    worker_init_fn=lambda *_: torch.set_num_threads(1),
+    shuffle=True,
+)
+
+# %%
+from copy import deepcopy
+
+
+class PINQI(torch.nn.Module):
+    def __init__(self, signalmodel, parameter_is_complex, n_images, n_iterations=4, constraints_op=None):
+        super().__init__()
+        self.signalmodel = mrpro.operators.RearrangeOp('t batch ... -> batch t ...') @ deepcopy(signalmodel)
+        if constraints_op is not None:
+            self.signalmodel = self.signalmodel @ constraints_op
+        self.constraints_op = constraints_op
+        self._n_images = n_images
+        self._parameter_is_complex = parameter_is_complex
+        real_parameters = sum(parameter_is_complex) + len(parameter_is_complex)
+        self.parameter_net = torch.compile(
+            mrpro.nn.nets.UNet(
+                dim=2,
+                channels_in=n_images * 2,
+                channels_out=real_parameters,
+                attention_depths=(-1,),
+                n_features=(64, 128, 192, 256),
+            ),
+            dynamic=False,
+            fullgraph=True,
+        )
+        self.image_net = torch.compile(
+            mrpro.nn.nets.UNet(
+                2,
+                channels_in=2,
+                channels_out=2,
+                attention_depths=(),
+                n_features=(16, 32, 48, 64),
+            ),
+            dynamic=False,
+            fullgraph=True,
+        )
+        self.lambdas_raw = torch.nn.Parameter(torch.ones(n_iterations, 3))
+        self.softplus = torch.nn.Softplus()
+
+        def objective_factory(lambda_parameters, image, *parameter_reg):
+            dc = mrpro.operators.functionals.L2NormSquared(image) @ self.signalmodel
+            reg = mrpro.operators.ProximableFunctionalSeparableSum(
+                *[mrpro.operators.functionals.L2NormSquared(r) for r in parameter_reg]
+            )
+            return dc + lambda_parameters * reg
+
+        self.nonlinear_solver = mrpro.operators.OptimizerOp(
+            objective_factory, lambda _l, _i, *parameter_reg: parameter_reg
+        )
+
+    def get_linear_solver(self, gram):
+        def operator_factory(lambda_image, lambda_q, _image_reg, _signal, _zero_filled_image):
+            return gram + lambda_image + lambda_q
+
+        def rhs_factory(lambda_image, lambda_q, image_reg, signal, zero_filled_image):
+            return (zero_filled_image + lambda_image * image_reg + lambda_q * signal,)
+
+        return mrpro.operators.ConjugateGradientOp(
+            operator_factory=operator_factory,
+            rhs_factory=rhs_factory,
+        )
+
+    def get_parameter_reg(self, image: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        image = einops.rearrange(torch.view_as_real(image), 'batch t 1 1 y x complex-> batch (t complex) y x')
+        parameters = self.parameter_net(image.contiguous())
+        parameters = einops.rearrange(parameters, 'batch parameters y x-> parameters batch 1 1 y x')
+        i = 0
+        result = []
+        for is_complex in self._parameter_is_complex:
+            if is_complex:
+                result.append(torch.complex(parameters[i], parameters[i + 1]))
+                i += 2
+            else:
+                result.append(parameters[i])
+                i += 1
+        return tuple(result)
+
+    def get_image_reg(self, image):
+        batch = image.shape[0]
+        image = einops.rearrange(torch.view_as_real(image), 'batch t 1 1 y x complex-> (batch t) complex y x')
+        image = image + self.image_net(image.contiguous())
+        image = einops.rearrange(image, '(batch t) complex y x-> batch t 1 1 y x complex', batch=batch)
+        return torch.view_as_complex(image.contiguous())
+
+    def forward(self, kdata: mrpro.data.KData, csm: mrpro.data.CsmData):
+        csm_op = csm.as_operator()
+        fourier_op = mrpro.operators.FourierOp.from_kdata(kdata)
+        acquisition_op = fourier_op @ csm_op
+        gram = acquisition_op.gram
+        (zero_filled_image,) = acquisition_op.H(kdata.data)
+        images = list(mrpro.algorithms.optimizers.cg(gram, zero_filled_image, max_iterations=2))
+        parameters = [self.get_parameter_reg(images[-1])]
+        linear_solver = self.get_linear_solver(gram)
+
+        for lambda_image, lambda_q, lambda_parameter in self.softplus(self.lambdas_raw):
+            # subproblem 1
+            image_reg = self.get_image_reg(images[-1])
+            (signal,) = self.signalmodel(*parameters[-1])
+            images.extend(linear_solver(lambda_image, lambda_q, image_reg, signal, zero_filled_image))
+            # subproblem 2
+            parameters_reg = self.get_parameter_reg(images[-1])
+            parameters.append(self.nonlinear_solver(lambda_parameter, images[-1], *parameters_reg))
+        if self.constraints_op is not None:
+            parameters = [self.constraints_op(*p) for p in parameters]
+        return images, parameters
+
+
+# %%
+from typing import TypeVar
+
+T = TypeVar('T')
+
+
+def to_device(batch: T, device: torch.device | str) -> T:
+    """Moves tensors and Mrpro data to the specified device recursively."""
+    if isinstance(batch, torch.Tensor | mrpro.data.Dataclass):
+        return batch.to(device)
+    if isinstance(batch, dict):
+        return {k: to_device(v, device) for k, v in batch.items()}
+    if isinstance(batch, list):
+        return [to_device(v, device) for v in batch]
+    if isinstance(batch, tuple):
+        return tuple(to_device(v, device) for v in batch)
+
+    return batch
+
+
+# %%
+# from tqdm import tqdm
+
+# pinqi = PINQI(ds.signalmodel, ds.n_parameters, ds.n_images, constraints_op=ds.constraints_op).cuda()
+# for epoch in tqdm(range(10)):
+#     pbar = tqdm(dl, leave=False)
+#     optim = torch.optim.Adam(pinqi.parameters(), lr=1e-4)
+#     for batch in pbar:
+#         batch = to_device(batch, 'cuda')
+#         images, parameters = pinqi(batch['kdata'], batch['csm'])
+#         prediction_m0, prediction_t1 = parameters[-1]
+#         loss_t1 = torch.nn.functional.mse_loss(prediction_t1.squeeze()[batch['mask']], batch['t1'][batch['mask']])
+
+#         loss_m0 = torch.nn.functional.mse_loss(
+#             torch.view_as_real((prediction_m0 + 0j).squeeze()[batch['mask']]),
+#             torch.view_as_real(batch['m0'][batch['mask']]),
+#         )
+
+#         loss = loss_t1 + loss_m0
+#         pbar.set_postfix(loss=loss.item())
+#         loss.backward()
+#         optim.step()
+#         optim.zero_grad()
+
+
+# %%
+import numpy as np
+import torch
+from IPython.display import clear_output, display
+from tqdm.notebook import tqdm
+
+
+def plot_results(
+    fig: plt.Figure,
+    axes: np.ndarray,
+    losses: list[float],
+    target_t1: torch.Tensor,
+    pred_t1: torch.Tensor,
+    mask: torch.Tensor,
+) -> None:
+    """
+    Updates and displays the training plot.
+
+    Parameters
+    ----------
+    fig
+        The matplotlib figure object.
+    axes
+        The array of matplotlib axes objects.
+    losses
+        losses for each step
+    target_t1
+        The ground truth T1 map from the last batch.
+    pred_t1
+        The predicted T1 map from the last batch.
+    mask
+        The mask from the last batch.
+    """
+    clear_output(wait=True)
+
+    axes[0].clear()
+    axes[0].semilogy(losses)
+    axes[0].set_title('Loss')
+    axes[0].set_xlabel('Step')
+    axes[0].set_ylabel('Loss')
+    axes[0].grid(True)
+
+    target_t1_viz = target_t1[1].squeeze().cpu().numpy()
+    pred_t1_viz = pred_t1[1].squeeze().detach().cpu().numpy()
+    mask_viz = mask[1].squeeze().detach().cpu().numpy()
+    target_t1_viz[~mask_viz] = np.nan
+    pred_t1_viz[~mask_viz] = np.nan
+    difference = target_t1_viz - pred_t1_viz
+    vmax = np.nanmax(target_t1_viz)
+
+    axes[1].clear()
+    axes[1].imshow(target_t1_viz, vmin=0, vmax=vmax)
+    axes[1].set_title('Target T1')
+    axes[1].axis('off')
+
+    axes[2].clear()
+    axes[2].imshow(pred_t1_viz, vmin=0, vmax=vmax)
+    axes[2].set_title(f'Predicted T1 (Epoch {epoch + 1})')
+    axes[2].axis('off')
+
+    axes[3].clear()
+    axes[3].imshow(difference, cmap='coolwarm')
+    axes[3].set_title('Difference')
+    axes[3].axis('off')
+
+    fig.tight_layout()
+    display(fig)
+
+
+# %%
+def calculate_loss(predictions, batch, weights=(0.2, 0.1, 0.1, 0.1, 0.5)) -> torch.Tensor:
+    loss = torch.tensor(0.0)
+    target_m0 = batch['m0']
+    target_t1 = batch['t1']
+    mask = batch['mask']
+    for prediction, weight in zip(predictions, weights, strict=False):
+        prediction_m0, prediction_t1 = prediction
+        loss_t1 = torch.nn.functional.mse_loss(prediction_t1.squeeze()[mask], target_t1[mask])
+        loss_m0 = torch.nn.functional.mse_loss(
+            torch.view_as_real((prediction_m0).squeeze()[mask]),
+            torch.view_as_real(target_m0[mask]),
+        )
+        loss = loss + weight * (loss_t1 + loss_m0)
+    return loss
+
+
+# %%
+torch.set_float32_matmul_precision('high')
+torch._inductor.config.worker_start_method = 'fork'
+torch._inductor.config.compile_threads = 4
+torch._dynamo.config.capture_scalar_outputs = True
+torch._functorch.config.activation_memory_budget = 0.9
+
+pinqi = PINQI(ds.signalmodel, ds.complex_parameters, ds.n_images, constraints_op=ds.constraints_op).to('cuda')
+optim = torch.optim.AdamW(pinqi.parameters(), lr=3e-4, weight_decay=1e-4)
+torch._dynamo.config.cache_size_limit = 256
+n_epochs = 10
+losses = []
+fig, axes = plt.subplots(1, 4, figsize=(20, 5))
+
+for epoch in range(n_epochs):
+    epoch_losses = []
+    pbar = tqdm(dl, desc=f'Epoch {epoch + 1}/{n_epochs}', leave=False)
+
+    for batch in pbar:
+        batch = to_device(batch, 'cuda')
+        optim.zero_grad()
+
+        images, parameters = pinqi(batch['kdata'], batch['csm'])
+        loss = calculate_loss(parameters, batch)
+
+        loss.backward()
+        optim.step()
+        epoch_losses.append(loss.item())
+        pbar.set_postfix(epoch_loss=f'{np.mean(epoch_losses):.3f}', loss=f'{epoch_losses[-1]:.3f}')
+
+    losses.extend(epoch_losses)
+    prediction_t1 = parameters[-1][1]
+    plot_results(fig, axes, losses, batch['t1'], prediction_t1, batch['mask'])
+
+plt.close(fig)
+
+
+# %%
