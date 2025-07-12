@@ -166,7 +166,8 @@ class NeighborhoodSelfAttention(Module):
         Parameters
         ----------
         x
-            The input tensor, with shape `batch, channels, *spatial_dims`.
+            The input tensor, with shape `(batch, channels, *spatial_dims)`
+            or `(batch, *spatial_dims, channels)` (if `features_last`).
 
         Returns
         -------
