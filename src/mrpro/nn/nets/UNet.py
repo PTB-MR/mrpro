@@ -311,7 +311,7 @@ class UNet(UNetBase):
         encoder_blocks: list[Module] = [ConvND(dim)(channels_in, n_features[0], 3, padding=1)]
         down_blocks: list[Module] = [Identity()]
         decoder_blocks: list[Module] = []
-        up_blocks: list[Module] = [Identity()]
+        up_blocks: list[Module] = []
 
         for i_level, (n_feat, n_feat_next) in enumerate(pairwise(n_features)):
             encoder_blocks.append(blocks(n_feat, n_feat, i_level in attention_depths))
@@ -323,13 +323,16 @@ class UNet(UNetBase):
             ResBlock(dim, n_feat_next, n_feat_next, cond_dim),
             ResBlock(dim, n_feat_next, n_feat_next, cond_dim),
         )
-        if i_level in attention_depths:
-            middle_block.insert(1, attention_block(n_feat))
-        encoder = UNetEncoder(Identity(), encoder_blocks, down_blocks, middle_block)
+        if depth - 1 in attention_depths:
+            middle_block.insert(1, attention_block(n_feat_next))
+        first_block = ConvND(dim)(channels_in, n_features[0], 3, padding=1)
+        encoder = UNetEncoder(first_block, encoder_blocks, down_blocks, middle_block)
 
         decoder_blocks, up_blocks = decoder_blocks[::-1], up_blocks[::-1]
-        decoder_blocks.append(ResBlock(dim, 2 * n_features[0], n_features[0], cond_dim))
-        last_block = ConvND(dim)(n_features[0], channels_out, 1)
+        last_block = Sequential(
+            SiLU(),
+            ConvND(dim)(n_features[0], channels_out, 3, padding=1),
+        )
         concat_blocks = [Concat() for _ in range(len(decoder_blocks))]
         decoder = UNetDecoder(decoder_blocks, up_blocks, concat_blocks, last_block)
 
@@ -530,7 +533,10 @@ class SeparableUNet(UNetBase):
         last_block = Sequential(
             GroupNorm(n_features[0]),
             SiLU(),
-            PermutedBlock(all_spatial_dims, ConvND(len(all_spatial_dims))(n_features[0], channels_out, 3, padding=1)),
+            PermutedBlock(
+                all_spatial_dims,
+                ConvND(len(all_spatial_dims))(n_features[0], channels_out, 3, padding=1),
+            ),
         )
         decoder = UNetDecoder(decoder_blocks, up_blocks, concat_blocks, last_block)
 
