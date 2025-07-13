@@ -107,7 +107,8 @@ class SpatialTransformerBlock(CondMixin, Module):
         dropout: float = 0.0,
         cond_dim: int = 0,
     ):
-        """
+        """Initialize the spatial transformer block.
+
         Parameters
         ----------
         dim_groups

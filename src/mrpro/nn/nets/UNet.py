@@ -394,7 +394,7 @@ class AttentionGatedUNet(UNetBase):
         for n_feat, n_feat_skip in pairwise(n_features[::-1]):
             concat_blocks.append(AttentionGate(dim, n_feat, n_feat_skip, n_feat_skip, concatenate=True))
             decoder_blocks.append(block(n_feat + n_feat_skip, n_feat_skip))
-            up_blocks.append(Upsample(dim, scale_factor=2))
+            up_blocks.append(Upsample(range(-dim, 0), scale_factor=2))
         last_block = ConvND(dim)(n_features[0], channels_out, 1)
         decoder = UNetDecoder(decoder_blocks, up_blocks, concat_blocks, last_block)
 
@@ -467,19 +467,14 @@ class SeparableUNet(UNetBase):
 
         def downsampler(level_dims, c_in, c_out) -> Module:
             if len(level_dims) > 3:
-                sequence = Sequence(downsampler(d[0], c_in, c_out) for d in level_dims)
+                sequence = Sequential(*(downsampler(d[0], c_in, c_out) for d in level_dims))
                 for d in level_dims[1:]:
                     sequence.append(downsampler(d, c_out, c_out))
                 return sequence
             return PermutedBlock(level_dims, ConvND(len(level_dims))(c_in, c_out, 3, stride=2, padding=1))
 
         def upsampler(level_dims, c_in, c_out) -> Module:
-            if len(level_dims) > 3:
-                sequence = Sequence(upsampler(d[0], c_in, c_out) for d in level_dims)
-                for d in level_dims[1:]:
-                    sequence.append(upsampler(d, c_out, c_out))
-                return sequence
-            return PermutedBlock(level_dims, Upsample(len(level_dims), scale_factor=2, mode='nearest'))
+            return Upsample(level_dims, scale_factor=2)
 
         def block(c_in: int, c_out: int, apply_attention: bool) -> Module:
             res_block = SeparableResBlock(dim_groups, c_in, c_out, cond_dim)
@@ -502,9 +497,7 @@ class SeparableUNet(UNetBase):
                 c_feat = n_feat_level
                 skip_features.append(c_feat)
             if i_level < depth - 1:
-                down_blocks.append(
-                    _create_downsampler(downsample_dims_per_level[i_level], c_feat, n_features[i_level + 1])
-                )
+                down_blocks.append(downsampler(downsample_dims_per_level[i_level], c_feat, n_features[i_level + 1]))
                 c_feat = n_features[i_level + 1]
 
         # -- Middle & Encoder Finalization --
@@ -519,7 +512,7 @@ class SeparableUNet(UNetBase):
         for i_level in reversed(range(depth)):
             n_feat_level = n_features[i_level]
             if i_level > 0:
-                up_blocks.append(_create_upsampler(downsample_dims_per_level[i_level - 1], c_feat, n_feat_level))
+                up_blocks.append(upsampler(downsample_dims_per_level[i_level - 1], c_feat, n_feat_level))
             for _ in range(encoder_blocks_per_scale + 1):
                 skip_c = skip_features.pop()
                 decoder_blocks.append(block(c_feat + skip_c, n_feat_level, i_level in attention_depths))

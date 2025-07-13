@@ -68,55 +68,67 @@ class AxialRoPE(Module):
 
     freqs: torch.Tensor
 
-    def __init__(self, dim: int, d_head: int, n_heads: int, headpos: int = -2, non_embed_fraction: float = 0.5):
+    def __init__(
+        self,
+        n_dim: int,
+        n_channels: int,
+        n_heads: int,
+        channels_last: bool = True,
+        non_embed_fraction: float = 0.5,
+    ):
         """Initialize AxialRoPE.
 
         Parameters
         ----------
-        dim : int
-            Dimension of the input space
-        d_head : int
-            Dimension of each attention head
-        n_heads : int
+        n_dim
+            Number of (spatial-like) dimensions of the input
+        n_channels
+            Number of channels
+        n_heads
             Number of attention heads
-        headpos : int, optional
-            Position of the head dimension
-        non_embed_fraction : float, optional
-            Fraction of dimensions to not embed
+        channels_last
+            Whether the channels are the last dimension or dimension 1.
+        non_embed_fraction
+            Fraction of channels not used for embedding
         """
         super().__init__()
         log_min = torch.log(torch.tensor(torch.pi))
         log_max = torch.log(torch.tensor(10000.0))
-        freqs = torch.exp(torch.linspace(log_min, log_max, d_head // 2))
+        if n_channels % n_heads:
+            raise ValueError(f'Number of channels {n_channels} must be divisible by number of heads {n_heads}')
+        channels_per_head = n_channels // n_heads
+        freqs = torch.exp(torch.linspace(log_min, log_max, channels_per_head // 2))
         self.register_buffer('freqs', freqs)
-        self.headpos = headpos
+        self.channels_last = channels_last
+        self.n_heads = n_heads
 
     def get_theta(self, pos: torch.Tensor) -> torch.Tensor:
         """Get rotation angles for given positions.
 
         Parameters
         ----------
-        pos : torch.Tensor
+        pos
             Position tensor
 
         Returns
         -------
-        torch.Tensor
             Rotation angles
         """
-        return (self.freqs * pos[..., None, :, None]).flatten(start_dim=-2).movedim(-2, self.headpos)
+        return (self.freqs * pos[..., None, :, None]).flatten(start_dim=-2)
 
     def forward(self, pos: torch.Tensor, *tensors: torch.Tensor) -> None:
         """Apply rotary embeddings to input tensors.
 
         Parameters
         ----------
-        pos : torch.Tensor
+        pos
             Position tensor
         *tensors : torch.Tensor
             Tensors to apply rotary embeddings to
         """
         theta = self.get_theta(pos)
+        if not self.channels_last:
+            tensors = tuple(t.movedim(-1, 1) for t in tensors)
         tuple(RotaryEmbedding.apply(x, theta, False) for x in tensors)
 
     @staticmethod
