@@ -76,7 +76,7 @@ def pad_or_crop(
         diff = new - old
         after = math.trunc(diff / 2)
         before = diff - after
-        if before != 0 or after != 0:
+        if before or after or npad:
             npad.append(before)
             npad.append(after)
 
