@@ -1,5 +1,7 @@
 """ND-version of PixelShuffle and PixelUnshuffle."""
 
+from math import ceil
+
 import torch
 from torch.nn import Module
 
@@ -91,9 +93,9 @@ class PixelUnshuffleDownsample(Module):
         ----------
         n_dim
             Dimension of the input tensor.
-        channels_in
+        n_channels_in
             Number of channels in the input tensor.
-        channels_out
+        n_channels_out
             Number of channels in the output tensor.
         downscale_factor
             Factor by which to downscale the input tensor.
@@ -185,7 +187,7 @@ class PixelShuffleUpsample(Module):
         """Apply upsampling."""
         h = self.conv(x)
         if self.residual:
-            h = h + x.repeat_interleave(h.shape[1] // x.shape[1], dim=1)
+            h = h + x.repeat_interleave(ceil(h.shape[1] / x.shape[1]), dim=1)[:, : h.shape[1]]
         out = self.pixel_shuffle(h)
         return out
 

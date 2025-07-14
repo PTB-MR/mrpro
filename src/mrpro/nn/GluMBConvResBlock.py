@@ -38,9 +38,9 @@ class GluMBConvResBlock(CondMixin, Module):
         ----------
         n_dim
             Number of spatial dimensions.
-        channels_in
+        n_channels_in
             Number of input channels.
-        channels_out
+        n_channels_out
             Number of output channels.
         expand_ratio
             Expansion ratio inside the block.
