@@ -24,6 +24,7 @@ from mrpro.nn.Residual import Residual
 from mrpro.nn.ComplexAsChannel import ComplexAsChannel
 from mrpro.nn import nets
 from mrpro.nn.PermutedBlock import PermutedBlock
+from mrpro.nn.RMSNorm import RMSNorm
 
 __all__ = [
     "AdaptiveAvgPoolND",
@@ -41,6 +42,7 @@ __all__ = [
     "MaxPoolND",
     "NeighborhoodSelfAttention",
     "PermutedBlock",
+    "RMSNorm",
     "ResBlock",
     "Residual",
     "Sequential",

@@ -47,6 +47,8 @@ class BasicCNN(Sequential):
             The type of normalization to use. If 'batch', use batch normalization. If 'group', use group normalization,
             if 'instance', use instance normalization, and if `layer`, use layer normalization.
             If 'none', use no normalization.
+        activation
+            The type of activation to use. If 'relu', use ReLU. If 'silu', use SiLU. If 'leaky_relu', use LeakyReLU.
         n_features
             The number of features in the hidden layers. The length of this sequence determines the number of hidden
             layers. The total number of convolutions is `len(n_features) + 1`.

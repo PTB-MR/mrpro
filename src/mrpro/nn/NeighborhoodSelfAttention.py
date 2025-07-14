@@ -16,6 +16,7 @@ T = TypeVar('T')
 
 @cache
 def neighborhood_mask(
+    device: str,
     input_size: torch.Size,
     kernel_size: int | tuple[int, ...],  # tuples instead of Sequence for cache
     dilation: int | tuple[int, ...] = 1,
@@ -42,6 +43,8 @@ def neighborhood_mask(
     circular
         Whether the neighborhood wraps around the edges (circular padding).
         Can be a single boolean or a sequence of booleans.
+    device
+        The device to create the mask on.
 
     Returns
     -------
@@ -98,7 +101,7 @@ def neighborhood_mask(
         return reduce(lambda x, y: x & y, masks)
 
     qkv_len = input_size.numel()
-    return create_block_mask(mask, B=None, H=None, Q_LEN=qkv_len, KV_LEN=qkv_len, _compile=True)
+    return torch.compile(create_block_mask)(mask, B=None, H=None, Q_LEN=qkv_len, KV_LEN=qkv_len, device=device)
 
 
 class NeighborhoodSelfAttention(Module):
@@ -178,14 +181,19 @@ class NeighborhoodSelfAttention(Module):
         spatial_shape = x.shape[1:-1]
         qkv = self.to_qkv(x)
         query, key, value = rearrange(
-            qkv, 'batch ... (qkv head channels) -> qkv batch head (...) channel', qkv=3, head=self.n_head
+            qkv, 'batch ... (qkv head channels) -> qkv batch head (...) channels', qkv=3, head=self.n_head
         )
         # the mask depends on the input size. To be more flexible if used within CNNs, we compute it here.
         # The computation is cached..
         mask = neighborhood_mask(
-            input_size=spatial_shape, kernel_size=self.kernel_size, dilation=self.dilation, circular=self.circular
+            device=str(qkv.device),
+            input_size=spatial_shape,
+            kernel_size=self.kernel_size,
+            dilation=self.dilation,
+            circular=self.circular,
         )
         out: torch.Tensor = flex_attention(query.contiguous(), key.contiguous(), value.contiguous(), block_mask=mask)  # type: ignore[assignment] # wrong type hints
+        out = rearrange(out, 'batch head sequence channels -> batch sequence(head channels)')
         out = self.to_out(out)
         out = out.unflatten(-2, spatial_shape)
         if not self.features_last:
