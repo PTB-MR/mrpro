@@ -17,17 +17,15 @@ from mrpro.utils import RandomGenerator
         (4, 4, True),
     ],
 )
-def test_shifted_window_attentio(dim: int, window_size: int, shifted: bool, device: str) -> None:
-    batch = 2
-    channels = 8
-    n_heads = 2
+def test_shifted_window_attention(dim: int, window_size: int, shifted: bool, device: str) -> None:
+    n_batch, n_channels, n_heads = 2, 8, 2
     spatial_shape = (window_size * 4,) * dim
     rng = RandomGenerator(13)
-    x = rng.float32_tensor((batch, channels, *spatial_shape)).to(device).requires_grad_(True)
+    x = rng.float32_tensor((n_batch, n_channels, *spatial_shape)).to(device).requires_grad_(True)
     swin = ShiftedWindowAttention(
         n_dim=dim,
-        n_channels_in=channels,
-        n_channels_out=channels,
+        n_channels_in=n_channels,
+        n_channels_out=n_channels,
         n_heads=n_heads,
         window_size=window_size,
         shifted=shifted,

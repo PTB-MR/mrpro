@@ -28,7 +28,7 @@ def test_transposed_attention(dim, channels, num_heads, input_shape, device):
     assert output.shape == x.shape, f'Output shape {output.shape} != input shape {x.shape}'
     output.sum().backward()
     assert x.grad is not None, 'No gradient computed for input'
-    assert not x.isnan().any(), 'NaN values in input'
+    assert not output.isnan().any(), 'NaN values in output'
     assert not x.grad.isnan().any(), 'NaN values in input gradients'
     assert attn.to_qkv.weight.grad is not None, 'No gradient computed for qkv'
     assert attn.qkv_dwconv.weight.grad is not None, 'No gradient computed for qkv_dwconv'

@@ -31,7 +31,7 @@ def test_resblock(dim, channels_in, channels_out, cond_dim, input_shape, cond_sh
     )
     output.sum().backward()
     assert x.grad is not None, 'No gradient computed for input'
-    assert not x.isnan().any(), 'NaN values in input'
+    assert not output.isnan().any(), 'NaN values in output'
     assert not x.grad.isnan().any(), 'NaN values in input gradients'
     assert res.block[2].weight.grad is not None, 'No gradient computed for first Conv'
     if cond is not None:

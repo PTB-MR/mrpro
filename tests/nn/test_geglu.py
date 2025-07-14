@@ -1,15 +1,23 @@
 """Test GEGLU."""
 
+import pytest
 import torch
 from mrpro.nn.GEGLU import GEGLU
 from mrpro.utils import RandomGenerator
 
 
-def test_geglu():
+@pytest.mark.parametrize(
+    'device',
+    [
+        pytest.param('cpu', id='cpu'),
+        pytest.param('cuda', id='cuda', marks=pytest.mark.cuda),
+    ],
+)
+def test_geglu(device: str) -> None:
     """Test GELU."""
     rng = RandomGenerator(seed=42)
-    x = rng.float32_tensor((1, 3, 4, 5)).requires_grad_(True)
-    gelu = GEGLU(3, 4)
+    x = rng.float32_tensor((1, 3, 4, 5)).to(device).requires_grad_(True)
+    gelu = GEGLU(3, 4).to(device)
     y = gelu(x)
     assert y.shape == (1, 4, 4, 5)
 
@@ -18,7 +26,7 @@ def test_geglu():
     assert gelu.proj.weight.grad is not None
 
 
-def test_geglu_features_last():
+def test_geglu_features_last() -> None:
     """Test GELU with features last."""
     rng = RandomGenerator(seed=42)
     x = rng.float32_tensor((1, 3, 4, 5)).requires_grad_(True)

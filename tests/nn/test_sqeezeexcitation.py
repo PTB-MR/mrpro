@@ -21,6 +21,6 @@ def test_squeeze_excitation(dim, input_shape, squeeze_channels):
     assert output.shape == x.shape, f'Output shape {output.shape} != input shape {x.shape}'
     output.sum().backward()
     assert x.grad is not None, 'No gradient computed for input'
-    assert not x.isnan().any(), 'NaN values in input'
+    assert not output.isnan().any(), 'NaN values in output'
     assert not x.grad.isnan().any(), 'NaN values in input gradients'
     assert se.scale[1].weight.grad is not None, 'No gradient computed for Conv'
