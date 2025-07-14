@@ -23,41 +23,47 @@ class ShiftedWindowAttention(Module):
     rel_position_index: torch.Tensor
 
     def __init__(
-        self, dim: int, channels_in: int, channels_out: int, n_heads: int, window_size: int = 7, shifted: bool = True
+        self,
+        n_dim: int,
+        n_channels_in: int,
+        n_channels_out: int,
+        n_heads: int,
+        window_size: int = 7,
+        shifted: bool = True,
     ):
         """Initialize the ShiftedWindowAttention module.
 
         Parameters
         ----------
-        dim : int
+        n_dim
             The dimension of the input.
-        channels_in : int
+        n_channels_in
             The number of channels in the input tensor.
-        channels_out : int
+        n_channels_out
             The number of channels in the output tensor.
-        n_heads : int
+        n_heads
             The number of attention heads. The number if channels per head is ``channels // n_heads``.
-        window_size : int
+        window_size
             The size of the window.
-        shifted : bool
+        shifted
             Whether to shift the window.
         """
         super().__init__()
         self.n_heads = n_heads
         self.window_size = window_size
         self.shifted = shifted
-        channels_per_head = channels_in // n_heads
-        self.to_qkv = ConvND(dim)(channels_per_head * n_heads, 3 * channels_per_head * n_heads, 1)
-        self.to_out = ConvND(dim)(channels_per_head * n_heads, channels_out, 1)
-        self.dim = dim
+        channels_per_head = n_channels_in // n_heads
+        self.to_qkv = ConvND(n_dim)(channels_per_head * n_heads, 3 * channels_per_head * n_heads, 1)
+        self.to_out = ConvND(n_dim)(channels_per_head * n_heads, n_channels_out, 1)
+        self.dim = n_dim
         coords_1d = torch.arange(window_size)
-        coords_nd = torch.stack(torch.meshgrid(*([coords_1d] * dim), indexing='ij'), 0).flatten(1)
+        coords_nd = torch.stack(torch.meshgrid(*([coords_1d] * n_dim), indexing='ij'), 0).flatten(1)
         rel_coords = coords_nd[:, :, None] - coords_nd[:, None, :]  # (dim, window_size**dim, window_size**dim)
         rel_coords += window_size - 1  # shift to >=0
-        rel_position_index = ravel_multi_index(tuple(rel_coords), (2 * window_size - 1,) * dim)
+        rel_position_index = ravel_multi_index(tuple(rel_coords), (2 * window_size - 1,) * n_dim)
         self.register_buffer('rel_position_index', rel_position_index)
 
-        self.relative_position_bias_table = torch.nn.Parameter(torch.empty((2 * window_size - 1) ** dim, n_heads))
+        self.relative_position_bias_table = torch.nn.Parameter(torch.empty((2 * window_size - 1) ** n_dim, n_heads))
         torch.nn.init.trunc_normal_(self.relative_position_bias_table, std=0.02, a=-0.04, b=0.04)
 
     def __call__(self, x: torch.Tensor) -> torch.Tensor:
@@ -98,6 +104,3 @@ class ShiftedWindowAttention(Module):
             attention = torch.roll(attention, (self.window_size // 2,) * self.dim, dims=tuple(range(-self.dim, 0)))
         out = self.to_out(attention)
         return out
-
-
-''

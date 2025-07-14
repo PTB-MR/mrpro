@@ -10,12 +10,12 @@ from mrpro.utils.reshape import unsqueeze_at, unsqueeze_right
 class LayerNorm(CondMixin, Module):
     """Layer normalization."""
 
-    def __init__(self, channels: int | None, features_last: bool = False, cond_dim: int = 0) -> None:
+    def __init__(self, n_channels: int | None, features_last: bool = False, cond_dim: int = 0) -> None:
         """Initialize the layer normalization.
 
         Parameters
         ----------
-        channels
+        n_channels
             Number of channels in the input tensor. If `None`, the layer normalization does not do an elementwise
             affine transformation.
         features_last
@@ -24,20 +24,20 @@ class LayerNorm(CondMixin, Module):
             Number of channels in the conditioning tensor. If `0`, no adaptive scaling is applied.
         """
         super().__init__()
-        if channels is None and cond_dim == 0:
+        if n_channels is None and cond_dim == 0:
             self.weight: Parameter | None = None
             self.bias: Parameter | None = None
             self.cond_proj: Linear | None = None
-        elif channels is None and cond_dim > 0:
+        elif n_channels is None and cond_dim > 0:
             raise ValueError('channels must be provided if cond_dim > 0')
-        elif channels is not None and cond_dim == 0:
-            self.weight = Parameter(torch.ones(channels))
-            self.bias = Parameter(torch.zeros(channels))
+        elif n_channels is not None and cond_dim == 0:
+            self.weight = Parameter(torch.ones(n_channels))
+            self.bias = Parameter(torch.zeros(n_channels))
             self.cond_proj = None
-        elif channels is not None:
+        elif n_channels is not None:
             self.weight = None
             self.bias = None
-            self.cond_proj = Linear(cond_dim, 2 * channels)
+            self.cond_proj = Linear(cond_dim, 2 * n_channels)
         else:
             raise ValueError('cond_dim must be zero or positive.')
 

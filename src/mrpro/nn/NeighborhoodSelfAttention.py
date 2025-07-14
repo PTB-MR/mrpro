@@ -119,8 +119,8 @@ class NeighborhoodSelfAttention(Module):
 
     def __init__(
         self,
-        channels_in: int,
-        channels_out: int,
+        n_channels_in: int,
+        n_channels_out: int,
         n_heads: int,
         kernel_size: int | Sequence[int],
         dilation: int | Sequence[int] = 1,
@@ -134,9 +134,9 @@ class NeighborhoodSelfAttention(Module):
 
         Parameters
         ----------
-        channels_in
+        n_channels_in
             The number of channels in the input tensor.
-        channels_out
+        n_channels_out
             The number of channels in the output tensor.
         n_heads
             The number of attention heads.
@@ -156,9 +156,9 @@ class NeighborhoodSelfAttention(Module):
         self.dilation = dilation if isinstance(dilation, int) else tuple(dilation)
         self.circular = circular if isinstance(circular, bool) else tuple(circular)
         self.features_last = features_last
-        channels_per_head = channels_in // n_heads
-        self.to_qkv = Linear(channels_in, 3 * channels_per_head * n_heads)
-        self.to_out = Linear(channels_per_head * n_heads, channels_out)
+        channels_per_head = n_channels_in // n_heads
+        self.to_qkv = Linear(n_channels_in, 3 * channels_per_head * n_heads)
+        self.to_out = Linear(channels_per_head * n_heads, n_channels_out)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Apply neighborhood attention to the input tensor.

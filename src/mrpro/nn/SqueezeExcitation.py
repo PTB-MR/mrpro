@@ -17,24 +17,24 @@ class SqueezeExcitation(Module):
     ..[SE] Hu, Jie, Li Shen, and Gang Sun. "Squeeze-and-excitation networks." CVPR 2018, https://arxiv.org/abs/1709.01507
     """
 
-    def __init__(self, dim: int, input_channels: int, squeeze_channels: int) -> None:
+    def __init__(self, n_dim: int, n_channels_input: int, n_channels_squeeze: int) -> None:
         """Initialize SqueezeExcitation.
 
         Parameters
         ----------
-        dim
+        n_dim
             The dimension of the input tensor.
-        input_channels
+        n_channels_input
             The number of channels in the input tensor.
-        squeeze_channels
+        n_channels_squeeze
             The number of channels in the squeeze tensor.
         """
         super().__init__()
         self.scale = Sequential(
-            AdaptiveAvgPoolND(dim)(1),
-            ConvND(dim)(input_channels, squeeze_channels, kernel_size=1),
+            AdaptiveAvgPoolND(n_dim)(1),
+            ConvND(n_dim)(n_channels_input, n_channels_squeeze, kernel_size=1),
             ReLU(),
-            ConvND(dim)(squeeze_channels, input_channels, kernel_size=1),
+            ConvND(n_dim)(n_channels_squeeze, n_channels_input, kernel_size=1),
             Sigmoid(),
         )
 

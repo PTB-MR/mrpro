@@ -19,16 +19,16 @@ class TransposedAttention(Module):
        CVPR 2022, https://arxiv.org/pdf/2111.09881.pdf
     """
 
-    def __init__(self, dim: int, channels_in: int, channels_out: int, n_heads: int):
+    def __init__(self, n_dim: int, n_channels_in: int, n_channels_out: int, n_heads: int):
         """Initialize a TransposedAttention layer.
 
         Parameters
         ----------
-        dim
+        n_dim
             input dimension
-        channels_in
+        n_channels_in
             Number of channels in the input tensor.
-        channels_out
+        n_channels_out
             Number of channels in the output tensor.
         n_heads
             Number of attention heads.
@@ -36,17 +36,17 @@ class TransposedAttention(Module):
         super().__init__()
         self.n_heads = n_heads
         self.temperature = Parameter(torch.ones(n_heads, 1, 1))
-        channels_per_head = channels_in // n_heads
-        self.to_qkv = ConvND(dim)(channels_in, channels_per_head * n_heads * 3, kernel_size=1)
-        self.qkv_dwconv = ConvND(dim)(
+        channels_per_head = n_channels_in // n_heads
+        self.to_qkv = ConvND(n_dim)(n_channels_in, channels_per_head * n_heads * 3, kernel_size=1)
+        self.qkv_dwconv = ConvND(n_dim)(
             channels_per_head * n_heads * 3,
             channels_per_head * n_heads * 3,
             kernel_size=3,
-            groups=channels_in * 3,
+            groups=n_channels_in * 3,
             padding=1,
             bias=False,
         )
-        self.to_out = ConvND(dim)(channels_per_head * n_heads, channels_out, kernel_size=1)
+        self.to_out = ConvND(n_dim)(channels_per_head * n_heads, n_channels_out, kernel_size=1)
 
     def __call__(self, x: torch.Tensor) -> torch.Tensor:
         """Apply transposed attention.

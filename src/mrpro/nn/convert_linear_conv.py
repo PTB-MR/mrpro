@@ -9,22 +9,22 @@ from mrpro.nn.ndmodules import ConvND
 
 
 @overload
-def linear_to_conv(linear_layer: Linear, dim: Literal[1]) -> Conv1d: ...
+def linear_to_conv(linear_layer: Linear, n_dim: Literal[1]) -> Conv1d: ...
 
 
 @overload
-def linear_to_conv(linear_layer: Linear, dim: Literal[2]) -> Conv2d: ...
+def linear_to_conv(linear_layer: Linear, n_dim: Literal[2]) -> Conv2d: ...
 
 
 @overload
-def linear_to_conv(linear_layer: Linear, dim: Literal[3]) -> Conv3d: ...
+def linear_to_conv(linear_layer: Linear, n_dim: Literal[3]) -> Conv3d: ...
 
 
 @overload
-def linear_to_conv(linear_layer: Linear, dim: int) -> Conv1d | Conv2d | Conv3d: ...
+def linear_to_conv(linear_layer: Linear, n_dim: int) -> Conv1d | Conv2d | Conv3d: ...
 
 
-def linear_to_conv(linear_layer: Linear, dim: int) -> Conv1d | Conv2d | Conv3d:
+def linear_to_conv(linear_layer: Linear, n_dim: int) -> Conv1d | Conv2d | Conv3d:
     """Convert a Linear layer to a ConvNd layer with kernel size 1.
 
     Rearranging the spatial dimensions to the batch dimension,
@@ -39,16 +39,16 @@ def linear_to_conv(linear_layer: Linear, dim: int) -> Conv1d | Conv2d | Conv3d:
 
     Parameters
     ----------
-    linear_layer : nn.Linear
+    linear_layer
         The linear layer to convert.
-    dim : int
+    n_dim
         The convolution dimension (1, 2, or 3).
 
     Returns
     -------
         A Conv layer with equivalent weights and bias.
     """
-    conv = ConvND(dim)(
+    conv = ConvND(n_dim)(
         in_channels=linear_layer.in_features,
         out_channels=linear_layer.out_features,
         kernel_size=1,

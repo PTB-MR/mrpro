@@ -25,7 +25,7 @@ def test_attention_gate(dim, channels_gate, channels_in, channels_hidden, input_
     x = rng.float32_tensor(input_shape).to(device).requires_grad_(True)
     gate = rng.float32_tensor(gate_shape).to(device).requires_grad_(True)
     attn = AttentionGate(
-        dim=dim, channels_gate=channels_gate, channels_in=channels_in, channels_hidden=channels_hidden
+        n_dim=dim, channels_gate=channels_gate, channels_in=channels_in, channels_hidden=channels_hidden
     ).to(device)
     output = attn(x, gate)
     assert output.shape == x.shape, f'Output shape {output.shape} != input shape {x.shape}'

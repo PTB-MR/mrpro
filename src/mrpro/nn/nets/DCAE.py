@@ -93,9 +93,9 @@ class EfficientViTBlock(Module):
             attention = MultiHeadAttention(channels, channels, n_heads, features_last=False)
         self.context_module = Residual(Sequential(attention, RMSNorm(channels)))
         self.local_module = GluMBConvResBlock(
-            dim=dim,
-            channels_in=channels,
-            channels_out=channels,
+            n_dim=dim,
+            n_channels_in=channels,
+            n_channels_out=channels,
             expand_ratio=expand_ratio,
         )
 

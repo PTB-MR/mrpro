@@ -65,9 +65,9 @@ class BasicCNN(Sequential):
             elif norm.lower() == 'group':
                 self.append(GroupNorm(c_in, affine=not use_film))
             elif norm.lower() == 'instance':
-                self.append(GroupNorm(c_in, groups=c_in, affine=not use_film))  # is instance norm
+                self.append(GroupNorm(c_in, n_groups=c_in, affine=not use_film))  # is instance norm
             elif norm.lower() == 'layer':
-                self.append(GroupNorm(c_in, groups=1, affine=not use_film))  # is layer norm
+                self.append(GroupNorm(c_in, n_groups=1, affine=not use_film))  # is layer norm
             elif norm.lower() != 'none':
                 raise ValueError(f'Invalid normalization type: {norm}')
 

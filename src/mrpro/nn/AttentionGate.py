@@ -17,12 +17,14 @@ class AttentionGate(Module):
       https://arxiv.org/abs/1804.03999
     """
 
-    def __init__(self, dim: int, channels_gate: int, channels_in: int, channels_hidden: int, concatenate: bool = False):
+    def __init__(
+        self, n_dim: int, channels_gate: int, channels_in: int, channels_hidden: int, concatenate: bool = False
+    ):
         """Initialize the attention gate.
 
         Parameters
         ----------
-        dim
+        n_dim
             The dimension, i.e. 1, 2 or 3.
         channels_gate
             The number of channels in the gate tensor.
@@ -34,11 +36,11 @@ class AttentionGate(Module):
             Whether to concatenate the gated signal with the gate signal in the channel dimension (1)
         """
         super().__init__()
-        self.project_gate = ConvND(dim)(channels_gate, channels_hidden, kernel_size=1)
-        self.project_x = ConvND(dim)(channels_in, channels_hidden, kernel_size=1)
+        self.project_gate = ConvND(n_dim)(channels_gate, channels_hidden, kernel_size=1)
+        self.project_x = ConvND(n_dim)(channels_in, channels_hidden, kernel_size=1)
         self.psi = Sequential(
             ReLU(),
-            ConvND(dim)(channels_hidden, 1, kernel_size=1),
+            ConvND(n_dim)(channels_hidden, 1, kernel_size=1),
             Sigmoid(),
         )
         self.concatenate = concatenate

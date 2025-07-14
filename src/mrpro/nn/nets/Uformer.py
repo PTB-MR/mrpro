@@ -59,9 +59,9 @@ class LeWinTransformerBlock(CondMixin, Module):
         hidden_dim = int(channels * mlp_ratio)
         self.norm1 = InstanceNormND(dim)(channels)
         self.attn = ShiftedWindowAttention(
-            dim=dim,
-            channels_in=channels,
-            channels_out=channels,
+            n_dim=dim,
+            n_channels_in=channels,
+            n_channels_out=channels,
             n_heads=n_heads,
             window_size=window_size,
             shifted=shifted,

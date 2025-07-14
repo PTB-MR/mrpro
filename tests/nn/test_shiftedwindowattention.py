@@ -25,7 +25,12 @@ def test_shifted_window_attentio(dim: int, window_size: int, shifted: bool, devi
     rng = RandomGenerator(13)
     x = rng.float32_tensor((batch, channels, *spatial_shape)).to(device).requires_grad_(True)
     swin = ShiftedWindowAttention(
-        dim=dim, channels_in=channels, channels_out=channels, n_heads=n_heads, window_size=window_size, shifted=shifted
+        n_dim=dim,
+        n_channels_in=channels,
+        n_channels_out=channels,
+        n_heads=n_heads,
+        window_size=window_size,
+        shifted=shifted,
     ).to(device)
     out = swin(x)
     assert out.shape == x.shape, f'Output shape {out.shape} != input shape {x.shape}'

@@ -57,8 +57,8 @@ class BasicTransformerBlock(CondMixin, Module):
         self.selfattention = Sequential(
             LayerNorm(channels, features_last=True),
             MultiHeadAttention(
-                channels_in=channels,
-                channels_out=channels,
+                n_channels_in=channels,
+                n_channels_out=channels,
                 n_heads=n_heads,
                 p_dropout=p_dropout,
                 features_last=True,

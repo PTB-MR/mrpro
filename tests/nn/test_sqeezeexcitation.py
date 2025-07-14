@@ -16,7 +16,7 @@ def test_squeeze_excitation(dim, input_shape, squeeze_channels):
     """Test SqueezeExcitation output shape and backpropagation."""
     rng = RandomGenerator(seed=42)
     x = rng.float32_tensor(input_shape).requires_grad_(True)
-    se = SqueezeExcitation(dim=dim, input_channels=input_shape[1], squeeze_channels=squeeze_channels)
+    se = SqueezeExcitation(n_dim=dim, n_channels_input=input_shape[1], n_channels_squeeze=squeeze_channels)
     output = se(x)
     assert output.shape == x.shape, f'Output shape {output.shape} != input shape {x.shape}'
     output.sum().backward()

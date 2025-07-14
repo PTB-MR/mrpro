@@ -14,22 +14,20 @@ class MultiHeadAttention(Module):
 
     def __init__(
         self,
-        channels_in: int,
-        channels_out: int,
+        n_channels_in: int,
+        n_channels_out: int,
         n_heads: int,
         features_last: bool = False,
         p_dropout: float = 0.0,
-        channels_cross: int | None = None,
+        n_channels_cross: int | None = None,
     ):
         """Initialize the Multi-head Attention.
 
         Parameters
         ----------
-        dim
-            Number of spatial dimensions.
-        channels_in
+        n_channels_in
             Number of input channels.
-        channels_out
+        n_channels_out
             Number of output channels.
         n_heads
             number of attention heads
@@ -38,17 +36,17 @@ class MultiHeadAttention(Module):
             or the second dimension, as common in image models.
         p_dropout
             Dropout probability.
-        channels_cross
-            Number of channels for cross-attention. If `None`, use `channels_in`.
+        n_channels_cross
+            Number of channels for cross-attention. If `None`, use `n_channels_in`.
         """
         super().__init__()
-        channels_per_head_q = channels_in // n_heads
-        channels_per_head_kv = channels_cross // n_heads if channels_cross is not None else channels_in // n_heads
-        self.to_q = Linear(channels_in, channels_per_head_q * n_heads)
-        self.to_kv = Linear(channels_in, channels_per_head_kv * n_heads * 2)
+        channels_per_head_q = n_channels_in // n_heads
+        channels_per_head_kv = n_channels_cross // n_heads if n_channels_cross is not None else n_channels_in // n_heads
+        self.to_q = Linear(n_channels_in, channels_per_head_q * n_heads)
+        self.to_kv = Linear(n_channels_in, channels_per_head_kv * n_heads * 2)
         self.p_dropout = p_dropout
         self.features_last = features_last
-        self.to_out = Linear(channels_in, channels_out)
+        self.to_out = Linear(n_channels_in, n_channels_out)
         self.n_heads = n_heads
 
     def __call__(self, x: torch.Tensor, cross_attention: torch.Tensor | None = None) -> torch.Tensor:

@@ -23,7 +23,7 @@ def test_groupnorm32(channels, groups, input_shape, device):
     """Test GroupNorm32 output shape and backpropagation."""
     rng = RandomGenerator(seed=42)
     x = rng.float32_tensor(input_shape).to(device).requires_grad_(True)
-    norm = GroupNorm(channels=channels, groups=groups).to(device)
+    norm = GroupNorm(n_channels=channels, n_groups=groups).to(device)
     output = norm(x)
     assert output.shape == x.shape, f'Output shape {output.shape} != input shape {x.shape}'
     output.sum().backward()

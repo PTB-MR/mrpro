@@ -20,9 +20,9 @@ class ComplexAsChannel(CondMixin, Module):
 
         Parameters
         ----------
-        module : Module
+        module
             The module to wrap. Should output a single real tensor.
-        convert_back : bool
+        convert_back
             If True, the output is converted back to a complex tensor.
             The output should have a number of channels that is a multiple of 2.
         """
@@ -35,9 +35,9 @@ class ComplexAsChannel(CondMixin, Module):
 
         Parameters
         ----------
-        x : torch.Tensor
+        x
             The input tensor.
-        cond : torch.Tensor | None
+        cond
             The conditioning tensor (if used by the wrapped module)
         """
         return super().__call__(*x, cond=cond)

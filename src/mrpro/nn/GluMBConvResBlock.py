@@ -12,7 +12,7 @@ from mrpro.nn.RMSNorm import RMSNorm
 class GluMBConvResBlock(CondMixin, Module):
     """Gated MBConv residual block.
 
-    Gated variant [DCAE]_ of the MBConv block [EffNet]_ with a residual connection.
+    Gated variant [DCAE]_ of the MBConv block [EffNet]_ with a residual connection and (optional) conditioning.
 
     References
     ----------
@@ -24,9 +24,9 @@ class GluMBConvResBlock(CondMixin, Module):
 
     def __init__(
         self,
-        dim: int,
-        channels_in: int,
-        channels_out: int,
+        n_dim: int,
+        n_channels_in: int,
+        n_channels_out: int,
         expand_ratio: int = 6,
         stride: int = 1,
         kernel_size: int = 3,
@@ -36,7 +36,7 @@ class GluMBConvResBlock(CondMixin, Module):
 
         Parameters
         ----------
-        dim
+        n_dim
             Number of spatial dimensions.
         channels_in
             Number of input channels.
@@ -52,21 +52,21 @@ class GluMBConvResBlock(CondMixin, Module):
             Dimension of the conditioning tensor used in a FiLM. If 0, no FiLM is used.
         """
         super().__init__()
-        channels_mid = channels_in * expand_ratio
-        if stride == 1 and channels_in == channels_out:
+        channels_mid = n_channels_in * expand_ratio
+        if stride == 1 and n_channels_in == n_channels_out:
             self.skip: Module = Identity()
         else:
-            self.skip = ConvND(dim)(channels_in, channels_out, kernel_size=1, stride=stride)
+            self.skip = ConvND(n_dim)(n_channels_in, n_channels_out, kernel_size=1, stride=stride)
         self.inverted_conv = Sequential(
-            ConvND(dim)(
-                channels_in,
+            ConvND(n_dim)(
+                n_channels_in,
                 channels_mid * 2,
                 kernel_size=1,
             ),
             SiLU(),
         )
         self.depth_conv = Sequential(
-            ConvND(dim)(
+            ConvND(n_dim)(
                 channels_mid * 2,
                 channels_mid * 2,
                 kernel_size=kernel_size,
@@ -77,12 +77,12 @@ class GluMBConvResBlock(CondMixin, Module):
             SiLU(),
         )
         self.point_conv = Sequential(
-            ConvND(dim)(
+            ConvND(n_dim)(
                 channels_mid,
-                channels_out,
+                n_channels_out,
                 kernel_size=1,
             ),
-            RMSNorm(channels_out),
+            RMSNorm(n_channels_out),
             SiLU(),
         )
         if cond_dim > 0:
@@ -98,7 +98,7 @@ class GluMBConvResBlock(CondMixin, Module):
         x
             Input tensor.
         cond
-            Conditioning tensor. If None, no conditioning is applied.
+            Conditioning tensor. If `None`, no conditioning is applied.
 
         Returns
         -------
