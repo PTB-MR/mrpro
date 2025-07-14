@@ -1,4 +1,4 @@
-torch==2.3.1+cpu
+torch==2.5.0+cpu
 torchvision==0.18.1+cpu
 numpy==1.23
 ismrmrd==1.14.1
