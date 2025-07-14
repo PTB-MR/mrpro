@@ -154,11 +154,11 @@ class UNetBase(Module):
         self.skip_blocks = ModuleList()
         """Modifications of the skip connections."""
 
-        # if len(decoder) != len(encoder):
-        #    raise ValueError(
-        #        'The number of resolutions in the encoder and decoder must be the same, '
-        #        f'got {len(decoder)} and {len(encoder)}'
-        #    )
+        if len(decoder) != len(encoder):
+            raise ValueError(
+                'The number of resolutions in the encoder and decoder must be the same, '
+                f'got {len(decoder)} and {len(encoder)}'
+            )
 
         if skip_blocks is None:
             self.skip_blocks.extend(Identity() for _ in range(len(decoder)))
@@ -241,17 +241,21 @@ class UNet(UNetBase):
     """UNet.
 
     U-shaped convolutional network with optional patch attention.
-    Inspired by the OpenAi DDPM UNet/Latent Diffusion UNet [LDM]_,
+    Inspired by [NOSENSE_] and the OpenAi DDPM UNet/Latent Diffusion UNet [LDM]_.
     significant differences to the vanilla UNet [UNET]_ include:
        - Spatial transformer blocks
        - Convolutional downsampling, nearest neighbor upsampling
        - Residual convolution blocks with pre-act group normalization and SiLU activation
+
 
     References
     ----------
     .. [UNET] Ronneberger, Olaf, Philipp Fischer, and Thomas Brox. "U-net: Convolutional networks for biomedical image
        segmentation MICCAI 2015. https://arxiv.org/abs/1505.04597
     .. [LDM] https://github.com/CompVis/stable-diffusion/blob/main/ldm/modules/diffusionmodules/openaimodel.py
+    .. [NOSENSE] Zimmermann, FF, and Kofler, Andreas. "NoSENSE: Learned unrolled cardiac MRI reconstruction without
+        explicit sensitivity maps." STACOM 2023. https://github.com/fzimmermann89/CMRxRecon/blob/master/src/cmrxrecon/nets/unet.py
+
     """
 
     def __init__(

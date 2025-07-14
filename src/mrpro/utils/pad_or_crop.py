@@ -76,8 +76,18 @@ def pad_or_crop(
         diff = new - old
         after = math.trunc(diff / 2)
         before = diff - after
-        npad.append(before)
-        npad.append(after)
+        if before != 0 or after != 0:
+            npad.append(before)
+            npad.append(after)
+
+    if mode != 'constant':
+        while len(npad) // 2 < data.ndim - 2:
+            npad = [0, 0, *npad]
+        if len(npad) // 2 > data.ndim - 2:
+            raise ValueError(
+                'replicate and circular padding are only supported for up to the last 3 dimensions of 4D/5D data, '
+                'last 2 dimensions of 3D/4D data and last dimension of 2D/3D data.'
+            )
 
     if any(npad):
         # F.pad expects paddings in reversed order

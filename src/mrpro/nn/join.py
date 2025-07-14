@@ -12,7 +12,7 @@ from mrpro.utils.pad_or_crop import pad_or_crop
 
 def _fix_shapes(
     xs: Sequence[torch.Tensor],
-    mode: Literal['fail', 'crop', 'zero', 'replicate', 'circular', 'linear', 'nearest'],
+    mode: str,
     dim: Sequence[int],
 ) -> tuple[torch.Tensor, ...]:
     """Fix shapes of input tensors by padding or cropping."""
@@ -29,7 +29,7 @@ def _fix_shapes(
     if mode == 'zero' or mode == 'crop':
         return tuple(pad_or_crop(x, target, dim=dim, mode='constant', value=0.0) for x in xs)
     else:
-        return tuple(pad_or_crop(x, target, dim=dim, mode=mode) for x in xs)
+        return tuple(pad_or_crop(x, target, dim=dim, mode=mode) for x in xs)  # type: ignore
 
 
 class Concat(Module):
@@ -55,7 +55,7 @@ class Concat(Module):
             Dimension along which to concatenate.
         """
         super().__init__()
-        modes = {'fail', 'crop', 'zero', 'replicate', 'circular', 'interpolate'}
+        modes = {'fail', 'crop', 'zero', 'replicate', 'circular', 'linear', 'nearest'}
         if mode not in modes:
             raise ValueError(f'mode must be one of {modes}')
         self.mode = mode

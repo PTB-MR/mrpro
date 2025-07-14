@@ -19,6 +19,7 @@ from mrpro.nn.Sequential import Sequential
 from mrpro.nn.ShiftedWindowAttention import ShiftedWindowAttention
 from mrpro.nn.SqueezeExcitation import SqueezeExcitation
 from mrpro.nn.TransposedAttention import TransposedAttention
+from mrpro.nn.LinearSelfAttention import LinearSelfAttention
 from mrpro.nn.DropPath import DropPath
 from mrpro.nn.Residual import Residual
 from mrpro.nn.ComplexAsChannel import ComplexAsChannel
@@ -39,6 +40,7 @@ __all__ = [
     "FiLM",
     "GroupNorm",
     "InstanceNormND",
+    "LinearSelfAttention",
     "MaxPoolND",
     "NeighborhoodSelfAttention",
     "PermutedBlock",
