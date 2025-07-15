@@ -14,7 +14,7 @@ ${APT_GET_INSTALL} git software-properties-common gpg-agent curl jq build-essent
 add-apt-repository ppa:deadsnakes/ppa
 apt update -qq
 
-${APT_GET_INSTALL} $PYTHON-dev
+${APT_GET_INSTALL} $PYTHON-dev $PYTHON-full
 
 # pip
 if [[ "$PYTHON" == "python3.10" ]]; then
