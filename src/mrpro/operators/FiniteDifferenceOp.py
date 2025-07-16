@@ -62,17 +62,31 @@ class FiniteDifferenceOp(LinearOperator):
         self.pad_mode: Literal['constant', 'circular'] = 'constant' if pad_mode == 'zeros' else pad_mode
         self.kernel = self.finite_difference_kernel(mode)
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Forward of finite differences.
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply forward finite difference operation.
+
+        Calculates finite differences of the input tensor `x` along the dimensions
+        specified during initialization. The results for each dimension are stacked
+        along the first dimension of the output tensor.
 
         Parameters
         ----------
         x
-            Input tensor
+            Input tensor.
 
         Returns
         -------
-            Finite differences of x along dim stacked along first dimension
+            Tensor containing the finite differences of `x` along the specified
+            dimensions, stacked along the first dimension.
+        """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply forward of FiniteDifferenceOp.
+
+        .. note::
+            Prefer calling the instance of the FiniteDifferenceOp operator as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         return (
             torch.stack(
@@ -84,22 +98,29 @@ class FiniteDifferenceOp(LinearOperator):
         )
 
     def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Adjoing of finite differences.
+        """Apply adjoint finite difference operation.
+
+        This operation is the adjoint of the forward finite difference calculation.
+        It takes a tensor `y` (which is assumed to be the output of the forward pass,
+        i.e., finite differences stacked along the first dimension) and computes
+        the sum of the adjoints of the individual directional finite difference operations.
 
         Parameters
         ----------
         y
-            Finite differences stacked along first dimension
+            Input tensor, representing finite differences stacked along the first dimension.
+            The size of the first dimension must match the number of dimensions
+            specified for the operator.
 
         Returns
         -------
-            Adjoint finite differences
+            Result of the adjoint finite difference operation.
 
         Raises
         ------
-        `ValueError`
-            If the first dimension of y is to the same as the number of dimensions along which the finite differences
-            are calculated
+        ValueError
+            If the first dimension of `y` does not match the number of
+            dimensions along which finite differences were calculated.
         """
         if y.shape[0] != len(self.dim):
             raise ValueError('Fist dimension of input tensor has to match the number of finite difference directions.')
