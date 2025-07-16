@@ -12,6 +12,7 @@ from einops import repeat
 from mrpro.data import Rotation, SpatialDimension
 from mrpro.phantoms import EllipsePhantom
 from mrpro.utils.unit_conversion import s_to_ms
+from pydicom.dataset import set_pixel_data
 
 
 class DicomTestImage:
@@ -85,8 +86,8 @@ class DicomTestImage:
         img_dimension = SpatialDimension(z=1, y=matrix_size_y, x=matrix_size_x)
         self.img_ref = torch.abs(self.phantom.image_space(img_dimension))
         self.img_ref = self.img_ref[0, 0, 0, ...]  # we can only store a 2D or 3D image in the dicom here
-        self.img_ref /= torch.max(self.img_ref) * 2  # *2 to make sure we are well within uint16 range later on
-        self.img_ref = torch.round(self.img_ref * 2**16)
+        self.img_ref /= torch.max(self.img_ref)
+        self.img_ref = torch.round(self.img_ref * (2**16 - 1))
 
         # Metadata
         file_meta = pydicom.dataset.FileMetaDataset()
@@ -108,20 +109,8 @@ class DicomTestImage:
         dataset.SeriesDescription = series_description
         dataset.SeriesInstanceUID = self.series_instance_uid
 
-        # When accessing the data using dataset.pixel_array pydicom will return an image with dimensions (rows columns).
-        # According to the dicom standard rows corresponds to the vertical dimension (i.e. y) and columns corresponds
-        # to the horizontal dimension (i.e. x)
-        dataset.Rows = self.img_ref.shape[0]
-        dataset.Columns = self.img_ref.shape[1]
-
         elem = pydicom.DataElement(0x00191015, 'FD', [1.0, 2.0, 3.0])
         dataset.add(elem)
-
-        dataset.BitsAllocated = 16
-        dataset.PixelRepresentation = 0  # uint
-        dataset.SamplesPerPixel = 1
-        dataset.PhotometricInterpretation = 'MONOCHROME2'
-        dataset.BitsStored = 16
 
         n_slices = len(self.slice_offset)
         readout_direction = np.asarray(self.slice_orientation[2].zyx[::-1])
@@ -133,13 +122,12 @@ class DicomTestImage:
         slice_thickness = 4
         # Patient position in dicom defines the pixel with index (0,0). Start in isocentre (0,0)
         patient_position = (
-            -readout_direction * inplane_resolution * dataset.Columns / 2
-            - phase_direction * inplane_resolution * dataset.Rows / 2
+            -readout_direction * inplane_resolution * self.img_ref.shape[-1] / 2
+            - phase_direction * inplane_resolution * self.img_ref.shape[-2] / 2
         )
 
         if n_slices > 1:
             dataset.MRAcquisitionType = '3D'
-            dataset.NumberOfFrames = n_slices
             dataset.PerFrameFunctionalGroupsSequence = pydicom.Sequence()
 
             plane_position_sequence = pydicom.Sequence()
@@ -182,7 +170,6 @@ class DicomTestImage:
 
         else:
             dataset.MRAcquisitionType = '2D'
-            dataset.NumberOfFrames = 1
 
             dataset.ImagePositionPatient = (patient_position + slice_direction * self.slice_offset.numpy()).tolist()
             dataset.ImageOrientationPatient = [*readout_direction, *phase_direction]
@@ -193,8 +180,12 @@ class DicomTestImage:
             dataset.FlipAngle = 15.0
             dataset.RepetitionTime = 25.2
 
-        dataset.PixelData = (
-            repeat(self.img_ref, 'x y -> slices x y', slices=n_slices).numpy().astype(np.uint16).tobytes()
+        # 'MONOCHROME2' means smallest value is black, largest value is white
+        set_pixel_data(
+            ds=dataset,
+            arr=repeat(self.img_ref, 'y x -> slices x y', slices=n_slices).numpy().astype(np.uint16),
+            photometric_interpretation='MONOCHROME2',
+            bits_stored=16,
         )
 
         # Save
