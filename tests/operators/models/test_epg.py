@@ -1,11 +1,74 @@
 """Tests for EPG signal models."""
 
+from collections.abc import Sequence
+from typing import Literal
+
 import pytest
 import torch
-from mrpro.operators.models.EPG import DelayBlock, EPGSequence, FispBlock, InversionBlock, Parameters, T2PrepBlock
+from mrpro.operators.models.EPG import (
+    AcquisitionBlock,
+    DelayBlock,
+    EPGSequence,
+    FispBlock,
+    GradientDephasingBlock,
+    InversionBlock,
+    Parameters,
+    RFBlock,
+    T2PrepBlock,
+    initial_state,
+)
 from mrpro.operators.SignalModel import SignalModel
 from mrpro.utils import RandomGenerator
 from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
+
+
+class BasicEpgModel(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]):
+    """An EPG model which covers all basic EPG blocks for testing.
+
+    A "basic block" is a block which carries out a single operation on the EPG states.
+    """
+
+    def __init__(
+        self,
+        n_states: int = 10,
+        device: Literal['cpu', 'cuda'] = 'cpu',
+    ):
+        super().__init__()
+        self.sequence = EPGSequence()
+        self.sequence.append(AcquisitionBlock())
+        self.sequence.append(DelayBlock(delay_time=torch.tensor(0.01, device=device)))
+        self.sequence.append(GradientDephasingBlock())
+        self.sequence.append(InversionBlock(inversion_time=torch.tensor(0.02, device=device)))
+        self.sequence.append(
+            RFBlock(flip_angle=torch.tensor(torch.pi, device=device), phase=torch.tensor(0, device=device))
+        )
+        self.sequence.append(T2PrepBlock(te=torch.tensor(0.1, device=device)))
+        self.n_states = n_states
+
+    def forward(
+        self, m0: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor, b1_relative: torch.Tensor
+    ) -> tuple[torch.Tensor]:
+        """Simulate the signal.
+
+        Parameters
+        ----------
+        m0
+            Steady state magnetization (complex)
+        t1
+            longitudinal relaxation time T1
+        t2
+            transversal relaxation time T2
+        b1_relative
+            relative B1 scaling (complex)
+
+        Returns
+        -------
+            Signal of sequence.
+        """
+        parameters = Parameters(m0, t1, t2, b1_relative)
+        _, signals = self.sequence(parameters, states=self.n_states)
+        signal = torch.stack(list(signals), dim=0)
+        return (signal,)
 
 
 class EpgFispModel(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]):
@@ -51,11 +114,40 @@ class EpgFispModel(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.T
         return (signal,)
 
 
-def test_EpgFisp_not_enough_states() -> None:
+@pytest.mark.cuda
+def test_BasicEpgModel_cuda(parameter_shape: Sequence[int] = (2,)) -> None:
+    """Test basic EPG blocks work on cuda devices."""
+    rng = RandomGenerator(8)
+    t1 = rng.float32_tensor(parameter_shape, low=1e-5, high=5)
+    t2 = rng.float32_tensor(parameter_shape, low=1e-5, high=0.5)
+    m0 = rng.complex64_tensor(parameter_shape)
+    relative_b1 = rng.complex64_tensor(parameter_shape)
+
+    # Create on CPU, transfer to GPU and run on GPU
+    model = BasicEpgModel()
+    model.cuda()
+    (signal,) = model(m0.cuda(), t1.cuda(), t2.cuda(), relative_b1.cuda())
+    assert signal.is_cuda
+    assert signal.isfinite().all()
+
+    # Create on GPU and run on GPU
+    model = BasicEpgModel(device='cuda')
+    (signal,) = model(m0.cuda(), t1.cuda(), t2.cuda(), relative_b1.cuda())
+    assert signal.is_cuda
+    assert signal.isfinite().all()
+
+    # Create on GPU, transfer to CPU and run on CPU
+    model = BasicEpgModel(device='cuda')
+    model.cpu()
+    (signal,) = model(m0, t1, t2, relative_b1)
+    assert signal.is_cpu
+    assert signal.isfinite().all()
+
+
+def test_initial_state_not_enough_states() -> None:
     """Verify error for less than 2 states."""
-    epg_model = EpgFispModel(n_states=1)
     with pytest.raises(ValueError, match='Number of states should be at least 2'):
-        epg_model(torch.ones((1,)), torch.ones((1,)), torch.ones((1,)), torch.ones((1,)))
+        initial_state(shape=(1, 2), n_states=1)
 
 
 def test_EpgFisp_parameter_broadcasting() -> None:
@@ -76,6 +168,20 @@ def test_EpgFisp_parameter_mismatch() -> None:
         EpgFispModel(flip_angles=flip_angles, rf_phases=rf_phases, te=te, tr=tr)
 
 
+def test_EpgFisp_tr_te() -> None:
+    """Verify error for tr shorter than te."""
+    flip_angles = rf_phases = tr = torch.ones((1, 2))
+    with pytest.raises(ValueError, match='should be smaller than repetition time'):
+        EpgFispModel(flip_angles=flip_angles, rf_phases=rf_phases, te=tr * 2, tr=tr)
+
+
+def test_EpgFisp_neg_te() -> None:
+    """Verify error for negative te."""
+    flip_angles = rf_phases = tr = torch.ones((1, 2))
+    with pytest.raises(ValueError, match='Negative echo time'):
+        EpgFispModel(flip_angles=flip_angles, rf_phases=rf_phases, te=-tr, tr=tr)
+
+
 @SHAPE_VARIATIONS_SIGNAL_MODELS
 def test_EpgFisp_shape(parameter_shape, contrast_dim_shape, signal_shape) -> None:
     """Test correct signal shapes."""
@@ -92,6 +198,40 @@ def test_EpgFisp_shape(parameter_shape, contrast_dim_shape, signal_shape) -> Non
     model_op = EpgFispModel(flip_angles=flip_angles, rf_phases=rf_phases, te=te, tr=tr)
     (signal,) = model_op(m0, t1, t2, relative_b1)
     assert signal.shape == signal_shape
+
+
+@pytest.mark.cuda
+def test_EpgFisp_cuda(parameter_shape: Sequence[int] = (2,)) -> None:
+    """Test Fisp model works on cuda devices."""
+    rng = RandomGenerator(8)
+    flip_angles = rng.float32_tensor(9, low=1e-5, high=5)
+    rf_phases = rng.float32_tensor(9, low=1e-5, high=0.5)
+    te = rng.float32_tensor(9, low=1e-5, high=0.01)
+    tr = rng.float32_tensor(9, low=0.01, high=0.05)
+    t1 = rng.float32_tensor(parameter_shape, low=1e-5, high=5)
+    t2 = rng.float32_tensor(parameter_shape, low=1e-5, high=0.5)
+    m0 = rng.complex64_tensor(parameter_shape)
+    relative_b1 = rng.complex64_tensor(parameter_shape)
+
+    # Create on CPU, transfer to GPU and run on GPU
+    model = EpgFispModel(flip_angles, rf_phases, tr, te)
+    model.cuda()
+    (signal,) = model(m0.cuda(), t1.cuda(), t2.cuda(), relative_b1.cuda())
+    assert signal.is_cuda
+    assert signal.isfinite().all()
+
+    # Create on GPU and run on GPU
+    model = EpgFispModel(flip_angles.cuda(), rf_phases.cuda(), tr, te.cuda())
+    (signal,) = model(m0.cuda(), t1.cuda(), t2.cuda(), relative_b1.cuda())
+    assert signal.is_cuda
+    assert signal.isfinite().all()
+
+    # Create on GPU, transfer to CPU and run on CPU
+    model = EpgFispModel(flip_angles.cuda(), rf_phases.cuda(), tr.cuda(), te)
+    model.cpu()
+    (signal,) = model(m0, t1, t2, relative_b1)
+    assert signal.is_cpu
+    assert signal.isfinite().all()
 
 
 def test_EpgFisp_inversion_recovery() -> None:
