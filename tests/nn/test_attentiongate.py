@@ -3,7 +3,7 @@
 from collections.abc import Sequence
 
 import pytest
-from mrpro.nn.AttentionGate import AttentionGate
+from mrpro.nn.attention import AttentionGate
 from mrpro.utils import RandomGenerator
 
 

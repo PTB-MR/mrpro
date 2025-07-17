@@ -1,7 +1,7 @@
 """Tests for TransposedAttention module."""
 
 import pytest
-from mrpro.nn import TransposedAttention
+from mrpro.nn.attention.TransposedAttention import TransposedAttention
 from mrpro.utils import RandomGenerator
 
 

@@ -6,6 +6,7 @@ from itertools import pairwise
 import torch
 from torch.nn import Module
 
+from mrpro.nn.attention.TransposedAttention import TransposedAttention
 from mrpro.nn.CondMixin import CondMixin
 from mrpro.nn.FiLM import FiLM
 from mrpro.nn.join import Concat
@@ -13,7 +14,6 @@ from mrpro.nn.ndmodules import ConvND, InstanceNormND
 from mrpro.nn.nets.UNet import UNetBase, UNetDecoder, UNetEncoder
 from mrpro.nn.PixelShuffle import PixelShuffleUpsample, PixelUnshuffleDownsample
 from mrpro.nn.Sequential import Sequential
-from mrpro.nn.TransposedAttention import TransposedAttention
 
 
 class GDFN(Module):

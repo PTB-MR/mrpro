@@ -2,7 +2,7 @@
 
 import pytest
 import torch
-from mrpro.nn import NeighborhoodSelfAttention
+from mrpro.nn.attention.NeighborhoodSelfAttention import NeighborhoodSelfAttention
 from mrpro.utils import RandomGenerator
 
 

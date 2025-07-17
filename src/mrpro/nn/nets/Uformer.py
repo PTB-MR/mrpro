@@ -6,6 +6,7 @@ from itertools import pairwise
 import torch
 from torch.nn import GELU, LeakyReLU, Module
 
+from mrpro.nn.attention.ShiftedWindowAttention import ShiftedWindowAttention
 from mrpro.nn.CondMixin import CondMixin
 from mrpro.nn.DropPath import DropPath
 from mrpro.nn.FiLM import FiLM
@@ -13,7 +14,6 @@ from mrpro.nn.join import Concat
 from mrpro.nn.ndmodules import ConvND, ConvTransposeND, InstanceNormND
 from mrpro.nn.nets.UNet import UNetBase, UNetDecoder, UNetEncoder
 from mrpro.nn.Sequential import Sequential
-from mrpro.nn.ShiftedWindowAttention import ShiftedWindowAttention
 
 
 class LeWinTransformerBlock(CondMixin, Module):

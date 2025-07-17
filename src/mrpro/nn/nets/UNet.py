@@ -7,7 +7,8 @@ from itertools import pairwise
 import torch
 from torch.nn import Identity, Module, ModuleList, ReLU, SiLU
 
-from mrpro.nn.AttentionGate import AttentionGate
+from mrpro.nn.attention.AttentionGate import AttentionGate
+from mrpro.nn.attention.SpatialTransformerBlock import SpatialTransformerBlock
 from mrpro.nn.CondMixin import call_with_cond
 from mrpro.nn.FiLM import FiLM
 from mrpro.nn.GroupNorm import GroupNorm
@@ -17,7 +18,6 @@ from mrpro.nn.PermutedBlock import PermutedBlock
 from mrpro.nn.ResBlock import ResBlock
 from mrpro.nn.SeparableResBlock import SeparableResBlock  # Assuming SeparableResBlock is here
 from mrpro.nn.Sequential import Sequential
-from mrpro.nn.SpatialTransformerBlock import SpatialTransformerBlock
 from mrpro.nn.Upsample import Upsample
 
 

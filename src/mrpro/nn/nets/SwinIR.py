@@ -3,11 +3,11 @@
 import torch
 from torch.nn import GELU, Module
 
+from mrpro.nn.attention.ShiftedWindowAttention import ShiftedWindowAttention
 from mrpro.nn.DropPath import DropPath
 from mrpro.nn.FiLM import FiLM
 from mrpro.nn.ndmodules import ConvND, InstanceNormND
 from mrpro.nn.Sequential import Sequential
-from mrpro.nn.ShiftedWindowAttention import ShiftedWindowAttention
 
 
 class SwinTransformerLayer(Module):
