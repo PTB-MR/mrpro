@@ -63,13 +63,13 @@ class AbsolutePositionEncoding(Module):
 
     encoding: torch.Tensor
 
-    def __init__(self, dim: int, features: int, include_radii: bool = True, base_resolution: int = 128):
+    def __init__(self, n_dim: int, features: int, include_radii: bool = True, base_resolution: int = 128):
         """Initialize absolute position encoding layer.
 
         Parameters
         ----------
-        dim
-            Dimension of the input space (1, 2, or 3)
+        n_dim
+            Dimensions of the input space (1, 2, or 3)
         features
             Number of output features
         include_radii
@@ -79,19 +79,19 @@ class AbsolutePositionEncoding(Module):
         """
         super().__init__()
 
-        coords = [unsqueeze_right(torch.linspace(-1, 1, base_resolution), i) for i in range(dim)]
+        coords = [unsqueeze_right(torch.linspace(-1, 1, base_resolution), i) for i in range(n_dim)]
         if include_radii:
-            for n in range(2, dim + 1):
+            for n in range(2, n_dim + 1):
                 for combination in combinations(coords, n):
                     coords.append((2 * sum([c**2 for c in combination])) ** 0.5 - 1)
         n_freqs = ceil(features / len(coords) / 2)
-        freqs = unsqueeze_right((base_resolution) ** torch.linspace(0, 1, n_freqs), dim)
+        freqs = unsqueeze_right((base_resolution) ** torch.linspace(0, 1, n_freqs), n_dim)
         encoding = []
         for coord in coords:
-            encoding.append(torch.sin(coord * freqs).broadcast_to(1, -1, *((base_resolution,) * dim)))
-            encoding.append(torch.cos(coord * freqs).broadcast_to(1, -1, *((base_resolution,) * dim)))
+            encoding.append(torch.sin(coord * freqs).broadcast_to(1, -1, *((base_resolution,) * n_dim)))
+            encoding.append(torch.cos(coord * freqs).broadcast_to(1, -1, *((base_resolution,) * n_dim)))
         self.register_buffer('encoding', torch.cat(encoding, dim=1)[:, :features])
-        self.interpolation_mode = ['linear', 'bilinear', 'trilinear'][dim - 1]
+        self.interpolation_mode = ['linear', 'bilinear', 'trilinear'][n_dim - 1]
 
     def __call__(self, x: torch.Tensor) -> torch.Tensor:
         """

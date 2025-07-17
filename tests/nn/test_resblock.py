@@ -24,7 +24,7 @@ def test_resblock(dim, channels_in, channels_out, cond_dim, input_shape, cond_sh
     rng = RandomGenerator(seed=42)
     x = rng.float32_tensor(input_shape).to(device).requires_grad_(True)
     cond = rng.float32_tensor(cond_shape).to(device).requires_grad_(True) if cond_shape else None
-    res = ResBlock(dim=dim, channels_in=channels_in, channels_out=channels_out, cond_dim=cond_dim).to(device)
+    res = ResBlock(n_dim=dim, n_channels_in=channels_in, n_channels_out=channels_out, cond_dim=cond_dim).to(device)
     output = res(x, cond=cond)
     assert output.shape == (input_shape[0], channels_out, *input_shape[2:]), (
         f'Output shape {output.shape} != expected {(input_shape[0], channels_out, *input_shape[2:])}'

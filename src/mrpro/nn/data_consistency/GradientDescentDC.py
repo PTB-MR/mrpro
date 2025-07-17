@@ -1,3 +1,5 @@
+"""Gradient descent data consistency."""
+
 from typing import overload
 
 import torch
@@ -69,8 +71,8 @@ class GradientDescentDC(Module):
         data
             k-space data.
         acquisition_operator
-            Acquisition operator matching the k-space data. If None and data is provided as a `~mrpro.data.KData` object,
-            the Fourier operator is automatically created from the data.
+            Acquisition operator matching the k-space data. If None and data is provided as a `~mrpro.data.KData`
+            object, the Fourier operator is automatically created from the data.
 
         Returns
         -------

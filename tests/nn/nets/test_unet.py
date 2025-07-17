@@ -16,9 +16,9 @@ from mrpro.nn.nets import UNet
 def test_unet_forward(torch_compile: bool, device: str) -> None:
     """Test the forward pass of the UNet."""
     unet = UNet(
-        dim=2,
-        channels_in=1,
-        channels_out=1,
+        n_dim=2,
+        n_channels_in=1,
+        n_channels_out=1,
         attention_depths=(-1,),
         n_features=(4, 6, 8),
         n_heads=2,

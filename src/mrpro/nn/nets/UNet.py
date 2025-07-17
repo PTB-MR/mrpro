@@ -260,9 +260,9 @@ class UNet(UNetBase):
 
     def __init__(
         self,
-        dim: int,
-        channels_in: int,
-        channels_out: int,
+        n_dim: int,
+        n_channels_in: int,
+        n_channels_out: int,
         attention_depths: Sequence[int] = (-1,),
         n_features: Sequence[int] = (64, 128, 192, 256),
         n_heads: int = 8,
@@ -273,12 +273,12 @@ class UNet(UNetBase):
 
         Parameters
         ----------
-        dim
-            Spatial dimension of the input tensor.
-        channels_in
-            Number of channels in the input tensor.
-        channels_out
-            Number of channels in the output tensor.
+        n_dim
+            The number of spatial dimensions of the input tensor.
+        n_channels_in
+            The number of channels in the input tensor.
+        n_channels_out
+            The number of channels in the output tensor.
         attention_depths
             The depths at which to apply attention.
         n_features
@@ -300,42 +300,42 @@ class UNet(UNetBase):
             raise ValueError(f'attention_depths must be unique, got {attention_depths=}')
 
         def attention_block(channels: int) -> Module:
-            dim_groups = (tuple(range(-dim, 0)),)
+            dim_groups = (tuple(range(-n_dim, 0)),)
             return SpatialTransformerBlock(dim_groups, channels, n_heads, cond_dim=cond_dim)
 
         def blocks(channels_in: int, channels_out: int, attention: bool) -> Module:
             blocks = Sequential()
             for _ in range(encoder_blocks_per_scale):
-                blocks.append(ResBlock(dim, channels_in, channels_out, cond_dim))
+                blocks.append(ResBlock(n_dim, channels_in, channels_out, cond_dim))
                 if attention:
                     blocks.append(attention_block(channels_out))
                 channels_in = channels_out
             return blocks
 
-        encoder_blocks: list[Module] = [ConvND(dim)(channels_in, n_features[0], 3, padding=1)]
+        encoder_blocks: list[Module] = [ConvND(n_dim)(n_channels_in, n_features[0], 3, padding=1)]
         down_blocks: list[Module] = [Identity()]
         decoder_blocks: list[Module] = []
         up_blocks: list[Module] = []
 
         for i_level, (n_feat, n_feat_next) in enumerate(pairwise(n_features)):
             encoder_blocks.append(blocks(n_feat, n_feat, i_level in attention_depths))
-            down_blocks.append(ConvND(dim)(n_feat, n_feat_next, 3, stride=2, padding=1))
+            down_blocks.append(ConvND(n_dim)(n_feat, n_feat_next, 3, stride=2, padding=1))
             decoder_blocks.append(blocks(n_feat_next + n_feat, n_feat, i_level in attention_depths))
-            up_blocks.append(Upsample(tuple(range(-dim, 0)), scale_factor=2))
+            up_blocks.append(Upsample(tuple(range(-n_dim, 0)), scale_factor=2))
 
         middle_block = Sequential(
-            ResBlock(dim, n_feat_next, n_feat_next, cond_dim),
-            ResBlock(dim, n_feat_next, n_feat_next, cond_dim),
+            ResBlock(n_dim, n_feat_next, n_feat_next, cond_dim),
+            ResBlock(n_dim, n_feat_next, n_feat_next, cond_dim),
         )
         if depth - 1 in attention_depths:
             middle_block.insert(1, attention_block(n_feat_next))
-        first_block = ConvND(dim)(channels_in, n_features[0], 3, padding=1)
+        first_block = ConvND(n_dim)(n_channels_in, n_features[0], 3, padding=1)
         encoder = UNetEncoder(first_block, encoder_blocks, down_blocks, middle_block)
 
         decoder_blocks, up_blocks = decoder_blocks[::-1], up_blocks[::-1]
         last_block = Sequential(
             SiLU(),
-            ConvND(dim)(n_features[0], channels_out, 3, padding=1),
+            ConvND(n_dim)(n_features[0], n_channels_out, 3, padding=1),
         )
         concat_blocks = [Concat() for _ in range(len(decoder_blocks))]
         decoder = UNetDecoder(decoder_blocks, up_blocks, concat_blocks, last_block)
@@ -354,17 +354,19 @@ class AttentionGatedUNet(UNetBase):
       https://arxiv.org/abs/1804.03999
     """
 
-    def __init__(self, dim: int, channels_in: int, channels_out: int, n_features: Sequence[int], cond_dim: int = 0):
+    def __init__(
+        self, n_dim: int, n_channels_in: int, n_channels_out: int, n_features: Sequence[int], cond_dim: int = 0
+    ):
         """Initialize the AttentionGatedUNet.
 
         Parameters
         ----------
-        dim
-            Spatial dimension of the input tensor.
-        channels_in
-            Number of channels in the input tensor.
-        channels_out
-            Number of channels in the output tensor.
+        n_dim
+            The number of spatial dimensions of the input tensor.
+        n_channels_in
+            The number of channels in the input tensor.
+        n_channels_out
+            The number of channels in the output tensor.
         n_features
             Number of features at each resolution level. The length determines the number of resolution levels.
         cond_dim
@@ -373,9 +375,9 @@ class AttentionGatedUNet(UNetBase):
 
         def block(channels_in: int, channels_out: int) -> Module:
             block = Sequential(
-                ConvND(dim)(channels_in, channels_out, 3, padding=1),
+                ConvND(n_dim)(channels_in, channels_out, 3, padding=1),
                 ReLU(True),
-                ConvND(dim)(channels_out, channels_out, 3, padding=1),
+                ConvND(n_dim)(channels_out, channels_out, 3, padding=1),
                 ReLU(True),
             )
             if cond_dim > 0:
@@ -384,10 +386,10 @@ class AttentionGatedUNet(UNetBase):
 
         encoder_blocks: list[Module] = []
         down_blocks: list[Module] = []
-        n_feat_old = channels_in
+        n_feat_old = n_channels_in
         for n_feat in n_features[:-1]:
             encoder_blocks.append(block(n_feat_old, n_feat))
-            down_blocks.append(MaxPoolND(dim)(2))
+            down_blocks.append(MaxPoolND(n_dim)(2))
             n_feat_old = n_feat
         middle_block = block(n_features[-2], n_features[-1])
         encoder = UNetEncoder(Identity(), encoder_blocks, down_blocks, middle_block)
@@ -396,10 +398,10 @@ class AttentionGatedUNet(UNetBase):
         decoder_blocks: list[Module] = []
         up_blocks: list[Module] = []
         for n_feat, n_feat_skip in pairwise(n_features[::-1]):
-            concat_blocks.append(AttentionGate(dim, n_feat, n_feat_skip, n_feat_skip, concatenate=True))
+            concat_blocks.append(AttentionGate(n_dim, n_feat, n_feat_skip, n_feat_skip, concatenate=True))
             decoder_blocks.append(block(n_feat + n_feat_skip, n_feat_skip))
-            up_blocks.append(Upsample(range(-dim, 0), scale_factor=2))
-        last_block = ConvND(dim)(n_features[0], channels_out, 1)
+            up_blocks.append(Upsample(range(-n_dim, 0), scale_factor=2))
+        last_block = ConvND(n_dim)(n_features[0], n_channels_out, 1)
         decoder = UNetDecoder(decoder_blocks, up_blocks, concat_blocks, last_block)
 
         super().__init__(encoder, decoder)
@@ -410,10 +412,10 @@ class SeparableUNet(UNetBase):
 
     def __init__(
         self,
-        dim: int,
+        n_dim: int,
         dim_groups: Sequence[tuple[int, ...]],
-        channels_in: int,
-        channels_out: int,
+        n_channels_in: int,
+        n_channels_out: int,
         n_features: Sequence[int] = (64, 128, 256, 512),
         cond_dim: int = 0,
         encoder_blocks_per_scale: int = 2,
@@ -426,16 +428,15 @@ class SeparableUNet(UNetBase):
 
         Parameters
         ----------
-        dim
-            Total number of non batch, non channel dimensions.
-            E.g., 2 for 2D images, 3 for 3D volumes or 2D+time for 2D+time images.
+        n_dim
+            The number of spatial dimensions of the input tensor.
         dim_groups
             A list of tuples, where each tuple contains the spatial dimension
             indices for one separable convolution. Each group must contain fewer than 3 dimensions.
-        channels_in
-            Number of channels in the input tensor.
-        channels_out
-            Number of channels in the output tensor.
+        n_channels_in
+            The number of channels in the input tensor.
+        n_channels_out
+            The number of channels in the output tensor.
         n_features
             Number of features at each resolution level.
         cond_dim
@@ -461,12 +462,12 @@ class SeparableUNet(UNetBase):
         for group in dim_groups:
             if len(group) > 3:
                 raise ValueError(f'dim_group {group} can at most contain 3 dimensions. Split it into multiple groups.')
-            if any(d > dim + 2 or d < -dim for d in group):
-                raise ValueError(f'dim_group {group} contains dimensions that are out of range for dim={dim}')
+            if any(d > n_dim + 2 or d < -n_dim for d in group):
+                raise ValueError(f'dim_group {group} contains dimensions that are out of range for dim={n_dim}')
 
         attention_depths = tuple(d % depth for d in attention_depths)
         if downsample_dims is None:
-            all_spatial_dims = tuple(sorted(set(d if d < 0 else d - dim - 2 for group in dim_groups for d in group)))
+            all_spatial_dims = tuple(sorted(set(d if d < 0 else d - n_dim - 2 for group in dim_groups for d in group)))
             downsample_dims = (all_spatial_dims,) * (depth - 1)
 
         def downsampler(level_dims, c_in, c_out) -> Module:
@@ -489,7 +490,7 @@ class SeparableUNet(UNetBase):
 
         # --- Module Construction ---
         first_block = PermutedBlock(
-            all_spatial_dims, ConvND(len(all_spatial_dims))(channels_in, n_features[0], 3, padding=1)
+            all_spatial_dims, ConvND(len(all_spatial_dims))(n_channels_in, n_features[0], 3, padding=1)
         )
 
         # -- Encoder --
@@ -532,7 +533,7 @@ class SeparableUNet(UNetBase):
             SiLU(),
             PermutedBlock(
                 all_spatial_dims,
-                ConvND(len(all_spatial_dims))(n_features[0], channels_out, 3, padding=1),
+                ConvND(len(all_spatial_dims))(n_features[0], n_channels_out, 3, padding=1),
             ),
         )
         decoder = UNetDecoder(decoder_blocks, up_blocks, concat_blocks, last_block)

@@ -147,4 +147,17 @@ class SpatialTransformerBlock(CondMixin, Module):
         return skip + h
 
     def __call__(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
+        """Apply the spatial transformer block.
+
+        Parameters
+        ----------
+        x
+            Input tensor.
+        cond
+            Conditioning tensor. If None, no conditioning is applied.
+
+        Returns
+        -------
+            Output tensor.
+        """
         return super().__call__(x, cond=cond)

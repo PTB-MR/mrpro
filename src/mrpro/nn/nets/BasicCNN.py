@@ -25,9 +25,9 @@ class BasicCNN(Sequential):
 
     def __init__(
         self,
-        dim: int,
-        channels_in: int,
-        channels_out: int,
+        n_dim: int,
+        n_channels_in: int,
+        n_channels_out: int,
         norm: Literal['batch', 'group', 'instance', 'none', 'layer'] = 'none',
         activation: Literal['relu', 'silu', 'leaky_relu'] = 'relu',
         n_features: Sequence[int] = (64, 64, 64),
@@ -37,11 +37,11 @@ class BasicCNN(Sequential):
 
         Parameters
         ----------
-        dim
+        n_dim
             The number of spatial dimensions of the input tensor.
-        channels_in
+        n_channels_in
             The number of input channels.
-        channels_out
+        n_channels_out
             The number of output channels.
         norm
             The type of normalization to use. If 'batch', use batch normalization. If 'group', use group normalization,
@@ -59,11 +59,11 @@ class BasicCNN(Sequential):
         super().__init__()
         use_film = cond_dim > 0
 
-        self.append(ConvND(dim)(channels_in, n_features[0], kernel_size=3, padding='same'))
+        self.append(ConvND(n_dim)(n_channels_in, n_features[0], kernel_size=3, padding='same'))
 
-        for c_in, c_out in pairwise((*n_features, channels_out)):
+        for c_in, c_out in pairwise((*n_features, n_channels_out)):
             if norm.lower() == 'batch':
-                self.append(BatchNormND(dim)(c_in, affine=not use_film))
+                self.append(BatchNormND(n_dim)(c_in, affine=not use_film))
             elif norm.lower() == 'group':
                 self.append(GroupNorm(c_in, affine=not use_film))
             elif norm.lower() == 'instance':
@@ -85,7 +85,7 @@ class BasicCNN(Sequential):
             else:
                 raise ValueError(f'Invalid activation type: {activation}')
 
-            self.append(ConvND(dim)(c_in, c_out, kernel_size=3, padding='same'))
+            self.append(ConvND(n_dim)(c_in, c_out, kernel_size=3, padding='same'))
 
     def __call__(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:  # type: ignore[override]
         """Apply the basic CNN to the input tensor.

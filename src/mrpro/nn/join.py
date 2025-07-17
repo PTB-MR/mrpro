@@ -29,7 +29,7 @@ def _fix_shapes(
     if mode == 'zero' or mode == 'crop':
         return tuple(pad_or_crop(x, target, dim=dim, mode='constant', value=0.0) for x in xs)
     else:
-        return tuple(pad_or_crop(x, target, dim=dim, mode=mode) for x in xs)  # type: ignore
+        return tuple(pad_or_crop(x, target, dim=dim, mode=mode) for x in xs)  # type: ignore[arg-type]
 
 
 class Concat(Module):
