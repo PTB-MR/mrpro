@@ -67,6 +67,10 @@ class KTrajectoryCartesian(KTrajectoryCalculator):
         ----------
         encoding_matrix
             Encoded K-space size.
+
+        Returns
+        -------
+            Cartesian trajectory.
         """
         return cls()(
             n_k0=encoding_matrix.x,

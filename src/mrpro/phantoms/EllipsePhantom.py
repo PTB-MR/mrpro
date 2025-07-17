@@ -47,6 +47,10 @@ class EllipsePhantom:
         kx
             k-space locations in kx (frequency encoding direction).
 
+        Returns
+        -------
+            K-space data.
+
         References
         ----------
         .. [KOA2007] Koay C, Sarlls J, Oezarslan E (2007) Three-dimensional analytical magnetic resonance imaging
@@ -86,6 +90,10 @@ class EllipsePhantom:
         image_dimensions
             Number of voxels in the image.
             This is a 2D simulation, so the output will be of shape `(1 1 1 image_dimensions.y image_dimensions.x)`.
+
+        Returns
+        -------
+            Image representation of phantom
         """
         # Calculate image representation of phantom
         ny, nx = image_dimensions.y, image_dimensions.x
@@ -114,6 +122,10 @@ class EllipsePhantom:
             Trajectory.
         encoding_matrix
             Encoding matrix.
+
+        Returns
+        -------
+            K-space data with header and trajectory.
         """
         if (trajectory.kz != 0).any():
             raise ValueError('Only 2D k-space data is supported')
