@@ -1,5 +1,7 @@
 """Conjugate gradient data consistency."""
 
+from typing import overload
+
 import torch
 from torch.nn import Module, Parameter
 
@@ -7,7 +9,7 @@ from mrpro.data.CsmData import CsmData
 from mrpro.data.KData import KData
 from mrpro.operators.ConjugateGradientOp import ConjugateGradientOp
 from mrpro.operators.FourierOp import FourierOp
-from mrpro.operators.IdentityOp import IdentityOp
+from mrpro.operators.LinearOperator import LinearOperator
 from mrpro.operators.SensitivityOp import SensitivityOp
 
 
@@ -20,32 +22,96 @@ class ConjugateGradientDC(Module):
         Parameters
         ----------
         initial_regularization_weight
-            Initial regularization weight.
+            Initial regularization weight. The regularization weight is a trainable parameter.
+            Must be a positive scalar.
         """
         super().__init__()
-        self.regularization_weight = Parameter(torch.as_tensor(initial_regularization_weight))
+        weight = torch.as_tensor(initial_regularization_weight)
+        if weight.ndim != 0:
+            raise ValueError('Regularization weight must be a scalar')
+        if weight.item() <= 0:
+            raise ValueError('Regularization weight must be positive')
+        self.log_weight = Parameter(weight.log())
 
-        def operator_factory(
-            fourier_op: FourierOp, csm: torch.Tensor | CsmData | None, regularization_weight: torch.Tensor | float, *_
-        ):
-            csm_op = SensitivityOp(csm) if csm is not None else IdentityOp()
-            op = csm_op.H @ fourier_op.gram @ csm_op + regularization_weight
-            return op
+    @overload
+    def __call__(
+        self,
+        image: torch.Tensor,
+        data: KData,
+        fourier_op: FourierOp | None = None,
+        csm: torch.Tensor | CsmData | None = None,
+    ) -> torch.Tensor: ...
 
-        self.cg_op = ConjugateGradientOp(
-            operator_factory=operator_factory,
-            rhs_factory=lambda _fourier, _csm, regularization_weight, zero_filled, regularization: zero_filled
-            + regularization_weight * regularization,
-        )
+    @overload
+    def __call__(
+        self,
+        image: torch.Tensor,
+        data: torch.Tensor,
+        fourier_op: FourierOp,
+        csm: torch.Tensor | CsmData | None = None,
+    ) -> torch.Tensor: ...
+
+    def __call__(
+        self,
+        image: torch.Tensor,
+        data: KData | torch.Tensor,
+        fourier_op: LinearOperator | None = None,
+        csm: torch.Tensor | CsmData | None = None,
+    ) -> torch.Tensor:
+        """Apply the data consistency.
+
+        Parameters
+        ----------
+        image
+            Current image estimate.
+        data
+            k-space data.
+        fourier_op
+            Fourier operator matching the k-space data. If None and data is provided as a `~mrpro.data.KData` object,
+            the Fourier operator is automatically created from the data.
+            This operator can already include the coil sensitivity weighting, if gradients wrt the coil sensitivity maps
+            NOT required. Otherwise, they should be given as an additional argument.
+        csm
+            Coil sensitivity maps. If None, no coil sensitivity weighting is applied.
+
+        Returns
+        -------
+            Updated image estimate.
+        """
+        return super().__call__(image, data, fourier_op, csm)
 
     def forward(
         self,
-        x: torch.Tensor,
+        image: torch.Tensor,
         data: torch.Tensor | KData,
-        fourier_op: FourierOp,
-        csm: torch.Tensor | CsmData | None,
-    ):
+        fourier_op: FourierOp | None = None,
+        csm: torch.Tensor | CsmData | None = None,
+    ) -> torch.Tensor:
+        """Apply the data consistency."""
+        if fourier_op is None:
+            if isinstance(data, KData):
+                fourier_op = FourierOp.from_kdata(data)
+            else:
+                raise ValueError('Either a KData or a FourierOp is required')
+
         data_ = data.data if isinstance(data, KData) else data
-        zero_filled = fourier_op.adjoint(data_)
-        x = self.cg_op(fourier_op, csm, self.regularization_weight, zero_filled, x)
-        return x
+
+        if csm is None:
+            csm = torch.tensor(())
+        elif isinstance(csm, CsmData):
+            csm = csm.data
+
+        def operator_factory(csm: torch.Tensor, weight: torch.Tensor, *_):
+            op = fourier_op.gram
+            if csm.numel():
+                csm_op = SensitivityOp(csm)
+                op = csm_op.H @ op @ csm_op
+            op = op + weight
+            return op
+
+        def rhs_factory(_csm: torch.Tensor, weight: torch.Tensor, zero_filled: torch.Tensor, image: torch.Tensor):
+            return (zero_filled + weight * image,)
+
+        cg_op = ConjugateGradientOp(operator_factory=operator_factory, rhs_factory=rhs_factory)
+        (result,) = cg_op(csm, self.log_weight.exp(), fourier_op.adjoint(data_)[0], image)
+        return result
