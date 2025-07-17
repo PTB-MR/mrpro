@@ -9,7 +9,7 @@ class GradientDescentDC(Module):
     r"""Gradient descent data consistency.
 
     Performs gradient descent steps on
-    :math:`\|Ax - k\|_2^2` where :math:`A` is the acquistion operator and :math:`k` is the data.
+    :math:`\|Ax - k\|_2^2` where :math:`A` is the acquisition operator and :math:`k` is the data.
 
     Parameters
     ----------
@@ -28,10 +28,12 @@ class GradientDescentDC(Module):
         self.stepsize = Parameter(torch.tensor(initial_stepsize))
         self.n_steps = n_steps
 
-    def forward(self, x: torch.Tensor, data: KData | torch.Tensor, acquistion_operator: LinearOperator) -> torch.Tensor:
+    def forward(
+        self, x: torch.Tensor, data: KData | torch.Tensor, acquisition_operator: LinearOperator
+    ) -> torch.Tensor:
         """Forward pass."""
         data_ = data.data if isinstance(data, KData) else data
         for _ in range(self.n_steps):
-            residual = acquistion_operator(x)[0] - data_
-            x = x - self.stepsize * acquistion_operator.adjoint(residual)[0]
+            residual = acquisition_operator(x)[0] - data_
+            x = x - self.stepsize * acquisition_operator.adjoint(residual)[0]
         return x
