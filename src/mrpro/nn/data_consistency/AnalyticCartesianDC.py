@@ -45,7 +45,8 @@ class AnalyticCartesianDC(Module):
         data_ = data.data if isinstance(data, KData) else data
         fft_op = fourier_op._fast_fourier_op
         sampling_op = fourier_op._cart_sampling_op if fourier_op._cart_sampling_op is not None else IdentityOp()
+        (zero_filled,) = sampling_op.adjoint(data_)
         (k_pred,) = fft_op(x)
-        (k,) = sampling_op.gram((data_ - k_pred) / (1 + self.regularization_weight))
+        (k,) = sampling_op.gram((zero_filled - k_pred) / (1 + self.regularization_weight))
         (delta,) = fft_op.H(k)
         return x + delta
