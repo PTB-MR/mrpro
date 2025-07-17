@@ -1,5 +1,5 @@
 import pytest
-from mrpro.nn import ShiftedWindowAttention
+from mrpro.nn.attention import ShiftedWindowAttention
 from mrpro.utils import RandomGenerator
 
 

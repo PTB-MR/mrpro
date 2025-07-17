@@ -1,7 +1,7 @@
 """Tests for SqueezeExcitation module."""
 
 import pytest
-from mrpro.nn.attention.SqueezeExcitation import SqueezeExcitation
+from mrpro.nn.attention import SqueezeExcitation
 from mrpro.utils import RandomGenerator
 
 

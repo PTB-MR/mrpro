@@ -1,4 +1,4 @@
-from inspect import Parameter
+"""Conjugate gradient data consistency."""
 
 import torch
 from torch.nn import Module, Parameter
@@ -43,7 +43,7 @@ class ConjugateGradientDC(Module):
         x: torch.Tensor,
         data: torch.Tensor | KData,
         fourier_op: FourierOp,
-        csm: torch.Tensor | CSMData | None,
+        csm: torch.Tensor | CsmData | None,
     ):
         data_ = data.data if isinstance(data, KData) else data
         zero_filled = fourier_op.adjoint(data_)

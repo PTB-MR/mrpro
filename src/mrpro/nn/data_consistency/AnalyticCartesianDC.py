@@ -1,3 +1,5 @@
+from typing import overload
+
 import torch
 from torch.nn import Module, Parameter
 
@@ -30,15 +32,59 @@ class AnalyticCartesianDC(Module):
     """
 
     def __init__(self, initial_regularization_weight: torch.Tensor | float):
+        """Initialize the data consistency.
+
+        Parameters
+        ----------
+        initial_regularization_weight
+            Initial regularization weight. The regularization weight is a trainable parameter.
+            Must be a positive scalar.
+        """
         super().__init__()
-        self.regularization_weight = Parameter(torch.as_tensor(initial_regularization_weight))
+        weight = torch.as_tensor(initial_regularization_weight)
+        if weight.ndim != 0:
+            raise ValueError('Regularization weight must be a scalar')
+        if weight.item() <= 0:
+            raise ValueError('Regularization weight must be positive')
+        self.log_weight = Parameter(weight.log())
+
+    @overload
+    def __call__(self, image: torch.Tensor, data: KData, fourier_op: FourierOp | None = None) -> torch.Tensor: ...
+
+    @overload
+    def __call__(self, image: torch.Tensor, data: torch.Tensor, fourier_op: FourierOp) -> torch.Tensor: ...
+
+    def __call__(
+        self, image: torch.Tensor, data: KData | torch.Tensor, fourier_op: FourierOp | None = None
+    ) -> torch.Tensor:
+        """Apply the data consistency.
+
+        Parameters
+        ----------
+        image
+            Current image estimate.
+        data
+            k-space data.
+        fourier_op
+            Fourier operator matching the k-space data. If None and data is provided as a `~mrpro.data.KData` object, the Fourier operator is
+            automatically created from the data.
+
+        Returns
+        -------
+            Updated image estimate.
+        """
+        return super().__call__(image, data, fourier_op)
 
     def forward(
-        self,
-        x: torch.Tensor,
-        data: KData | torch.Tensor,
-        fourier_op: FourierOp,
-    ):
+        self, image: torch.Tensor, data: KData | torch.Tensor, fourier_op: FourierOp | None = None
+    ) -> torch.Tensor:
+        """Apply the data consistency."""
+        if fourier_op is None:
+            if isinstance(data, KData):
+                fourier_op = FourierOp.from_kdata(data)
+            else:
+                raise ValueError('Either a KData or a FourierOp is required')
+
         if not isinstance(fourier_op, FourierOp) or fourier_op._nufft_dims or fourier_op._fast_fourier_op is None:
             raise ValueError('Only Cartesian acquisitions are supported')
 
@@ -46,7 +92,8 @@ class AnalyticCartesianDC(Module):
         fft_op = fourier_op._fast_fourier_op
         sampling_op = fourier_op._cart_sampling_op if fourier_op._cart_sampling_op is not None else IdentityOp()
         (zero_filled,) = sampling_op.adjoint(data_)
-        (k_pred,) = fft_op(x)
-        (k,) = sampling_op.gram((zero_filled - k_pred) / (1 + self.regularization_weight))
+        (k_pred,) = fft_op(image)
+        regularization_weight = self.log_weight.exp()
+        (k,) = sampling_op.gram((zero_filled - k_pred) / (1 + regularization_weight))
         (delta,) = fft_op.H(k)
-        return x + delta
+        return image + delta

@@ -1,7 +1,7 @@
 """Tests for LinearSelfAttention module."""
 
 import pytest
-from mrpro.nn.attention.LinearSelfAttention import LinearSelfAttention
+from mrpro.nn.attention import LinearSelfAttention
 from mrpro.utils import RandomGenerator
 
 
