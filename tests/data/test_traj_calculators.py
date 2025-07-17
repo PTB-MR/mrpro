@@ -217,6 +217,18 @@ def test_KTrajectoryCartesian_random(acceleration: int = 2, n_k: int = 64) -> No
         assert center_idx in lines1
 
 
+def test_KTrajectoryCartesian_fullysampled() -> None:
+    """Test the generation of a fully sampled Cartesian trajectory"""
+    traj = KTrajectoryCartesian.fullysampled(SpatialDimension(10, 64, 64))
+    assert traj.kx.shape == (1, 1, 1, 1, 64)
+    assert traj.ky.shape == (1, 1, 1, 64, 1)
+    assert traj.kz.shape == (1, 1, 10, 1, 1)
+    assert len(traj.kx.unique()) == 64
+    assert len(traj.ky.unique()) == 64
+    assert len(traj.kz.unique()) == 10
+    assert traj.kx.diff().unique() == 1
+
+
 @pytest.mark.parametrize('acceleration', [1, 16])
 def test_KTrajectoryCartesian_random_edgecases(acceleration: int, n_k=128) -> None:
     """Test the generation of a 2D gaussian variable density pattern"""
@@ -229,7 +241,7 @@ def test_KTrajectoryCartesian_random_edgecases(acceleration: int, n_k=128) -> No
         assert center_idx in traj.ky.ravel()
 
 
-def test_KTrajectorySpiral():
+def test_KTrajectorySpiral() -> None:
     """Test the generation of a 2D spiral trajectory"""
     trajectory_calculator = KTrajectorySpiral2D()
     trajectory = trajectory_calculator(
