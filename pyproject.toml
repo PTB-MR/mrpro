@@ -61,16 +61,16 @@ classifiers = [
 ]
 dependencies = [
     "numpy>=1.23, <3.0",
-    "torch>=2.3.1",
+    "torch>=2.5.1",
     "ismrmrd>=1.14.1",
     "einops>=0.7.0",
     "pydicom>=3.0.1",
     "pypulseq>=1.4.2",
     "pytorch-finufft>=0.1.0",
-    "cufinufft==2.3.1; platform_system=='Linux'",
+    "cufinufft==2.4.1; platform_system=='Linux'",
     "scipy>=1.12",
     "ptwt>=0.1.8",
-    "torchvision>=0.18.1",
+    "torchvision>=0.20.1",
     "tqdm>=4.60.0",
     "typing-extensions>=4.12",
     "platformdirs>=4.0",
@@ -97,6 +97,7 @@ docs = [
     "sphinx-autodoc-typehints>=3, <3.1",
     "sphinx-copybutton>=0.5, <0.6",
     "sphinx-last-updated-by-git>=0.3, <0.4",
+    "snowballstemmer>=2.2, <3.0",
 ]
 notebooks = [
     "zenodo_get>=2.0",
@@ -226,6 +227,7 @@ iy = "iy"
 arange = "arange" # torch.arange
 Ba = "Ba"
 wht = "wht"       # Brainweb tissue class
+ND = "ND"         # Short for N-dimensional
 
 [tool.typos.files]
 extend-exclude = [

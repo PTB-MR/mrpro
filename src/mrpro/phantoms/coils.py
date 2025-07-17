@@ -7,7 +7,7 @@ from mrpro.data.SpatialDimension import SpatialDimension
 
 
 def birdcage_2d(
-    number_of_coils: int,
+    n_coils: int,
     image_dimensions: SpatialDimension[int],
     relative_radius: float = 1.5,
     normalize_with_rss: bool = True,
@@ -19,21 +19,25 @@ def birdcage_2d(
 
     Parameters
     ----------
-    number_of_coils
+    n_coils
         number of coil elements
     image_dimensions
-        number of voxels in the image
-        This is a 2D simulation so the output will be (1 number_of_coils 1 image_dimensions.y image_dimensions.x)
+        number of pixels in the image in y and x direction
     relative_radius
         relative radius of birdcage
     normalize_with_rss
         If set to true, the calculated sensitivities are normalized by the root-sum-of-squares
 
+    Returns
+    -------
+        Coil sensitivities.
+        Shape: `(1, n_coils, 1, image_dimensions.y, image_dimensions.x)`
+
     References
     ----------
     .. [ISMc] ISMRMRD Python tools https://github.com/ismrmrd/ismrmrd-python-tools
     """
-    dim = [number_of_coils, image_dimensions.y, image_dimensions.x]
+    dim = [n_coils, image_dimensions.y, image_dimensions.x]
     x_co, y_co = torch.meshgrid(
         torch.linspace(-dim[2] // 2, dim[2] // 2 - 1, dim[2]),
         torch.linspace(-dim[1] // 2, dim[1] // 2 - 1, dim[1]),
@@ -53,9 +57,8 @@ def birdcage_2d(
     sensitivities = (1 / rr) * torch.exp(1j * phi)
 
     if normalize_with_rss:
-        rss = sensitivities.abs().square().sum(0).sqrt()
-        # Normalize only where rss is > 0
-        sensitivities[:, rss > 0] /= rss[None, rss > 0]
+        rss = sensitivities.abs().square().sum(0, keepdim=True).sqrt()
+        sensitivities /= rss + 1e-8
 
     return repeat(sensitivities, 'coils y x->other coils z y x', other=1, z=1)
 

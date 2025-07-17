@@ -60,6 +60,28 @@ class KTrajectoryCartesian(KTrajectoryCalculator):
         return KTrajectory(kz, ky, kx)
 
     @classmethod
+    def fullysampled(cls, encoding_matrix: SpatialDimension[int]) -> KTrajectory:
+        """Generate fully sampled Cartesian trajectory.
+
+        Parameters
+        ----------
+        encoding_matrix
+            Encoded K-space size.
+
+        Returns
+        -------
+            Cartesian trajectory.
+        """
+        return cls()(
+            n_k0=encoding_matrix.x,
+            k0_center=encoding_matrix.x // 2,
+            k1_idx=torch.arange(encoding_matrix.y)[:, None],
+            k1_center=encoding_matrix.y // 2,
+            k2_idx=torch.arange(encoding_matrix.z)[:, None, None],
+            k2_center=encoding_matrix.z // 2,
+        )
+
+    @classmethod
     def gaussian_variable_density(
         cls,
         encoding_matrix: SpatialDimension[int] | int,
