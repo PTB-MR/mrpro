@@ -5,11 +5,11 @@ from collections.abc import Sequence
 import torch
 from torch.nn import Dropout, Linear, Module
 
+from mrpro.nn.attention.MultiHeadAttention import MultiHeadAttention
 from mrpro.nn.CondMixin import CondMixin
 from mrpro.nn.GEGLU import GEGLU
 from mrpro.nn.GroupNorm import GroupNorm
 from mrpro.nn.LayerNorm import LayerNorm
-from mrpro.nn.attention.MultiHeadAttention import MultiHeadAttention
 from mrpro.nn.PermutedBlock import PermutedBlock
 from mrpro.nn.Sequential import Sequential
 
