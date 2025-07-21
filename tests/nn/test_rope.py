@@ -15,7 +15,7 @@ def test_rope(device: torch.device):
     shape = (10, 10)
     n_heads = 2
     n_channels = 64
-    n_embed = int(0.5 * n_channels // n_heads)
+    n_embed = int(0.5 * n_channels)
     q, k = RandomGenerator(seed=42).float32_tensor((2, 1, n_heads, *shape, n_channels), low=0.5).to(device)
 
     rope = AxialRoPE(embed_fraction=0.5)

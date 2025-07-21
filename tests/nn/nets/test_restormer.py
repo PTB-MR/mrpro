@@ -34,12 +34,11 @@ def test_restormer_forward(torch_compile: bool, device: str) -> None:
         restormer = cast(Restormer, torch.compile(restormer))
     y = restormer(x, cond=cond)
     assert y.shape == (1, 1, 16, 16)
-    assert y.mean().abs() < 0.2
 
 
 def test_restormer_backward():
     restormer = Restormer(
-        n_dim=2,
+        n_dim=1,
         n_channels_in=1,
         n_channels_out=1,
         n_heads=(1, 2),

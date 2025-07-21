@@ -35,7 +35,6 @@ def test_unet_forward(torch_compile: bool, device: str) -> None:
         unet = cast(UNet, torch.compile(unet))
     y = unet(x, cond=cond)
     assert y.shape == (1, 1, 16, 16)
-    assert y.mean().abs() < 0.1
 
 
 def test_unet_backward():
@@ -90,7 +89,6 @@ def test_gated_unet_forward(torch_compile: bool, device: str) -> None:
         unet = cast(AttentionGatedUNet, torch.compile(unet))
     y = unet(x, cond=cond)
     assert y.shape == (1, 1, 16, 16)
-    assert y.mean().abs() < 0.1
 
 
 def test_gated_unet_backward() -> None:

@@ -102,4 +102,4 @@ class BasicCNN(Sequential):
         -------
             The output tensor.
         """
-        return super().__call__(*x, cond=cond)
+        return super().__call__(x, cond=cond)

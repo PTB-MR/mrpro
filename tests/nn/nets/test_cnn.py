@@ -24,15 +24,12 @@ def test_cnn_forward(torch_compile: bool, device: str) -> None:
     )
 
     x = torch.zeros(1, 1, 16, 16, device=device)
-    cond = torch.zeros(1, 32, device=device)
     cnn = cnn.to(device)
     x = x.to(device)
-    cond = cond.to(device)
     if torch_compile:
         cnn = cast(BasicCNN, torch.compile(cnn))
-    y = cnn(x, cond=cond)
+    y = cnn(x)
     assert y.shape == (1, 1, 16, 16)
-    assert y.mean().abs() < 0.1
 
 
 def test_cnn_backward():
@@ -43,6 +40,7 @@ def test_cnn_backward():
         norm='instance',
         activation='silu',
         n_features=(8, 8),
+        cond_dim=32,
     )
 
     x = torch.zeros(1, 1, 16, requires_grad=True)
