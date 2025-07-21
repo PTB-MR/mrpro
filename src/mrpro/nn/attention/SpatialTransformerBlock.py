@@ -6,6 +6,7 @@ import torch
 from torch.nn import Dropout, Linear, Module
 
 from mrpro.nn.attention.MultiHeadAttention import MultiHeadAttention
+from mrpro.nn.attention.NeighborhoodSelfAttention import NeighborhoodSelfAttention
 from mrpro.nn.CondMixin import CondMixin
 from mrpro.nn.GEGLU import GEGLU
 from mrpro.nn.GroupNorm import GroupNorm
@@ -34,6 +35,8 @@ class BasicTransformerBlock(CondMixin, Module):
         cond_dim: int = 0,
         mlp_ratio: float = 4,
         features_last: bool = False,
+        rope_embed_fraction: float = 0.0,
+        attention_neighborhood: int | None = None,
     ):
         """Initialize the basic transformer block.
 
@@ -51,19 +54,37 @@ class BasicTransformerBlock(CondMixin, Module):
             Ratio of the hidden dimension to the input dimension.
         features_last
             Whether the features are last in the input tensor.
+        rope_embed_fraction
+            Fraction of channels to embed with RoPE.
+        attention_neighborhood
+            If not None, use neighborhood self attention with the given neighborhood size instead
+            of global self attention.
         """
         super().__init__()
         self.features_last = features_last
-        self.selfattention = Sequential(
-            LayerNorm(channels, features_last=True),
-            MultiHeadAttention(
+
+        if attention_neighborhood is None:
+            attention: Module = MultiHeadAttention(
                 n_channels_in=channels,
                 n_channels_out=channels,
                 n_heads=n_heads,
                 p_dropout=p_dropout,
                 features_last=True,
-            ),
-        )
+                rope_embed_fraction=rope_embed_fraction,
+            )
+        else:
+            if p_dropout > 0:
+                raise ValueError('p_dropout > 0 is not supported for neighborhood self attention')
+            attention = NeighborhoodSelfAttention(
+                n_channels_in=channels,
+                n_channels_out=channels,
+                n_heads=n_heads,
+                features_last=True,
+                kernel_size=attention_neighborhood,
+                circular=True,
+                rope_embed_fraction=rope_embed_fraction,
+            )
+        self.selfattention = Sequential(LayerNorm(channels, features_last=True), attention)
         hidden_dim = int(channels * mlp_ratio)
         self.ff = Sequential(
             LayerNorm(channels, features_last=True, cond_dim=cond_dim),
@@ -104,8 +125,10 @@ class SpatialTransformerBlock(CondMixin, Module):
         channels: int,
         n_heads: int,
         depth: int = 1,
-        dropout: float = 0.0,
+        p_dropout: float = 0.0,
         cond_dim: int = 0,
+        rope_embed_fraction: float = 0.0,
+        attention_neighborhood: int | None = None,
     ):
         """Initialize the spatial transformer block.
 
@@ -119,10 +142,14 @@ class SpatialTransformerBlock(CondMixin, Module):
             Number of attention heads for each group.
         depth
             Number of transformer blocks for each group.
-        dropout
+        p_dropout
             Dropout probability.
         cond_dim
             Dimension of the conditioning tensor.
+        rope_embed_fraction
+            Fraction of channels to embed with RoPE.
+        attention_neighborhood
+            If not None, use NeighborhoodSelfAttention with the given neighborhood size instead of MultiHeadAttention.
         """
         super().__init__()
         hidden_dim = n_heads * (channels // n_heads)
@@ -131,7 +158,15 @@ class SpatialTransformerBlock(CondMixin, Module):
         self.transformer_blocks = Sequential()
         for group in (g for _ in range(depth) for g in dim_groups):
             group = tuple(g - 1 if g < 0 else g for g in group)
-            block = BasicTransformerBlock(hidden_dim, n_heads, p_dropout=dropout, cond_dim=cond_dim, features_last=True)
+            block = BasicTransformerBlock(
+                hidden_dim,
+                n_heads,
+                p_dropout=p_dropout,
+                cond_dim=cond_dim,
+                features_last=True,
+                rope_embed_fraction=rope_embed_fraction,
+                attention_neighborhood=attention_neighborhood,
+            )
             self.transformer_blocks.append(PermutedBlock(group, block, features_last=True))
         self.proj_out = Linear(hidden_dim, channels)
 

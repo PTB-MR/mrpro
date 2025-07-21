@@ -62,14 +62,14 @@ def test_neighborhood_self_attention(
 
 
 @pytest.mark.parametrize(
-    ('kernel_size', 'dilation', 'circular'),
+    ('kernel_size', 'dilation', 'circular', 'rope'),
     [
-        (3, 1, False),
-        (5, 2, True),
-        (7, 1, False),
+        (3, 1, False, True),
+        (5, 2, True, False),
+        (7, 1, False, True),
     ],
 )
-def test_neighborhood_attention_variants(kernel_size: int, dilation: int, circular: bool) -> None:
+def test_neighborhood_attention_variants(kernel_size: int, dilation: int, circular: bool, rope: bool) -> None:
     """Test NeighborhoodSelfAttention with different neighborhood configurations."""
     rng = RandomGenerator(seed=42)
     x = rng.float32_tensor((1, 32, 16, 16)).requires_grad_(True)
@@ -81,6 +81,7 @@ def test_neighborhood_attention_variants(kernel_size: int, dilation: int, circul
         kernel_size=kernel_size,
         dilation=dilation,
         circular=circular,
+        rope_embed_fraction=1.0 if rope else 0.0,
     )
 
     output = attn(x)

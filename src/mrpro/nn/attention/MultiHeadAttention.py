@@ -4,6 +4,8 @@ import torch
 from einops import rearrange
 from torch.nn import Linear, Module
 
+from mrpro.nn.AxialRoPE import AxialRoPE
+
 
 class MultiHeadAttention(Module):
     """Multi-head Attention.
@@ -20,6 +22,7 @@ class MultiHeadAttention(Module):
         features_last: bool = False,
         p_dropout: float = 0.0,
         n_channels_cross: int | None = None,
+        rope_embed_fraction: float = 0.0,
     ):
         """Initialize the Multi-head Attention.
 
@@ -38,6 +41,8 @@ class MultiHeadAttention(Module):
             Dropout probability.
         n_channels_cross
             Number of channels for cross-attention. If `None`, use `n_channels_in`.
+        rope_embed_fraction
+            Fraction of channels to embed with RoPE.
         """
         super().__init__()
         channels_per_head_q = n_channels_in // n_heads
@@ -48,6 +53,7 @@ class MultiHeadAttention(Module):
         self.features_last = features_last
         self.to_out = Linear(n_channels_in, n_channels_out)
         self.n_heads = n_heads
+        self.rope = AxialRoPE(n_heads, non_embed_fraction=1 - rope_embed_fraction)
 
     def __call__(self, x: torch.Tensor, cross_attention: torch.Tensor | None = None) -> torch.Tensor:
         """Apply multi-head attention.
@@ -75,14 +81,17 @@ class MultiHeadAttention(Module):
         reshaped_x = self._reshape(x)
         reshaped_cross_attention = self._reshape(cross_attention) if cross_attention is not None else reshaped_x
 
-        q = rearrange(self.to_q(reshaped_x), '... L (heads dim) -> ... heads L dim ', heads=self.n_heads)
-        k, v = rearrange(
+        query = rearrange(self.to_q(reshaped_x), '... L (heads dim) -> ... heads L dim ', heads=self.n_heads)
+        key, value = rearrange(
             self.to_kv(reshaped_cross_attention),
             '... S (kv heads dim) -> kv ... heads S dim ',
             heads=self.n_heads,
             kv=2,
         )
-        y = torch.nn.functional.scaled_dot_product_attention(q, k, v, dropout_p=self.p_dropout, is_causal=False)
+        query, key = self.rope(query, key)  # NO-OP if rope_embed_fraction is 0.0
+        y = torch.nn.functional.scaled_dot_product_attention(
+            query, key, value, dropout_p=self.p_dropout, is_causal=False
+        )
         y = rearrange(y, '... heads L dim -> ... L (heads dim)')
         out = self.to_out(y)
 

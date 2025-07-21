@@ -9,6 +9,7 @@ from einops import rearrange
 from torch.nn import Linear, Module
 from torch.nn.attention.flex_attention import BlockMask, create_block_mask, flex_attention
 
+from mrpro.nn.AxialRoPE import AxialRoPE
 from mrpro.utils.to_tuple import to_tuple
 
 T = TypeVar('T')
@@ -129,6 +130,7 @@ class NeighborhoodSelfAttention(Module):
         dilation: int | Sequence[int] = 1,
         circular: bool | Sequence[bool] = False,
         features_last: bool = False,
+        rope_embed_fraction: float = 0.0,
     ) -> None:
         """Initialize a neighborhood attention module.
 
@@ -152,6 +154,9 @@ class NeighborhoodSelfAttention(Module):
         features_last
             Whether the channels are in the last dimension of the tensor, as common in visíon transformers.
             Otherwise, assume the channels are in the second dimension, as common in CNN models.
+        rope_embed_fraction
+            Fraction of channels to embed with RoPE.
+
         """
         super().__init__()
         self.n_head = n_heads
@@ -162,6 +167,7 @@ class NeighborhoodSelfAttention(Module):
         channels_per_head = n_channels_in // n_heads
         self.to_qkv = Linear(n_channels_in, 3 * channels_per_head * n_heads)
         self.to_out = Linear(channels_per_head * n_heads, n_channels_out)
+        self.rope = AxialRoPE(n_heads, rope_embed_fraction)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Apply neighborhood attention to the input tensor.
@@ -183,6 +189,7 @@ class NeighborhoodSelfAttention(Module):
         query, key, value = rearrange(
             qkv, 'batch ... (qkv head channels) -> qkv batch head (...) channels', qkv=3, head=self.n_head
         )
+        query, key = self.rope(query, key)  # NO-OP if rope_embed_fraction is 0.0
         # the mask depends on the input size. To be more flexible if used within CNNs, we compute it here.
         # The computation is cached..
         mask = neighborhood_mask(
