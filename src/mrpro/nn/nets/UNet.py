@@ -269,8 +269,8 @@ class UNet(UNetBase):
                 channels_in = channels_out
             return blocks
 
-        encoder_blocks: list[Module] = [ConvND(n_dim)(n_channels_in, n_features[0], 3, padding=1)]
-        down_blocks: list[Module] = [Identity()]
+        encoder_blocks: list[Module] = []
+        down_blocks: list[Module] = []
         decoder_blocks: list[Module] = []
         up_blocks: list[Module] = []
 
