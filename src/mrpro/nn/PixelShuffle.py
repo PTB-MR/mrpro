@@ -103,12 +103,12 @@ class PixelUnshuffleDownsample(Module):
             Whether to use a residual connection as proposed in [DCAE]_.
         """
         super().__init__()
-        self.pixel_unshuffle = PixelUnshuffle(downscale_factor)
         out_ratio = downscale_factor**n_dim
         if n_channels_out % out_ratio != 0:
             raise ValueError(f'channels_out must be divisible by downscale_factor**{n_dim}.')
         self.conv = ConvND(n_dim)(n_channels_in, n_channels_out // out_ratio, kernel_size=3, padding='same')
         self.residual = residual
+        self.pixel_unshuffle = PixelUnshuffle(downscale_factor)
 
     def __call__(self, x: torch.Tensor) -> torch.Tensor:
         """Apply downsampling.

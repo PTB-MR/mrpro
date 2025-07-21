@@ -164,6 +164,8 @@ class Restormer(UNetBase):
         cond_dim
             Dimension of conditioning input. If 0, no conditioning is applied.
         """
+        if len(n_blocks) != len(n_heads):
+            raise ValueError('n_blocks and n_heads must have the same length.')
 
         def blocks(n_heads: int, n_blocks: int):
             layers = Sequential(
@@ -192,7 +194,13 @@ class Restormer(UNetBase):
             PixelShuffleUpsample(n_dim, n_channels_per_head * head_next, n_channels_per_head * head_current)
             for head_current, head_next in pairwise(n_heads)
         ][::-1]
-        concat_blocks = [Concat() for _ in range(len(encoder_blocks))]
+        concat_blocks = [
+            Sequential(
+                Concat(),
+                ConvND(n_dim)(2 * n_channels_per_head * head, n_channels_per_head * head, kernel_size=1),
+            )
+            for head in n_heads[1::-1]
+        ]
         decoder_blocks = [blocks(head, block) for head, block in zip(n_heads[:-1], n_blocks[:-1], strict=True)][::-1]
         last_block = Sequential(
             *(RestormerBlock(n_dim, n_channels_per_head, n_heads[0], mlp_ratio) for _ in range(n_refinement_blocks)),
