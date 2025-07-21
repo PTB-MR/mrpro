@@ -31,7 +31,7 @@ def get_theta(shape: Sequence[int], n_embedding_channels: int, device: torch.dev
     log_min = torch.log(torch.tensor(torch.pi))
     log_max = torch.log(torch.tensor(10000.0))
     freqs = torch.exp(torch.linspace(log_min, log_max, n_embedding_channels // (2 * position.shape[-1]), device=device))
-    return rearrange(freqs * position[..., None], '... dim freqs ->... 1 (dim freqs)')
+    return rearrange(freqs * position[..., None], '... dim freqs ->... (dim freqs)')
 
 
 class AxialRoPE(Module):
@@ -44,23 +44,19 @@ class AxialRoPE(Module):
 
     def __init__(
         self,
-        n_heads: int,
-        non_embed_fraction: float = 0.0,
+        embed_fraction: float = 1.0,
     ):
         """Initialize AxialRoPE.
 
         Parameters
         ----------
-        n_heads
-            Number of attention heads
-        non_embed_fraction
-            Fraction of channels not used for embedding
+        embed_fraction
+            Fraction of channels used for embedding
         """
         super().__init__()
-        self.non_embed_fraction = non_embed_fraction
-        if non_embed_fraction < 0 or non_embed_fraction > 1:
-            raise ValueError('non_embed_fraction must be between 0 and 1')
-        self.n_heads = n_heads
+        self.embed_fraction = embed_fraction
+        if embed_fraction < 0 or embed_fraction > 1:
+            raise ValueError('embed_fraction must be between 0 and 1')
 
     def forward(self, *tensors: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Apply rotary embeddings to input tensors.
@@ -68,9 +64,10 @@ class AxialRoPE(Module):
         Parameters
         ----------
         *tensors
-            Tensors to apply rotary embeddings to
+            Tensors to apply rotary embeddings to.
+            Shape must be `(batch, heads, *spatial_dims, channels)`.
         """
-        if self.non_embed_fraction == 1.0:
+        if self.embed_fraction == 1.0:
             return tensors
 
         shape = tensors[0].shape
@@ -80,14 +77,10 @@ class AxialRoPE(Module):
         if not all(t.device == device for t in tensors):
             raise ValueError('All tensors must be on the same device')
 
-        shape, n_channels = shape[1:-1], shape[-1]
-        if n_channels % self.n_heads:
-            raise ValueError(f'Number of channels {n_channels} must be divisible by number of heads {self.n_heads}')
-        n_channels_per_head = n_channels // self.n_heads
-        tensors = tuple(t.unflatten(-1, (self.n_heads, -1)) for t in tensors)
-        n_embedding_channels = int(n_channels_per_head * (1 - self.non_embed_fraction))
+        shape, n_channels_per_head = shape[2:-1], shape[-1]
+        n_embedding_channels = int(n_channels_per_head * self.embed_fraction)
         theta = get_theta(shape, n_embedding_channels, device)
-        return tuple(self.apply_rotary_emb(t, theta).flatten(-2) for t in tensors)
+        return tuple(self.apply_rotary_emb(t, theta) for t in tensors)
 
     @staticmethod
     def apply_rotary_emb(x: torch.Tensor, theta: torch.Tensor) -> torch.Tensor:

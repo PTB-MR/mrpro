@@ -53,7 +53,7 @@ class MultiHeadAttention(Module):
         self.features_last = features_last
         self.to_out = Linear(n_channels_in, n_channels_out)
         self.n_heads = n_heads
-        self.rope = AxialRoPE(n_heads, non_embed_fraction=1 - rope_embed_fraction)
+        self.rope = AxialRoPE(rope_embed_fraction)
 
     def __call__(self, x: torch.Tensor, cross_attention: torch.Tensor | None = None) -> torch.Tensor:
         """Apply multi-head attention.
@@ -78,21 +78,25 @@ class MultiHeadAttention(Module):
 
     def forward(self, x: torch.Tensor, cross_attention: torch.Tensor | None = None) -> torch.Tensor:
         """Apply multi-head attention."""
-        reshaped_x = self._reshape(x)
-        reshaped_cross_attention = self._reshape(cross_attention) if cross_attention is not None else reshaped_x
+        if cross_attention is None:
+            cross_attention = x
+        if not self.features_last:
+            x = x.moveaxis(1, -1)
+            cross_attention = cross_attention.moveaxis(1, -1)
 
-        query = rearrange(self.to_q(reshaped_x), '... L (heads dim) -> ... heads L dim ', heads=self.n_heads)
+        query = rearrange(self.to_q(x), 'batch ... (heads channels) -> batch heads ... channels ', heads=self.n_heads)
         key, value = rearrange(
-            self.to_kv(reshaped_cross_attention),
-            '... S (kv heads dim) -> kv ... heads S dim ',
+            self.to_kv(cross_attention),
+            'batch ... (kv heads channels) -> kv batch heads ... channels ',
             heads=self.n_heads,
             kv=2,
         )
         query, key = self.rope(query, key)  # NO-OP if rope_embed_fraction is 0.0
+        query, key, value = query.flatten(2, -2), key.flatten(2, -2), value.flatten(2, -2)
         y = torch.nn.functional.scaled_dot_product_attention(
             query, key, value, dropout_p=self.p_dropout, is_causal=False
         )
-        y = rearrange(y, '... heads L dim -> ... L (heads dim)')
+        y = rearrange(y, '... heads L channels -> ... L (heads channels)')
         out = self.to_out(y)
 
         if not self.features_last:

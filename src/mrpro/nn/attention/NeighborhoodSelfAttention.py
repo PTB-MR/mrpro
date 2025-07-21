@@ -15,6 +15,8 @@ from mrpro.utils.to_tuple import to_tuple
 T = TypeVar('T')
 
 
+# coverage does not pick up the use via flex_attention, as the code gets compiled.
+# pragma: no cover
 @cache
 def neighborhood_mask(
     device: str,
@@ -130,7 +132,7 @@ class NeighborhoodSelfAttention(Module):
         dilation: int | Sequence[int] = 1,
         circular: bool | Sequence[bool] = False,
         features_last: bool = False,
-        rope_embed_fraction: float = 0.0,
+        rope_embed_fraction: float = 1.0,
     ) -> None:
         """Initialize a neighborhood attention module.
 
@@ -167,7 +169,7 @@ class NeighborhoodSelfAttention(Module):
         channels_per_head = n_channels_in // n_heads
         self.to_qkv = Linear(n_channels_in, 3 * channels_per_head * n_heads)
         self.to_out = Linear(channels_per_head * n_heads, n_channels_out)
-        self.rope = AxialRoPE(n_heads, rope_embed_fraction)
+        self.rope = AxialRoPE(rope_embed_fraction)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Apply neighborhood attention to the input tensor.
@@ -187,7 +189,7 @@ class NeighborhoodSelfAttention(Module):
         spatial_shape = x.shape[1:-1]
         qkv = self.to_qkv(x)
         query, key, value = rearrange(
-            qkv, 'batch ... (qkv head channels) -> qkv batch head (...) channels', qkv=3, head=self.n_head
+            qkv, 'batch ... (qkv heads channels) -> qkv batch heads (...) channels', qkv=3, heads=self.n_head
         )
         query, key = self.rope(query, key)  # NO-OP if rope_embed_fraction is 0.0
         # the mask depends on the input size. To be more flexible if used within CNNs, we compute it here.
