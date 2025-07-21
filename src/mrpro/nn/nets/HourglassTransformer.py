@@ -1,3 +1,5 @@
+"""Hourglass Transformer."""
+
 from collections.abc import Sequence
 
 from torch.nn import Module
@@ -12,6 +14,18 @@ from mrpro.utils import to_tuple
 
 
 class HourglassTransformer(UNetBase):
+    """Hourglass Transformer.
+
+    A U-shaped transformer [CK]_ with neighborhood self-attention [NAT]_.
+
+    References
+    ----------
+    .. [CK] Crowson, Katherine, et al. "Scalable high-resolution pixel-space image synthesis with
+        hourglass diffusion transformers." ICML 2024, https://arxiv.org/abs/2401.11605
+    .. [NAT] Hassani, A. et al. "Neighborhood Attention Transformer" CVPR, 2023, https://arxiv.org/abs/2204.07143
+
+    """
+
     def __init__(
         self,
         n_dim: int,
@@ -23,6 +37,28 @@ class HourglassTransformer(UNetBase):
         n_heads: int | Sequence[int] = 4,
         cond_dim: int = 0,
     ):
+        """Initialize the Hourglass Transformer.
+
+        Parameters
+        ----------
+        n_dim
+            Number of (spatial)dimensions of the input data.
+        n_channels_in
+            Number of channels in the input data.
+        n_channels_out
+            Number of channels in the output data.
+        n_features
+            Number of features in each stage.
+        depths
+            Number of layers in each stage.
+        attention_neighborhood
+            Neighborhood size for the neighborhood self-attention. If None, use global attention
+            for that stage.
+        n_heads
+            Number of heads in each stage.
+        cond_dim
+            Number of dimensions of the conditioning tensor.
+        """
         n_layers_ = [
             len(x)
             for x in (n_features, depths, attention_neighborhood, n_heads)

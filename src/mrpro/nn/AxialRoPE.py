@@ -18,6 +18,12 @@ def get_theta(shape: Sequence[int], n_embedding_channels: int, device: torch.dev
         i.e. the shape excluding batch and channel dimensions.
     n_embedding_channels
         Number of embedding channels per head
+    device
+        Device to create the rotation angles on
+
+    Returns
+    -------
+        Rotation angles
     """
     position = torch.stack(
         torch.meshgrid([torch.arange(s, device=device) - s // 2 for s in shape], indexing='ij'), dim=-1
