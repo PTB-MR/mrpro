@@ -97,9 +97,9 @@ class MultiHeadAttention(Module):
             query, key, value, dropout_p=self.p_dropout, is_causal=False
         )
         y = rearrange(y, '... heads L channels -> ... L (heads channels)')
-        out = self.to_out(y)
+        out = self.to_out(y).reshape(x.shape)
 
         if not self.features_last:
             out = out.moveaxis(-1, 1)
 
-        return out.reshape(x.shape)
+        return out

@@ -239,11 +239,13 @@ class Decoder(Sequential):
                     stage: list[Module] = [CNNBlock(n_dim, width) for _ in range(depth)]
                 case 'LinearViT':
                     stage = [
-                        EfficientViTBlock(n_dim, width, n_heads=width // 32, linear_attn=True) for _ in range(depth)
+                        EfficientViTBlock(n_dim, width, n_heads=max(1, width // 32), linear_attn=True)
+                        for _ in range(depth)
                     ]
                 case 'ViT':
                     stage = [
-                        EfficientViTBlock(n_dim, width, n_heads=width // 32, linear_attn=False) for _ in range(depth)
+                        EfficientViTBlock(n_dim, width, n_heads=max(1, width // 32), linear_attn=False)
+                        for _ in range(depth)
                     ]
                 case _:
                     raise ValueError(f'Block type {block_type} not supported')
