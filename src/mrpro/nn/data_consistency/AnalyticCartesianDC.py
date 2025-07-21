@@ -16,9 +16,9 @@ class AnalyticCartesianDC(Module):
     Solves the following problem:
     :math:`\min_x \|Ax - k\|_2^2 + \lambda \|x-p\|_2^2`
     where :math:`A` is the acquisition operator and :math:`k` is the data, :math:`\lambda` is the regularization
-    parameter and :math:`p` is the regularization image/prior analytically. :math:`A^H A` has to be diagonal. This is a special case
-    for a Cartesian acquisition without coil sensitivity weighting. This can be used for either single-coil data or
-    to apply data consistency to each coil image [NOSENSE]_
+    parameter and :math:`p` is the regularization image/prior analytically. :math:`A^H A` has to be diagonal. This is a
+    special case for a Cartesian acquisition without coil sensitivity weighting. This can be used for either single-coil
+    data or to apply data consistency to each coil image [NOSENSE]_.
 
     References
     ----------
@@ -68,8 +68,8 @@ class AnalyticCartesianDC(Module):
         data
             k-space data.
         fourier_op
-            Fourier operator matching the k-space data. If None and data is provided as a `~mrpro.data.KData` object, the Fourier operator is
-            automatically created from the data.
+            Fourier operator matching the k-space data. If None and data is provided as a `~mrpro.data.KData` object,
+            the Fourier operator is automatically created from the data.
 
         Returns
         -------

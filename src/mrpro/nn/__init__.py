@@ -23,10 +23,12 @@ from mrpro.nn import attention
 from mrpro.nn import data_consistency
 from mrpro.nn.PermutedBlock import PermutedBlock
 from mrpro.nn.RMSNorm import RMSNorm
+from mrpro.nn.AxialRoPE import AxialRoPE
 
 __all__ = [
     "AdaptiveAvgPoolND",
     "AvgPoolND",
+    "AxialRoPE",
     "BatchNormND",
     "ComplexAsChannel",
     "CondMixin",
