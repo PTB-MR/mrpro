@@ -5,7 +5,9 @@ from mrpro.data.KData import KData
 from mrpro.nn.data_consistency.ConjugateGradientDC import ConjugateGradientDC
 
 
-def test_conjugate_gradient_dc(image_noisy: torch.Tensor, kdata_us: KData, image: torch.Tensor, image_us: torch.Tensor):
+def test_conjugate_gradient_dc(
+    image_noisy: torch.Tensor, kdata_us: KData, image: torch.Tensor, image_us: torch.Tensor
+) -> None:
     image_noisy = image_noisy.clone().requires_grad_(True)
     dc = ConjugateGradientDC(initial_regularization_weight=1.0)
     result = dc(image_noisy, kdata_us)

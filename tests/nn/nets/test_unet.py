@@ -39,7 +39,7 @@ def test_unet_forward(torch_compile: bool, device: str) -> None:
     assert y.shape == (1, 1, 16, 16)
 
 
-def test_unet_backward():
+def test_unet_backward() -> None:
     unet = UNet(
         n_dim=1,
         n_channels_in=1,

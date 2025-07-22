@@ -38,7 +38,7 @@ def test_restormer_forward(torch_compile: bool, device: str) -> None:
     assert y.shape == (1, 1, 16, 16)
 
 
-def test_restormer_backward():
+def test_restormer_backward() -> None:
     restormer = Restormer(
         n_dim=1,
         n_channels_in=1,
