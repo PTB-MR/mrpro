@@ -24,4 +24,4 @@ def test_absolute_position_encodings(device) -> None:
     y1, y2 = ape(x1), ape(x2)
     assert y1.shape == x1.shape
     torch.testing.assert_close(y1 - x1, y2 - x2)
-    assert x1[:, n_features:] == y1[:, n_features:]  # unembedded features
+    assert (x1[:, n_features:] == y1[:, n_features:]).all()  # unembedded features

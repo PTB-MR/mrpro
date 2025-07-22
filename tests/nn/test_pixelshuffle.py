@@ -77,10 +77,10 @@ def test_pixelshuffleupsample_pixelunshuffledownsample():
     downsample = PixelUnshuffleDownsample(3, 1, 3**3, downscale_factor=3, residual=False)
     upsample = PixelShuffleUpsample(3, 3**3, 1, upscale_factor=3, residual=False)
     # Only if the convs are Identity, the upsample and downsample are inverses.
-    torch.nn.init.dirac_(downsample.conv.weight)
-    torch.nn.init.dirac_(upsample.conv.weight)
-    torch.nn.init.zeros_(downsample.conv.bias)  # type: ignore[arg-type]
-    torch.nn.init.zeros_(upsample.conv.bias)  # type: ignore[arg-type]
+    torch.nn.init.dirac_(downsample.projection.weight)
+    torch.nn.init.dirac_(upsample.projection.weight)
+    torch.nn.init.zeros_(downsample.projection.bias)  # type: ignore[arg-type]
+    torch.nn.init.zeros_(upsample.projection.bias)  # type: ignore[arg-type]
     y = downsample(upsample(x))
     assert y.shape == (1, 3**3, 3, 4, 5)
     torch.testing.assert_close(y, x, msg='Upsample and downsample are not inverses.')

@@ -3,7 +3,7 @@
 from math import ceil
 
 import torch
-from torch.nn import Module
+from torch.nn import Linear, Module
 
 from mrpro.nn.ndmodules import ConvND
 
@@ -85,7 +85,13 @@ class PixelUnshuffleDownsample(Module):
     """
 
     def __init__(
-        self, n_dim: int, n_channels_in: int, n_channels_out: int, downscale_factor: int = 2, residual: bool = False
+        self,
+        n_dim: int,
+        n_channels_in: int,
+        n_channels_out: int,
+        downscale_factor: int = 2,
+        residual: bool = False,
+        features_last: bool = False,
     ):
         """Initialize a PixelUnshuffleDownsample layer.
 
@@ -101,14 +107,21 @@ class PixelUnshuffleDownsample(Module):
             Factor by which to downscale the input tensor.
         residual
             Whether to use a residual connection as proposed in [DCAE]_.
+        features_last
+            Whether the features are last in the input tensor, as common in transformer models,
+            or in the second dimension, as common in CNNs.
         """
         super().__init__()
         out_ratio = downscale_factor**n_dim
         if n_channels_out % out_ratio != 0:
             raise ValueError(f'channels_out must be divisible by downscale_factor**{n_dim}.')
-        self.conv = ConvND(n_dim)(n_channels_in, n_channels_out // out_ratio, kernel_size=3, padding='same')
+        if features_last:
+            self.projection: Module = Linear(n_channels_in, n_channels_out // out_ratio)
+        else:
+            self.projection = ConvND(n_dim)(n_channels_in, n_channels_out // out_ratio, kernel_size=3, padding='same')
+        self.features_last = features_last
         self.residual = residual
-        self.pixel_unshuffle = PixelUnshuffle(downscale_factor)
+        self.pixel_unshuffle = PixelUnshuffle(downscale_factor, features_last)
 
     def __call__(self, x: torch.Tensor) -> torch.Tensor:
         """Apply downsampling.
@@ -126,13 +139,17 @@ class PixelUnshuffleDownsample(Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Apply downsampling."""
-        h = self.conv(x)
+        h = self.projection(x)
         h = self.pixel_unshuffle(h)
 
         if self.residual:
             x = self.pixel_unshuffle(x)
-            n = (x.shape[1] // h.shape[1]) * h.shape[1]
-            h = h + x[:, :n].unflatten(1, (h.shape[1], -1)).mean(2)
+            if self.features_last:
+                n = (x.shape[-1] // h.shape[-1]) * h.shape[-1]
+                h = h + x[..., :n].unflatten(-1, (h.shape[-1], -1)).mean(-1)
+            else:
+                n = (x.shape[1] // h.shape[1]) * h.shape[1]
+                h = h + x[:, :n].unflatten(1, (h.shape[1], -1)).mean(2)
         return h
 
 
@@ -148,7 +165,13 @@ class PixelShuffleUpsample(Module):
     """
 
     def __init__(
-        self, n_dim: int, n_channels_in: int, n_channels_out: int, upscale_factor: int = 2, residual: bool = False
+        self,
+        n_dim: int,
+        n_channels_in: int,
+        n_channels_out: int,
+        upscale_factor: int = 2,
+        residual: bool = False,
+        features_last: bool = False,
     ):
         """Initialize a PixelShuffleUpsample layer.
 
@@ -164,10 +187,19 @@ class PixelShuffleUpsample(Module):
             Factor by which to upscale the input tensor.
         residual
             Whether to use a residual connection as proposed in [DCAE]_.
+        features_last
+            Whether the features are last in the input tensor, as common in transformer models,
+            or in the second dimension, as common in CNNs.
         """
         super().__init__()
-        self.conv = ConvND(n_dim)(n_channels_in, n_channels_out * upscale_factor**n_dim, kernel_size=3, padding='same')
-        self.pixel_shuffle = PixelShuffle(upscale_factor)
+        if features_last:
+            self.projection: Module = Linear(n_channels_in, n_channels_out * upscale_factor**n_dim)
+        else:
+            self.projection = ConvND(n_dim)(
+                n_channels_in, n_channels_out * upscale_factor**n_dim, kernel_size=3, padding='same'
+            )
+        self.features_last = features_last
+        self.pixel_shuffle = PixelShuffle(upscale_factor, features_last)
         self.residual = residual
 
     def __call__(self, x: torch.Tensor) -> torch.Tensor:
@@ -186,9 +218,12 @@ class PixelShuffleUpsample(Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Apply upsampling."""
-        h = self.conv(x)
+        h = self.projection(x)
         if self.residual:
-            h = h + x.repeat_interleave(ceil(h.shape[1] / x.shape[1]), dim=1)[:, : h.shape[1]]
+            if self.features_last:
+                h = h + x.repeat_interleave(ceil(h.shape[-1] / x.shape[-1]), dim=-1)[..., : h.shape[-1]]
+            else:
+                h = h + x.repeat_interleave(ceil(h.shape[1] / x.shape[1]), dim=1)[:, : h.shape[1]]
         out = self.pixel_shuffle(h)
         return out
 

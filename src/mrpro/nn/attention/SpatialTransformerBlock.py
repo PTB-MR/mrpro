@@ -1,6 +1,7 @@
 """Spatial transformer block."""
 
 from collections.abc import Sequence
+from typing import Literal
 
 import torch
 from torch.nn import Dropout, Linear, Module
@@ -12,6 +13,7 @@ from mrpro.nn.GEGLU import GEGLU
 from mrpro.nn.GroupNorm import GroupNorm
 from mrpro.nn.LayerNorm import LayerNorm
 from mrpro.nn.PermutedBlock import PermutedBlock
+from mrpro.nn.RMSNorm import RMSNorm
 from mrpro.nn.Sequential import Sequential
 
 
@@ -129,6 +131,8 @@ class SpatialTransformerBlock(CondMixin, Module):
         cond_dim: int = 0,
         rope_embed_fraction: float = 0.0,
         attention_neighborhood: int | None = None,
+        features_last: bool = False,
+        norm: Literal['group', 'rms'] = 'group',
     ):
         """Initialize the spatial transformer block.
 
@@ -150,14 +154,26 @@ class SpatialTransformerBlock(CondMixin, Module):
             Fraction of channels to embed with RoPE.
         attention_neighborhood
             If not None, use NeighborhoodSelfAttention with the given neighborhood size instead of MultiHeadAttention.
+        features_last
+            Whether the features are last in the input tensor, as common in transformer models.
+        norm
+            Whether to use GroupNorm or RMSNorm.
         """
         super().__init__()
         hidden_dim = n_heads * (channels // n_heads)
-        self.norm = GroupNorm(channels)
+        match norm:
+            case 'group':
+                self.norm: Module = GroupNorm(channels, features_last=features_last)
+            case 'rms':
+                self.norm = RMSNorm(channels, features_last=features_last)
+            case _:
+                raise ValueError(f'Invalid norm: {norm}')
+        self.features_last = features_last
         self.proj_in = Linear(channels, hidden_dim)
         self.transformer_blocks = Sequential()
         for group in (g for _ in range(depth) for g in dim_groups):
-            group = tuple(g - 1 if g < 0 else g for g in group)
+            if not self.features_last:
+                group = tuple(g - 1 if g < 0 else g for g in group)
             block = BasicTransformerBlock(
                 hidden_dim,
                 n_heads,
@@ -174,11 +190,13 @@ class SpatialTransformerBlock(CondMixin, Module):
         """Apply the spatial transformer block."""
         skip = x
         h = self.norm(x)
-        h = h.movedim(1, -1)
+        if not self.features_last:
+            h = h.movedim(1, -1)
         h = self.proj_in(h)
         h = self.transformer_blocks(h, cond=cond)
         h = self.proj_out(h)
-        h = h.movedim(-1, 1)
+        if not self.features_last:
+            h = h.movedim(-1, 1)
         return skip + h
 
     def __call__(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
