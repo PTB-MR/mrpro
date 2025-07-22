@@ -5,7 +5,9 @@ from mrpro.data.KData import KData
 from mrpro.nn.data_consistency.GradientDescentDC import GradientDescentDC
 
 
-def test_gradient_descent_dc(image_noisy: torch.Tensor, kdata_us: KData, image: torch.Tensor, image_us: torch.Tensor):
+def test_gradient_descent_dc(
+    image_noisy: torch.Tensor, kdata_us: KData, image: torch.Tensor, image_us: torch.Tensor
+) -> None:
     image_noisy = image_noisy.clone().requires_grad_(True)
     dc = GradientDescentDC(initial_stepsize=1.0)
     result = dc(image_noisy, kdata_us)
