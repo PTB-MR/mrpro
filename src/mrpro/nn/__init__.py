@@ -24,8 +24,11 @@ from mrpro.nn import data_consistency
 from mrpro.nn.PermutedBlock import PermutedBlock
 from mrpro.nn.RMSNorm import RMSNorm
 from mrpro.nn.AxialRoPE import AxialRoPE
+from mrpro.nn.AbsolutePositionEncoding import  AbsolutePositionEncoding
+from mrpro.nn.FourierFeatures import FourierFeatures
 
 __all__ = [
+    "AbsolutePositionEncoding",
     "AdaptiveAvgPoolND",
     "AvgPoolND",
     "AxialRoPE",
@@ -36,6 +39,7 @@ __all__ = [
     "ConvTransposeND",
     "DropPath",
     "FiLM",
+    "FourierFeatures",
     "GroupNorm",
     "InstanceNormND",
     "MaxPoolND",
