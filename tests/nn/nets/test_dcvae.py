@@ -53,7 +53,7 @@ def test_dcvae_backward_kl():
     kl.sum().backward()
     assert x.grad is not None, 'x.grad is None'
     assert not x.grad.isnan().any(), 'x.grad is NaN'
-    for name, parameter in dcvae.named_parameters():
+    for name, parameter in dcvae.encoder.named_parameters():  # only the encoder parameters can influence kl
         assert parameter.grad is not None, f'{name}.grad is None'
         assert not parameter.grad.isnan().any(), f'{name}.grad is NaN'
 
@@ -75,7 +75,6 @@ def test_dcvae_backward_y():
     y.sum().backward()
     assert x.grad is not None, 'x.grad is None'
     assert not x.grad.isnan().any(), 'x.grad is NaN'
-    # only the encoder parameters can influence kl
-    for name, parameter in dcvae.encoder.named_parameters():
+    for name, parameter in dcvae.named_parameters():
         assert parameter.grad is not None, f'{name}.grad is None'
         assert not parameter.grad.isnan().any(), f'{name}.grad is NaN'
