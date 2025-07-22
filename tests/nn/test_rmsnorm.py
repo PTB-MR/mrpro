@@ -44,8 +44,8 @@ def test_rmsnorm_basic(n_channels: int | None, features_last: bool, input_shape:
         assert norm.bias.grad is not None, 'No gradient computed for bias'
 
 
-def test_rmsnorm_features_last():
-    """Test RMSNorm with features_last=True."""
+def test_rmsnorm_features_last() -> None:
+    """Test RMSNorm with features_last=True vs features_last=False."""
     rng = RandomGenerator(seed=42)
     x = rng.float32_tensor((1, 3, 4, 5)).requires_grad_(True)
 

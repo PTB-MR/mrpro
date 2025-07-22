@@ -1,3 +1,5 @@
+"""Test fixtures for data consistency tests."""
+
 import pytest
 from mrpro.data.KData import KData
 from mrpro.data.SpatialDimension import SpatialDimension

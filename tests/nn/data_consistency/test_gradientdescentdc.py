@@ -1,3 +1,5 @@
+"""Tests for GradientDescentDC module."""
+
 import torch
 from mrpro.data.KData import KData
 from mrpro.nn.data_consistency.GradientDescentDC import GradientDescentDC

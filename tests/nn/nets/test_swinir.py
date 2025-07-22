@@ -1,3 +1,5 @@
+"""Tests for SwinIR network."""
+
 from typing import cast
 
 import pytest
@@ -33,7 +35,7 @@ def test_swinir_forward(torch_compile: bool, device: str) -> None:
     assert y.shape == (1, 1, 16, 16)
 
 
-def test_swinir_backward():
+def test_swinir_backward() -> None:
     swinir = SwinIR(
         n_dim=1,
         n_channels_in=1,

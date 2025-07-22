@@ -13,7 +13,7 @@ from mrpro.utils import RandomGenerator
         pytest.param('cuda', marks=pytest.mark.cuda, id='cuda'),
     ],
 )
-def test_absolute_position_encodings(device) -> None:
+def test_absolute_position_encodings(device: str) -> None:
     """Test absolute position encoding."""
     n_features = 32
     shape = (1, 2 * n_features, 32, 32)

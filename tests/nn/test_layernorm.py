@@ -1,5 +1,7 @@
 """Tests for LayerNorm module."""
 
+from collections.abc import Sequence
+
 import pytest
 import torch
 from mrpro.nn.LayerNorm import LayerNorm
@@ -22,7 +24,12 @@ from mrpro.utils import RandomGenerator
         (None, True, (2, 16, 16, 64)),
     ],
 )
-def test_layernorm_basic(n_channels, features_last, input_shape, device):
+def test_layernorm_basic(
+    n_channels: int | None,
+    features_last: bool,
+    input_shape: Sequence[int],
+    device: str,
+) -> None:
     """Test LayerNorm basic functionality."""
     rng = RandomGenerator(seed=42)
     x = rng.float32_tensor(input_shape).to(device).requires_grad_(True)
@@ -49,7 +56,12 @@ def test_layernorm_basic(n_channels, features_last, input_shape, device):
         (64, 32, (2, 64, 16, 16), (2, 32)),
     ],
 )
-def test_layernorm_with_conditioning(n_channels, cond_dim, input_shape, cond_shape):
+def test_layernorm_with_conditioning(
+    n_channels: int,
+    cond_dim: int,
+    input_shape: Sequence[int],
+    cond_shape: Sequence[int],
+) -> None:
     """Test LayerNorm with conditioning."""
     rng = RandomGenerator(seed=42)
     x = rng.float32_tensor(input_shape).requires_grad_(True)
@@ -66,8 +78,8 @@ def test_layernorm_with_conditioning(n_channels, cond_dim, input_shape, cond_sha
     assert norm.cond_proj.weight.grad is not None, 'No gradient computed for cond_proj'
 
 
-def test_layernorm_features_last():
-    """Test LayerNorm with features_last=True."""
+def test_layernorm_features_last() -> None:
+    """Test LayerNorm with features_last=True vs features_last=False."""
     rng = RandomGenerator(seed=42)
     x = rng.float32_tensor((1, 3, 4, 5)).requires_grad_(True)
 
@@ -80,7 +92,7 @@ def test_layernorm_features_last():
     torch.testing.assert_close(y_standard, y_last.moveaxis(-1, 1))
 
 
-def test_layernorm_no_channels():
+def test_layernorm_no_channels() -> None:
     """Test LayerNorm without channels (pure normalization)."""
     rng = RandomGenerator(seed=42)
     x = rng.float32_tensor((1, 32, 32, 32)).requires_grad_(True)
@@ -98,19 +110,19 @@ def test_layernorm_no_channels():
     assert torch.allclose(std, torch.ones_like(std), atol=1e-5), 'Std not close to 1'
 
 
-def test_layernorm_conditioning_without_channels():
+def test_layernorm_conditioning_without_channels() -> None:
     """Test LayerNorm with conditioning but no channels (should raise error)."""
     with pytest.raises(ValueError, match='channels must be provided if cond_dim > 0'):
         LayerNorm(n_channels=None, cond_dim=16)
 
 
-def test_layernorm_invalid_cond_dim():
+def test_layernorm_invalid_cond_dim() -> None:
     """Test LayerNorm with invalid cond_dim."""
     with pytest.raises(RuntimeError, match='Trying to create tensor with negative dimension'):
         LayerNorm(n_channels=32, cond_dim=-1)
 
 
-def test_layernorm_3d_input():
+def test_layernorm_3d_input() -> None:
     """Test LayerNorm with 3D input."""
     rng = RandomGenerator(seed=42)
     x = rng.float32_tensor((2, 64, 128)).requires_grad_(True)
@@ -123,7 +135,7 @@ def test_layernorm_3d_input():
     assert x.grad is not None, 'No gradient computed for input'
 
 
-def test_layernorm_5d_input():
+def test_layernorm_5d_input() -> None:
     """Test LayerNorm with 5D input."""
     rng = RandomGenerator(seed=42)
     x = rng.float32_tensor((1, 32, 16, 16, 16)).requires_grad_(True)
@@ -136,7 +148,7 @@ def test_layernorm_5d_input():
     assert x.grad is not None, 'No gradient computed for input'
 
 
-def test_layernorm_conditioning_features_last():
+def test_layernorm_conditioning_features_last() -> None:
     """Test LayerNorm with conditioning and features_last=True."""
     rng = RandomGenerator(seed=42)
     x = rng.float32_tensor((1, 3, 4, 5)).requires_grad_(True)
@@ -152,7 +164,7 @@ def test_layernorm_conditioning_features_last():
     assert cond.grad is not None, 'No gradient computed for conditioning'
 
 
-def test_layernorm_gradient_flow():
+def test_layernorm_gradient_flow() -> None:
     """Test that gradients flow properly through LayerNorm."""
     rng = RandomGenerator(seed=42)
     x = rng.float32_tensor((1, 32, 32, 32)).requires_grad_(True)

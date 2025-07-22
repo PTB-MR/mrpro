@@ -12,8 +12,8 @@ from mrpro.utils import RandomGenerator
         pytest.param('cuda', marks=pytest.mark.cuda, id='cuda'),
     ],
 )
-def test_fourierfeatures(device) -> None:
-    """Test fourier features"""
+def test_fourierfeatures(device: str) -> None:
+    """Test FourierFeatures."""
     n_features_in = 1
     n_features_out = 16
     std = 1.0

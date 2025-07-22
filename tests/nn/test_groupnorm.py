@@ -21,7 +21,13 @@ from mrpro.utils import RandomGenerator
         (64, 8, (2, 64, 16, 16, 16), False),
     ],
 )
-def test_groupnorm(n_channels: int, n_groups: int, input_shape: Sequence[int], device: str, affine: bool) -> None:
+def test_groupnorm(
+    n_channels: int,
+    n_groups: int | None,
+    input_shape: Sequence[int],
+    device: str,
+    affine: bool,
+) -> None:
     """Test GroupNorm output shape and backpropagation."""
     rng = RandomGenerator(seed=42)
     x = rng.float32_tensor(input_shape).to(device).requires_grad_(True)

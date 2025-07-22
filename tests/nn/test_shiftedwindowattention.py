@@ -1,3 +1,5 @@
+"""Tests for ShiftedWindowAttention module."""
+
 import pytest
 from mrpro.nn.attention import ShiftedWindowAttention
 from mrpro.utils import RandomGenerator
@@ -18,6 +20,7 @@ from mrpro.utils import RandomGenerator
     ],
 )
 def test_shifted_window_attention(dim: int, window_size: int, shifted: bool, device: str) -> None:
+    """Test ShiftedWindowAttention output shape and backpropagation."""
     n_batch, n_channels, n_heads = 2, 8, 2
     spatial_shape = (window_size * 4,) * dim
     rng = RandomGenerator(13)

@@ -1,3 +1,5 @@
+"""Tests for AnalyticCartesianDC module."""
+
 import torch
 from mrpro.data.KData import KData
 from mrpro.nn.data_consistency.AnalyticCartesianDC import AnalyticCartesianDC

@@ -14,7 +14,7 @@ from mrpro.utils import RandomGenerator
     ],
 )
 def test_geglu(device: str) -> None:
-    """Test GELU."""
+    """Test GEGLU output shape and backpropagation."""
     rng = RandomGenerator(seed=42)
     x = rng.float32_tensor((1, 3, 4, 5)).to(device).requires_grad_(True)
     gelu = GEGLU(3, 4).to(device)
@@ -27,7 +27,7 @@ def test_geglu(device: str) -> None:
 
 
 def test_geglu_features_last() -> None:
-    """Test GELU with features last."""
+    """Test GEGLU with features_last=True vs features_last=False."""
     rng = RandomGenerator(seed=42)
     x = rng.float32_tensor((1, 3, 4, 5)).requires_grad_(True)
     gelu_last = GEGLU(3, 4, features_last=True)

@@ -1,3 +1,5 @@
+"""Tests for UNet and AttentionGatedUNet networks."""
+
 from typing import cast
 
 import pytest

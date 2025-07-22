@@ -1,5 +1,7 @@
 """Tests for Sequential module."""
 
+from collections.abc import Sequence
+
 import pytest
 from mrpro.nn import FiLM, Sequential
 from mrpro.operators import FastFourierOp, MagnitudeOp
@@ -21,7 +23,11 @@ from torch.nn import Linear
         ((2, 32), None),
     ],
 )
-def test_sequential(input_shape, cond_dim, device):
+def test_sequential(
+    input_shape: Sequence[int],
+    cond_dim: Sequence[int] | None,
+    device: str,
+) -> None:
     """Test Sequential output shape and backpropagation."""
     rng = RandomGenerator(seed=42)
     x = rng.float32_tensor(input_shape).to(device).requires_grad_(True)

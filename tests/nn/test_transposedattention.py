@@ -1,5 +1,7 @@
 """Tests for TransposedAttention module."""
 
+from collections.abc import Sequence
+
 import pytest
 from mrpro.nn.attention import TransposedAttention
 from mrpro.utils import RandomGenerator
@@ -19,7 +21,13 @@ from mrpro.utils import RandomGenerator
         (3, 64, 8, (2, 64, 16, 16, 16)),
     ],
 )
-def test_transposed_attention(dim, channels, num_heads, input_shape, device):
+def test_transposed_attention(
+    dim: int,
+    channels: int,
+    num_heads: int,
+    input_shape: Sequence[int],
+    device: str,
+) -> None:
     """Test TransposedAttention output shape and backpropagation."""
     rng = RandomGenerator(seed=42)
     x = rng.float32_tensor(input_shape).to(device).requires_grad_(True)

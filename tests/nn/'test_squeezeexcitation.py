@@ -1,5 +1,7 @@
 """Tests for SqueezeExcitation module."""
 
+from collections.abc import Sequence
+
 import pytest
 from mrpro.nn.attention import SqueezeExcitation
 from mrpro.utils import RandomGenerator
@@ -12,7 +14,11 @@ from mrpro.utils import RandomGenerator
         (3, (1, 64, 16, 16, 16), 16),
     ],
 )
-def test_squeeze_excitation(dim, input_shape, squeeze_channels):
+def test_squeeze_excitation(
+    dim: int,
+    input_shape: Sequence[int],
+    squeeze_channels: int,
+) -> None:
     """Test SqueezeExcitation output shape and backpropagation."""
     rng = RandomGenerator(seed=42)
     x = rng.float32_tensor(input_shape).requires_grad_(True)

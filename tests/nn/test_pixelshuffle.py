@@ -5,7 +5,7 @@ from mrpro.nn.PixelShuffle import PixelShuffle, PixelShuffleUpsample, PixelUnshu
 from mrpro.utils import RandomGenerator
 
 
-def test_pixel_shuffle_2d():
+def test_pixel_shuffle_2d() -> None:
     """Test PixelUnshuffle's fast path for 2D images."""
     x = torch.arange(3 * 4 * 8).reshape(1, 3, 4, 8)
     pixel_unshuffle = PixelUnshuffle(2)
@@ -18,7 +18,7 @@ def test_pixel_shuffle_2d():
     assert (x == z).all()
 
 
-def test_pixel_unshuffle_4d():
+def test_pixel_unshuffle_4d() -> None:
     """Test PixelUnshuffle's general case."""
     x = torch.arange(3 * 4 * 8 * 10 * 12).reshape(1, 3, 4, 8, 10, 12)
     pixel_unshuffle = PixelUnshuffle(2)
@@ -31,7 +31,7 @@ def test_pixel_unshuffle_4d():
     assert (x == z).all()
 
 
-def test_pixelunshuffle_features_last():
+def test_pixelunshuffle_features_last() -> None:
     """Test PixelUnshuffle with features_last."""
     x = torch.arange(3 * 4 * 8 * 10 * 12).reshape(1, 3, 4, 8, 10, 12)
     pixel_unshuffle_last = PixelUnshuffle(2, features_last=True)
@@ -41,8 +41,8 @@ def test_pixelunshuffle_features_last():
     assert (y_last == y_normal).all()
 
 
-def test_pixelshuffle_features_last():
-    """Test PixelS	huffle with features_last."""
+def test_pixelshuffle_features_last() -> None:
+    """Test PixelShuffle with features_last."""
     x = torch.arange(3 * 4 * 8 * 10 * 12).reshape(1, -1, 2, 4, 5, 6)
     pixel_shuffle_last = PixelShuffle(2, features_last=True)
     pixel_shuffle = PixelShuffle(2, features_last=False)
@@ -51,7 +51,7 @@ def test_pixelshuffle_features_last():
     assert (y_last == y_normal).all()
 
 
-def test_unpixelshuffledownsample_residual():
+def test_unpixelshuffledownsample_residual() -> None:
     """Test PixelUnshuffleDownsample with residual."""
     rng = RandomGenerator(seed=42)
     x = rng.float32_tensor((1, 2, 9, 12, 15))
@@ -60,7 +60,7 @@ def test_unpixelshuffledownsample_residual():
     assert y.shape == (1, 27, 3, 4, 5)
 
 
-def test_pixelshuffleupsample_residual():
+def test_pixelshuffleupsample_residual() -> None:
     """Test PixelShuffleUpsample with residual."""
     rng = RandomGenerator(seed=42)
     x = rng.float32_tensor((1, 2, 3, 4, 5))
@@ -69,7 +69,7 @@ def test_pixelshuffleupsample_residual():
     assert y.shape == (1, 1, 9, 12, 15)
 
 
-def test_pixelshuffleupsample_pixelunshuffledownsample():
+def test_pixelshuffleupsample_pixelunshuffledownsample() -> None:
     """Test if PixelUnshuffleDownsample is the inverse of PixelShuffleUpsample."""
     rng = RandomGenerator(seed=42)
     x = rng.float32_tensor((1, 3**3, 3, 4, 5))

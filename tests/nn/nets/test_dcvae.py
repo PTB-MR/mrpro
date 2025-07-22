@@ -1,3 +1,5 @@
+"""Tests for DCVAE network."""
+
 from typing import cast
 
 import pytest
@@ -36,7 +38,7 @@ def test_dcvae_forward(torch_compile: bool, device: str) -> None:
     assert latent.shape == (1, 2 * 4, 2, 2)  # 2 because of mean and logvar
 
 
-def test_dcvae_backward_kl():
+def test_dcvae_backward_kl() -> None:
     """Test the backward pass of the DCVAE wrt kl."""
     dcvae = DCVAE(
         n_dim=1,
@@ -58,7 +60,7 @@ def test_dcvae_backward_kl():
         assert not parameter.grad.isnan().any(), f'{name}.grad is NaN'
 
 
-def test_dcvae_backward_y():
+def test_dcvae_backward_y() -> None:
     """Test the backward pass of the DCVAE wrt y."""
     dcvae = DCVAE(
         n_dim=1,

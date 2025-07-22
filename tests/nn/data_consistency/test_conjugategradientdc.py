@@ -1,3 +1,5 @@
+"""Tests for ConjugateGradientDC module."""
+
 import torch
 from mrpro.data.KData import KData
 from mrpro.nn.data_consistency.ConjugateGradientDC import ConjugateGradientDC

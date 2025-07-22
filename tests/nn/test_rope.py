@@ -1,3 +1,5 @@
+"""Tests for AxialRoPE module."""
+
 import pytest
 import torch
 from mrpro.nn import AxialRoPE
@@ -11,7 +13,8 @@ from mrpro.utils import RandomGenerator
         pytest.param('cuda', id='cuda', marks=pytest.mark.cuda),
     ],
 )
-def test_rope(device: torch.device):
+def test_rope(device: torch.device) -> None:
+    """Test AxialRoPE rotation and embedding functionality."""
     shape = (10, 10)
     n_heads = 2
     n_channels = 64
