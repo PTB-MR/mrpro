@@ -7,6 +7,7 @@ from einops import rearrange
 from torch.nn import Module
 
 
+# pragma: no cover
 @torch.compile
 def get_theta(shape: Sequence[int], n_embedding_channels: int, device: torch.device) -> torch.Tensor:
     """Get rotation angles.
