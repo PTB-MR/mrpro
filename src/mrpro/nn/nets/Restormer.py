@@ -199,7 +199,7 @@ class Restormer(UNetBase):
                 Concat(),
                 ConvND(n_dim)(2 * n_channels_per_head * head, n_channels_per_head * head, kernel_size=1),
             )
-            for head in n_heads[1::-1]
+            for head in n_heads[-2::-1]
         ]
         decoder_blocks = [blocks(head, block) for head, block in zip(n_heads[:-1], n_blocks[:-1], strict=True)][::-1]
         last_block = Sequential(

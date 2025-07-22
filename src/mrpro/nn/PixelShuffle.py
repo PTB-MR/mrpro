@@ -131,7 +131,8 @@ class PixelUnshuffleDownsample(Module):
 
         if self.residual:
             x = self.pixel_unshuffle(x)
-            h = h + x.unflatten(1, (h.shape[1], -1)).mean(2)
+            n = (x.shape[1] // h.shape[1]) * h.shape[1]
+            h = h + x[:, :n].unflatten(1, (h.shape[1], -1)).mean(2)
         return h
 
 

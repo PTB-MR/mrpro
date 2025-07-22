@@ -67,7 +67,7 @@ class AxialRoPE(Module):
             Tensors to apply rotary embeddings to.
             Shape must be `(batch, heads, *spatial_dims, channels)`.
         """
-        if self.embed_fraction == 1.0:
+        if self.embed_fraction == 0.0:
             return tensors
 
         shape = tensors[0].shape

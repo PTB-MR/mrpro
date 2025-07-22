@@ -21,7 +21,7 @@ def test_dcvae_forward(torch_compile: bool, device: str) -> None:
         latent_dim=4,
         block_types=('CNN', 'LinearViT', 'ViT'),
         widths=(32, 64, 32),
-        depths=(2, 2, 3),
+        depths=(1, 2, 2),
     )
 
     x = torch.zeros(1, 1, 16, 16, device=device)
@@ -36,8 +36,8 @@ def test_dcvae_forward(torch_compile: bool, device: str) -> None:
     assert latent.shape == (1, 2 * 4, 2, 2)  # 2 because of mean and logvar
 
 
-def test_dcvae_backward():
-    """Test the backward pass of the DCVAE."""
+def test_dcvae_backward_kl():
+    """Test the backward pass of the DCVAE wrt kl."""
     dcvae = DCVAE(
         n_dim=1,
         n_channels=1,
@@ -49,11 +49,33 @@ def test_dcvae_backward():
 
     x = torch.zeros(1, 1, 16, requires_grad=True)
 
-    y, kl = dcvae(x)
-    y.sum().backward()
+    _, kl = dcvae(x)
     kl.sum().backward()
     assert x.grad is not None, 'x.grad is None'
     assert not x.grad.isnan().any(), 'x.grad is NaN'
     for name, parameter in dcvae.named_parameters():
+        assert parameter.grad is not None, f'{name}.grad is None'
+        assert not parameter.grad.isnan().any(), f'{name}.grad is NaN'
+
+
+def test_dcvae_backward_y():
+    """Test the backward pass of the DCVAE wrt y."""
+    dcvae = DCVAE(
+        n_dim=1,
+        n_channels=1,
+        latent_dim=4,
+        block_types=('CNN', 'LinearViT', 'ViT'),
+        widths=(8, 12, 16),
+        depths=(2, 2, 3),
+    )
+
+    x = torch.zeros(1, 1, 16, requires_grad=True)
+
+    y, _ = dcvae(x)
+    y.sum().backward()
+    assert x.grad is not None, 'x.grad is None'
+    assert not x.grad.isnan().any(), 'x.grad is NaN'
+    # only the encoder parameters can influence kl
+    for name, parameter in dcvae.encoder.named_parameters():
         assert parameter.grad is not None, f'{name}.grad is None'
         assert not parameter.grad.isnan().any(), f'{name}.grad is NaN'
