@@ -8,13 +8,13 @@ apt-get update -qq
 ${APT_GET_INSTALL} --reinstall ca-certificates
 
 # base utilities
-${APT_GET_INSTALL} git software-properties-common gpg-agent curl jq
+${APT_GET_INSTALL} git software-properties-common gpg-agent curl jq build-essential
 
 # add repo for python installation
 add-apt-repository ppa:deadsnakes/ppa
 apt update -qq
 
-${APT_GET_INSTALL} $PYTHON-full
+${APT_GET_INSTALL} $PYTHON-dev $PYTHON-full
 
 # pip
 if [[ "$PYTHON" == "python3.10" ]]; then
