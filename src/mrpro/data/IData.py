@@ -4,11 +4,10 @@ import dataclasses
 from collections.abc import Generator, Sequence
 from pathlib import Path
 
-import ismrmrd
-import nibabel as nib
+import nibabel
 import numpy as np
 import torch
-from einops import repeat
+from einops import rearrange, repeat
 from pydicom import dcmread
 from pydicom.dataset import Dataset
 from typing_extensions import Self
@@ -16,6 +15,7 @@ from typing_extensions import Self
 from mrpro.data.Data import Data
 from mrpro.data.IHeader import IHeader
 from mrpro.data.KHeader import KHeader
+from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 
 
 def _dcm_pixelarray_to_tensor(dataset: Dataset) -> torch.Tensor:
@@ -162,46 +162,28 @@ class IData(Data):
         Parameters
         ----------
         filename
-            filename of the NIFTI file.
+            filename / path of the NIFTI file.
         """
-        num_to_flatten = max(0, len(self.data.shape) - 7)
-        image_data = torch.flatten(self.data, end_dim=num_to_flatten - 1) if num_to_flatten else self.data
+        orientation = self.header.orientation.mean().as_matrix()
+        position = torch.stack([p.mean() for p in self.header.position.zyx])
+        affine_zyx = torch.cat(
+            [torch.tensor([[1.0, 0.0, 0.0, 0.0]]), torch.cat([position[:, None], orientation], 1)], 0
+        )
+        affine = affine_zyx.flip([0, 1])
+        data = rearrange(self.data, '... other coils z y x-> x y z 1 other (...) coils')
 
-        # store orientation and position in affine matrix
-        affine = np.eye(4)
-        orientation_zyx = self.header.orientation.as_matrix().squeeze().numpy()
-        orientation_xyz = orientation_zyx[[2, 1, 0], :]
-        pos_z = self.header.position.z.item()
-        pos_y = self.header.position.y.item()
-        pos_x = self.header.position.x.item()
-        position_xyz = np.array([pos_x, pos_y, pos_z])
+        header = nibabel.nifti2.Nifti2Header()
+        header['pixdim'][1:4] = [self.header.resolution.x, self.header.resolution.y, self.header.resolution.z]
 
-        affine[:3, :3] = orientation_xyz
-        affine[:3, 3] = position_xyz
-
-        data_nifti = np.transpose(image_data.squeeze(), (2, 1, 0))
-        magnitude = np.abs(data_nifti).numpy()
-        nifti_img = nib.Nifti1Image(magnitude, affine)
-
-        hdr = nifti_img.header
-        hdr['pixdim'][1:4] = [self.header.resolution.x, self.header.resolution.y, self.header.resolution.z]
-        description = f'TE={self.header.te}ms; TI={self.header.ti}ms; TR={self.header.tr}ms; FA={self.header.fa}rad'
-        hdr['descrip'] = description.encode('utf-8')
-
-        nib.save(nifti_img, f'{filename}.nii')
-
-    def save_as_ismrmrd(self, filename: str | Path) -> None:
-        """Save image data as ISMRMRD file.
-
-        Parameters
-        ----------
-        filename
-            filename of the ISMRMRD file.
-        """
-        dataset = ismrmrd.Dataset(f'{filename}.h5', 'dataset', create_if_needed=True)
-        image = ismrmrd.Image.from_array(self.data.numpy()[0, ...])
-        dataset.append_image(impath=f'{filename}.h5', im=image)
-        dataset.close()
+        description = (
+            f'TE={summarize_tensorvalues(self.header.te)}ms; '
+            f'TI={summarize_tensorvalues(self.header.ti)}ms; '
+            f'TR={summarize_tensorvalues(self.header.tr)}ms; '
+            f'FA={summarize_tensorvalues(self.header.fa)}rad'
+        )
+        header['descrip'] = description.encode('utf-8')
+        nifti = nibabel.nifti2.Nifti2Image(data.numpy(), affine.numpy(), header, dtype=np.complex64)
+        nifti.to_filename(filename)
 
     def __repr__(self):
         """Representation method for IData class."""
