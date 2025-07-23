@@ -157,13 +157,17 @@ class IData(Dataclass):
         # Pass on sorted file list as order of dicom files is often the same as the required order
         return cls.from_dicom_files(filenames=sorted(file_paths))
 
-    def save_as_nifti(self, filename: str | Path) -> None:
+    def save_as_nifti(self, filename: str | Path, magnitude_only: bool = False) -> None:
         """Save image data as NIFTI file.
 
         Parameters
         ----------
         filename
             filename / path of the NIFTI file.
+        magnitude_only
+            if `True`, only the magnitude of the image data is saved as a NIFTI1 file,
+            otherwise the complex image data is saved as a NIFTI2 file.
+            Many software packages do not support complex data.
         """
         orientation = self.header.orientation.mean().as_matrix()
         position = torch.stack([p.mean() for p in self.header.position.zyx])
@@ -172,18 +176,19 @@ class IData(Dataclass):
         )
         affine = affine_zyx.flip([0, 1])
         data = rearrange(self.data, '... other coils z y x-> x y z 1 other (...) coils')
+        if magnitude_only:
+            nifti = nibabel.nifti2.Nifti1Image(data.abs().numpy(), affine.numpy(), dtype=np.float32)
+        else:
+            nifti = nibabel.nifti2.Nifti2Image(data.numpy(), affine.numpy(), dtype=np.complex64)
 
-        header = nibabel.nifti2.Nifti2Header()
-        header['pixdim'][1:4] = [self.header.resolution.x, self.header.resolution.y, self.header.resolution.z]
-
+        nifti.header['pixdim'][1:4] = [self.header.resolution.x, self.header.resolution.y, self.header.resolution.z]
         description = (
             f'TE={summarize_values(self.header.te)}ms; '
             f'TI={summarize_values(self.header.ti)}ms; '
             f'TR={summarize_values(self.header.tr)}ms; '
             f'FA={summarize_values(self.header.fa)}rad'
         )
-        header['descrip'] = description.encode('utf-8')
-        nifti = nibabel.nifti2.Nifti2Image(data.numpy(), affine.numpy(), header, dtype=np.complex64)
+        nifti.header['descrip'] = description.encode('utf-8')
         nifti.to_filename(filename)
 
     def __repr__(self):
