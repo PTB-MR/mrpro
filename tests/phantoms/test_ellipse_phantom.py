@@ -47,8 +47,8 @@ def test_kspace_image_match(ellipse_phantom: EllipsePhantomTestData) -> None:
     assert relative_image_difference(reconstructed_img, img[0, 0, 0]) <= 0.05
 
 
-def test_kspace_fullysampled(ellipse_phantom: EllipsePhantomTestData) -> None:
-    """Check if kspace has correct shape."""
+def test_kdata_fullysampled(ellipse_phantom: EllipsePhantomTestData) -> None:
+    """Check if kdata object is created and can be reconstructed."""
     matrix = SpatialDimension(z=1, y=ellipse_phantom.n_y, x=ellipse_phantom.n_x)
     traj = KTrajectoryCartesian.fullysampled(matrix)
     kdata = ellipse_phantom.phantom.kdata(traj, matrix)
