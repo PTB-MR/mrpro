@@ -4,12 +4,14 @@ from mrpro.nn.attention.NeighborhoodSelfAttention import NeighborhoodSelfAttenti
 from mrpro.nn.attention.ShiftedWindowAttention import ShiftedWindowAttention
 from mrpro.nn.attention.SqueezeExcitation import SqueezeExcitation
 from mrpro.nn.attention.TransposedAttention import TransposedAttention
+from mrpro.nn.attention.SpatialTransformerBlock import SpatialTransformerBlock
 
 __all__ = [
-    'AttentionGate',
-    'LinearSelfAttention',
-    'NeighborhoodSelfAttention',
-    'ShiftedWindowAttention',
-    'SqueezeExcitation',
-    'TransposedAttention',
+    "AttentionGate",
+    "LinearSelfAttention",
+    "NeighborhoodSelfAttention",
+    "ShiftedWindowAttention",
+    "SpatialTransformerBlock",
+    "SqueezeExcitation",
+    "TransposedAttention"
 ]

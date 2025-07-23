@@ -32,7 +32,7 @@ def test_hourglass_forward(torch_compile: bool, device: str) -> None:
     x = x.to(device)
     cond = cond.to(device)
     if torch_compile:
-        hourglass = cast(HourglassTransformer, torch.compile(hourglass))
+        hourglass = cast(HourglassTransformer, torch.compile(hourglass, dynamic=False))
     y = hourglass(x, cond=cond)
     assert y.shape == (1, 1, 16, 16)
 

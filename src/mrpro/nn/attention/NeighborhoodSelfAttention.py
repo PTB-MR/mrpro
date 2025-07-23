@@ -1,8 +1,8 @@
 """Neighborhood Self Attention."""
 
 from collections.abc import Sequence
-from functools import cache, reduce
-from typing import TypeVar
+from functools import reduce
+from typing import Any, TypeVar
 
 import torch
 from einops import rearrange
@@ -15,16 +15,28 @@ from mrpro.utils.to_tuple import to_tuple
 T = TypeVar('T')
 
 
-# coverage does not pick up the use via flex_attention, as the code gets compiled.
-# pragma: no cover
-@cache
+@torch.compiler.disable(recursive=True)
+def uncompiled_flex_attention(
+    query: torch.Tensor,
+    key: torch.Tensor,
+    value: torch.Tensor,
+    score_mod: torch.nn.attention.flex_attention._score_mod_signature | None = None,
+    block_mask: BlockMask | None = None,
+    scale: float | None = None,
+    enable_gqa: bool = False,
+    kernel_options: dict[str, Any] | None = None,
+) -> torch.Tensor:
+    """Wrap flex_attention to disable compilation."""
+    return flex_attention(key, query, value, score_mod, block_mask, scale, enable_gqa, kernel_options=kernel_options)  # type: ignore[return-value] # wrong type hints
+
+
 def neighborhood_mask(
     device: str,
     input_size: torch.Size,
     kernel_size: int | tuple[int, ...],  # tuples instead of Sequence for cache
     dilation: int | tuple[int, ...] = 1,
     circular: bool | tuple[bool, ...] = False,
-) -> BlockMask:
+) -> BlockMask:  # pragma: no cover
     """Create a flex attention block mask for neighborhood attention.
 
     This function defines which key/value pairs a query can attend to based
@@ -192,16 +204,24 @@ class NeighborhoodSelfAttention(Module):
             qkv, 'batch ... (qkv heads channels) -> qkv batch heads (...) channels', qkv=3, heads=self.n_head
         )
         query, key = self.rope(query, key)  # NO-OP if rope_embed_fraction is 0.0
+        query, key, value = query.contiguous(), key.contiguous(), value.contiguous()
         # the mask depends on the input size. To be more flexible if used within CNNs, we compute it here.
         # The computation is cached..
+        device = str(qkv.device)
         mask = neighborhood_mask(
-            device=str(qkv.device),
+            device=device,
             input_size=spatial_shape,
             kernel_size=self.kernel_size,
             dilation=self.dilation,
             circular=self.circular,
         )
-        out: torch.Tensor = flex_attention(query.contiguous(), key.contiguous(), value.contiguous(), block_mask=mask)  # type: ignore[assignment] # wrong type hints
+
+        if device == 'cpu':
+            # flex attention cannot be compiled on CPU
+            # https://github.com/pytorch/pytorch/issues/148752
+            out: torch.Tensor = uncompiled_flex_attention(query, key, value, block_mask=mask)
+        else:
+            out = flex_attention(query, key, value, block_mask=mask)  # type: ignore[assignment] # wrong type hints
         out = rearrange(out, 'batch head sequence channels -> batch sequence(head channels)')
         out = self.to_out(out)
         out = out.unflatten(-2, spatial_shape)
