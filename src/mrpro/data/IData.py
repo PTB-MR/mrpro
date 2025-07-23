@@ -1,8 +1,8 @@
 """MR image data (IData) class."""
 
+import datetime
 import warnings
 from collections.abc import Generator, Sequence
-from copy import deepcopy
 from pathlib import Path
 
 import numpy as np
@@ -190,10 +190,7 @@ class IData(Dataclass):
         mr_acquisition_type = '3D' if self.data.shape[-3] > 1 else '2D'
         frame_dimension = next((i for i in range(-3, -len(self.data.shape) - 1, -1) if self.data.shape[i] > 1), -3)
         number_of_frames = self.data.shape[frame_dimension]
-        pattern_in = ['d' + str(i) for i in range(self.data.ndim)]
-        pattern_out = pattern_in.copy()
-        pattern_out[frame_dimension], pattern_out[-3] = pattern_out[-3], pattern_out[frame_dimension]
-        dcm_idata = self.rearrange(' '.join(pattern_in) + '->' + ' '.join(pattern_out))
+        dcm_idata = self.swapdims(frame_dimension, -3)
 
         # Metadata
         file_meta = pydicom.dataset.FileMetaDataset()
@@ -210,10 +207,10 @@ class IData(Dataclass):
         dataset.PatientSex = 'O'
         dataset.Modality = 'MR'
         dataset.StudyDescription = 'MRpro'
-        import datetime
 
-        dataset.SeriesDate = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%d')
-        dataset.SeriesTime = datetime.datetime.now(datetime.timezone.utc).strftime('%H%M%S.%f')
+        timestamp = self.header.datetime or datetime.datetime.now(datetime.timezone.utc)
+        dataset.SeriesDate = timestamp.strftime('%Y%m%d')
+        dataset.SeriesTime = timestamp.strftime('%H%M%S.%f')
         if series_description:
             dataset.SeriesDescription = series_description
             dataset.ProtocolName = series_description
@@ -227,28 +224,16 @@ class IData(Dataclass):
             dataset.MRAcquisitionType = mr_acquisition_type
             dataset.PerFrameFunctionalGroupsSequence = pydicom.Sequence()
 
-            plane_position_sequence = pydicom.Sequence()
-            plane_position_sequence.append(Dataset())
-            plane_orientation_sequence = pydicom.Sequence()
-            plane_orientation_sequence.append(Dataset())
-            mr_echo_sequence = pydicom.Sequence()
-            mr_echo_sequence.append(Dataset())
-            pixel_measure_sequence = pydicom.Sequence()
-            pixel_measure_sequence.append(Dataset())
-            mr_timing_parameters_sequence = pydicom.Sequence()
-            mr_timing_parameters_sequence.append(Dataset())
-
             for frame in range(number_of_frames):
                 dcm_frame_idata = dcm_file_idata[..., frame, :, :]
+                frame_info = Dataset()
                 if dcm_frame_idata.header.shape.numel() != 1:
                     raise ValueError('Only single image can be saved as a frame.')
                 directions = dcm_frame_idata.header.orientation[0].as_directions()
-                readout_direction = np.squeeze(torch.stack(directions[2].zyx[::-1]).numpy())
-                phase_direction = np.squeeze(torch.stack(directions[1].zyx[::-1]).numpy())
-                slice_direction = np.squeeze(torch.stack(directions[0].zyx[::-1]).numpy())
-                position = np.squeeze(torch.stack(dcm_frame_idata.header.position.zyx[::-1]).numpy())
-
-                dataset.PerFrameFunctionalGroupsSequence.append(Dataset())
+                readout_direction = torch.stack(directions[2].zyx[::-1]).squeeze().numpy()
+                phase_direction = torch.stack(directions[1].zyx[::-1]).squeeze().numpy()
+                slice_direction = torch.stack(directions[0].zyx[::-1]).squeeze().numpy()
+                position = torch.stack(dcm_frame_idata.header.position.zyx[::-1]).squeeze().numpy()
 
                 image_position_patient = (
                     position
@@ -266,51 +251,51 @@ class IData(Dataclass):
                             (dcm_frame_idata.header.patient_table_position - reference_patient_table_position).zyx[::-1]
                         ).numpy()
                     )
-
-                plane_position_sequence[0].ImagePositionPatient = m_to_mm(image_position_patient.tolist())
-                dataset.PerFrameFunctionalGroupsSequence[-1].PlanePositionSequence = deepcopy(plane_position_sequence)
+                position_ds = Dataset()
+                position_ds.ImagePositionPatient = m_to_mm(image_position_patient.tolist())
+                frame_info.PlanePositionSequence = pydicom.Sequence([position_ds])
 
                 # According to the dicom manual, ImageOrientationPatient describes:
                 # "The direction cosines of the first row and the first column with respect to the patient."
                 # This would suggest that the first direction should be the readout direction, the second the
                 # phase direction. Nevertheless, for all our data the two directions have to be swapped to achieve
                 # the correct orientation. Any help welcome in solving this!
-                plane_orientation_sequence[0].ImageOrientationPatient = [*phase_direction, *readout_direction]
-                dataset.PerFrameFunctionalGroupsSequence[-1].PlaneOrientationSequence = deepcopy(
-                    plane_orientation_sequence
-                )
+                orientation_ds = Dataset()
+                orientation_ds.ImageOrientationPatient = [*phase_direction, *readout_direction]
+                frame_info.PlaneOrientationSequence = pydicom.Sequence([orientation_ds])
 
-                def unique_parameter(parameter: torch.Tensor | list[float], parameter_name: str) -> float | None:
+                def get_singleton(parameter: torch.Tensor | list[float], parameter_name: str) -> float | None:
                     """Return unique value of parameter tensor or list. Raise warning if not unique."""
-                    unique_parameter = torch.unique(torch.as_tensor(parameter))
-                    if unique_parameter.numel() > 1:
+                    unique_values = torch.unique(torch.as_tensor(parameter))
+                    if unique_values.numel() > 1:
                         warnings.warn(
-                            f'{parameter_name} is not unique. Using first value. To ensure all values are saved, '
+                            f'{parameter_name} is not singleton. Using first value. To ensure all values are saved, '
                             'split data into correct subsets first.',
                             stacklevel=2,
                         )
-                    return unique_parameter[0].item() if len(unique_parameter) > 0 else None
+                    return unique_values[0].item() if len(unique_values) > 0 else None
 
-                if (echo_time := unique_parameter(dcm_frame_idata.header.te, 'te')) is not None:
-                    mr_echo_sequence[0].EchoTime = s_to_ms(echo_time)
+                echo_ds = Dataset()
+                if (echo_time := get_singleton(dcm_frame_idata.header.te, 'te')) is not None:
+                    echo_ds.EchoTime = s_to_ms(echo_time)
+                frame_info.MREchoSequence = pydicom.Sequence([echo_ds])
 
-                dataset.PerFrameFunctionalGroupsSequence[-1].MREchoSequence = deepcopy(mr_echo_sequence)
+                pixel_measures = Dataset()
+                resolution = dcm_frame_idata.header.resolution[0]
+                pixel_measures.SliceThickness = m_to_mm(resolution.z)
+                pixel_measures.PixelSpacing = m_to_mm([resolution.x, resolution.y])
+                frame_info.PixelMeasuresSequence = pydicom.Sequence([Dataset(pixel_measures)])
 
-                pixel_measure_sequence[0].SliceThickness = m_to_mm(dcm_frame_idata.header.resolution[0].z)
-                pixel_measure_sequence[0].PixelSpacing = m_to_mm(
-                    [dcm_frame_idata.header.resolution[0].x, dcm_frame_idata.header.resolution[0].y]
-                )
-                dataset.PerFrameFunctionalGroupsSequence[-1].PixelMeasuresSequence = deepcopy(pixel_measure_sequence)
+                timing_parameters = Dataset()
+                if (flip_angle := get_singleton(dcm_frame_idata.header.fa, 'fa')) is not None:
+                    timing_parameters.FlipAngle = rad_to_deg(flip_angle)
+                if (inversion_time := get_singleton(dcm_frame_idata.header.ti, 'ti')) is not None:
+                    timing_parameters.InversionTime = s_to_ms(inversion_time)
+                if (repetition_time := get_singleton(dcm_frame_idata.header.tr, 'tr')) is not None:
+                    timing_parameters.RepetitionTime = s_to_ms(repetition_time)
+                frame_info.MRTimingAndRelatedParametersSequence = pydicom.Sequence([timing_parameters])
 
-                if (flip_angle := unique_parameter(dcm_frame_idata.header.fa, 'fa')) is not None:
-                    mr_timing_parameters_sequence[0].FlipAngle = rad_to_deg(flip_angle)
-                if (inversion_time := unique_parameter(dcm_frame_idata.header.ti, 'ti')) is not None:
-                    mr_timing_parameters_sequence[0].InversionTime = s_to_ms(inversion_time)
-                if (repetition_time := unique_parameter(dcm_frame_idata.header.tr, 'tr')) is not None:
-                    mr_timing_parameters_sequence[0].RepetitionTime = s_to_ms(repetition_time)
-                dataset.PerFrameFunctionalGroupsSequence[-1].MRTimingAndRelatedParametersSequence = deepcopy(
-                    mr_timing_parameters_sequence
-                )
+                dataset.PerFrameFunctionalGroupsSequence.append(frame_info)
 
             # (frames, rows, columns) for multi-frame grayscale data
             pixel_data = dcm_file_idata.data.abs().cpu().numpy()
@@ -322,5 +307,4 @@ class IData(Dataclass):
                 ds=dataset, arr=pixel_data.astype(np.uint16), photometric_interpretation='MONOCHROME2', bits_stored=16
             )
 
-            # Save
             dataset.save_as(foldername / f'im_mrpro_{np.prod(file_index)}.dcm', enforce_file_format=True)

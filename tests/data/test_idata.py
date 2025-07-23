@@ -164,7 +164,7 @@ def test_IData_to_dicom_folder(dcm_data_fixture, request):
     """Verify saving of different dicom types."""
     dcm_data = request.getfixturevalue(dcm_data_fixture)
     idata = IData.from_dicom_folder(dcm_data[0].filename.parent)
-    with pytest.warns(UserWarning, match='is not unique. Using first value.'):
+    with pytest.warns(UserWarning, match='is not singleton. Using first value.'):
         idata.to_dicom_folder(dcm_data[0].filename.parent / 'test_output', series_description='test_series')
     idata_reloaded = IData.from_dicom_folder(dcm_data[0].filename.parent / 'test_output')
 
