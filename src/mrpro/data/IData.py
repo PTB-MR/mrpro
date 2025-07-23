@@ -14,7 +14,7 @@ from typing_extensions import Self
 from mrpro.data.Dataclass import Dataclass
 from mrpro.data.IHeader import IHeader
 from mrpro.data.KHeader import KHeader
-from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
+from mrpro.utils.summarize import summarize_values
 
 
 def _dcm_pixelarray_to_tensor(dataset: Dataset) -> torch.Tensor:
@@ -177,10 +177,10 @@ class IData(Dataclass):
         header['pixdim'][1:4] = [self.header.resolution.x, self.header.resolution.y, self.header.resolution.z]
 
         description = (
-            f'TE={summarize_tensorvalues(self.header.te)}ms; '
-            f'TI={summarize_tensorvalues(self.header.ti)}ms; '
-            f'TR={summarize_tensorvalues(self.header.tr)}ms; '
-            f'FA={summarize_tensorvalues(self.header.fa)}rad'
+            f'TE={summarize_values(self.header.te)}ms; '
+            f'TI={summarize_values(self.header.ti)}ms; '
+            f'TR={summarize_values(self.header.tr)}ms; '
+            f'FA={summarize_values(self.header.fa)}rad'
         )
         header['descrip'] = description.encode('utf-8')
         nifti = nibabel.nifti2.Nifti2Image(data.numpy(), affine.numpy(), header, dtype=np.complex64)
