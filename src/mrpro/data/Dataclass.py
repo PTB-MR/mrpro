@@ -41,7 +41,7 @@ class HasConcatenate(Protocol):
         """Concatenate other instances to self."""
 
 
-class InconsistentDeviceError(ValueError):
+class InconsistentDeviceError(RuntimeError):
     """Raised if the devices of different fields differ.
 
     There is no single device that all fields are on, thus
@@ -100,6 +100,7 @@ class Dataclass:
         cls,
         no_new_attributes: bool = True,
         auto_reduce_repeats: bool = True,
+        init: bool = True,
         *args,
         **kwargs,
     ) -> None:
@@ -112,8 +113,10 @@ class Dataclass:
         auto_reduce_repeats
             If `True`, try to reduce dimensions only containing repeats to singleton.
             This will be done after init and post_init.
+        init
+            If `True`, an automatic init function will be added. Set to `False` to use a custom init.
         """
-        dataclasses.dataclass(cls, repr=False, eq=False)  # type: ignore[call-overload]
+        dataclasses.dataclass(cls, repr=False, eq=False, init=init)  # type: ignore[call-overload]
         super().__init_subclass__(**kwargs)
         child_post_init = vars(cls).get('__post_init__')
 
@@ -521,6 +524,19 @@ class Dataclass:
 
     # endregion Move to device/dtype
 
+    def detach(self) -> Self:
+        """Detach the data from the autograd graph.
+
+        Returns
+        -------
+            A new dataclass with the data detached from the autograd graph.
+            The data is shared between the original and the new object.
+            Use ``detach().clone()`` to create an independent copy.
+        """
+        new = shallowcopy(self)
+        new.apply_(lambda data: data.detach() if isinstance(data, torch.Tensor) else data, recurse=True)
+        return new
+
     # region Properties
     @property
     def device(self) -> torch.device | None:
@@ -822,6 +838,16 @@ class Dataclass:
                 setattr(new, field.name, value_self.concatenate(*value_others, dim=dim))
         new._reduce_repeats_(recurse=True)
         return new
+
+    def stack(self, *others: Self) -> Self:
+        """Stack other along new first dimension.
+
+        Parameters
+        ----------
+        others
+            other instance to stack.
+        """
+        return self[None].concatenate(*[o[None] for o in others], dim=0)
 
     def __eq__(self, other: object) -> bool:
         """Check deep equality of two dataclasses.

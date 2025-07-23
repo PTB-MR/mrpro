@@ -223,13 +223,17 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
 
     @overload
     def __matmul__(
-        self, other: Operator[Unpack[Tin2], tuple[torch.Tensor,]]
+        self, other: Operator[Unpack[Tin2], tuple[torch.Tensor,]] | Operator[Unpack[Tin2], tuple[torch.Tensor, ...]]
     ) -> Operator[Unpack[Tin2], tuple[torch.Tensor,]]: ...
 
     def __matmul__(
         self,
-        other: Operator[Unpack[Tin2], tuple[torch.Tensor,]] | LinearOperator,
-    ) -> Operator[Unpack[Tin2], tuple[torch.Tensor,]] | LinearOperator:
+        other: Operator[Unpack[Tin2], tuple[torch.Tensor,]]
+        | LinearOperator
+        | Operator[Unpack[Tin2], tuple[torch.Tensor, ...]],
+    ) -> (
+        Operator[Unpack[Tin2], tuple[torch.Tensor,]] | LinearOperator | Operator[Unpack[Tin2], tuple[torch.Tensor, ...]]
+    ):
         """Operator composition.
 
         Returns ``lambda x: self(other(x))``
@@ -250,7 +254,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
             return OperatorComposition(self, cast(Operator[Unpack[Tin2], tuple[torch.Tensor,]], other))
         return NotImplemented  # type: ignore[unreachable]
 
-    def __radd__(self, other: torch.Tensor) -> LinearOperator:
+    def __radd__(self, other: torch.Tensor | complex) -> LinearOperator:
         """Operator addition.
 
         Returns ``lambda x: self(x) + other*x``
@@ -258,7 +262,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         return self + other
 
     @overload  # type: ignore[override]
-    def __add__(self, other: LinearOperator | torch.Tensor) -> LinearOperator: ...
+    def __add__(self, other: LinearOperator | torch.Tensor | complex) -> LinearOperator: ...
 
     @overload
     def __add__(
@@ -266,14 +270,14 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     ) -> Operator[torch.Tensor, tuple[torch.Tensor,]]: ...
 
     def __add__(
-        self, other: Operator[torch.Tensor, tuple[torch.Tensor,]] | LinearOperator | torch.Tensor
+        self, other: Operator[torch.Tensor, tuple[torch.Tensor,]] | LinearOperator | torch.Tensor | complex
     ) -> Operator[torch.Tensor, tuple[torch.Tensor,]] | LinearOperator:
         """Operator addition.
 
         Returns ``lambda x: self(x) + other(x)`` if other is a operator,
         ``lambda x: self(x) + other`` if other is a tensor
         """
-        if isinstance(other, torch.Tensor):
+        if isinstance(other, torch.Tensor | complex | int | float):
             # tensor addition
             return LinearOperatorSum(self, mrpro.operators.IdentityOp() * other)
         elif isinstance(self, mrpro.operators.ZeroOp):

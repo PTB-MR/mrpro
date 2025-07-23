@@ -10,6 +10,7 @@ import torch
 from einops import repeat
 from mrpro.data import KData, KHeader, KTrajectory, SpatialDimension
 from mrpro.data.acq_filters import has_n_coils, is_coil_calibration_acquisition, is_image_acquisition
+from mrpro.data.Dataclass import InconsistentDeviceError
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
@@ -248,7 +249,7 @@ def test_KData_inconsistentdevice(ismrmrd_cart) -> None:
     kdata_mix = KData(data=kdata_cuda.data, header=kdata_cpu.header, traj=kdata_cpu.traj)
     assert not kdata_mix.is_cuda
     assert not kdata_mix.is_cpu
-    with pytest.raises(ValueError):
+    with pytest.raises(InconsistentDeviceError):
         _ = kdata_mix.device
 
 

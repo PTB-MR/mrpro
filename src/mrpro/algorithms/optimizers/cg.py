@@ -104,7 +104,7 @@ def cg(
     Parameters
     ----------
     operator
-        Self-adjoint operator :math:`H`
+        Self-adjoint operator :math:`H`.
     right_hand_side
         Right-hand-side :math:`b`.
     initial_value
