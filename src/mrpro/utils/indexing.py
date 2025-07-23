@@ -1,13 +1,24 @@
 """Indexer class for custom indexing with broadcasting."""
 
 from collections.abc import Sequence
-from typing import cast
+from typing import TypeVar, cast, overload
 
 import torch
 import torch.testing
+from typing_extensions import Protocol, Self, runtime_checkable
 
 from mrpro.utils.reshape import reduce_view
 from mrpro.utils.typing import TorchIndexerType
+
+
+@runtime_checkable
+class HasIndex(Protocol):
+    """Objects that can be indexed with an `Indexer`."""
+
+    def _index(self, index: 'Indexer') -> Self: ...
+
+
+T = TypeVar('T', bound=HasIndex)
 
 
 class Indexer:
@@ -51,6 +62,8 @@ class Indexer:
         with the length equal to the shape of the sequences, is added. Indexed dimensions are kept as singleton.
         The different sequences must have the same shape, otherwise an IndexError is raised.
         Note that, as in numpy and torch, vectorized indexing is performed, not outer indexing.
+        If a single integer tensor is used, the indexed dimension will be replaced by the last dimension of the
+        indexing tensor and other dimensions of the indexing tensor are added at the beginning of the result.
     - None
         New axes can be added to the front of tensor by using None in the index.
         This is only allowed at the beginning of the index.
@@ -69,7 +82,7 @@ class Indexer:
         - remaining broadcasted dimensions are reduced to singleton dimensions.
     """
 
-    def __init__(self, broadcast_shape: tuple[int, ...], index: tuple[TorchIndexerType, ...]) -> None:
+    def __init__(self, broadcast_shape: tuple[int, ...], index: TorchIndexerType) -> None:
         """Initialize the Indexer.
 
         Parameters
@@ -96,6 +109,8 @@ class Indexer:
 
         # basics checks and figuring out the number of axes already covered by the index,
         # which is needed to determine the number of axes that are covered by the ellipsis
+        if not isinstance(index, tuple):
+            index = (index,)
         has_ellipsis = False
         has_boolean = False
         covered_axes = 0
@@ -151,7 +166,7 @@ class Indexer:
                         f'Index {idx} out of bounds for axis {shape_position} '
                         f'with shape {broadcast_shape[shape_position]}'
                     )
-                normal_index.append(slice(idx, idx + 1))
+                normal_index.append(slice(idx, None if idx == -1 else idx + 1))
                 fancy_index.append(slice(None))
                 shape_position += 1
 
@@ -284,21 +299,26 @@ class Indexer:
         elif vectorized_shape is not None and len(vectorized_shape) != 1:
             # for a single vectorized index, torch would insert it at the same position
             # this would shift the other axes, potentially causing violations of the shape invariants.
-            # thus, we move the inserted axis to the beginning of the tensor, after axes inserted by None
+            # thus, we move the inserted axis to the beginning of the tensor, after axes inserted by None.
+            # We keep the last axes of the vectorized index in the indexed axis.
             move_source_start = next(i for i, idx in enumerate(fancy_index) if isinstance(idx, torch.Tensor))
-            move_source = tuple(range(move_source_start, move_source_start + len(vectorized_shape)))
+            move_source = tuple(range(move_source_start, move_source_start + len(vectorized_shape) - 1))
             move_target_start = next(i for i, idx in enumerate(fancy_index) if idx is not None)
-            move_target = tuple(range(move_target_start, move_target_start + len(vectorized_shape)))
+            move_target = tuple(range(move_target_start, move_target_start + len(vectorized_shape) - 1))
             self.move_axes = (move_source, move_target)
-            # keep a singleton axes at the indexed axis
-            fancy_index.insert(move_source_start + 1, None)
 
         self.fancy_index = tuple(fancy_index) if has_fancy_index else ()
         self.normal_index = tuple(normal_index)
         self.shape = broadcast_shape
 
-    def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
-        """Apply the index to a tensor."""
+    @overload
+    def __call__(self, tensor: torch.Tensor) -> torch.Tensor: ...
+    @overload
+    def __call__(self, tensor: T) -> T: ...
+    def __call__(self, tensor: torch.Tensor | T) -> torch.Tensor | T:
+        """Apply the index to a tensor or object implementing _index."""
+        if isinstance(tensor, HasIndex):
+            return cast(T, tensor._index(self))
         try:
             tensor = tensor.broadcast_to(self.shape)
         except RuntimeError:

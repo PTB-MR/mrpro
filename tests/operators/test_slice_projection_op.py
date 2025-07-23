@@ -8,10 +8,10 @@ import pytest
 import torch
 from mrpro.data import Rotation, SpatialDimension
 from mrpro.operators import SliceProjectionOp
+from mrpro.utils import RandomGenerator
 from mrpro.utils.slice_profiles import SliceGaussian, SliceInterpolate, SliceSmoothedRectangular
 
 from tests import (
-    RandomGenerator,
     dotproduct_adjointness_test,
     forward_mode_autodiff_of_linear_operator_test,
     gradient_of_linear_operator_test,
@@ -19,11 +19,11 @@ from tests import (
 
 
 def create_slice_projection_op_and_domain_range(
-    optimize_for: Literal['forward', 'adjoint', 'both'], dtype: str
+    optimize_for: Literal['forward', 'adjoint', 'both'], dtype: torch.dtype
 ) -> tuple[SliceProjectionOp, torch.Tensor, torch.Tensor]:
     """Create a slice projection operator and an element from domain and range."""
-    rng = getattr(RandomGenerator(314), f'{dtype}_tensor')
-    operator_dtype = getattr(torch, dtype).to_real()
+    rng = RandomGenerator(314)
+    operator_dtype = dtype.to_real()
     input_shape = SpatialDimension(10, 20, 30)
     slice_rotation = None
     slice_shift = 0.0
@@ -36,8 +36,8 @@ def create_slice_projection_op_and_domain_range(
         optimize_for=optimize_for,
     )
     operator = operator.to(operator_dtype)
-    u = rng((1, *input_shape.zyx))
-    v = rng((1, 1, 1, max(input_shape.zyx), max(input_shape.zyx)))
+    u = rng.rand_tensor((1, *input_shape.zyx), dtype=dtype)
+    v = rng.rand_tensor((1, 1, 1, max(input_shape.zyx), max(input_shape.zyx)), dtype=dtype)
     return operator, u, v
 
 
@@ -124,9 +124,13 @@ def test_slice_projection_width_error() -> None:
         _ = SliceProjectionOp(input_shape=input_shape, slice_profile=slice_profile)
 
 
-@pytest.mark.parametrize('dtype', ['complex64', 'float64', 'float32'])
+@pytest.mark.parametrize(
+    'dtype', [torch.complex64, torch.float64, torch.float32], ids=['complex64', 'float64', 'float32']
+)
 @pytest.mark.parametrize('optimize_for', ['forward', 'adjoint', 'both'])
-def test_slice_projection_op_basic_adjointness(optimize_for: Literal['forward', 'adjoint', 'both'], dtype: str) -> None:
+def test_slice_projection_op_basic_adjointness(
+    optimize_for: Literal['forward', 'adjoint', 'both'], dtype: torch.dtype
+) -> None:
     dotproduct_adjointness_test(*create_slice_projection_op_and_domain_range(optimize_for, dtype))
 
 
@@ -168,13 +172,15 @@ def test_slice_projection_op_volume_batching() -> None:
 
 
 @pytest.mark.parametrize('direction', ['forward', 'adjoint'])
-@pytest.mark.parametrize('dtype', ['complex64', 'float64', 'float32'])
+@pytest.mark.parametrize(
+    'dtype', [torch.complex64, torch.float64, torch.float32], ids=['complex64', 'float64', 'float32']
+)
 @pytest.mark.parametrize('optimize_for', ['forward', 'adjoint', 'both'])
 def test_slice_projection_op_backward_is_adjoint(
-    optimize_for: Literal['forward', 'adjoint', 'both'], dtype: str, direction: str
+    optimize_for: Literal['forward', 'adjoint', 'both'], dtype: torch.dtype, direction: str
 ) -> None:
-    rng = getattr(RandomGenerator(314), f'{dtype}_tensor')
-    operator_dtype = getattr(torch, dtype).to_real()
+    rng = RandomGenerator(314)
+    operator_dtype = dtype.to_real()
     input_shape = SpatialDimension(10, 20, 30)
     slice_rotation = None
     slice_shift = 0.0
@@ -187,18 +193,19 @@ def test_slice_projection_op_backward_is_adjoint(
         optimize_for=optimize_for,
     )
     operator = operator.to(operator_dtype)
-    u = rng(input_shape.zyx).requires_grad_(True)
-    v = rng((1, 1, max(input_shape.zyx), max(input_shape.zyx))).requires_grad_(True)
+    u = rng.rand_tensor(input_shape.zyx, dtype=dtype).requires_grad_(True)
+    v = rng.rand_tensor((1, 1, max(input_shape.zyx), max(input_shape.zyx)), dtype=dtype).requires_grad_(True)
     match direction:
         case 'forward':  # backward of forward
             (forward_u,) = operator(u)
             forward_u.backward(v)
+            assert u.grad is not None
             adjoint_v = u.grad
         case 'adjoint':  # backward of adjoint
             (adjoint_v,) = operator.adjoint(v)
             adjoint_v.backward(u)
+            assert v.grad is not None
             forward_u = v.grad
-
     assert forward_u.shape == v.shape
     assert adjoint_v.shape == u.shape
     dotproduct_range = torch.vdot(forward_u.flatten(), v.flatten())
@@ -207,19 +214,49 @@ def test_slice_projection_op_backward_is_adjoint(
 
 
 # Sparse tensors do currently not work with torch.func. See https://github.com/pytorch/pytorch/issues/136357
-@pytest.mark.parametrize('dtype', ['complex64', 'float64', 'float32'])
+@pytest.mark.parametrize(
+    'dtype', [torch.complex64, torch.float64, torch.float32], ids=['complex64', 'float64', 'float32']
+)
 @pytest.mark.parametrize('optimize_for', ['forward', 'adjoint', 'both'])
-def test_slice_projection_op_grad(optimize_for: Literal['forward', 'adjoint', 'both'], dtype: str) -> None:
+def test_slice_projection_op_grad(optimize_for: Literal['forward', 'adjoint', 'both'], dtype: torch.dtype) -> None:
     """Test gradient of slice projection operator."""
     with pytest.raises(RuntimeError, match='Sparse CSR tensors'):
         gradient_of_linear_operator_test(*create_slice_projection_op_and_domain_range(optimize_for, dtype))
 
 
-@pytest.mark.parametrize('dtype', ['complex64', 'float64', 'float32'])
+@pytest.mark.parametrize(
+    'dtype', [torch.complex64, torch.float64, torch.float32], ids=['complex64', 'float64', 'float32']
+)
 @pytest.mark.parametrize('optimize_for', ['forward', 'adjoint', 'both'])
 def test_slice_projection_op_forward_mode_autodiff(
-    optimize_for: Literal['forward', 'adjoint', 'both'], dtype: str
+    optimize_for: Literal['forward', 'adjoint', 'both'], dtype: torch.dtype
 ) -> None:
     """Test forward-mode autodiff of slice projection operator."""
     with pytest.raises(RuntimeError, match='Sparse CSR tensors'):
         forward_mode_autodiff_of_linear_operator_test(*create_slice_projection_op_and_domain_range(optimize_for, dtype))
+
+
+@pytest.mark.cuda
+def test_slice_projection_op_cuda() -> None:
+    """Test slice projection operator works on CUDA devices."""
+    rng = RandomGenerator(0)
+    input_shape = SpatialDimension(10, 20, 30)
+    slice_rotation = Rotation.random(4)
+    slice_shift = rng.float32_tensor(4)
+    slice_profile = SliceGaussian(1.0)
+    u = rng.float32_tensor(input_shape.zyx)
+
+    # Create on CPU, transfer to GPU, run on GPU
+    sliceprojection_op = SliceProjectionOp(
+        input_shape=input_shape,
+        slice_rotation=slice_rotation,
+        slice_shift=slice_shift,
+        slice_profile=slice_profile,
+        optimize_for='forward',
+    )
+    operator = sliceprojection_op.H @ sliceprojection_op
+    operator.cuda()
+    (result,) = operator(u.cuda())
+    assert result.is_cuda
+
+    # Creation on GPU is not supported (see docstring)

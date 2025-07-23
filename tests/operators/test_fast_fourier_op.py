@@ -7,9 +7,9 @@ import pytest
 import torch
 from mrpro.data import SpatialDimension
 from mrpro.operators import FastFourierOp
+from mrpro.utils import RandomGenerator
 
 from tests import (
-    RandomGenerator,
     dotproduct_adjointness_test,
     forward_mode_autodiff_of_linear_operator_test,
     gradient_of_linear_operator_test,
@@ -21,9 +21,9 @@ def create_fast_fourier_op_and_range_domain(
 ) -> tuple[FastFourierOp, torch.Tensor, torch.Tensor]:
     """Create a fast Fourier operator and an element from domain and range."""
     # Create test data
-    generator = RandomGenerator(seed=0)
-    u = generator.complex64_tensor(recon_matrix)
-    v = generator.complex64_tensor(encoding_matrix)
+    rng = RandomGenerator(seed=0)
+    u = rng.complex64_tensor(recon_matrix)
+    v = rng.complex64_tensor(encoding_matrix)
 
     # Create operator and apply
     ff_op = FastFourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix)
@@ -93,9 +93,9 @@ def test_fast_fourier_op_spatial_dim() -> None:
     # Create test data
     recon_matrix = SpatialDimension(z=101, y=201, x=61)
     encoding_matrix = SpatialDimension(z=14, y=220, x=61)
-    generator = RandomGenerator(seed=0)
-    u = generator.complex64_tensor(size=(3, 2, recon_matrix.z, recon_matrix.y, recon_matrix.x))
-    v = generator.complex64_tensor(size=(3, 2, encoding_matrix.z, encoding_matrix.y, encoding_matrix.x))
+    rng = RandomGenerator(seed=0)
+    u = rng.complex64_tensor(size=(3, 2, recon_matrix.z, recon_matrix.y, recon_matrix.x))
+    v = rng.complex64_tensor(size=(3, 2, encoding_matrix.z, encoding_matrix.y, encoding_matrix.x))
     # these should not matter and are set to arbitrary values
     recon_matrix.x = -13
     encoding_matrix.x = -13
@@ -146,3 +146,40 @@ def test_fast_fourier_op_repr():
 
     # Check if __repr__ contains expected information
     assert 'Dimension(s) along which FFT is applied' in repr_str
+
+
+@pytest.mark.cuda
+def test_fast_fourier_op_cuda() -> None:
+    """Test fast Fourier operator works on CUDA devices."""
+
+    # Generate data
+    recon_matrix = SpatialDimension(z=101, y=201, x=61)
+    encoding_matrix = SpatialDimension(z=14, y=220, x=61)
+    generator = RandomGenerator(seed=0)
+    x = generator.complex64_tensor(size=(3, 2, recon_matrix.z, recon_matrix.y, recon_matrix.x))
+
+    # Create on CPU, transfer to GPU, run on GPU
+    ff_op = FastFourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, dim=(-2, -3))
+    operator = ff_op.H @ ff_op
+    operator.cuda()
+    (y,) = operator(x.cuda())
+    assert y.is_cuda
+
+    # Create on CPU, run on CPU
+    ff_op = FastFourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, dim=(-2, -3))
+    operator = ff_op.H @ ff_op
+    (y,) = operator(x)
+    assert y.is_cpu
+
+    # Create on GPU, run on GPU
+    ff_op = FastFourierOp(recon_matrix=recon_matrix.cuda(), encoding_matrix=encoding_matrix.cuda(), dim=(-2, -3))
+    operator = ff_op.H @ ff_op
+    (y,) = operator(x.cuda())
+    assert y.is_cuda
+
+    # Create on GPU, transfer to CPU, run on CPU
+    ff_op = FastFourierOp(recon_matrix=recon_matrix.cuda(), encoding_matrix=encoding_matrix.cuda(), dim=(-2, -3))
+    operator = ff_op.H @ ff_op
+    operator.cpu()
+    (y,) = operator(x)
+    assert y.is_cpu

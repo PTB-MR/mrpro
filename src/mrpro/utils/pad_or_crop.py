@@ -2,6 +2,7 @@
 
 import math
 from collections.abc import Sequence
+from typing import Literal
 
 import torch
 import torch.nn.functional as F  # noqa: N812
@@ -22,7 +23,7 @@ def normalize_index(ndim: int, index: int) -> int:
     `IndexError`
         if index is outside ``[-ndim,ndim)``
     """
-    if 0 < index < ndim:
+    if 0 <= index < ndim:
         return index
     elif -ndim <= index < 0:
         return ndim + index
@@ -30,26 +31,32 @@ def normalize_index(ndim: int, index: int) -> int:
         raise IndexError(f'Invalid index {index} for {ndim} data dimensions')
 
 
-def zero_pad_or_crop(
+def pad_or_crop(
     data: torch.Tensor,
     new_shape: Sequence[int] | torch.Size,
     dim: None | Sequence[int] = None,
+    mode: Literal['constant', 'replicate', 'circular'] = 'constant',
+    value: float = 0.0,
 ) -> torch.Tensor:
-    """Change shape of data by center cropping or symmetric zero-padding.
+    """Change shape of data by center cropping or symmetric padding.
 
     Parameters
     ----------
     data
-        data
+        Data to pad or crop.
     new_shape
-        desired shape of data
+        Desired shape of data.
     dim
-        dimensions the `new_shape` corresponds to.
-        `None` (default) is interpreted as last ``len(new_shape)`` dimensions.
+        Dimensions the `new_shape` corresponds to.
+        `None` is interpreted as last ``len(new_shape)`` dimensions.
+    mode
+        Mode for padding.
+    value
+        Value to use for padding.
 
     Returns
     -------
-        data zero padded or cropped to shape
+        Data zero padded or cropped to shape.
     """
     if len(new_shape) > data.ndim:
         raise ValueError('length of new shape should not exceed dimensions of data')
@@ -75,5 +82,5 @@ def zero_pad_or_crop(
 
     if any(npad):
         # F.pad expects paddings in reversed order
-        data = F.pad(data, npad[::-1])
+        data = F.pad(data, npad[::-1], mode=mode, value=value)
     return data

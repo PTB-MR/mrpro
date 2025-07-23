@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass
-from typing import Generic, get_args
+from typing import Generic, cast, get_args
 
 import numpy as np
 import torch
@@ -12,7 +11,8 @@ from numpy.typing import ArrayLike
 from typing_extensions import Protocol, Self, TypeVar, overload
 
 import mrpro.utils.typing as type_utils
-from mrpro.data.MoveDataMixin import MoveDataMixin
+from mrpro.data.Dataclass import Dataclass
+from mrpro.utils.indexing import Indexer
 
 # Change here to add more types
 VectorTypes = torch.Tensor
@@ -48,8 +48,7 @@ class XYZ(Protocol[T]):
     z: T
 
 
-@dataclass(slots=True)
-class SpatialDimension(MoveDataMixin, Generic[T_co]):
+class SpatialDimension(Dataclass, Generic[T_co]):
     """Spatial dataclass of float/int/tensors (z, y, x)."""
 
     z: T_co
@@ -118,7 +117,7 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         function
             function to apply
         """
-        return super(SpatialDimension, self).apply_(function)
+        return super().apply_(function)
 
     # This function is mainly for type hinting and docstring
     def apply(self, function: Callable[[T], T] | None = None, **_) -> Self:
@@ -129,24 +128,29 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         function
             function to apply
         """
-        return super(SpatialDimension, self).apply(function)
+        return super().apply(function)
 
     @property
     def zyx(self) -> tuple[T_co, T_co, T_co]:
-        """Return a z,y,x tuple."""
+        """Return a z,y,x tuple.
+
+        ```{note}
+        To access the z, y, x values, use the attributes directly.
+        ```
+        """
         return (self.z, self.y, self.x)
 
-    def __str__(self) -> str:
-        """Return a string representation of the SpatialDimension."""
+    def __shortstr__(self) -> str:
+        """Return a short string representation."""
+        if isinstance(self.x, VectorTypes) or isinstance(self.y, VectorTypes) or isinstance(self.z, VectorTypes):
+            super().__shortstr__()
         return f'z={self.z}, y={self.y}, x={self.x}'
 
-    def __getitem__(
-        self: SpatialDimension[T_co_vector], idx: type_utils.TorchIndexerType
-    ) -> SpatialDimension[T_co_vector]:
+    def __getitem__(self: SpatialDimension[T_co], idx: type_utils.TorchIndexerType | Indexer) -> SpatialDimension[T_co]:
         """Get SpatialDimension item."""
         if not all(isinstance(el, VectorTypes) for el in self.zyx):
-            raise IndexError('Cannot index SpatialDimension with non-indexable members')
-        return SpatialDimension(self.z[idx], self.y[idx], self.x[idx])
+            return self
+        return cast(SpatialDimension[T_co], super().__getitem__(idx))
 
     def __setitem__(self: SpatialDimension[T_co_vector], idx: type_utils.TorchIndexerType, other: SpatialDimension):
         """Set SpatialDimension item."""
@@ -395,35 +399,39 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
             return NotImplemented
         return (self.x >= other.x) & (self.y >= other.y) & (self.z >= other.z)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Ensure that the data is of matching shape."""
         if not all(isinstance(val, (int | float)) for val in self.zyx):
+            self.z, self.y, self.x = (_as_vectortype(v) for v in self.zyx)  # type: ignore[assignment]
             try:
-                zyx = [_as_vectortype(v) for v in self.zyx]
-                self.z, self.y, self.x = torch.broadcast_tensors(*zyx)
+                torch.broadcast_tensors(self.z, self.y, self.x)
             except RuntimeError:
-                raise ValueError('The shapes of the tensors do not match') from None
+                raise ValueError('The shapes of the tensors are not broadcastable') from None
 
     @property
     def shape(self) -> torch.Size:
-        """Get the shape of the x, y, and z.
+        """Get the (broadcasted) shape.
 
         Returns
         -------
-            Empty tuple if x, y, and z are scalar types, otherwise shape
-
-        Raises
-        ------
-            `ValueError` if the shapes are not equal
+            Empty tuple if x, y, and z are scalar types, otherwise shape.
+            The shape is the smallest shape x,y, and z can be broadcasted to.
+            None of the fields need to have this shape.
         """
         if isinstance(self.x, ScalarTypes) and isinstance(self.y, ScalarTypes) and isinstance(self.z, ScalarTypes):
             return torch.Size()
-        elif (
-            isinstance(self.x, VectorTypes)
-            and isinstance(self.y, VectorTypes)
-            and isinstance(self.z, VectorTypes)
-            and self.x.shape == self.y.shape == self.z.shape
-        ):
-            return torch.Size(self.x.shape)
         else:
-            raise ValueError('Inconsistent shapes')
+            return super().shape
+
+    # Note: mypy doesnt't support overloads on properties yet
+    @property
+    def dtype(self) -> torch.dtype | type[int] | type[float]:
+        """Get the (promoted) dtype of the fields."""
+        if isinstance(self.x, VectorTypes) and isinstance(self.y, VectorTypes) and isinstance(self.z, VectorTypes):
+            return torch.promote_types(torch.promote_types(self.x.dtype, self.y.dtype), self.z.dtype)
+        elif isinstance(self.x, int) and isinstance(self.y, int) and isinstance(self.z, int):
+            return int
+        elif isinstance(self.x, int | float) and isinstance(self.y, int | float) and isinstance(self.z, int | float):
+            return float
+        else:
+            raise TypeError('Inconsistent types of the fields.')

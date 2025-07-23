@@ -44,6 +44,7 @@ Content
    :maxdepth: 2
 
    user_guide
+   data
    examples
    contributor_guide
    api

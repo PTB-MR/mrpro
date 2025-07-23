@@ -153,7 +153,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         self._joint_dims_zyx.append(-4)  # -4 is always coil and always a joint dimension
 
         self._im_size = im_size
-        self._omega = omega
+        self._omega = omega.contiguous()
 
     def _separate_joint_dimensions(
         self, data_ndim: int
@@ -216,7 +216,8 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             x = x.flatten(end_dim=len(sep_dims_zyx) - 1) if len(sep_dims_zyx) else x[None, :]
             # combine joint_dims
             x = x.flatten(start_dim=1, end_dim=-len(self._direction_zyx) - 1)
-
+            # cufinufft needs c contiguous, otherwise it warns.
+            x = x.contiguous()
             x = torch.vmap(partial(finufft_type2, upsampfac=self.oversampling, modeord=0, isign=-1))(self._omega, x)
             x = x * self.scale
             shape_210 = [self._traj_broadcast_shape[i] for i in self._dimension_210]
@@ -251,7 +252,8 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             x = x.flatten(end_dim=len(sep_dims_210) - 1) if len(sep_dims_210) else x[None, :]
             # combine joint_dims and nufft_dims
             x = x.flatten(start_dim=1, end_dim=-len(self._dimension_210) - 1).flatten(start_dim=2)
-
+            # cufinufft needs c contiguous, otherwise it warns.
+            x = x.contiguous()
             x = torch.vmap(
                 partial(finufft_type1, upsampfac=self.oversampling, modeord=0, isign=1, output_shape=self._im_size)
             )(self._omega, x)
@@ -321,7 +323,9 @@ def gram_nufft_kernel(
     # we do two adjoint nuffts per dimensions, saving a lot of memory.
     adjnufft = torch.vmap(partial(finufft_type1, modeord=0, isign=1, output_shape=recon_shape))
 
-    kernel = torch.zeros(*weight.shape[:2], *[r * 2 for r in recon_shape], dtype=weight.dtype.to_complex())
+    kernel = torch.zeros(
+        *weight.shape[:2], *[r * 2 for r in recon_shape], dtype=weight.dtype.to_complex(), device=weight.device
+    )
     shifts = (torch.tensor(recon_shape) / 2).unsqueeze(-1).to(trajectory)
     for flips in list(product([1, -1], repeat=rank)):
         flipped_trajectory = trajectory * torch.tensor(flips).to(trajectory).unsqueeze(-1)
@@ -332,7 +336,9 @@ def gram_nufft_kernel(
                 slices.append(slice(0, kernel_part.size(dim)))
             else:  # second half in the dimension
                 slices.append(slice(kernel_part.size(dim) + 1, None))
-                kernel_part = kernel_part.index_select(dim, torch.arange(kernel_part.size(dim) - 1, 0, -1))  # flip
+                kernel_part = kernel_part.index_select(
+                    dim, torch.arange(kernel_part.size(dim) - 1, 0, -1, device=kernel.device)
+                )  # flip
 
         kernel[[..., *slices]] = kernel_part
 

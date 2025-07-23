@@ -5,13 +5,13 @@ from collections.abc import Sequence
 import torch
 
 from mrpro.operators.SignalModel import SignalModel
-from mrpro.utils import unsqueeze_right
+from mrpro.utils.reshape import unsqueeze_right
 
 
 class SaturationRecovery(SignalModel[torch.Tensor, torch.Tensor]):
     """Signal model for saturation recovery."""
 
-    def __init__(self, saturation_time: float | torch.Tensor | Sequence[int]) -> None:
+    def __init__(self, saturation_time: float | torch.Tensor | Sequence[float]) -> None:
         """Initialize saturation recovery signal model for T1 mapping.
 
         Parameters

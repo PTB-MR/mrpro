@@ -143,7 +143,7 @@ def pdhg(
 
     # We always use a separable sum for homogeneous handling, even if it is just a ZeroFunctional
     if f is None:
-        f_sum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * n_rows)
+        f_sum: ProximableFunctionalSeparableSum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * n_rows)
     elif isinstance(f, ProximableFunctional):
         f_sum = ProximableFunctionalSeparableSum(f)
     else:
@@ -153,7 +153,7 @@ def pdhg(
         raise ValueError('Number of rows in operator does not match number of functionals in f')
 
     if g is None:
-        g_sum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * n_columns)
+        g_sum: ProximableFunctionalSeparableSum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * n_columns)
     elif isinstance(g, ProximableFunctional):
         g_sum = ProximableFunctionalSeparableSum(g)
     else:
@@ -165,13 +165,13 @@ def pdhg(
     if primal_stepsize is None or dual_stepsize is None:
         # choose primal and dual step size such that their product is 1/|operator|**2
         # to ensure convergence
-        operator_norm = operator_matrix.operator_norm(*[torch.randn_like(v) for v in initial_values])
+        operator_norm = operator_matrix.operator_norm(*[torch.randn_like(v) for v in initial_values]).amax()
         if primal_stepsize is None and dual_stepsize is None:
             primal_stepsize_ = dual_stepsize_ = 1.0 / operator_norm
-        elif primal_stepsize is None:
+        elif primal_stepsize is None and dual_stepsize is not None:
             primal_stepsize_ = 1 / (operator_norm * dual_stepsize)
             dual_stepsize_ = dual_stepsize
-        elif dual_stepsize is None:
+        elif dual_stepsize is None and primal_stepsize is not None:
             dual_stepsize_ = 1 / (operator_norm * primal_stepsize)
             primal_stepsize_ = primal_stepsize
     else:

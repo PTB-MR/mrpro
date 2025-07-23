@@ -1,6 +1,5 @@
 """MR noise measurements class."""
 
-import dataclasses
 from collections.abc import Callable
 from pathlib import Path
 
@@ -10,11 +9,10 @@ from einops import repeat
 from typing_extensions import Self
 
 from mrpro.data.acq_filters import is_noise_acquisition
-from mrpro.data.MoveDataMixin import MoveDataMixin
+from mrpro.data.Dataclass import Dataclass
 
 
-@dataclasses.dataclass(slots=True, frozen=True)
-class KNoise(MoveDataMixin):
+class KNoise(Dataclass):
     """MR raw data / k-space data class for noise measurements."""
 
     data: torch.Tensor
@@ -50,12 +48,3 @@ class KNoise(MoveDataMixin):
         noise_data = repeat(noise_data, '... coils k0->... coils k2 k1 k0', k1=1, k2=1)
 
         return cls(noise_data)
-
-    def __repr__(self):
-        """Representation method for KNoise class."""
-        try:
-            device = str(self.device)
-        except RuntimeError:
-            device = 'mixed'
-        name = type(self).__name__
-        return f'{name} with shape: {list(self.data.shape)!s} and dtype {self.data.dtype}\nDevice: {device}.'

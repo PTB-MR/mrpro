@@ -65,7 +65,7 @@ def test_dcf_rad_traj_voronoi(n_kr, n_ka, phi0, broadcast):
         dcf_ptp = dcf.max() - dcf.min()
         assert dcf_ptp / dcf.max() < 0.1, 'DCF for a single spoke should be constant-ish'
         assert dcf.sum() > 1e-3, 'DCF sum should not be zero'
-        assert dcf.shape == traj.broadcasted_shape, 'DCF shape should match broadcasted trajectory shape'
+        assert dcf.shape == traj.shape, 'DCF shape should match broadcasted trajectory shape'
 
 
 @pytest.mark.parametrize(('n_k2', 'n_k1', 'n_k0'), [(4, 6, 8), (1, 2, 2)])
@@ -158,7 +158,7 @@ def test_dcf_3d_cart_nonuniform_traj_voronoi(n_k2, n_k1, n_k0, k2_steps, k1_step
 
     # Sanity check inputs
     torch.testing.assert_close(trajectory_full.as_tensor(), trajectory_broadcast.as_tensor())
-    assert trajectory_full.broadcasted_shape == (1, 1, len(k2_range), len(k1_range), len(k0_range))
+    assert trajectory_full.shape == (1, 1, len(k2_range), len(k1_range), len(k0_range))
     torch.testing.assert_close(kx_full[0, 0, :], k0_range)  # kx changes along k0
     torch.testing.assert_close(ky_full[0, :, 0], k1_range)  # ky changes along k1
     torch.testing.assert_close(kz_full[:, 0, 0], k2_range)  # kz changes along k2

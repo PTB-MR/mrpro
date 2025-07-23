@@ -19,8 +19,15 @@ from mrpro.phantoms.brainweb import (
     resize,
     trim_indices,
 )
+from mrpro.utils import RandomGenerator
 
-from tests import RandomGenerator
+BRAINWEBTESTSHAPE = (362 // 2, 434 // 2, 362 // 2)  # reduce the size of the brainweb data for faster testing
+
+
+@pytest.fixture(autouse=True)
+def modify_shape(monkeypatch):
+    """Modify the shape of the brainweb data for faster testing."""
+    monkeypatch.setattr('mrpro.phantoms.brainweb.BRAINWEBSHAPE', BRAINWEBTESTSHAPE)
 
 
 @pytest.fixture
@@ -37,7 +44,7 @@ def mock_requests(monkeypatch) -> None:
             # Fake data
             subject, class_name = match.groups()
             rng = RandomGenerator(int(subject) * 100 + ALL_CLASSES.index(class_name))
-            fake_data = rng.int16_tensor((362, 434, 362), low=0, high=4096)
+            fake_data = rng.int16_tensor(BRAINWEBTESTSHAPE, low=0, high=4096)
             compressed_data = gzip.compress(fake_data.numpy().astype(np.uint16).tobytes(), compresslevel=0)
             return type('MockResponse', (), {'content': compressed_data, 'raise_for_status': lambda _: None})()
 
@@ -62,7 +69,7 @@ def test_download_brainweb(tmp_path, mock_requests) -> None:
             assert 'subject' in f.attrs
             assert 'version' in f.attrs
             assert f.attrs['version'] == VERSION
-            assert f['classes'].shape == (362, 434, 362, len(ALL_CLASSES) - 1)
+            assert f['classes'].shape == (*BRAINWEBTESTSHAPE, len(ALL_CLASSES) - 1)
 
 
 @pytest.fixture(scope='session')
@@ -74,7 +81,7 @@ def brainweb_test_data(tmp_path_factory, n_subjects=1):
         file_path = test_dir / f's{subject:02d}.h5'
         with h5py.File(file_path, 'w') as f:
             rng = RandomGenerator(int(subject))
-            fake_data = rng.float32_tensor((362, 434, 362, len(ALL_CLASSES) - 1))
+            fake_data = rng.float32_tensor((*BRAINWEBTESTSHAPE, len(ALL_CLASSES) - 1))
             fake_data *= 255 / fake_data.sum(-1, keepdim=True)
             f.create_dataset('classes', data=fake_data.to(torch.uint8))
 
@@ -98,10 +105,10 @@ def test_brainwebvolumes_getitem(brainweb_test_data) -> None:
 
     assert isinstance(sample, dict)
 
-    assert sample['m0'].shape == (362, 434, 362)
-    assert sample['r1'].shape == (362, 434, 362)
-    assert sample['mask'].shape == (362, 434, 362)
-    assert sample['tissueclass'].shape == (362, 434, 362)
+    assert sample['m0'].shape == BRAINWEBTESTSHAPE
+    assert sample['r1'].shape == BRAINWEBTESTSHAPE
+    assert sample['mask'].shape == BRAINWEBTESTSHAPE
+    assert sample['tissueclass'].shape == BRAINWEBTESTSHAPE
 
     assert sample['m0'].dtype == torch.complex64
     assert sample['r1'].dtype == torch.float
@@ -200,7 +207,10 @@ def test_brainwebslices_init(brainweb_test_data) -> None:
 def test_brainwebslices_getitem(brainweb_test_data) -> None:
     """Test dataset __getitem__ method."""
     dataset = BrainwebSlices(
-        folder=brainweb_test_data, what=('m0', 'r1', 't2', 'mask', 'tissueclass', 'dura'), orientation='coronal'
+        folder=brainweb_test_data,
+        what=('m0', 'r1', 't2', 'mask', 'tissueclass', 'dura'),
+        orientation='coronal',
+        skip_slices=((10, 10), (10, 10), (10, 10)),
     )
     sample = dataset[0]
 
@@ -226,7 +236,9 @@ def test_brainwebslices_getitem(brainweb_test_data) -> None:
 @pytest.mark.parametrize('orientation', ['axial', 'coronal', 'sagittal'])
 def test_brainwebslices_orientations(brainweb_test_data, orientation: Literal['axial', 'coronal', 'sagittal']) -> None:
     """Test different slice orientations."""
-    dataset = BrainwebSlices(folder=brainweb_test_data, orientation=orientation)
+    dataset = BrainwebSlices(
+        folder=brainweb_test_data, orientation=orientation, skip_slices=((10, 10), (10, 10), (10, 10))
+    )
     assert len(dataset) > 0
     sample = dataset[0]
     assert isinstance(sample, dict)
