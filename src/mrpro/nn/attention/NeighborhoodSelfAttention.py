@@ -2,7 +2,7 @@
 
 from collections.abc import Sequence
 from functools import cache, reduce
-from typing import Any, TypeVar
+from typing import Any, TypeAlias, TypeVar
 
 import torch
 from einops import rearrange
@@ -16,6 +16,8 @@ T = TypeVar('T')
 
 if parse_version(torch.__version__) > parse_version('2.6'):
     from torch.nn.attention.flex_attention import BlockMask, create_block_mask, flex_attention
+else:
+    BlockMask: TypeAlias = Any
 
 
 @torch.compiler.disable(recursive=True)
@@ -24,7 +26,7 @@ def uncompiled_flex_attention(
     key: torch.Tensor,
     value: torch.Tensor,
     score_mod: Any = None,  # noqa: ANN401
-    block_mask: Any = None,  # noqa: ANN401
+    block_mask: BlockMask | None = None,
     scale: float | None = None,
     enable_gqa: bool = False,
     kernel_options: dict[str, Any] | None = None,
