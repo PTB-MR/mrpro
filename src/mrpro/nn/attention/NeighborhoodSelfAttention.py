@@ -15,6 +15,9 @@ from mrpro.utils.to_tuple import to_tuple
 
 T = TypeVar('T')
 
+if parse_version(torch.__version__) > parse_version('2.6'):
+    from torch.nn.attention.flex_attention import BlockMask, create_block_mask, flex_attention
+
 
 @torch.compiler.disable(recursive=True)
 def uncompiled_flex_attention(
