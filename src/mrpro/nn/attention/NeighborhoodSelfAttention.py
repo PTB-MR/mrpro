@@ -8,7 +8,6 @@ import torch
 from einops import rearrange
 from packaging.version import parse as parse_version
 from torch.nn import Linear, Module
-from torch.nn.attention.flex_attention import BlockMask, create_block_mask, flex_attention
 
 from mrpro.nn.AxialRoPE import AxialRoPE
 from mrpro.utils.to_tuple import to_tuple
