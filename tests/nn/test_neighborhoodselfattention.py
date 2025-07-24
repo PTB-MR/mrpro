@@ -4,7 +4,7 @@ import pytest
 import torch
 from mrpro.nn.attention.NeighborhoodSelfAttention import NeighborhoodSelfAttention
 from mrpro.utils import RandomGenerator
-from tests.nn.conftest import minimal_torch_26
+from tests.conftest import minimal_torch_26
 
 
 @minimal_torch_26
