@@ -23,7 +23,7 @@ def uncompiled_flex_attention(
     query: torch.Tensor,
     key: torch.Tensor,
     value: torch.Tensor,
-    score_mod: torch.nn.attention.flex_attention._score_mod_signature | None = None,
+    score_mod: Any = None,  # noqa: ANN401
     block_mask: BlockMask | None = None,
     scale: float | None = None,
     enable_gqa: bool = False,
