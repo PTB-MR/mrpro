@@ -24,7 +24,7 @@ def uncompiled_flex_attention(
     key: torch.Tensor,
     value: torch.Tensor,
     score_mod: Any = None,  # noqa: ANN401
-    block_mask: BlockMask | None = None,
+    block_mask: Any = None,  # noqa: ANN401
     scale: float | None = None,
     enable_gqa: bool = False,
     kernel_options: dict[str, Any] | None = None,
