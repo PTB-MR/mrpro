@@ -61,7 +61,7 @@ classifiers = [
 ]
 dependencies = [
     "numpy>=1.23, <3.0",
-    "torch>=2.5.1",
+    "torch>=2.3.1",
     "ismrmrd>=1.14.1",
     "einops>=0.7.0",
     "pydicom>=3.0.1",
@@ -121,7 +121,7 @@ filterwarnings = [
     "ignore:Anomaly Detection has been enabled:UserWarning",                   # torch.autograd
     "ignore:allow_ops_in_compiled_graph failed to import torch:ImportWarning", # einops and dynamo<2.5
     "ignore:TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled:UserWarning", # torch cuda
-    "ignore:Online softmax is disabled on the fly since Inductor decides to split the reduction:UserWarning", # torch.compile
+    "ignore:softmax is disabled:UserWarning", # torch.compile
 ]
 addopts = "-n auto --dist loadfile --maxprocesses=8"
 markers = ["cuda : Tests only to be run when cuda device is available"]

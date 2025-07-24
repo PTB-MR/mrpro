@@ -1,11 +1,12 @@
 """Neighborhood Self Attention."""
 
 from collections.abc import Sequence
-from functools import reduce
+from functools import cache, reduce
 from typing import Any, TypeVar
 
 import torch
 from einops import rearrange
+from packaging.version import parse as parse_version
 from torch.nn import Linear, Module
 from torch.nn.attention.flex_attention import BlockMask, create_block_mask, flex_attention
 
@@ -30,6 +31,7 @@ def uncompiled_flex_attention(
     return flex_attention(key, query, value, score_mod, block_mask, scale, enable_gqa, kernel_options=kernel_options)  # type: ignore[return-value] # wrong type hints
 
 
+@cache
 def neighborhood_mask(
     device: str,
     input_size: torch.Size,
@@ -172,6 +174,8 @@ class NeighborhoodSelfAttention(Module):
             Fraction of channels to embed with RoPE.
 
         """
+        if parse_version(torch.__version__) < parse_version('2.6.0'):
+            raise NotImplementedError('NeighborhoodSelfAttention requires PyTorch 2.6.0 or higher')
         super().__init__()
         self.n_head = n_heads
         self.kernel_size = kernel_size if isinstance(kernel_size, int) else tuple(kernel_size)

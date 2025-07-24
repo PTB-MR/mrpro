@@ -5,8 +5,10 @@ from typing import cast
 import pytest
 import torch
 from mrpro.nn.nets import HourglassTransformer
+from tests.nn.conftest import minimal_torch_26
 
 
+@minimal_torch_26
 @pytest.mark.parametrize('torch_compile', [True, False], ids=['compiled', 'uncompiled'])
 @pytest.mark.parametrize(
     'device',
@@ -37,6 +39,7 @@ def test_hourglass_forward(torch_compile: bool, device: str) -> None:
     assert y.shape == (1, 1, 16, 16)
 
 
+@minimal_torch_26
 def test_hourglass_backward() -> None:
     hourglass = HourglassTransformer(
         n_dim=1,

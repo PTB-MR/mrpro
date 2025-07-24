@@ -4,8 +4,10 @@ import pytest
 import torch
 from mrpro.nn.attention.NeighborhoodSelfAttention import NeighborhoodSelfAttention
 from mrpro.utils import RandomGenerator
+from tests.nn.conftest import minimal_torch_26
 
 
+@minimal_torch_26
 @pytest.mark.parametrize(
     'device',
     [
@@ -61,6 +63,7 @@ def test_neighborhood_self_attention(
     assert attn.to_out.bias.grad is not None, 'No gradient computed for to_out.bias'
 
 
+@minimal_torch_26
 @pytest.mark.parametrize(
     ('kernel_size', 'dilation', 'circular', 'rope'),
     [
