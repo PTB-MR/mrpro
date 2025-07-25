@@ -130,3 +130,49 @@ def test_IData_rss(random_kheader, random_test_data):
     idata = IData.from_tensor_and_kheader(data=random_test_data, header=random_kheader)
     torch.testing.assert_close(idata.rss(keepdim=True), expected)
     torch.testing.assert_close(idata.rss(keepdim=False), expected.squeeze(-4))
+
+
+@pytest.mark.parametrize(
+    ('dcm_data_fixture'),
+    [
+        'dcm_2d',
+        'dcm_3d',
+    ],
+)
+def test_IData_to_dicom_folder_identical(dcm_data_fixture, request):
+    """Verify saving of different dicom types."""
+    dcm_data = request.getfixturevalue(dcm_data_fixture)
+    idata = IData.from_dicom_folder(dcm_data[0].filename.parent)
+    idata.to_dicom_folder(dcm_data[0].filename.parent / 'test_output', series_description='test_series')
+    idata_reloaded = IData.from_dicom_folder(dcm_data[0].filename.parent / 'test_output')
+
+    torch.testing.assert_close(idata_reloaded.header.te, idata.header.te)
+    assert idata_reloaded.header.position == idata.header.position
+    assert idata_reloaded.header.orientation == idata.header.orientation
+    torch.testing.assert_close(idata_reloaded.data, idata.data)
+
+
+@pytest.mark.parametrize(
+    ('dcm_data_fixture'),
+    [
+        'dcm_2d_multi_echo_times',
+        'dcm_3d_multi_echo',
+        'dcm_3d_multi_echo_multi_cardiac_phases',
+    ],
+)
+def test_IData_to_dicom_folder(dcm_data_fixture, request):
+    """Verify saving of different dicom types."""
+    dcm_data = request.getfixturevalue(dcm_data_fixture)
+    idata = IData.from_dicom_folder(dcm_data[0].filename.parent)
+    with pytest.warns(UserWarning, match='is not singleton. Using first value.'):
+        idata.to_dicom_folder(dcm_data[0].filename.parent / 'test_output', series_description='test_series')
+    idata_reloaded = IData.from_dicom_folder(dcm_data[0].filename.parent / 'test_output')
+
+    # match dimensions
+    if idata_reloaded.ndim == 6:
+        idata = idata[None, ...]
+
+    torch.testing.assert_close(idata_reloaded.header.te[0], idata.header.te[0])
+    assert idata_reloaded.header.position == idata.header.position
+    assert idata_reloaded.header.orientation == idata.header.orientation
+    torch.testing.assert_close(idata_reloaded.data, idata.data)
