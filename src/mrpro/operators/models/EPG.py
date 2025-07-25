@@ -165,7 +165,7 @@ def gradient_dephasing(state: torch.Tensor) -> torch.Tensor:
     -------
         EPG configuration states after gradient. Shape `..., 3 (f_plus, f_minus, z), n`
     """
-    zero = state.new_zeros(state.shape[:-2] + (1,))
+    zero = state.new_zeros(state.shape[:-2] + (1,))  # noqa: RUF005 # not supported in torchscript
     f_plus = torch.cat((state[..., 1, 1:2].conj(), state[..., 0, :-1]), dim=-1)
     f_minus = torch.cat((state[..., 1, 1:], zero), -1)
     z = state[..., 2, :]
