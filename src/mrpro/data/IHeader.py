@@ -1,6 +1,7 @@
 """MR image data header (IHeader) dataclass."""
 
 import dataclasses
+import datetime as dt
 import re
 from collections.abc import Callable, Sequence
 from dataclasses import field
@@ -228,6 +229,9 @@ class IHeader(Dataclass):
     idx: ImageIdx = field(default_factory=ImageIdx)
     """Image Counters. For each slice or volume, describe its use."""
 
+    datetime: dt.datetime | None = None
+    """Date and time the image."""
+
     @classmethod
     def from_kheader(cls, header: KHeader) -> Self:
         """Create IHeader object from KHeader object.
@@ -256,6 +260,7 @@ class IHeader(Dataclass):
                 try_reduce_repeat(header.acq_info.physiology_time_stamps.timestamp2.mean((-1, -2, -3), True)),
             ),
             idx=ImageIdx.from_acqidx(header.acq_info.idx),
+            datetime=header.datetime,
         )
 
     @classmethod
