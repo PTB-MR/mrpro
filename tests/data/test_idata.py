@@ -14,6 +14,7 @@ from mrpro.data import IData
         'dcm_3d',
         'dcm_2d_multi_echo_times',
         'dcm_2d_multi_echo_times_multi_folders',
+        'dcm_cardiac_2d',
         'dcm_m2d_multi_orientation',
         'dcm_3d_multi_echo',
         'dcm_3d_multi_echo_multi_cardiac_phases',
@@ -25,8 +26,8 @@ def test_IData_content_from_dcm(dcm_data_fixture, request):
     dcm_data = request.getfixturevalue(dcm_data_fixture)
     idata = IData.from_dicom_folder(dcm_data[0].filename.parent)
     # IData uses complex values but dicom only supports real values
-    img = torch.real(idata.data[0, 0, 0, ...])
-    torch.testing.assert_close(img, dcm_data[0].img_ref)
+    first_img = torch.real(idata.data.flatten(end_dim=-3)[0])
+    torch.testing.assert_close(first_img, dcm_data[0].img_ref)
 
 
 def test_IData_from_dcm_file(dcm_2d):
