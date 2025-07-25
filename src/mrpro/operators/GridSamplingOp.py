@@ -193,13 +193,13 @@ class GridSamplingOp(LinearOperator):
         Parameters
         ----------
         grid_z
-            Z-component of sampling grid. Shape `*batchdim, z,y,x`. Values should be in ``[-1, 1.]``. Use `None` for a
+            Z-component of sampling grid. Shape `(*batchdim, z,y,x)`. Values should be in ``[-1, 1.]``. Use `None` for a
             2D interpolation along `y` and `x`.
         grid_y
-            Y-component of sampling grid. Shape `*batchdim, z,y,x` or `*batchdim, y,x` if `grid_z` is `None`.
+            Y-component of sampling grid. Shape `(*batchdim, z, y, x)` or `(*batchdim, y, x)` if `grid_z` is `None`.
             Values should be in ``[-1, 1.]``.
         grid_x
-            X-component of sampling grid. Shape `*batchdim, z,y,x` or `*batchdim, y,x` if `grid_z` is `None`.
+            X-component of sampling grid. Shape `(*batchdim, z, y, x)` or `(*batchdim, y, x)` if `grid_z` is `None`.
             Values should be in ``[-1, 1.]``.
         input_shape
             Used in the adjoint. The z, y, x shape of the domain of the operator.
@@ -376,10 +376,31 @@ class GridSamplingOp(LinearOperator):
 
         return sampled
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Apply the GridSampleOperator.
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply the GridSampling operator.
 
-        Samples at the location determine by the grid.
+        This operator samples an input tensor `x` at locations specified by a grid.
+        The grid coordinates are normalized to `[-1, 1]`. The output tensor's spatial
+        dimensions are determined by the grid's dimensions. Interpolation is used
+        if grid points do not fall exactly on input tensor elements.
+
+        Parameters
+        ----------
+        x
+            Input tensor to be sampled.
+
+        Returns
+        -------
+            Output tensor containing sampled values.
+        """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply forward of GridSamplingOp.
+
+        .. note::
+            Prefer calling the instance of the GridSamplingOp operator as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         if (
             (x.shape[-1] != self.input_shape.x)
@@ -409,5 +430,20 @@ class GridSamplingOp(LinearOperator):
         return sampled
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Apply the adjoint of the GridSampleOperator."""
+        """Apply the adjoint of the GridSampling operator.
+
+        This operation is the adjoint of the forward grid sampling. It effectively
+        "scatters" the values from the input tensor `x` (which is in the grid's domain)
+        back to a tensor in the original input domain of the forward operation,
+        using the same grid and interpolation settings.
+
+        Parameters
+        ----------
+        x
+            Input tensor, corresponding to the output of the forward operation.
+
+        Returns
+        -------
+            Output tensor in the original input domain of the forward operation.
+        """
         return self.__reshape_wrapper(x, self._adjoint_implementation)
