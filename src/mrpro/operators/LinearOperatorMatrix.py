@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import operator
 from collections.abc import Callable, Iterator, Sequence
-from functools import reduce
+from functools import cached_property, reduce
 from types import EllipsisType
 from typing import cast
 
@@ -144,7 +144,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
         return f'LinearOperatorMatrix(shape={self._shape}, operators={self._operators})'
 
     # Note: The type ignores are needed because we currently cannot do arithmetic operations with non-linear operators.
-    def __add__(self, other: Self | LinearOperator | torch.Tensor) -> Self:  # type: ignore[override]
+    def __add__(self, other: Self | LinearOperator | torch.Tensor | complex) -> Self:  # type: ignore[override]
         """Addition."""
         operators: list[list[LinearOperator]] = []
         if isinstance(other, LinearOperatorMatrix):
@@ -152,7 +152,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
                 raise ValueError('OperatorMatrix shapes do not match.')
             for self_row, other_row in zip(self._operators, other._operators, strict=False):
                 operators.append([s + o for s, o in zip(self_row, other_row, strict=False)])
-        elif isinstance(other, LinearOperator | torch.Tensor):
+        elif isinstance(other, LinearOperator | torch.Tensor | complex):
             if not self.shape[0] == self.shape[1]:
                 raise NotImplementedError('Cannot add a LinearOperator to a non-square OperatorMatrix.')
             for i, self_row in enumerate(self._operators):
@@ -161,7 +161,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
             return NotImplemented  # type: ignore[unreachable]
         return self.__class__(operators)
 
-    def __radd__(self, other: Self | LinearOperator | torch.Tensor) -> Self:
+    def __radd__(self, other: Self | LinearOperator | torch.Tensor | complex) -> Self:
         """Right addition."""
         return self.__add__(other)
 
@@ -225,6 +225,20 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
         """Adjoints of the operators."""
         return self.__class__([[op.H for op in row] for row in zip(*self._operators, strict=True)])
 
+    @cached_property
+    def gram(self) -> Self:
+        """Gram matrix of the operators."""
+        n, m = self.shape
+        operators: list[list[LinearOperator]] = [[ZeroOp() for _ in range(m)] for _ in range(m)]
+        for j in range(m):
+            operators[j][j] = reduce(operator.add, (self._operators[i][j].gram for i in range(n)), ZeroOp())
+            for k in range(j + 1, m):
+                operators[j][k] = reduce(
+                    operator.add, (self._operators[i][j].H @ self._operators[i][k] for i in range(n)), ZeroOp()
+                )
+                operators[k][j] = operators[j][k].H
+        return self.__class__(operators)
+
     def adjoint(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Apply the adjoint of the operator to the input.
 
@@ -240,7 +254,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
         return self.H(*x)
 
     @classmethod
-    def from_diagonal(cls, *operators: LinearOperator):
+    def from_diagonal(cls, *operators: LinearOperator) -> Self:
         """Create a diagonal `LinearOperatorMatrix`.
 
         Construct a square `LinearOperatorMatrix` with the given linear operators on the diagonal,
@@ -308,10 +322,13 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
 
         if len(initial_value) != self.shape[1]:
             raise ValueError('Initial value should have the same length as the operator has columns.')
-        norms = torch.tensor(
-            [[_singlenorm(op, iv) for op, iv in zip(row, initial_value, strict=True)] for row in self._operators]
+        norms = torch.stack(
+            [
+                torch.stack([_singlenorm(op, iv) for op, iv in zip(row, initial_value, strict=True)])
+                for row in self._operators
+            ]
         )
-        norm = norms.square().sum(-2).sqrt().amax(-1).unsqueeze(-1)
+        norm = norms.square().sum(0).sqrt().amax(0)
         return norm
 
     def __or__(self, other: LinearOperator | LinearOperatorMatrix) -> Self:

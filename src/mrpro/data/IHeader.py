@@ -3,7 +3,7 @@
 import dataclasses
 import re
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass, field
+from dataclasses import field
 from datetime import datetime, time
 from typing import cast
 
@@ -14,13 +14,12 @@ from pydicom.tag import Tag, TagType
 from typing_extensions import Self, TypeVar
 
 from mrpro.data.AcqInfo import AcqIdx, PhysiologyTimestamps
+from mrpro.data.Dataclass import Dataclass
 from mrpro.data.KHeader import KHeader
-from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.reshape import unsqueeze_right
-from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 from mrpro.utils.unit_conversion import deg_to_rad, mm_to_m, ms_to_s
 
 
@@ -95,8 +94,7 @@ def try_reduce_repeat(value: T) -> T:
     raise ValueError(f'Dimension mismatch. Spatial or coil dimension should be reduced to a single value. {value}')
 
 
-@dataclass(slots=True)
-class ImageIdx(MoveDataMixin):
+class ImageIdx(Dataclass):
     """Indices for each slice or volume.
 
     The different counters describe the use of each slice or volume in the image data.
@@ -179,8 +177,7 @@ class ImageIdx(MoveDataMixin):
         )
 
 
-@dataclass(slots=True)
-class IHeader(MoveDataMixin):
+class IHeader(Dataclass):
     """MR image data header."""
 
     resolution: SpatialDimension[float]
@@ -254,9 +251,9 @@ class IHeader(MoveDataMixin):
             patient_table_position=try_reduce_repeat(header.acq_info.patient_table_position.apply(lambda x: x)),
             acquisition_time_stamp=try_reduce_repeat(header.acq_info.acquisition_time_stamp.mean((-1, -2, -3), True)),
             physiology_time_stamps=PhysiologyTimestamps(
+                try_reduce_repeat(header.acq_info.physiology_time_stamps.timestamp0.mean((-1, -2, -3), True)),
                 try_reduce_repeat(header.acq_info.physiology_time_stamps.timestamp1.mean((-1, -2, -3), True)),
                 try_reduce_repeat(header.acq_info.physiology_time_stamps.timestamp2.mean((-1, -2, -3), True)),
-                try_reduce_repeat(header.acq_info.physiology_time_stamps.timestamp3.mean((-1, -2, -3), True)),
             ),
             idx=ImageIdx.from_acqidx(header.acq_info.idx),
         )
@@ -365,13 +362,3 @@ class IHeader(MoveDataMixin):
             header.idx.slice = torch.tensor(slice_idx) - 1
 
         return header
-
-    def __repr__(self):
-        """Representation method for IHeader class."""
-        te = summarize_tensorvalues(self.te)
-        ti = summarize_tensorvalues(self.ti)
-        fa = summarize_tensorvalues(self.fa)
-        tr = summarize_tensorvalues(self.tr)
-        out = f'Resolution [m/pixel]: {self.resolution!s}\nTE [s]: {te}\nTR [s]: {tr}\nTI [s]: {ti}\n\
-            Flip angle [rad]: {fa}.'
-        return out

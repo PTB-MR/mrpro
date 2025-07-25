@@ -15,7 +15,7 @@ MRpro is available on `pypi <https://pypi.org/project/mrpro/>`_ and can be insta
 
 To install additional dependencies used in our example notebooks, use::
 
-    pip install mrpro[notebook]
+    pip install mrpro[notebooks]
 
 You can also install the latest development directly from github using::
 
@@ -105,6 +105,6 @@ Citation
 ========
 We are currently preparing a manuscript for MRpro. In the meantime, please cite:
 
-Zimmermann, F. F., Schuenke, P., Brahma, S., Guastini, M., Hammacher, J., Kofler, A., Kranich Redshaw, C., Lunin, L., Martin, S., Schote, D., & Kolbitsch, C. (2024).
+Zimmermann, F. F., Schuenke, P., Brahma, S., Guastini, M., Hammacher, J., Kofler, A., Redshaw Kranich, C., Lunin, L., Martin, S., Schote, D., & Kolbitsch, C. (2024).
 MRpro - PyTorch-based MR image reconstruction and processing package
-`10.5281/zenodo.14509599 <https://doi.org/10.5281/zenodo.14509599>`_
+`10.5281/zenodo.14509598 <https://doi.org/10.5281/zenodo.14509598>`_

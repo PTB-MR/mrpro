@@ -56,25 +56,29 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3 :: Only",
 ]
 dependencies = [
     "numpy>=1.23, <3.0",
-    "torch>=2.3",
+    "torch>=2.3.1",
     "ismrmrd>=1.14.1",
-    "einops",
+    "einops>=0.7.0",
     "pydicom>=3.0.1",
     "pypulseq>=1.4.2",
     "pytorch-finufft>=0.1.0",
-    "cufinufft>=2.3.1; platform_system=='Linux'",
+    "cufinufft>=2.4.1; platform_system=='Linux'",
     "scipy>=1.12",
-    "ptwt>=0.1.8",
+    "ptwt>=0.1.8, <1.0",
+    "torchvision>=0.18.1",
+    "tqdm>=4.60.0",
     "typing-extensions>=4.12",
-    "torchvision>0.18",
+    "platformdirs>=4.0",
+    "requests>=2.25",
 ]
 
 [project.optional-dependencies]
-test = [
+tests = [
     "coverage",
     "codecov",
     "pre-commit",
@@ -83,6 +87,7 @@ test = [
     "pytest-xdist",
 ]
 docs = [
+    "mrpro[notebooks]",
     "sphinx>=8.1, <8.2",
     "sphinx_rtd_theme>=3.0, <3.1",
     "sphinx-pyproject>=0.3, <0.4",
@@ -93,16 +98,15 @@ docs = [
     "sphinx-copybutton>=0.5, <0.6",
     "sphinx-last-updated-by-git>=0.3, <0.4",
 ]
-notebook = [
-    "zenodo_get",
+notebooks = [
+    "zenodo_get>=2.0",
     "ipykernel",
     "ipywidgets",
     "jupytext",
     "matplotlib",
-    "pip-tools",
-    "sigpy==0.1.26",
-
+    "cmap",
 ]
+dev = ["mrpro[tests, docs]"]
 
 [project.urls]
 "Documentation" = "https://ptb-mr.github.io/mrpro/"
@@ -116,7 +120,7 @@ filterwarnings = [
     "ignore:Anomaly Detection has been enabled:UserWarning",                   # torch.autograd
     "ignore:allow_ops_in_compiled_graph failed to import torch:ImportWarning", # einops and dynamo<2.5
 ]
-addopts = "-n auto"
+addopts = "-n auto --dist loadfile --maxprocesses=8"
 markers = ["cuda : Tests only to be run when cuda device is available"]
 
 # MyPy section
@@ -142,6 +146,7 @@ module = [
     "pywt.*",
     "torchvision.*",
     "platformdirs",
+    "cmap",
 ]
 ignore_missing_imports = true
 
@@ -229,3 +234,6 @@ extend-exclude = [
 
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]
+
+[tool.coverage.run]
+disable_warnings = ["module-not-measured"]

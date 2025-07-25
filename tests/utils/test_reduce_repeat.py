@@ -2,9 +2,7 @@
 
 import pytest
 import torch
-from mrpro.utils import reduce_repeat
-
-from tests import RandomGenerator
+from mrpro.utils import RandomGenerator, reduce_repeat
 
 
 @pytest.mark.parametrize('dtype', [torch.float32, torch.complex64], ids=['float32', 'complex64'])

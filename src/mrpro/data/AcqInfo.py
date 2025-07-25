@@ -1,7 +1,7 @@
 """Acquisition information dataclass."""
 
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass, field, fields
+from dataclasses import field, fields
 from typing import Literal, TypeAlias, overload
 
 import ismrmrd
@@ -9,11 +9,11 @@ import numpy as np
 import torch
 from typing_extensions import Self
 
-from mrpro.data.MoveDataMixin import MoveDataMixin
+from mrpro.data.Dataclass import Dataclass
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.reshape import unsqueeze_at, unsqueeze_right
-from mrpro.utils.unit_conversion import mm_to_m
+from mrpro.utils.unit_conversion import m_to_mm, micrometer_to_m, mm_to_m
 
 _convert_time_stamp_type: TypeAlias = Callable[
     [
@@ -26,7 +26,7 @@ _convert_time_stamp_type: TypeAlias = Callable[
 ]
 
 
-def convert_time_stamp_siemens(
+def convert_time_stamp_from_siemens(
     timestamp: torch.Tensor,
     _: str,
 ) -> torch.Tensor:
@@ -34,12 +34,26 @@ def convert_time_stamp_siemens(
     return timestamp.double() * 2.5e-3
 
 
-def convert_time_stamp_osi2(
+def convert_time_stamp_to_siemens(
+    timestamp: float,
+) -> int:
+    """Convert time stamp in seconds to Siemens time steps (2.5ms)."""
+    return int(timestamp / 2.5e-3)
+
+
+def convert_time_stamp_from_osi2(
     timestamp: torch.Tensor,
     _: str,
 ) -> torch.Tensor:
     """Convert OSI2 time stamp to seconds."""
     return timestamp.double() * 1e-3
+
+
+def convert_time_stamp_to_osi2(
+    timestamp: float,
+) -> int:
+    """Convert time stamp in seconds to OSI2 time steps (1ms)."""
+    return int(timestamp * 1e3)
 
 
 def _int_factory() -> torch.Tensor:
@@ -58,8 +72,7 @@ def _position_factory() -> SpatialDimension[torch.Tensor]:
     )
 
 
-@dataclass(slots=True)
-class AcqIdx(MoveDataMixin):
+class AcqIdx(Dataclass):
     """Acquisition index for each readout."""
 
     k1: torch.Tensor = field(default_factory=_int_factory)
@@ -124,10 +137,10 @@ class AcqIdx(MoveDataMixin):
             raise ValueError('The acquisition index tensors should each have at least 5 dimensions.')
 
 
-@dataclass(slots=True)
-class UserValues(MoveDataMixin):
+class UserValues(Dataclass):
     """User Values used in AcqInfo."""
 
+    float0: torch.Tensor = field(default_factory=_float_factory)
     float1: torch.Tensor = field(default_factory=_float_factory)
     float2: torch.Tensor = field(default_factory=_float_factory)
     float3: torch.Tensor = field(default_factory=_float_factory)
@@ -135,7 +148,7 @@ class UserValues(MoveDataMixin):
     float5: torch.Tensor = field(default_factory=_float_factory)
     float6: torch.Tensor = field(default_factory=_float_factory)
     float7: torch.Tensor = field(default_factory=_float_factory)
-    float8: torch.Tensor = field(default_factory=_float_factory)
+    int0: torch.Tensor = field(default_factory=_int_factory)
     int1: torch.Tensor = field(default_factory=_int_factory)
     int2: torch.Tensor = field(default_factory=_int_factory)
     int3: torch.Tensor = field(default_factory=_int_factory)
@@ -143,20 +156,17 @@ class UserValues(MoveDataMixin):
     int5: torch.Tensor = field(default_factory=_int_factory)
     int6: torch.Tensor = field(default_factory=_int_factory)
     int7: torch.Tensor = field(default_factory=_int_factory)
-    int8: torch.Tensor = field(default_factory=_int_factory)
 
 
-@dataclass(slots=True)
-class PhysiologyTimestamps(MoveDataMixin):
+class PhysiologyTimestamps(Dataclass):
     """Time stamps relative to physiological triggering, e.g. ECG, in seconds."""
 
+    timestamp0: torch.Tensor = field(default_factory=_float_factory)
     timestamp1: torch.Tensor = field(default_factory=_float_factory)
     timestamp2: torch.Tensor = field(default_factory=_float_factory)
-    timestamp3: torch.Tensor = field(default_factory=_float_factory)
 
 
-@dataclass(slots=True)
-class AcqInfo(MoveDataMixin):
+class AcqInfo(Dataclass):
     """Acquisition information for each readout."""
 
     idx: AcqIdx = field(default_factory=AcqIdx)
@@ -193,7 +203,7 @@ class AcqInfo(MoveDataMixin):
         acquisitions: Sequence[ismrmrd.acquisition.Acquisition],
         *,
         additional_fields: None,
-        convert_time_stamp: _convert_time_stamp_type = convert_time_stamp_siemens,
+        convert_time_stamp: _convert_time_stamp_type = convert_time_stamp_from_siemens,
     ) -> Self: ...
 
     @overload
@@ -203,7 +213,7 @@ class AcqInfo(MoveDataMixin):
         acquisitions: Sequence[ismrmrd.acquisition.Acquisition],
         *,
         additional_fields: Sequence[str],
-        convert_time_stamp: _convert_time_stamp_type = convert_time_stamp_siemens,
+        convert_time_stamp: _convert_time_stamp_type = convert_time_stamp_from_siemens,
     ) -> tuple[Self, tuple[torch.Tensor, ...]]: ...
 
     @classmethod
@@ -212,7 +222,7 @@ class AcqInfo(MoveDataMixin):
         acquisitions: Sequence[ismrmrd.acquisition.Acquisition],
         *,
         additional_fields: Sequence[str] | None = None,
-        convert_time_stamp: _convert_time_stamp_type = convert_time_stamp_siemens,
+        convert_time_stamp: _convert_time_stamp_type = convert_time_stamp_from_siemens,
     ) -> Self | tuple[Self, tuple[torch.Tensor, ...]]:
         """Read the header of a list of acquisition and store information.
 
@@ -249,9 +259,9 @@ class AcqInfo(MoveDataMixin):
             # we use int32 for uint16 and int64 for uint32 to fit largest values.
             match data.dtype:
                 case np.uint16:
-                    data = data.astype(np.int32)
+                    data = data.astype(np.int32)  # type: ignore[unreachable]
                 case np.uint32 | np.uint64:
-                    data = data.astype(np.int64)
+                    data = data.astype(np.int64)  # type: ignore[unreachable]
             # Remove any unnecessary dimensions
             return torch.tensor(np.squeeze(data))
 
@@ -319,7 +329,7 @@ class AcqInfo(MoveDataMixin):
                 spatialdimension_5d(headers['phase_dir']),
                 spatialdimension_5d(headers['read_dir']),
             ),
-            patient_table_position=spatialdimension_5d(headers['patient_table_position']).apply_(mm_to_m),
+            patient_table_position=spatialdimension_5d(headers['patient_table_position']).apply_(micrometer_to_m),
             position=spatialdimension_5d(headers['position']).apply_(mm_to_m),
             sample_time_us=tensor_5d(headers['sample_time_us']),
             user=user,
@@ -331,3 +341,82 @@ class AcqInfo(MoveDataMixin):
         else:
             additional_values = tuple(tensor_5d(headers[field]) for field in additional_fields)
             return acq_info, additional_values
+
+
+def write_acqinfo_to_ismrmrd_acquisition_(
+    acq_info: AcqInfo,
+    ismrmrd_acq: ismrmrd.Acquisition,
+    convert_time_stamp: Callable[[float], int] = convert_time_stamp_to_siemens,
+) -> ismrmrd.Acquisition:
+    """Overwrite ISMRMRD acquisition information for single acquisition.
+
+    Parameters
+    ----------
+    acq_info
+        Acquisition information to write to ISMRMRD acquisition.
+    ismrmrd_acq
+        ISMRMRD acquisition to write to. Modified in place.
+    convert_time_stamp
+        Function to convert time stamp to ISMRMRD time stamp.
+
+    Returns
+    -------
+        ISMRMRD acquisition with updated information.
+    """
+    if acq_info.shape.numel() != 1:
+        raise ValueError('Only single acquisition (single readout for all coils) can be written.')
+    ismrmrd_acq.flags = acq_info.flags
+    ismrmrd_acq.idx.kspace_encode_step_1 = acq_info.idx.k1
+    ismrmrd_acq.idx.kspace_encode_step_2 = acq_info.idx.k2
+    ismrmrd_acq.idx.average = acq_info.idx.average
+    ismrmrd_acq.idx.slice = acq_info.idx.slice
+    ismrmrd_acq.idx.contrast = acq_info.idx.contrast
+    ismrmrd_acq.idx.phase = acq_info.idx.phase
+    ismrmrd_acq.idx.repetition = acq_info.idx.repetition
+    ismrmrd_acq.idx.set = acq_info.idx.set
+    ismrmrd_acq.idx.segment = acq_info.idx.segment
+    ismrmrd_acq.idx.user = (
+        acq_info.idx.user0,
+        acq_info.idx.user1,
+        acq_info.idx.user2,
+        acq_info.idx.user3,
+        acq_info.idx.user4,
+        acq_info.idx.user5,
+        acq_info.idx.user6,
+        acq_info.idx.user7,
+    )
+    # active_channesl, number_of_samples and trajectory_dimensions are read-only and cannot be set
+    ismrmrd_acq.patient_table_position = acq_info.patient_table_position[0].apply(m_to_mm).zyx[::-1]  # zyx -> xyz
+    directions = acq_info.orientation[0].as_directions()
+    ismrmrd_acq.slice_dir = directions[0].zyx[::-1]  # zyx -> xyz
+    ismrmrd_acq.phase_dir = directions[1].zyx[::-1]
+    ismrmrd_acq.read_dir = directions[2].zyx[::-1]
+    ismrmrd_acq.position = acq_info.position[0].apply(m_to_mm).zyx[::-1]
+    ismrmrd_acq.sample_time_us = acq_info.sample_time_us
+    ismrmrd_acq.user_float = (
+        acq_info.user.float0,
+        acq_info.user.float1,
+        acq_info.user.float2,
+        acq_info.user.float3,
+        acq_info.user.float4,
+        acq_info.user.float5,
+        acq_info.user.float6,
+        acq_info.user.float7,
+    )
+    ismrmrd_acq.user_int = (
+        acq_info.user.int0,
+        acq_info.user.int1,
+        acq_info.user.int2,
+        acq_info.user.int3,
+        acq_info.user.int4,
+        acq_info.user.int5,
+        acq_info.user.int6,
+        acq_info.user.int7,
+    )
+    ismrmrd_acq.acquisition_time_stamp = convert_time_stamp(acq_info.acquisition_time_stamp.item())
+    ismrmrd_acq.physiology_time_stamp = (
+        convert_time_stamp(acq_info.physiology_time_stamps.timestamp0.item()),
+        convert_time_stamp(acq_info.physiology_time_stamps.timestamp1.item()),
+        convert_time_stamp(acq_info.physiology_time_stamps.timestamp2.item()),
+    )
+    return ismrmrd_acq

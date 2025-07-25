@@ -46,9 +46,8 @@ import pytest
 import torch
 from mrpro.data import Rotation, SpatialDimension
 from mrpro.data.Rotation import AXIS_ORDER
+from mrpro.utils import RandomGenerator
 from scipy.stats import special_ortho_group
-
-from tests import RandomGenerator
 
 
 def _norm(x):
@@ -748,6 +747,16 @@ def test_approx_equal_single_rotation() -> None:
     assert not p.approx_equal(q[3], atol=1e-8, degrees=True)
 
 
+def test_equal() -> None:
+    """Test __eq__ method of the Rotation class."""
+    a = Rotation.random(10, random_state=0)
+    assert a == a  # same instance
+    b = Rotation.random(10, random_state=0)
+    assert b == a  # same random state
+    c = Rotation.random(10, random_state=1)
+    assert c != a  # different random state
+
+
 def test_apply_single_spatialdim() -> None:
     vec = SpatialDimension(1.0, 2.0, 3.0)
     mat = torch.tensor([[0, -1, 0], [1, 0, 0], [0, 0, 1]]).float()
@@ -1234,13 +1243,23 @@ def test_as_euler_contiguous() -> None:
     assert e2.is_contiguous()
 
 
-def test_concatenate() -> None:
-    """Test Rotation"""
+def test_concatenate_classmethod() -> None:
+    """Test concatenation of Rotation objects as a classmethod"""
     rotation = Rotation.random(10, random_state=0)
     sizes = [1, 2, 3, 1, 3]
     starts = [0, *np.cumsum(sizes)]
     split = [rotation[i : i + n] for i, n in zip(starts, sizes, strict=False)]
     result = Rotation.concatenate(split)
+    assert (rotation.as_quat() == result.as_quat()).all()
+
+
+def test_concatenate_instance() -> None:
+    """Test concatenation of Rotation objects as an instance method"""
+    rotation = Rotation.random(10, random_state=0)
+    sizes = [1, 2, 3, 1, 3]
+    starts = [0, *np.cumsum(sizes)]
+    split = [rotation[i : i + n] for i, n in zip(starts, sizes, strict=False)]
+    result = split[0].concatenate(*split[1:])
     assert (rotation.as_quat() == result.as_quat()).all()
 
 
@@ -1276,7 +1295,7 @@ def test_mean(theta: float) -> None:
     "Basic test for mean"
     axes = torch.cat((-torch.eye(3), torch.eye(3)))
     r = Rotation.from_rotvec(theta * axes)
-    assert math.isclose(r.mean().magnitude(), 0.0)
+    assert math.isclose(r.mean().magnitude(), 0.0, abs_tol=1e-7)
 
 
 @pytest.mark.parametrize('theta', [0.0, np.pi / 8, np.pi / 4, np.pi / 3, np.pi / 2])
@@ -1352,10 +1371,10 @@ def test_quaternion_properties_single() -> None:
     assert r.quaternion_y == quat[AXIS_ORDER.index('y')]
     assert r.quaternion_z == quat[AXIS_ORDER.index('z')]
     assert r.quaternion_w == quat[-1]
-    r.quaternion_x = 1.0  # type: ignore[assignment]
+    r.quaternion_x = 1.0
     r.quaternion_y = torch.tensor(2.0)
-    r.quaternion_z = 3  # type: ignore[assignment]
-    r.quaternion_w = 4.0  # type: ignore[assignment]
+    r.quaternion_z = 3
+    r.quaternion_w = 4.0
     torch.testing.assert_close(r.quaternion_x, torch.tensor(1.0))
     torch.testing.assert_close(r.quaternion_y, torch.tensor(2.0))
     torch.testing.assert_close(r.quaternion_z, torch.tensor(3.0))

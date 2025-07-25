@@ -48,7 +48,7 @@ def pdhg(
     relaxation: float = 1.0,
     initial_relaxed: Sequence[torch.Tensor] | None = None,
     initial_duals: Sequence[torch.Tensor] | None = None,
-    callback: Callable[[PDHGStatus], None] | None = None,
+    callback: Callable[[PDHGStatus], bool | None] | None = None,
 ) -> tuple[torch.Tensor, ...]:
     r"""Primal-Dual Hybrid Gradient Algorithm (PDHG).
 
@@ -117,7 +117,8 @@ def pdhg(
     initial_duals
         dual variables, used for warm start.
     callback
-        callback function called after each iteration.
+        callback function called after each iteration. This can be used to monitor the progress of the algorithm.
+        If it returns `False`, the algorithm stops at that iteration.
     """
     if f is None and g is None:
         warnings.warn(
@@ -142,7 +143,7 @@ def pdhg(
 
     # We always use a separable sum for homogeneous handling, even if it is just a ZeroFunctional
     if f is None:
-        f_sum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * n_rows)
+        f_sum: ProximableFunctionalSeparableSum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * n_rows)
     elif isinstance(f, ProximableFunctional):
         f_sum = ProximableFunctionalSeparableSum(f)
     else:
@@ -152,7 +153,7 @@ def pdhg(
         raise ValueError('Number of rows in operator does not match number of functionals in f')
 
     if g is None:
-        g_sum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * n_columns)
+        g_sum: ProximableFunctionalSeparableSum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * n_columns)
     elif isinstance(g, ProximableFunctional):
         g_sum = ProximableFunctionalSeparableSum(g)
     else:
@@ -164,13 +165,13 @@ def pdhg(
     if primal_stepsize is None or dual_stepsize is None:
         # choose primal and dual step size such that their product is 1/|operator|**2
         # to ensure convergence
-        operator_norm = operator_matrix.operator_norm(*[torch.randn_like(v) for v in initial_values])
+        operator_norm = operator_matrix.operator_norm(*[torch.randn_like(v) for v in initial_values]).amax()
         if primal_stepsize is None and dual_stepsize is None:
             primal_stepsize_ = dual_stepsize_ = 1.0 / operator_norm
-        elif primal_stepsize is None:
+        elif primal_stepsize is None and dual_stepsize is not None:
             primal_stepsize_ = 1 / (operator_norm * dual_stepsize)
             dual_stepsize_ = dual_stepsize
-        elif dual_stepsize is None:
+        elif dual_stepsize is None and primal_stepsize is not None:
             dual_stepsize_ = 1 / (operator_norm * primal_stepsize)
             primal_stepsize_ = primal_stepsize
     else:
@@ -218,6 +219,8 @@ def pdhg(
                 relaxed=primals_relaxed,
                 objective=lambda *x: f_sum.forward(*operator_matrix(*x))[0] + g_sum.forward(*x)[0],
             )
-            callback(status)
+            continue_iterations = callback(status)
+            if continue_iterations is False:
+                break
 
     return tuple(primals)

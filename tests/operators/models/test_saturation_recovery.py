@@ -5,7 +5,8 @@ from collections.abc import Sequence
 import pytest
 import torch
 from mrpro.operators.models import SaturationRecovery
-from tests import RandomGenerator, autodiff_test
+from mrpro.utils import RandomGenerator
+from tests import autodiff_test
 from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
 
 
