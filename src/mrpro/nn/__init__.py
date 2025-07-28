@@ -26,6 +26,7 @@ from mrpro.nn.RMSNorm import RMSNorm
 from mrpro.nn.AxialRoPE import AxialRoPE
 from mrpro.nn.AbsolutePositionEncoding import  AbsolutePositionEncoding
 from mrpro.nn.FourierFeatures import FourierFeatures
+from mrpro.nn.SeparableResBlock import SeparableResBlock
 
 __all__ = [
     "AbsolutePositionEncoding",
@@ -47,6 +48,7 @@ __all__ = [
     "RMSNorm",
     "ResBlock",
     "Residual",
+    "SeparableResBlock",
     "Sequential",
     "attention",
     "data_consistency",

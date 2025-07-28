@@ -18,8 +18,8 @@ class SeparableResBlock(Module):
     def __init__(
         self,
         dim_groups: Sequence[Sequence[int]],
-        channels_in: int,
-        channels_out: int,
+        n_channels_in: int,
+        n_channels_out: int,
         cond_dim: int,
     ) -> None:
         """Initialize the SeparableResBlock.
@@ -35,9 +35,9 @@ class SeparableResBlock(Module):
         ----------
         dim_groups
             Sequence of dimension groups to use in the convolutions.
-        channels_in
+        n_channels_in
             Number of input channels.
-        channels_out
+        n_channels_out
             Number of output channels.
         cond_dim
             Number of channels in the conditioning tensor. If 0, no conditioning is applied.
@@ -49,17 +49,17 @@ class SeparableResBlock(Module):
             return Sequential(
                 GroupNorm(channels_in),
                 SiLU(),
-                PermutedBlock(dims, ConvND(len(dims))(channels_in, channels_out, 3, padding=1)),
+                PermutedBlock(dims, ConvND(len(dims))(channels_in, n_channels_out, 3, padding=1)),
             )
 
-        blocks = Sequential(*(block(d, channels_in if i == 0 else channels_out) for i, d in enumerate(dim_groups)))
+        blocks = Sequential(*(block(d, n_channels_in if i == 0 else n_channels_out) for i, d in enumerate(dim_groups)))
         if cond_dim > 0:
-            blocks.append(FiLM(channels_out, cond_dim))
-        blocks.extend(block(d, channels_out) for d in dim_groups)
+            blocks.append(FiLM(n_channels_out, cond_dim))
+        blocks.extend(block(d, n_channels_out) for d in dim_groups)
         self.block = blocks
         self.skip_connection = None
-        if channels_in != channels_out:
-            self.skip_connection = torch.nn.Linear(channels_in, channels_out)
+        if n_channels_in != n_channels_out:
+            self.skip_connection = torch.nn.Linear(n_channels_in, n_channels_out)
 
     def __call__(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the SeparableResBlock.
