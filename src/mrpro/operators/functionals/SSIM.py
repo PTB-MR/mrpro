@@ -241,10 +241,9 @@ class SSIM(Operator[torch.Tensor, tuple[torch.Tensor]]):
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
         """Apply forward of SSIM.
 
-        Note
-        ----
-        Prefer calling the instance of the SSIM as ``operator(x)`` over directly calling this method.
-        See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
+        .. note::
+            Prefer calling the instance of the SSIM as ``operator(x)`` over directly calling this method.
+            See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         ssim = ssim3d(
             self.target.real,
