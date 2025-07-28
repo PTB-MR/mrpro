@@ -48,7 +48,7 @@ class L1Norm(ElementaryProximableFunctional):
         """Apply forward of L1Norm.
 
         .. note::
-            Prefer calling the instance of the L1Norm as ``operator(x)`` over directly calling this method.
+            Prefer calling the instance of the L1Norm as ``operator(x)`` over directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         value = (self.weight * (x - self.target)).abs()
 
