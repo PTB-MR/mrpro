@@ -57,6 +57,6 @@ class QData(Dataclass):
         dataset = dcmread(filename)
         # Image data is 2D np.array of Uint16, which cannot directly be converted to tensor
         qdata = torch.as_tensor(dataset.pixel_array.astype(np.complex64))
-        qdata = repeat(qdata, 'y x -> other coils z y x', other=1, coils=1, z=1)
+        qdata = repeat(qdata, 'x y -> other coils z y x', other=1, coils=1, z=1)
         header = QHeader.from_dicom(dataset)
         return cls(data=qdata, header=header)
