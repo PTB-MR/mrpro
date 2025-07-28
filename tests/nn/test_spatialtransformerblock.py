@@ -10,6 +10,7 @@ from mrpro.utils import RandomGenerator
 from tests.conftest import minimal_torch_26
 
 
+@minimal_torch_26
 @pytest.mark.parametrize('torch_compile', [True, False], ids=['compiled', 'uncompiled'])
 @pytest.mark.parametrize(
     'device',

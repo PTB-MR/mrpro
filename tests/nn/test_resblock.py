@@ -7,9 +7,16 @@ import pytest
 import torch
 from mrpro.nn import ResBlock
 from mrpro.utils import RandomGenerator
+from tests.conftest import minimal_torch_26
 
 
-@pytest.mark.parametrize('torch_compile', [True, False], ids=['compiled', 'uncompiled'])
+@pytest.mark.parametrize(
+    'torch_compile',
+    [
+        pytest.param(True, id='compiled', marks=minimal_torch_26),
+        pytest.param(False, id='eager'),
+    ],
+)
 @pytest.mark.parametrize(
     'device',
     [

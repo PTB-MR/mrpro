@@ -95,6 +95,7 @@ def test_neighborhood_attention_variants(kernel_size: int, dilation: int, circul
     assert not output.isnan().any(), 'NaN values in output'
 
 
+@minimal_torch_26
 @pytest.mark.parametrize(
     ('kernel_size', 'circular', 'input_shape'),
     [
