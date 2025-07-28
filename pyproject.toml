@@ -123,7 +123,7 @@ filterwarnings = [
     "ignore:TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled:UserWarning", # torch cuda
     "ignore:softmax is disabled:UserWarning", # torch.compile
     "ignore:.*In the future, this object will be coerced as if it was first converted using.*:FutureWarning", # numpy 1.2
-    "ignore:the load_module() method is deprecated:DeprecationWarning", # torch dynamo
+    "ignore:load_module:DeprecationWarning", # torch dynamo
 ]
 addopts = "-n auto --dist loadfile --maxprocesses=8"
 markers = ["cuda : Tests only to be run when cuda device is available"]
