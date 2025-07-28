@@ -7,16 +7,9 @@ import pytest
 import torch
 from mrpro.nn import ResBlock
 from mrpro.utils import RandomGenerator
-from tests.conftest import minimal_torch_26
 
 
-@pytest.mark.parametrize(
-    'torch_compile',
-    [
-        pytest.param(True, id='compiled', marks=minimal_torch_26),
-        pytest.param(False, id='eager'),
-    ],
-)
+@pytest.mark.parametrize('torch_compile', [True, False], ids=['compiled', 'eager'])
 @pytest.mark.parametrize(
     'device',
     [
@@ -47,7 +40,7 @@ def test_resblock(
     cond = rng.float32_tensor(cond_shape).to(device).requires_grad_(True) if cond_shape else None
     block = ResBlock(n_dim=dim, n_channels_in=channels_in, n_channels_out=channels_out, cond_dim=cond_dim).to(device)
     if torch_compile:
-        block = cast(ResBlock, torch.compile(block))
+        block = cast(ResBlock, torch.compile(block, dynamic=False))
     output = block(x, cond=cond)
     assert output.shape == (input_shape[0], channels_out, *input_shape[2:]), (
         f'Output shape {output.shape} != expected {(input_shape[0], channels_out, *input_shape[2:])}'
