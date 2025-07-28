@@ -22,9 +22,9 @@ from tests.conftest import minimal_torch_26
 @pytest.mark.parametrize(
     ('channels', 'cond_dim', 'attention_neighborhood', 'features_last', 'norm', 'input_shape'),
     [
-        pytest.param(32, 16, 7, False, 'group', (16, 16), id='2d-cond-group-first-NA'),
+        pytest.param(64, 16, 7, False, 'group', (16, 16), id='2d-cond-group-first-NA'),
         pytest.param(32, 16, None, True, 'group', (16, 16), marks=minimal_torch_26, id='2d-cond-group-last-global'),
-        pytest.param(32, 16, 5, True, 'group', (16, 16), id='2d-cond-group-last-NA'),
+        pytest.param(64, 16, 5, True, 'group', (16, 16), id='2d-cond-group-last-NA'),
         pytest.param(64, 0, 7, True, 'rms', (16, 8, 16), marks=minimal_torch_26, id='3d-nocond-rms-last-NA'),
     ],
 )
