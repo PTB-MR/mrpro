@@ -2,7 +2,7 @@
 
 from collections.abc import Sequence
 from functools import cache, reduce
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import torch
 from einops import rearrange
@@ -14,7 +14,7 @@ from mrpro.utils.to_tuple import to_tuple
 
 T = TypeVar('T')
 
-if parse_version(torch.__version__) > parse_version('2.6'):
+if TYPE_CHECKING or parse_version(torch.__version__) > parse_version('2.6'):
     from torch.nn.attention.flex_attention import BlockMask, create_block_mask, flex_attention
 else:
 
