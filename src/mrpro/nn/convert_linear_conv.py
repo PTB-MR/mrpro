@@ -5,7 +5,7 @@ from typing import Literal, overload
 import torch
 from torch.nn import Conv1d, Conv2d, Conv3d, Linear
 
-from mrpro.nn.ndmodules import ConvND
+from mrpro.nn.ndmodules import convND
 
 
 @overload
@@ -48,7 +48,7 @@ def linear_to_conv(linear_layer: Linear, n_dim: int) -> Conv1d | Conv2d | Conv3d
     -------
         A Conv layer with equivalent weights and bias.
     """
-    conv = ConvND(n_dim)(
+    conv = convND(n_dim)(
         in_channels=linear_layer.in_features,
         out_channels=linear_layer.out_features,
         kernel_size=1,

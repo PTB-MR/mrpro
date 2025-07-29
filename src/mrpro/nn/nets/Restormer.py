@@ -10,7 +10,7 @@ from mrpro.nn.attention.TransposedAttention import TransposedAttention
 from mrpro.nn.CondMixin import CondMixin
 from mrpro.nn.FiLM import FiLM
 from mrpro.nn.join import Concat
-from mrpro.nn.ndmodules import ConvND, InstanceNormND
+from mrpro.nn.ndmodules import convND, instanceNormND
 from mrpro.nn.nets.UNet import UNetBase, UNetDecoder, UNetEncoder
 from mrpro.nn.PixelShuffle import PixelShuffleUpsample, PixelUnshuffleDownsample
 from mrpro.nn.Sequential import Sequential
@@ -37,8 +37,8 @@ class GDFN(Module):
         super().__init__()
 
         hidden_features = int(n_channels * mlp_ratio)
-        self.project_in = ConvND(n_dim)(n_channels, hidden_features * 2, kernel_size=1)
-        self.depthwise_conv = ConvND(n_dim)(
+        self.project_in = convND(n_dim)(n_channels, hidden_features * 2, kernel_size=1)
+        self.depthwise_conv = convND(n_dim)(
             hidden_features * 2,
             hidden_features * 2,
             kernel_size=3,
@@ -46,7 +46,7 @@ class GDFN(Module):
             padding=1,
             groups=hidden_features * 2,
         )
-        self.project_out = ConvND(n_dim)(hidden_features, n_channels, kernel_size=1)
+        self.project_out = convND(n_dim)(hidden_features, n_channels, kernel_size=1)
 
     def __call__(self, x: torch.Tensor) -> torch.Tensor:
         """Apply the gated depthwise feed forward network.
@@ -87,9 +87,9 @@ class RestormerBlock(CondMixin, Module):
             Dimension of conditioning input. If 0, no conditioning is applied.
         """
         super().__init__()
-        self.norm1 = Sequential(InstanceNormND(n_dim)(n_channels))
+        self.norm1 = Sequential(instanceNormND(n_dim)(n_channels))
         self.attn = TransposedAttention(n_dim, n_channels, n_channels, n_heads)
-        self.norm2 = Sequential(InstanceNormND(n_dim)(n_channels))
+        self.norm2 = Sequential(instanceNormND(n_dim)(n_channels))
         self.ffn = GDFN(n_dim, n_channels, mlp_ratio)
         if cond_dim > 0:
             self.norm2.append(FiLM(channels=n_channels, cond_dim=cond_dim))
@@ -176,7 +176,7 @@ class Restormer(UNetBase):
                 layers.insert(1, FiLM(channels=n_channels_per_head * n_heads, cond_dim=cond_dim))
             return layers
 
-        first_block = ConvND(n_dim)(n_channels_in, n_channels_per_head, kernel_size=3, stride=1, padding=1, bias=False)
+        first_block = convND(n_dim)(n_channels_in, n_channels_per_head, kernel_size=3, stride=1, padding=1, bias=False)
         encoder_blocks = [blocks(head, block) for head, block in zip(n_heads[:-1], n_blocks[:-1], strict=True)]
         down_blocks = [
             PixelUnshuffleDownsample(n_dim, n_channels_per_head * head_current, n_channels_per_head * head_next)
@@ -197,14 +197,14 @@ class Restormer(UNetBase):
         concat_blocks = [
             Sequential(
                 Concat(),
-                ConvND(n_dim)(2 * n_channels_per_head * head, n_channels_per_head * head, kernel_size=1),
+                convND(n_dim)(2 * n_channels_per_head * head, n_channels_per_head * head, kernel_size=1),
             )
             for head in n_heads[-2::-1]
         ]
         decoder_blocks = [blocks(head, block) for head, block in zip(n_heads[:-1], n_blocks[:-1], strict=True)][::-1]
         last_block = Sequential(
             *(RestormerBlock(n_dim, n_channels_per_head, n_heads[0], mlp_ratio) for _ in range(n_refinement_blocks)),
-            ConvND(n_dim)(n_channels_per_head, n_channels_out, kernel_size=3, stride=1, padding=1),
+            convND(n_dim)(n_channels_per_head, n_channels_out, kernel_size=3, stride=1, padding=1),
         )
         decoder = UNetDecoder(
             blocks=decoder_blocks,

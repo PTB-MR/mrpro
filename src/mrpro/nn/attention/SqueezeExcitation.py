@@ -3,7 +3,7 @@
 import torch
 from torch.nn import Module, ReLU, Sigmoid
 
-from mrpro.nn.ndmodules import AdaptiveAvgPoolND, ConvND
+from mrpro.nn.ndmodules import adaptiveAvgPoolND, convND
 from mrpro.nn.Sequential import Sequential
 
 
@@ -31,10 +31,10 @@ class SqueezeExcitation(Module):
         """
         super().__init__()
         self.scale = Sequential(
-            AdaptiveAvgPoolND(n_dim)(1),
-            ConvND(n_dim)(n_channels_input, n_channels_squeeze, kernel_size=1),
+            adaptiveAvgPoolND(n_dim)(1),
+            convND(n_dim)(n_channels_input, n_channels_squeeze, kernel_size=1),
             ReLU(),
-            ConvND(n_dim)(n_channels_squeeze, n_channels_input, kernel_size=1),
+            convND(n_dim)(n_channels_squeeze, n_channels_input, kernel_size=1),
             Sigmoid(),
         )
 

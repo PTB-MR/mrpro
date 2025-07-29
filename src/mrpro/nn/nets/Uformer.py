@@ -11,7 +11,7 @@ from mrpro.nn.CondMixin import CondMixin
 from mrpro.nn.DropPath import DropPath
 from mrpro.nn.FiLM import FiLM
 from mrpro.nn.join import Concat
-from mrpro.nn.ndmodules import ConvND, ConvTransposeND, InstanceNormND
+from mrpro.nn.ndmodules import convND, convTransposeND, instanceNormND
 from mrpro.nn.nets.UNet import UNetBase, UNetDecoder, UNetEncoder
 from mrpro.nn.Sequential import Sequential
 
@@ -57,7 +57,7 @@ class LeWinTransformerBlock(CondMixin, Module):
         super().__init__()
         channels = n_channels_per_head * n_heads
         hidden_dim = int(channels * mlp_ratio)
-        self.norm1 = InstanceNormND(n_dim)(channels)
+        self.norm1 = instanceNormND(n_dim)(channels)
         self.attn = ShiftedWindowAttention(
             n_dim=n_dim,
             n_channels_in=channels,
@@ -66,13 +66,13 @@ class LeWinTransformerBlock(CondMixin, Module):
             window_size=window_size,
             shifted=shifted,
         )
-        self.norm2 = InstanceNormND(n_dim)(channels)
+        self.norm2 = instanceNormND(n_dim)(channels)
         self.ff = Sequential(
-            ConvND(n_dim)(channels, hidden_dim, 1),
+            convND(n_dim)(channels, hidden_dim, 1),
             GELU(),
-            ConvND(n_dim)(hidden_dim, hidden_dim, kernel_size=3, groups=hidden_dim, stride=1, padding=1),
+            convND(n_dim)(hidden_dim, hidden_dim, kernel_size=3, groups=hidden_dim, stride=1, padding=1),
             GELU(),
-            ConvND(n_dim)(hidden_dim, channels, 1),
+            convND(n_dim)(hidden_dim, channels, 1),
         )
         if cond_dim > 0:
             self.ff.append(FiLM(channels, cond_dim))
@@ -178,7 +178,7 @@ class Uformer(UNetBase):
             )
 
         first_block = torch.nn.Sequential(
-            ConvND(n_dim)(n_channels_in, n_channels_per_head * n_heads[0], kernel_size=3, stride=1, padding='same'),
+            convND(n_dim)(n_channels_in, n_channels_per_head * n_heads[0], kernel_size=3, stride=1, padding='same'),
             LeakyReLU(),
         )
         drop_path_rates = torch.linspace(0, max_droppath_rate, len(n_heads)).tolist()
@@ -187,7 +187,7 @@ class Uformer(UNetBase):
             for n_head, p_droppath_input in zip(n_heads[:-1], drop_path_rates[:-1], strict=True)
         ]
         down_blocks = [
-            ConvND(n_dim)(
+            convND(n_dim)(
                 n_channels_per_head * n_head_current,
                 n_channels_per_head * n_head_next,
                 kernel_size=4,
@@ -207,17 +207,17 @@ class Uformer(UNetBase):
         decoder_blocks = [blocks(n_heads=2 * n_head, p_droppath=max_droppath_rate) for n_head in reversed(n_heads[:-1])]
         concat_blocks = [Concat() for _ in range(len(decoder_blocks))]
         up_blocks = [
-            ConvTransposeND(n_dim)(
+            convTransposeND(n_dim)(
                 n_channels_per_head * n_heads[-1], n_channels_per_head * n_heads[-2], kernel_size=2, stride=2
             )
         ]
         for n_head_current, n_head_next in pairwise(reversed(n_heads[:-1])):
             up_blocks.append(
-                ConvTransposeND(n_dim)(
+                convTransposeND(n_dim)(
                     2 * n_channels_per_head * n_head_current, n_channels_per_head * n_head_next, kernel_size=2, stride=2
                 )
             )
-        last_block = ConvND(n_dim)(
+        last_block = convND(n_dim)(
             2 * n_channels_per_head * n_heads[0], n_channels_out, kernel_size=3, stride=1, padding='same'
         )
         decoder = UNetDecoder(

@@ -3,7 +3,7 @@
 import torch
 
 
-def ConvND(n_dim: int) -> type[torch.nn.Conv1d] | type[torch.nn.Conv2d] | type[torch.nn.Conv3d]:  # noqa: N802
+def convND(n_dim: int) -> type[torch.nn.Conv1d] | type[torch.nn.Conv2d] | type[torch.nn.Conv3d]:  # noqa: N802
     """Get the `n_dim`-dimensional convolution class.
 
     Parameters
@@ -26,7 +26,7 @@ def ConvND(n_dim: int) -> type[torch.nn.Conv1d] | type[torch.nn.Conv2d] | type[t
             raise NotImplementedError(f'ConvND for dim {n_dim} not implemented. Raise an issue if you need this.')
 
 
-def ConvTransposeND(  # noqa: N802
+def convTransposeND(  # noqa: N802
     n_dim: int,
 ) -> type[torch.nn.ConvTranspose1d] | type[torch.nn.ConvTranspose2d] | type[torch.nn.ConvTranspose3d]:
     """Get the `n_dim`-dimensional transposed convolution class.
@@ -53,7 +53,7 @@ def ConvTransposeND(  # noqa: N802
             )
 
 
-def MaxPoolND(n_dim: int) -> type[torch.nn.MaxPool1d] | type[torch.nn.MaxPool2d] | type[torch.nn.MaxPool3d]:  # noqa: N802
+def maxPoolND(n_dim: int) -> type[torch.nn.MaxPool1d] | type[torch.nn.MaxPool2d] | type[torch.nn.MaxPool3d]:  # noqa: N802
     """Get the `n_dim`-dimensional max pooling class.
 
     Parameters
@@ -76,7 +76,7 @@ def MaxPoolND(n_dim: int) -> type[torch.nn.MaxPool1d] | type[torch.nn.MaxPool2d]
             raise NotImplementedError(f'MaxPoolNd for dim {n_dim} not implemented. Raise an issue if you need this.')
 
 
-def AvgPoolND(n_dim: int) -> type[torch.nn.AvgPool1d] | type[torch.nn.AvgPool2d] | type[torch.nn.AvgPool3d]:  # noqa: N802
+def avgPoolND(n_dim: int) -> type[torch.nn.AvgPool1d] | type[torch.nn.AvgPool2d] | type[torch.nn.AvgPool3d]:  # noqa: N802
     """Get the `n_dim`-dimensional average pooling class.
 
     Parameters
@@ -99,7 +99,7 @@ def AvgPoolND(n_dim: int) -> type[torch.nn.AvgPool1d] | type[torch.nn.AvgPool2d]
             raise NotImplementedError(f'AvgPoolNd for dim {n_dim} not implemented. Raise an issue if you need this.')
 
 
-def AdaptiveAvgPoolND(  # noqa: N802
+def adaptiveAvgPoolND(  # noqa: N802
     n_dim: int,
 ) -> type[torch.nn.AdaptiveAvgPool1d] | type[torch.nn.AdaptiveAvgPool2d] | type[torch.nn.AdaptiveAvgPool3d]:
     """Get the `n_dim`-dimensional adaptive average pooling class.
@@ -126,7 +126,7 @@ def AdaptiveAvgPoolND(  # noqa: N802
             )
 
 
-def InstanceNormND(  # noqa: N802
+def instanceNormND(  # noqa: N802
     n_dim: int,
 ) -> type[torch.nn.InstanceNorm1d] | type[torch.nn.InstanceNorm2d] | type[torch.nn.InstanceNorm3d]:
     """Get the `n_dim`-dimensional instance normalization class.
@@ -153,7 +153,7 @@ def InstanceNormND(  # noqa: N802
             )
 
 
-def BatchNormND(  # noqa: N802
+def batchNormND(  # noqa: N802
     n_dim: int,
 ) -> type[torch.nn.BatchNorm1d] | type[torch.nn.BatchNorm2d] | type[torch.nn.BatchNorm3d]:
     """Get the `n_dim`-dimensional batch normalization class.

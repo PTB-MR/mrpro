@@ -4,13 +4,13 @@ from mrpro.nn.CondMixin import CondMixin
 from mrpro.nn.FiLM import FiLM
 from mrpro.nn.GroupNorm import GroupNorm
 from mrpro.nn.ndmodules import (
-    AdaptiveAvgPoolND,
-    AvgPoolND,
-    BatchNormND,
-    ConvND,
-    ConvTransposeND,
-    InstanceNormND,
-    MaxPoolND,
+    adaptiveAvgPoolND,
+    avgPoolND,
+    batchNormND,
+    convND,
+    convTransposeND,
+    instanceNormND,
+    maxPoolND,
 )
 from mrpro.nn.ResBlock import ResBlock
 from mrpro.nn.Sequential import Sequential
@@ -30,20 +30,20 @@ from mrpro.nn.SeparableResBlock import SeparableResBlock
 
 __all__ = [
     "AbsolutePositionEncoding",
-    "AdaptiveAvgPoolND",
-    "AvgPoolND",
+    "adaptiveAvgPoolND",
+    "avgPoolND",
     "AxialRoPE",
-    "BatchNormND",
+    "batchNormND",
     "ComplexAsChannel",
     "CondMixin",
-    "ConvND",
-    "ConvTransposeND",
+    "convND",
+    "convTransposeND",
     "DropPath",
     "FiLM",
     "FourierFeatures",
     "GroupNorm",
-    "InstanceNormND",
-    "MaxPoolND",
+    "instanceNormND",
+    "maxPoolND",
     "PermutedBlock",
     "RMSNorm",
     "ResBlock",

@@ -103,6 +103,7 @@ class ShiftedWindowAttention(Module):
         )
         bias = rearrange(self.relative_position_bias_table[self.rel_position_index], 'wd1 wd2 heads -> 1 heads wd1 wd2')
         with warnings.catch_warnings():
+            # Inductor in torch 2.6 warns for small batch*n_patches*n_heads about suboptimal softmax compilation.
             warnings.filterwarnings('ignore', message='.*softmax.*')
             attention = torch.nn.functional.scaled_dot_product_attention(q, k, v, attn_mask=bias)
         attention = rearrange(attention, '... head sequence channels->... sequence (head channels)')

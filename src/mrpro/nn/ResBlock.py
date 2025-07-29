@@ -6,7 +6,7 @@ from torch.nn import Identity, Module, SiLU
 from mrpro.nn.CondMixin import CondMixin
 from mrpro.nn.FiLM import FiLM
 from mrpro.nn.GroupNorm import GroupNorm
-from mrpro.nn.ndmodules import ConvND
+from mrpro.nn.ndmodules import convND
 from mrpro.nn.Sequential import Sequential
 
 
@@ -34,10 +34,10 @@ class ResBlock(CondMixin, Module):
         self.block = Sequential(
             GroupNorm(n_channels_in),
             SiLU(),
-            ConvND(n_dim)(n_channels_in, n_channels_out, kernel_size=3, padding=1),
+            convND(n_dim)(n_channels_in, n_channels_out, kernel_size=3, padding=1),
             GroupNorm(n_channels_out),
             SiLU(),
-            ConvND(n_dim)(n_channels_out, n_channels_out, kernel_size=3, padding=1),
+            convND(n_dim)(n_channels_out, n_channels_out, kernel_size=3, padding=1),
         )
         if cond_dim > 0:
             self.block.insert(-3, FiLM(n_channels_out, cond_dim))
@@ -45,7 +45,7 @@ class ResBlock(CondMixin, Module):
         if n_channels_out == n_channels_in:
             self.skip_connection: Module = Identity()
         else:
-            self.skip_connection = ConvND(n_dim)(n_channels_in, n_channels_out, kernel_size=1)
+            self.skip_connection = convND(n_dim)(n_channels_in, n_channels_out, kernel_size=1)
 
     def __call__(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the ResBlock.

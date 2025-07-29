@@ -6,7 +6,7 @@ from torch.nn import GELU, Module
 from mrpro.nn.attention.ShiftedWindowAttention import ShiftedWindowAttention
 from mrpro.nn.DropPath import DropPath
 from mrpro.nn.FiLM import FiLM
-from mrpro.nn.ndmodules import ConvND, InstanceNormND
+from mrpro.nn.ndmodules import convND, instanceNormND
 from mrpro.nn.Sequential import Sequential
 
 
@@ -46,15 +46,15 @@ class SwinTransformerLayer(Module):
             Droppath probability for MLP
         """
         super().__init__()
-        self.norm1 = InstanceNormND(n_dim)(n_channels)
+        self.norm1 = instanceNormND(n_dim)(n_channels)
         self.attn = ShiftedWindowAttention(n_dim, n_channels, n_channels, n_heads, window_size)
-        self.norm2 = Sequential(InstanceNormND(n_dim)(n_channels))
+        self.norm2 = Sequential(instanceNormND(n_dim)(n_channels))
         if emb_dim > 0:
             self.norm2.append(FiLM(channels=n_channels, cond_dim=emb_dim))
         self.mlp = Sequential(
-            ConvND(n_dim)(n_channels, n_channels * mlp_ratio, 1),
+            convND(n_dim)(n_channels, n_channels * mlp_ratio, 1),
             GELU('tanh'),
-            ConvND(n_dim)(n_channels * mlp_ratio, n_channels, 1),
+            convND(n_dim)(n_channels * mlp_ratio, n_channels, 1),
             DropPath(p_droppath),
         )
 
@@ -130,7 +130,7 @@ class ResidualSwinTransformerBlock(Module):
                 for _ in range(depth)
             )
         )
-        self.conv = ConvND(n_dim)(n_channels, n_channels, 3, padding=1)
+        self.conv = convND(n_dim)(n_channels, n_channels, 3, padding=1)
 
     def __call__(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the residual Swin Transformer block.
@@ -208,7 +208,7 @@ class SwinIR(Module):
             The ratio for hidden dimension expansion in MLP.
         """
         super().__init__()
-        self.first = ConvND(n_dim)(n_channels_in, n_channels_per_head * n_heads, kernel_size=3, padding=1)
+        self.first = convND(n_dim)(n_channels_in, n_channels_per_head * n_heads, kernel_size=3, padding=1)
         self.blocks = Sequential(
             *(
                 ResidualSwinTransformerBlock(
@@ -224,7 +224,7 @@ class SwinIR(Module):
                 for _ in range(n_blocks)
             )
         )
-        self.last = ConvND(n_dim)(n_channels_per_head * n_heads, n_channels_out, kernel_size=3, padding=1)
+        self.last = convND(n_dim)(n_channels_per_head * n_heads, n_channels_out, kernel_size=3, padding=1)
 
     def forward(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply SwinIR.

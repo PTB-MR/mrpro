@@ -9,7 +9,7 @@ from torch.nn import Module, ReLU, SiLU
 from mrpro.nn.attention.LinearSelfAttention import LinearSelfAttention
 from mrpro.nn.attention.MultiHeadAttention import MultiHeadAttention
 from mrpro.nn.GluMBConvResBlock import GluMBConvResBlock
-from mrpro.nn.ndmodules import ConvND
+from mrpro.nn.ndmodules import convND
 from mrpro.nn.nets.VAE import VAE
 from mrpro.nn.PixelShuffle import PixelShuffleUpsample, PixelUnshuffleDownsample
 from mrpro.nn.Residual import Residual
@@ -44,9 +44,9 @@ class CNNBlock(Residual):
         """
         super().__init__(
             Sequential(
-                ConvND(n_dim)(n_channels, n_channels, kernel_size=3, padding=1),
+                convND(n_dim)(n_channels, n_channels, kernel_size=3, padding=1),
                 SiLU(True),
-                ConvND(n_dim)(n_channels, n_channels, kernel_size=3, padding=1, bias=False),
+                convND(n_dim)(n_channels, n_channels, kernel_size=3, padding=1, bias=False),
                 RMSNorm(n_channels),
             )
         )

@@ -5,7 +5,7 @@ from math import ceil
 import torch
 from torch.nn import Linear, Module
 
-from mrpro.nn.ndmodules import ConvND
+from mrpro.nn.ndmodules import convND
 
 
 class PixelUnshuffle(Module):
@@ -118,7 +118,7 @@ class PixelUnshuffleDownsample(Module):
         if features_last:
             self.projection: Module = Linear(n_channels_in, n_channels_out // out_ratio)
         else:
-            self.projection = ConvND(n_dim)(n_channels_in, n_channels_out // out_ratio, kernel_size=3, padding='same')
+            self.projection = convND(n_dim)(n_channels_in, n_channels_out // out_ratio, kernel_size=3, padding='same')
         self.features_last = features_last
         self.residual = residual
         self.pixel_unshuffle = PixelUnshuffle(downscale_factor, features_last)
@@ -195,7 +195,7 @@ class PixelShuffleUpsample(Module):
         if features_last:
             self.projection: Module = Linear(n_channels_in, n_channels_out * upscale_factor**n_dim)
         else:
-            self.projection = ConvND(n_dim)(
+            self.projection = convND(n_dim)(
                 n_channels_in, n_channels_out * upscale_factor**n_dim, kernel_size=3, padding='same'
             )
         self.features_last = features_last

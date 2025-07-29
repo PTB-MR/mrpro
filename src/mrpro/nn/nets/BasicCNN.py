@@ -9,7 +9,7 @@ from torch.nn import LeakyReLU, ReLU, SiLU
 
 from mrpro.nn.FiLM import FiLM
 from mrpro.nn.GroupNorm import GroupNorm
-from mrpro.nn.ndmodules import BatchNormND, ConvND
+from mrpro.nn.ndmodules import batchNormND, convND
 from mrpro.nn.Sequential import Sequential
 
 
@@ -59,11 +59,11 @@ class BasicCNN(Sequential):
         super().__init__()
         use_film = cond_dim > 0
 
-        self.append(ConvND(n_dim)(n_channels_in, n_features[0], kernel_size=3, padding='same'))
+        self.append(convND(n_dim)(n_channels_in, n_features[0], kernel_size=3, padding='same'))
 
         for c_in, c_out in pairwise((*n_features, n_channels_out)):
             if norm.lower() == 'batch':
-                self.append(BatchNormND(n_dim)(c_in, affine=not use_film))
+                self.append(batchNormND(n_dim)(c_in, affine=not use_film))
             elif norm.lower() == 'group':
                 self.append(GroupNorm(c_in, affine=not use_film))
             elif norm.lower() == 'instance':
@@ -85,7 +85,7 @@ class BasicCNN(Sequential):
             else:
                 raise ValueError(f'Invalid activation type: {activation}')
 
-            self.append(ConvND(n_dim)(c_in, c_out, kernel_size=3, padding='same'))
+            self.append(convND(n_dim)(c_in, c_out, kernel_size=3, padding='same'))
 
     def __call__(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:  # type: ignore[override]
         """Apply the basic CNN to the input tensor.

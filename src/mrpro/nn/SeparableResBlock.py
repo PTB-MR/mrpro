@@ -7,7 +7,7 @@ from torch.nn import Module, SiLU
 
 from mrpro.nn.FiLM import FiLM
 from mrpro.nn.GroupNorm import GroupNorm
-from mrpro.nn.ndmodules import ConvND
+from mrpro.nn.ndmodules import convND
 from mrpro.nn.PermutedBlock import PermutedBlock
 from mrpro.nn.Sequential import Sequential
 
@@ -49,7 +49,7 @@ class SeparableResBlock(Module):
             return Sequential(
                 GroupNorm(channels_in),
                 SiLU(),
-                PermutedBlock(dims, ConvND(len(dims))(channels_in, n_channels_out, 3, padding=1)),
+                PermutedBlock(dims, convND(len(dims))(channels_in, n_channels_out, 3, padding=1)),
             )
 
         blocks = Sequential(*(block(d, n_channels_in if i == 0 else n_channels_out) for i, d in enumerate(dim_groups)))

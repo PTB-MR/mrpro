@@ -5,7 +5,7 @@ from torch.nn import Identity, Module, Sequential, SiLU
 
 from mrpro.nn.CondMixin import CondMixin
 from mrpro.nn.FiLM import FiLM
-from mrpro.nn.ndmodules import ConvND
+from mrpro.nn.ndmodules import convND
 from mrpro.nn.RMSNorm import RMSNorm
 
 
@@ -56,9 +56,9 @@ class GluMBConvResBlock(CondMixin, Module):
         if stride == 1 and n_channels_in == n_channels_out:
             self.skip: Module = Identity()
         else:
-            self.skip = ConvND(n_dim)(n_channels_in, n_channels_out, kernel_size=1, stride=stride)
+            self.skip = convND(n_dim)(n_channels_in, n_channels_out, kernel_size=1, stride=stride)
         self.inverted_conv = Sequential(
-            ConvND(n_dim)(
+            convND(n_dim)(
                 n_channels_in,
                 channels_mid * 2,
                 kernel_size=1,
@@ -66,7 +66,7 @@ class GluMBConvResBlock(CondMixin, Module):
             SiLU(),
         )
         self.depth_conv = Sequential(
-            ConvND(n_dim)(
+            convND(n_dim)(
                 channels_mid * 2,
                 channels_mid * 2,
                 kernel_size=kernel_size,
@@ -77,7 +77,7 @@ class GluMBConvResBlock(CondMixin, Module):
             SiLU(),
         )
         self.point_conv = Sequential(
-            ConvND(n_dim)(
+            convND(n_dim)(
                 channels_mid,
                 n_channels_out,
                 kernel_size=1,

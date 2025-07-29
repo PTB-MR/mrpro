@@ -12,7 +12,7 @@ from mrpro.nn.attention.SpatialTransformerBlock import SpatialTransformerBlock
 from mrpro.nn.CondMixin import call_with_cond
 from mrpro.nn.FiLM import FiLM
 from mrpro.nn.join import Concat
-from mrpro.nn.ndmodules import ConvND, MaxPoolND
+from mrpro.nn.ndmodules import convND, maxPoolND
 from mrpro.nn.ResBlock import ResBlock
 from mrpro.nn.Sequential import Sequential
 from mrpro.nn.Upsample import Upsample
@@ -276,7 +276,7 @@ class UNet(UNetBase):
 
         for i_level, (n_feat, n_feat_next) in enumerate(pairwise(n_features)):
             encoder_blocks.append(blocks(n_feat, n_feat, i_level in attention_depths))
-            down_blocks.append(ConvND(n_dim)(n_feat, n_feat_next, 3, stride=2, padding=1))
+            down_blocks.append(convND(n_dim)(n_feat, n_feat_next, 3, stride=2, padding=1))
             decoder_blocks.append(blocks(n_feat_next + n_feat, n_feat, i_level in attention_depths))
             up_blocks.append(Upsample(tuple(range(-n_dim, 0)), scale_factor=2))
 
@@ -286,13 +286,13 @@ class UNet(UNetBase):
         )
         if depth - 1 in attention_depths:
             middle_block.insert(1, attention_block(n_feat_next))
-        first_block = ConvND(n_dim)(n_channels_in, n_features[0], 3, padding=1)
+        first_block = convND(n_dim)(n_channels_in, n_features[0], 3, padding=1)
         encoder = UNetEncoder(first_block, encoder_blocks, down_blocks, middle_block)
 
         decoder_blocks, up_blocks = decoder_blocks[::-1], up_blocks[::-1]
         last_block = Sequential(
             SiLU(),
-            ConvND(n_dim)(n_features[0], n_channels_out, 3, padding=1),
+            convND(n_dim)(n_features[0], n_channels_out, 3, padding=1),
         )
         concat_blocks = [Concat() for _ in range(len(decoder_blocks))]
         decoder = UNetDecoder(decoder_blocks, up_blocks, concat_blocks, last_block)
@@ -332,9 +332,9 @@ class AttentionGatedUNet(UNetBase):
 
         def block(channels_in: int, channels_out: int) -> Module:
             block = Sequential(
-                ConvND(n_dim)(channels_in, channels_out, 3, padding=1),
+                convND(n_dim)(channels_in, channels_out, 3, padding=1),
                 ReLU(True),
-                ConvND(n_dim)(channels_out, channels_out, 3, padding=1),
+                convND(n_dim)(channels_out, channels_out, 3, padding=1),
                 ReLU(True),
             )
             if cond_dim > 0:
@@ -346,7 +346,7 @@ class AttentionGatedUNet(UNetBase):
         n_feat_old = n_channels_in
         for n_feat in n_features[:-1]:
             encoder_blocks.append(block(n_feat_old, n_feat))
-            down_blocks.append(MaxPoolND(n_dim)(2))
+            down_blocks.append(maxPoolND(n_dim)(2))
             n_feat_old = n_feat
         middle_block = block(n_features[-2], n_features[-1])
         encoder = UNetEncoder(Identity(), encoder_blocks, down_blocks, middle_block)
@@ -358,7 +358,7 @@ class AttentionGatedUNet(UNetBase):
             concat_blocks.append(AttentionGate(n_dim, n_feat, n_feat_skip, n_feat_skip, concatenate=True))
             decoder_blocks.append(block(n_feat + n_feat_skip, n_feat_skip))
             up_blocks.append(Upsample(range(-n_dim, 0), scale_factor=2))
-        last_block = ConvND(n_dim)(n_features[0], n_channels_out, 1)
+        last_block = convND(n_dim)(n_features[0], n_channels_out, 1)
         decoder = UNetDecoder(decoder_blocks, up_blocks, concat_blocks, last_block)
 
         super().__init__(encoder, decoder)

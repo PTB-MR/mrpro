@@ -4,7 +4,7 @@ import torch
 from einops import rearrange
 from torch.nn import Module, Parameter
 
-from mrpro.nn.ndmodules import ConvND
+from mrpro.nn.ndmodules import convND
 
 
 class TransposedAttention(Module):
@@ -37,8 +37,8 @@ class TransposedAttention(Module):
         self.n_heads = n_heads
         self.temperature = Parameter(torch.ones(n_heads, 1, 1))
         channels_per_head = n_channels_in // n_heads
-        self.to_qkv = ConvND(n_dim)(n_channels_in, channels_per_head * n_heads * 3, kernel_size=1)
-        self.qkv_dwconv = ConvND(n_dim)(
+        self.to_qkv = convND(n_dim)(n_channels_in, channels_per_head * n_heads * 3, kernel_size=1)
+        self.qkv_dwconv = convND(n_dim)(
             channels_per_head * n_heads * 3,
             channels_per_head * n_heads * 3,
             kernel_size=3,
@@ -46,7 +46,7 @@ class TransposedAttention(Module):
             padding=1,
             bias=False,
         )
-        self.to_out = ConvND(n_dim)(channels_per_head * n_heads, n_channels_out, kernel_size=1)
+        self.to_out = convND(n_dim)(channels_per_head * n_heads, n_channels_out, kernel_size=1)
 
     def __call__(self, x: torch.Tensor) -> torch.Tensor:
         """Apply transposed attention.

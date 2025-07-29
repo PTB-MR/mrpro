@@ -3,7 +3,7 @@
 import torch
 from torch.nn import Module, ReLU, Sequential, Sigmoid
 
-from mrpro.nn.ndmodules import ConvND
+from mrpro.nn.ndmodules import convND
 
 
 class AttentionGate(Module):
@@ -36,11 +36,11 @@ class AttentionGate(Module):
             Whether to concatenate the gated signal with the gate signal in the channel dimension (1)
         """
         super().__init__()
-        self.project_gate = ConvND(n_dim)(channels_gate, channels_hidden, kernel_size=1)
-        self.project_x = ConvND(n_dim)(channels_in, channels_hidden, kernel_size=1)
+        self.project_gate = convND(n_dim)(channels_gate, channels_hidden, kernel_size=1)
+        self.project_x = convND(n_dim)(channels_in, channels_hidden, kernel_size=1)
         self.psi = Sequential(
             ReLU(),
-            ConvND(n_dim)(channels_hidden, 1, kernel_size=1),
+            convND(n_dim)(channels_hidden, 1, kernel_size=1),
             Sigmoid(),
         )
         self.concatenate = concatenate
