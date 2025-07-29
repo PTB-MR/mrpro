@@ -118,7 +118,7 @@ def test_conv_to_linear_functional(dim: Literal[1, 2, 3], channels_in: int, chan
     torch.testing.assert_close(y_conv, y_linear)
 
 
-def test_conv_to_linear_invalid_kernel():
+def test_conv_to_linear_invalid_kernel() -> None:
     """Test conv_to_linear with invalid kernel size."""
     conv = Conv2d(32, 64, kernel_size=3, bias=True)
     with pytest.raises(ValueError, match='Kernel size must be 1'):

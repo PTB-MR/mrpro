@@ -67,9 +67,9 @@ dependencies = [
     "pydicom>=3.0.1",
     "pypulseq>=1.4.2",
     "pytorch-finufft>=0.1.0",
-    "cufinufft==2.3.1; platform_system=='Linux'",
+    "cufinufft>=2.4.1; platform_system=='Linux'",
     "scipy>=1.12",
-    "ptwt>=0.1.8",
+    "ptwt>=0.1.8, <1.0",
     "torchvision>=0.18.1",
     "tqdm>=4.60.0",
     "typing-extensions>=4.12",
@@ -120,6 +120,9 @@ filterwarnings = [
     "ignore:'write_like_original':DeprecationWarning:pydicom:",
     "ignore:Anomaly Detection has been enabled:UserWarning",                   # torch.autograd
     "ignore:allow_ops_in_compiled_graph failed to import torch:ImportWarning", # einops and dynamo<2.5
+    "ignore:TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled:UserWarning", # torch cuda
+    "ignore:.*In the future, this object will be coerced as if it was first converted using.*:FutureWarning", # numpy 1.2
+    "ignore:.*load_module.*:DeprecationWarning", # torch compile in torch<2.6
 ]
 addopts = "-n auto --dist loadfile --maxprocesses=8"
 markers = ["cuda : Tests only to be run when cuda device is available"]

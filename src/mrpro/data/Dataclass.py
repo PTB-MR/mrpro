@@ -760,6 +760,26 @@ class Dataclass:
         new = shallowcopy(self)
         return new.apply_(apply_rearrange, memo=memo, recurse=False)
 
+    def swapdims(self, dim0: int, dim1: int) -> Self:
+        """Swap two dimensions of the dataclass.
+
+        Parameters
+        ----------
+        dim0
+            First dimension to swap.
+        dim1
+            Second dimension to swap.
+
+        Returns
+        -------
+            The dataclass with the dimensions swapped.
+        """
+        axes = [f'dim{i}' for i in range(self.ndim)]
+        input_pattern = ' '.join(axes)
+        axes[dim0], axes[dim1] = axes[dim1], axes[dim0]
+        output_pattern = ' '.join(axes)
+        return self.rearrange(f'{input_pattern} -> {output_pattern}')
+
     def split(self, dim: int, size: int = 1, overlap: int = 0, dilation: int = 1) -> tuple[Self, ...]:
         """Split the dataclass along a dimension.
 

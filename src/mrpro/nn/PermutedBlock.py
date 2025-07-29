@@ -32,7 +32,24 @@ class PermutedBlock(CondMixin, nn.Module):
         self.module = module
         self.features_last = features_last
 
-    def forward(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
+    def __call__(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
+        """Apply the module along the selected dimensions.
+
+        Parameters
+        ----------
+        x
+            Input tensor
+        cond
+            Conditioning tensor, passed to the module if it supports conditioning
+            (that is, if it is a subclass of `~mrpro.nn.CondMixin`)
+
+        Returns
+        -------
+            Output tensor.
+        """
+        return self.forward(x, cond=cond)
+
+    def forward(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the module along the selected dimensions."""
         keep = tuple(d % x.ndim for d in self.apply_along_dim)
         if 0 in keep:

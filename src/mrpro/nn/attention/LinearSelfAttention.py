@@ -14,25 +14,14 @@ class LinearSelfAttention(Module):
 
     References
     ----------
-    .. [KAT20] Katharopoulos, Angelos, et al. Transformers are rnns: Fast autoregressive transformers with linear
+    .. [KAT20] Katharopoulos, Angelos, et al. Transformers are RNNs: Fast autoregressive transformers with linear
        attention. ICML 2020. https://arxiv.org/abs/2006.16236
-
-    Parameters
-    ----------
-    channels
-        Input and output channel dimension.
-    n_heads
-        Number of attention heads.
-    bias
-        Whether to use bias in the QKV projection.
-    eps
-        Small epsilon for numerical stability in normalization.
     """
 
     def __init__(
         self,
-        channels_in: int,
-        channels_out: int,
+        n_channels_in: int,
+        n_channels_out: int,
         n_heads: int,
         eps: float = 1e-6,
         features_last: bool = False,
@@ -41,9 +30,9 @@ class LinearSelfAttention(Module):
 
         Parameters
         ----------
-        channels_in
+        n_channels_in
             Input channel dimension.
-        channels_out
+        n_channels_out
             Output channel dimension.
         n_heads
             Number of attention heads.
@@ -57,10 +46,10 @@ class LinearSelfAttention(Module):
         self.features_last = features_last
         self.eps = eps
         self.n_heads = n_heads
-        channels_per_head = channels_in // n_heads
-        self.to_qkv = Linear(channels_in, 3 * channels_per_head * n_heads)
+        channels_per_head = n_channels_in // n_heads
+        self.to_qkv = Linear(n_channels_in, 3 * channels_per_head * n_heads)
         self.kernel_function = ReLU()
-        self.to_out = Linear(channels_per_head * n_heads, channels_out)
+        self.to_out = Linear(channels_per_head * n_heads, n_channels_out)
 
     def __call__(self, x: Tensor) -> Tensor:
         """Apply linear self-attention.

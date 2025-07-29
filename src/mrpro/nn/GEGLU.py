@@ -12,22 +12,22 @@ class GEGLU(Module):
     ..[GLU] Shazeer, N. (2020). GLU variants improve transformer. https://arxiv.org/abs/2002.05202
     """
 
-    def __init__(self, in_features: int, out_features: int | None = None, features_last: bool = False):
+    def __init__(self, n_channels_in: int, n_channels_out: int | None = None, features_last: bool = False):
         """Initialize the GEGLU activation function.
 
         Parameters
         ----------
-        in_features
-            The number of input features.
-        out_features
-            The number of output features. If None, the number of
+        n_channels_in
+            The number of input features/channels.
+        n_channels_out
+            The number of output features/channels. If None, the number of
             output features is the same as the number of input features.
         features_last
             If True, the channel dimension is the last dimension, else in the second dimension.
         """
         super().__init__()
-        out_features_ = in_features if out_features is None else out_features
-        self.proj = Linear(in_features, out_features_ * 2)  # gate and output stacked
+        out_channels_ = n_channels_in if n_channels_out is None else n_channels_out
+        self.proj = Linear(n_channels_in, out_channels_ * 2)  # gate and output stacked
         self.features_last = features_last
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

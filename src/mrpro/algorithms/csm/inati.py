@@ -36,9 +36,7 @@ def inati(
 
     if isinstance(smoothing_width, int):
         smoothing_width = SpatialDimension(
-            z=smoothing_width if coil_img.shape[-3] > 1 else 1,
-            y=smoothing_width,
-            x=smoothing_width,
+            z=smoothing_width if coil_img.shape[-3] > 1 else 1, y=smoothing_width, x=smoothing_width
         )
 
     if any(ks % 2 != 1 for ks in [smoothing_width.z, smoothing_width.y, smoothing_width.x]):
@@ -47,14 +45,7 @@ def inati(
     ks_halved = [ks // 2 for ks in smoothing_width.zyx]
     padded_coil_img = torch.nn.functional.pad(
         coil_img,
-        (
-            ks_halved[-1],
-            ks_halved[-1],
-            ks_halved[-2],
-            ks_halved[-2],
-            ks_halved[-3],
-            ks_halved[-3],
-        ),
+        (ks_halved[-1], ks_halved[-1], ks_halved[-2], ks_halved[-2], ks_halved[-3], ks_halved[-3]),
         mode='replicate',
     )
     # Get the voxels in an ROI defined by the smoothing_width around each voxel leading to shape

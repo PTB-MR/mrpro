@@ -120,7 +120,7 @@ def collate_fn(batch: Any):  # noqa: ANN401
     return torch.utils.data._utils.collate.collate(
         batch,
         collate_fn_map={
-            mrpro.data.Dataclass: lambda batch, *, collate_fn_map: batch[0].stack(*batch[1:]),  # noqa: ARG005
+            mrpro.data.Dataclass: lambda batch, *, collate_fn_map: batch[0].stack(*batch[1:]),
             **torch.utils.data._utils.collate.default_collate_fn_map,
         },
     )
@@ -148,9 +148,9 @@ class PINQI(torch.nn.Module):
         real_parameters = sum(1 for c in parameter_is_complex if c) + len(parameter_is_complex)
         self.parameter_net = torch.compile(
             mrpro.nn.nets.UNet(
-                dim=2,
-                channels_in=n_images * 2,
-                channels_out=real_parameters,
+                n_dim=2,
+                n_channels_in=n_images * 2,
+                n_channels_out=real_parameters,
                 attention_depths=(-1, -2),
                 n_features=n_features_parameter_net,
                 cond_dim=128,
@@ -160,7 +160,12 @@ class PINQI(torch.nn.Module):
         )
         self.image_net = torch.compile(
             mrpro.nn.nets.UNet(
-                2, channels_in=2, channels_out=2, attention_depths=(), n_features=n_features_image_net, cond_dim=128
+                n_dim=2,
+                n_channels_in=2,
+                n_channels_out=2,
+                attention_depths=(),
+                n_features=n_features_image_net,
+                cond_dim=128,
             ),
             dynamic=False,
             fullgraph=True,
@@ -533,8 +538,16 @@ class PinqiModule(pl.LightningModule):
                 params.append(p)
         optimizer = torch.optim.AdamW(
             [
-                {'params': params, 'weight_decay': self.hparams.weight_decay, 'lr': self.hparams.lr},
-                {'params': scalar_params, 'weight_decay': 0.0, 'lr': self.hparams.lr * 10},
+                {
+                    'params': params,
+                    'weight_decay': self.hparams.weight_decay,
+                    'lr': self.hparams.lr,
+                },
+                {
+                    'params': scalar_params,
+                    'weight_decay': 0.0,
+                    'lr': self.hparams.lr * 10,
+                },
             ],
         )
         scheduler = torch.optim.lr_scheduler.OneCycleLR(
@@ -573,7 +586,11 @@ class Baseline(torch.nn.Module):
 
         objective = mrpro.operators.functionals.L2NormSquared(images.data) @ self.signalmodel @ self.constraints_op
         initial_values = tuple(
-            torch.zeros(images.shape[1:], device=images.device, dtype=torch.complex64 if is_complex else torch.float32)
+            torch.zeros(
+                images.shape[1:],
+                device=images.device,
+                dtype=torch.complex64 if is_complex else torch.float32,
+            )
             for is_complex in self.parameter_is_complex
         )
         solution = self.constraints_op(*mrpro.algorithms.optimizers.lbfgs(objective, initial_values))

@@ -421,6 +421,14 @@ def test_dataclass_equal() -> None:
     assert b != a  # different values
 
 
+def test_dataclass_swapdims() -> None:
+    """Test swapdims method of the dataclass."""
+    a = A()
+    b = a.swapdims(0, 1)
+    assert b.shape == (20, 10)
+    assert a.shape == (10, 20)
+
+
 def test_dataclass_rearrange_permute() -> None:
     """Test rearrange method of the dataclass."""
     a = A()

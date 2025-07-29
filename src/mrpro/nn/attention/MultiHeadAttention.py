@@ -4,6 +4,8 @@ import torch
 from einops import rearrange
 from torch.nn import Linear, Module
 
+from mrpro.nn.AxialRoPE import AxialRoPE
+
 
 class MultiHeadAttention(Module):
     """Multi-head Attention.
@@ -14,22 +16,21 @@ class MultiHeadAttention(Module):
 
     def __init__(
         self,
-        channels_in: int,
-        channels_out: int,
+        n_channels_in: int,
+        n_channels_out: int,
         n_heads: int,
         features_last: bool = False,
         p_dropout: float = 0.0,
-        channels_cross: int | None = None,
+        n_channels_cross: int | None = None,
+        rope_embed_fraction: float = 0.0,
     ):
         """Initialize the Multi-head Attention.
 
         Parameters
         ----------
-        dim
-            Number of spatial dimensions.
-        channels_in
+        n_channels_in
             Number of input channels.
-        channels_out
+        n_channels_out
             Number of output channels.
         n_heads
             number of attention heads
@@ -38,18 +39,21 @@ class MultiHeadAttention(Module):
             or the second dimension, as common in image models.
         p_dropout
             Dropout probability.
-        channels_cross
-            Number of channels for cross-attention. If `None`, use `channels_in`.
+        n_channels_cross
+            Number of channels for cross-attention. If `None`, use `n_channels_in`.
+        rope_embed_fraction
+            Fraction of channels to embed with RoPE.
         """
         super().__init__()
-        channels_per_head_q = channels_in // n_heads
-        channels_per_head_kv = channels_cross // n_heads if channels_cross is not None else channels_in // n_heads
-        self.to_q = Linear(channels_in, channels_per_head_q * n_heads)
-        self.to_kv = Linear(channels_in, channels_per_head_kv * n_heads * 2)
+        channels_per_head_q = n_channels_in // n_heads
+        channels_per_head_kv = n_channels_cross // n_heads if n_channels_cross is not None else n_channels_in // n_heads
+        self.to_q = Linear(n_channels_in, channels_per_head_q * n_heads)
+        self.to_kv = Linear(n_channels_in, channels_per_head_kv * n_heads * 2)
         self.p_dropout = p_dropout
         self.features_last = features_last
-        self.to_out = Linear(channels_in, channels_out)
+        self.to_out = Linear(n_channels_in, n_channels_out)
         self.n_heads = n_heads
+        self.rope = AxialRoPE(rope_embed_fraction)
 
     def __call__(self, x: torch.Tensor, cross_attention: torch.Tensor | None = None) -> torch.Tensor:
         """Apply multi-head attention.
@@ -74,21 +78,28 @@ class MultiHeadAttention(Module):
 
     def forward(self, x: torch.Tensor, cross_attention: torch.Tensor | None = None) -> torch.Tensor:
         """Apply multi-head attention."""
-        reshaped_x = self._reshape(x)
-        reshaped_cross_attention = self._reshape(cross_attention) if cross_attention is not None else reshaped_x
+        if cross_attention is None:
+            cross_attention = x
+        if not self.features_last:
+            x = x.moveaxis(1, -1)
+            cross_attention = cross_attention.moveaxis(1, -1)
 
-        q = rearrange(self.to_q(reshaped_x), '... L (heads dim) -> ... heads L dim ', heads=self.n_heads)
-        k, v = rearrange(
-            self.to_kv(reshaped_cross_attention),
-            '... S (kv heads dim) -> kv ... heads S dim ',
+        query = rearrange(self.to_q(x), 'batch ... (heads channels) -> batch heads ... channels ', heads=self.n_heads)
+        key, value = rearrange(
+            self.to_kv(cross_attention),
+            'batch ... (kv heads channels) -> kv batch heads ... channels ',
             heads=self.n_heads,
             kv=2,
         )
-        y = torch.nn.functional.scaled_dot_product_attention(q, k, v, dropout_p=self.p_dropout, is_causal=False)
-        y = rearrange(y, '... heads L dim -> ... L (heads dim)')
-        out = self.to_out(y)
+        query, key = self.rope(query, key)  # NO-OP if rope_embed_fraction is 0.0
+        query, key, value = query.flatten(2, -2), key.flatten(2, -2), value.flatten(2, -2)
+        y = torch.nn.functional.scaled_dot_product_attention(
+            query, key, value, dropout_p=self.p_dropout, is_causal=False
+        )
+        y = rearrange(y, '... heads L channels -> ... L (heads channels)')
+        out = self.to_out(y).reshape(x.shape)
 
         if not self.features_last:
             out = out.moveaxis(-1, 1)
 
-        return out.reshape(x.shape)
+        return out

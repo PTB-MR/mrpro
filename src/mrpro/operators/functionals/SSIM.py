@@ -29,14 +29,14 @@ def ssim3d(
     target
         Ground truth tensor, shape `(... z, y, x)` or broadcastable with prediction.
     prediction
-        Predicted tensor, same shape as target
+        Predicted tensor, same shape as target.
     data_range
-        Value range if the data. If None, the max-to-min per volume of the target will be used.
+        Value range if the data. If `None`, the max-to-min per volume of the target will be used.
     weight
         Weight (or mask) tensor, same shape as target.
-        Only windows with all weight values > 0 (or True) are considered.
+        Only windows with all weight values > 0 (or `True`) are considered.
         Windows will be weighted by the average value of the weight in the window.
-        If None, all windows are considered without weighting.
+        If `None`, all windows are considered without weighting.
     k1
         Constant for SSIM computation. Commonly 0.01.
     k2
@@ -221,8 +221,30 @@ class SSIM(Operator[torch.Tensor, tuple[torch.Tensor]]):
         self.data_range = data_range
         self.reduction = reduction
 
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Calculate the Structural Similarity Index (SSIM) between the input and a target.
+
+        This method computes the SSIM between the provided input tensor `x` and
+        the `target` tensor defined during initialization.
+
+        Parameters
+        ----------
+        x
+            Input tensor, expected to be comparable to `target`.
+
+        Returns
+        -------
+            The SSIM value(s), the shape of which depends on the `reduction` parameter.
+        """
+        return super().__call__(x)
+
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Calculate SSIM of an input."""
+        """Apply forward of SSIM.
+
+        .. note::
+            Prefer calling the instance of the SSIM as ``operator(x)`` over directly calling this method.
+            See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
+        """
         ssim = ssim3d(
             self.target.real,
             x.real,

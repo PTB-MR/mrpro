@@ -2,25 +2,49 @@
 
 from collections.abc import Sequence
 from functools import cache, reduce
-from typing import TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import torch
 from einops import rearrange
+from packaging.version import parse as parse_version
 from torch.nn import Linear, Module
-from torch.nn.attention.flex_attention import BlockMask, create_block_mask, flex_attention
 
+from mrpro.nn.AxialRoPE import AxialRoPE
 from mrpro.utils.to_tuple import to_tuple
 
 T = TypeVar('T')
 
+if TYPE_CHECKING or parse_version(torch.__version__) > parse_version('2.6'):
+    from torch.nn.attention.flex_attention import BlockMask, create_block_mask, flex_attention
+else:
+
+    class BlockMask:
+        """Dummy class for older PyTorch versions."""
+
+
+@torch.compiler.disable(recursive=True)
+def uncompiled_flex_attention(
+    query: torch.Tensor,
+    key: torch.Tensor,
+    value: torch.Tensor,
+    score_mod: Any = None,  # noqa: ANN401
+    block_mask: BlockMask | None = None,
+    scale: float | None = None,
+    enable_gqa: bool = False,
+    kernel_options: dict[str, Any] | None = None,
+) -> torch.Tensor:
+    """Wrap flex_attention to disable compilation."""
+    return flex_attention(key, query, value, score_mod, block_mask, scale, enable_gqa, kernel_options=kernel_options)  # type: ignore[return-value] # wrong type hints
+
 
 @cache
 def neighborhood_mask(
+    device: str,
     input_size: torch.Size,
     kernel_size: int | tuple[int, ...],  # tuples instead of Sequence for cache
     dilation: int | tuple[int, ...] = 1,
     circular: bool | tuple[bool, ...] = False,
-) -> BlockMask:
+) -> BlockMask:  # pragma: no cover
     """Create a flex attention block mask for neighborhood attention.
 
     This function defines which key/value pairs a query can attend to based
@@ -42,6 +66,8 @@ def neighborhood_mask(
     circular
         Whether the neighborhood wraps around the edges (circular padding).
         Can be a single boolean or a sequence of booleans.
+    device
+        The device to create the mask on.
 
     Returns
     -------
@@ -98,7 +124,7 @@ def neighborhood_mask(
         return reduce(lambda x, y: x & y, masks)
 
     qkv_len = input_size.numel()
-    return create_block_mask(mask, B=None, H=None, Q_LEN=qkv_len, KV_LEN=qkv_len, _compile=True)
+    return torch.compile(create_block_mask)(mask, B=None, H=None, Q_LEN=qkv_len, KV_LEN=qkv_len, device=device)
 
 
 class NeighborhoodSelfAttention(Module):
@@ -119,13 +145,14 @@ class NeighborhoodSelfAttention(Module):
 
     def __init__(
         self,
-        channels_in: int,
-        channels_out: int,
+        n_channels_in: int,
+        n_channels_out: int,
         n_heads: int,
         kernel_size: int | Sequence[int],
         dilation: int | Sequence[int] = 1,
         circular: bool | Sequence[bool] = False,
         features_last: bool = False,
+        rope_embed_fraction: float = 1.0,
     ) -> None:
         """Initialize a neighborhood attention module.
 
@@ -134,9 +161,9 @@ class NeighborhoodSelfAttention(Module):
 
         Parameters
         ----------
-        channels_in
+        n_channels_in
             The number of channels in the input tensor.
-        channels_out
+        n_channels_out
             The number of channels in the output tensor.
         n_heads
             The number of attention heads.
@@ -149,16 +176,22 @@ class NeighborhoodSelfAttention(Module):
         features_last
             Whether the channels are in the last dimension of the tensor, as common in visíon transformers.
             Otherwise, assume the channels are in the second dimension, as common in CNN models.
+        rope_embed_fraction
+            Fraction of channels to embed with RoPE.
+
         """
+        if parse_version(torch.__version__) < parse_version('2.6.0'):
+            raise NotImplementedError('NeighborhoodSelfAttention requires PyTorch 2.6.0 or higher')
         super().__init__()
         self.n_head = n_heads
         self.kernel_size = kernel_size if isinstance(kernel_size, int) else tuple(kernel_size)
         self.dilation = dilation if isinstance(dilation, int) else tuple(dilation)
         self.circular = circular if isinstance(circular, bool) else tuple(circular)
         self.features_last = features_last
-        channels_per_head = channels_in // n_heads
-        self.to_qkv = Linear(channels_in, 3 * channels_per_head * n_heads)
-        self.to_out = Linear(channels_per_head * n_heads, channels_out)
+        channels_per_head = n_channels_in // n_heads
+        self.to_qkv = Linear(n_channels_in, 3 * channels_per_head * n_heads)
+        self.to_out = Linear(channels_per_head * n_heads, n_channels_out)
+        self.rope = AxialRoPE(rope_embed_fraction)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Apply neighborhood attention to the input tensor.
@@ -178,14 +211,28 @@ class NeighborhoodSelfAttention(Module):
         spatial_shape = x.shape[1:-1]
         qkv = self.to_qkv(x)
         query, key, value = rearrange(
-            qkv, 'batch ... (qkv head channels) -> qkv batch head (...) channel', qkv=3, head=self.n_head
+            qkv, 'batch ... (qkv heads channels) -> qkv batch heads (...) channels', qkv=3, heads=self.n_head
         )
+        query, key = self.rope(query, key)  # NO-OP if rope_embed_fraction is 0.0
+        query, key, value = query.contiguous(), key.contiguous(), value.contiguous()
         # the mask depends on the input size. To be more flexible if used within CNNs, we compute it here.
         # The computation is cached..
+        device = str(qkv.device)
         mask = neighborhood_mask(
-            input_size=spatial_shape, kernel_size=self.kernel_size, dilation=self.dilation, circular=self.circular
+            device=device,
+            input_size=spatial_shape,
+            kernel_size=self.kernel_size,
+            dilation=self.dilation,
+            circular=self.circular,
         )
-        out: torch.Tensor = flex_attention(query.contiguous(), key.contiguous(), value.contiguous(), block_mask=mask)  # type: ignore[assignment] # wrong type hints
+
+        if device == 'cpu':
+            # flex attention cannot be compiled on CPU
+            # https://github.com/pytorch/pytorch/issues/148752
+            out: torch.Tensor = uncompiled_flex_attention(query, key, value, block_mask=mask)
+        else:
+            out = flex_attention(query, key, value, block_mask=mask)  # type: ignore[assignment] # wrong type hints
+        out = rearrange(out, 'batch head sequence channels -> batch sequence(head channels)')
         out = self.to_out(out)
         out = out.unflatten(-2, spatial_shape)
         if not self.features_last:

@@ -30,7 +30,7 @@ class Sequential(CondMixin, torch.nn.Sequential):
         -------
             The output tensor.
         """
-        return super().__call__(*x, cond=cond)
+        return torch.nn.Sequential.__call__(self, *x, cond=cond)
 
     def forward(self, *x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply all modules in series to the input."""

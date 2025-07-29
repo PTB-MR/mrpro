@@ -13,7 +13,7 @@ from torch.nn import Linear
         pytest.param('cuda', id='cuda', marks=pytest.mark.cuda),
     ],
 )
-def test_complexaschannel(device):
+def test_complexaschannel(device: str) -> None:
     """Test ComplexAsChannel output shape and backpropagation."""
     rng = RandomGenerator(seed=42)
     input_shape = (1, 32)
@@ -24,7 +24,7 @@ def test_complexaschannel(device):
     assert output.is_complex(), 'Output is not complex'
     output.sum().abs().backward()
     assert x.grad is not None, 'No gradient computed for input'
-    assert not x.isnan().any(), 'NaN values in input'
+    assert not output.isnan().any(), 'NaN values in output'
     assert not x.grad.isnan().any(), 'NaN values in input gradients'
     assert module.module.weight.grad is not None, 'No gradient computed for weight'
     assert module.module.bias.grad is not None, 'No gradient computed for bias'

@@ -93,6 +93,34 @@ def test_sum_operator():
     assert not isinstance(c, LinearOperator), 'Operator + Operator should not be a LinearOperator'
 
 
+def test_diff_operator():
+    a = DummyOperator(torch.tensor(2.0))
+    b = DummyOperator(torch.tensor(3.0))
+    c = a - b
+    x = RandomGenerator(0).complex64_tensor(10)
+    (y1,) = c(x)
+    y2 = a(x)[0] - b(x)[0]
+
+    torch.testing.assert_close(y1, y2)
+    assert isinstance(c, Operator), 'Operator - Operator should be an Operator'
+    assert not isinstance(c, LinearOperator), 'Operator - Operator should not be a LinearOperator'
+
+
+def test_diff_linearoperator():
+    rng = RandomGenerator(2)
+    a = DummyLinearOperator(rng.complex64_tensor((3, 10)))
+    b = DummyLinearOperator(rng.complex64_tensor((3, 10)))
+    c = a - b
+    x = RandomGenerator(0).complex64_tensor(10)
+    (y1,) = c(x)
+    y2 = a(x)[0] - b(x)[0]
+
+    torch.testing.assert_close(y1, y2)
+    assert isinstance(c, Operator), 'LinearOperator - LinearOperator should be an Operator'
+    assert isinstance(c, LinearOperator), 'LinearOperator - LinearOperator should be a LinearOperator'
+    assert_type(c, LinearOperator)
+
+
 def test_sum_linearoperator():
     rng = RandomGenerator(2)
     a = DummyLinearOperator(rng.complex64_tensor((3, 10)))
@@ -106,6 +134,21 @@ def test_sum_linearoperator():
     assert isinstance(c, Operator), 'LinearOperator + LinearOperator should be an Operator'
     assert isinstance(c, LinearOperator), 'LinearOperator + LinearOperator should be a LinearOperator'
     assert_type(c, LinearOperator)
+
+
+def test_diff_operator_linearoperator():
+    rng = RandomGenerator(0)
+    a = DummyOperator(torch.tensor(3.0))
+    b = DummyLinearOperator(rng.complex64_tensor((3, 10)))
+    c = a - b
+    x = rng.complex64_tensor(10)
+    (y1,) = c(x)
+    y2 = a(x)[0] - b(x)[0]
+
+    torch.testing.assert_close(y1, y2)
+    assert isinstance(c, Operator), 'Operator - LinearOperator should be an Operator'
+    assert not isinstance(c, LinearOperator), 'Operator - LinearOperator should not be a LinearOperator'
+    assert_type(c, Operator[torch.Tensor, tuple[torch.Tensor]])
 
 
 def test_sum_linearoperator_operator():
