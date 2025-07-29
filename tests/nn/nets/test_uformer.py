@@ -21,7 +21,7 @@ def test_uformer_forward(torch_compile: bool, device: str) -> None:
         n_dim=2, n_channels_in=1, n_channels_out=1, n_heads=(1, 2), cond_dim=32, n_channels_per_head=8, window_size=2
     )
 
-    x = torch.zeros(1, 1, 32, 32, device=device)
+    x = torch.zeros(1, 1, 16, 16, device=device)
     cond = torch.zeros(1, 32, device=device)
     uformer = uformer.to(device)
     x = x.to(device)
@@ -29,7 +29,7 @@ def test_uformer_forward(torch_compile: bool, device: str) -> None:
     if torch_compile:
         uformer = cast(Uformer, torch.compile(uformer))
     y = uformer(x, cond=cond)
-    assert y.shape == (1, 1, 32, 32)
+    assert y.shape == (1, 1, 16, 16)
 
 
 def test_uformer_backward() -> None:

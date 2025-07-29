@@ -121,7 +121,6 @@ filterwarnings = [
     "ignore:Anomaly Detection has been enabled:UserWarning",                   # torch.autograd
     "ignore:allow_ops_in_compiled_graph failed to import torch:ImportWarning", # einops and dynamo<2.5
     "ignore:TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled:UserWarning", # torch cuda
-    "ignore:.*softmax.*", # torch.compile
     "ignore:.*In the future, this object will be coerced as if it was first converted using.*:FutureWarning", # numpy 1.2
     "ignore:.*load_module.*:DeprecationWarning", # torch compile in torch<2.6
 ]
