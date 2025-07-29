@@ -34,30 +34,54 @@ class ZeroPadOp(LinearOperator):
         self.original_shape = original_shape
         self.padded_shape = padded_shape
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Pad or crop data.
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply zero-padding or cropping to the input tensor.
+
+        If `padded_shape` (defined at initialization) is larger than `original_shape`
+        along the specified dimensions, the tensor is zero-padded. If smaller,
+        it is cropped. The operation is applied along the dimensions specified in `dim`.
 
         Parameters
         ----------
         x
-            data with shape orig_shape
+            Input tensor. Its shape along the dimensions in `dim` should
+            match `original_shape`.
 
         Returns
         -------
-            data with shape padded_shape
+            The padded or cropped tensor. Its shape along the dimensions in `dim`
+            will match `padded_shape`.
+
+
+        """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply forward of ZeroPadOp.
+
+        .. note::
+            Prefer calling the instance of the ZeroPadOp operator as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         return (pad_or_crop(x, self.padded_shape, self.dim),)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Crop or pad data.
+        """Apply cropping or zero-padding (adjoint of forward).
+
+        This operation is the adjoint of the forward `ZeroPadOp`. If the forward
+        operation was padding, the adjoint is cropping. If the forward was
+        cropping, the adjoint is zero-padding. The operation is applied along
+        the dimensions specified in `dim`.
 
         Parameters
         ----------
         x
-            data with shape padded_shape
+            Input tensor. Its shape along the dimensions in `dim` should
+            match `padded_shape` (from initialization).
 
         Returns
         -------
-            data with shape orig_shape
+            The cropped or padded tensor. Its shape along the dimensions in `dim`
+            will match `original_shape` (from initialization).
         """
         return (pad_or_crop(x, self.original_shape, self.dim),)
