@@ -1,5 +1,7 @@
 """Shifted Window Attention."""
 
+import warnings
+
 import torch
 from einops import rearrange
 from torch.nn import Linear, Module
@@ -100,7 +102,9 @@ class ShiftedWindowAttention(Module):
             qkv=3,
         )
         bias = rearrange(self.relative_position_bias_table[self.rel_position_index], 'wd1 wd2 heads -> 1 heads wd1 wd2')
-        attention = torch.nn.functional.scaled_dot_product_attention(q, k, v, attn_mask=bias)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', message='.*softmax.*')
+            attention = torch.nn.functional.scaled_dot_product_attention(q, k, v, attn_mask=bias)
         attention = rearrange(attention, '... head sequence channels->... sequence (head channels)')
         attention = attention.unflatten(-2, windowed.shape[-self.n_dim - 1 : -1])
         # permute (in 3d) batch channels z y x wz wy wx -> batch channels wz z wy y wx x
