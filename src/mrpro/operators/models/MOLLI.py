@@ -37,24 +37,38 @@ class MOLLI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         ti = torch.as_tensor(ti)
         self.ti = torch.nn.Parameter(ti, requires_grad=ti.requires_grad)
 
-    def forward(self, a: torch.Tensor, c: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply MOLLI signal model.
+    def __call__(self, a: torch.Tensor, c: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply the Modified Look-Locker Inversion recovery (MOLLI) signal model.
+
+        Calculates the signal based on the formula:
+        :math:`S(TI) = a(1 - (1 + c) e^{-TI c / T1})`,
+        where `TI` are the inversion times.
 
         Parameters
         ----------
         a
-            parameter a in MOLLI signal model
-            with shape `(*other, coils, z, y, x)`
+            Parameter 'a' in the MOLLI signal model.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
         c
-            parameter c = b/a in MOLLI signal model
-            with shape `(*other, coils, z, y, x)`
+            Parameter 'c = b/a' in the MOLLI signal model.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
         t1
-            longitudinal relaxation time T1
-            with shape `(*other, coils, z, y, x)`
+            Longitudinal relaxation time T1.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
 
         Returns
         -------
-            signal with shape `(time, *other, coils, z, y, x)`
+            Shape `(times ...)`, for example `(times, *other, coils, z, y, x)`, or `(times, samples)`
+            where `times` is the number of inversion times.
+        """
+        return super().__call__(a, c, t1)
+
+    def forward(self, a: torch.Tensor, c: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply forward of MOLLI.
+
+        .. note::
+            Prefer calling the instance of the MOLLI as ``operator(x)`` over directly calling this method.
+            See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         ndim = max(a.ndim, c.ndim, t1.ndim)
         ti = unsqueeze_right(self.ti, ndim - self.ti.ndim + 1)  # leftmost is time

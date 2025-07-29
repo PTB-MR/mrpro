@@ -20,9 +20,9 @@ class VAE(Module):
 
         Parameters
         ----------
-        encoder : Module
+        encoder
             Encoder module. Should return double the number of channels of the latent space.
-        decoder : Module
+        decoder
             Decoder module
         """
         super().__init__()
@@ -37,7 +37,7 @@ class VAE(Module):
 
         Parameters
         ----------
-        x : torch.Tensor
+        x
             Input tensor
 
         Returns

@@ -1,51 +1,56 @@
 """Neural network modules and utilities."""
 
-from mrpro.nn.AttentionGate import AttentionGate
 from mrpro.nn.CondMixin import CondMixin
 from mrpro.nn.FiLM import FiLM
 from mrpro.nn.GroupNorm import GroupNorm
 from mrpro.nn.ndmodules import (
-    AdaptiveAvgPoolND,
-    AvgPoolND,
-    BatchNormND,
-    ConvND,
-    ConvTransposeND,
-    InstanceNormND,
-    MaxPoolND,
+    adaptiveAvgPoolND,
+    avgPoolND,
+    batchNormND,
+    convND,
+    convTransposeND,
+    instanceNormND,
+    maxPoolND,
 )
-from mrpro.nn.NeighborhoodSelfAttention import NeighborhoodSelfAttention
 from mrpro.nn.ResBlock import ResBlock
 from mrpro.nn.Sequential import Sequential
-from mrpro.nn.ShiftedWindowAttention import ShiftedWindowAttention
-from mrpro.nn.SqueezeExcitation import SqueezeExcitation
-from mrpro.nn.TransposedAttention import TransposedAttention
+
 from mrpro.nn.DropPath import DropPath
 from mrpro.nn.Residual import Residual
 from mrpro.nn.ComplexAsChannel import ComplexAsChannel
 from mrpro.nn import nets
+from mrpro.nn import attention
+from mrpro.nn import data_consistency
 from mrpro.nn.PermutedBlock import PermutedBlock
+from mrpro.nn.RMSNorm import RMSNorm
+from mrpro.nn.AxialRoPE import AxialRoPE
+from mrpro.nn.AbsolutePositionEncoding import  AbsolutePositionEncoding
+from mrpro.nn.FourierFeatures import FourierFeatures
+from mrpro.nn.SeparableResBlock import SeparableResBlock
 
 __all__ = [
-    "AdaptiveAvgPoolND",
-    "AttentionGate",
-    "AvgPoolND",
-    "BatchNormND",
+    "AbsolutePositionEncoding",
+    "adaptiveAvgPoolND",
+    "avgPoolND",
+    "AxialRoPE",
+    "batchNormND",
     "ComplexAsChannel",
     "CondMixin",
-    "ConvND",
-    "ConvTransposeND",
+    "convND",
+    "convTransposeND",
     "DropPath",
     "FiLM",
+    "FourierFeatures",
     "GroupNorm",
-    "InstanceNormND",
-    "MaxPoolND",
-    "NeighborhoodSelfAttention",
+    "instanceNormND",
+    "maxPoolND",
     "PermutedBlock",
+    "RMSNorm",
     "ResBlock",
     "Residual",
+    "SeparableResBlock",
     "Sequential",
-    "ShiftedWindowAttention",
-    "SqueezeExcitation",
-    "TransposedAttention",
+    "attention",
+    "data_consistency",
     "nets"
 ]

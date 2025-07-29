@@ -21,10 +21,10 @@ class DropPath(Module):
 
         Parameters
         ----------
-        droprate : float, optional
+        droprate
             Drop probability
-        scale_by_keep : bool, optional
-            If True, the kept samples are scaled by `1/(1-droprate)`
+        scale_by_keep
+            If True, the kept samples are scaled by :math:`1/(1-droprate)`
         """
         super().__init__()
         self.droprate = droprate
@@ -35,12 +35,12 @@ class DropPath(Module):
 
         Parameters
         ----------
-        x : torch.Tensor
+        x
             Input tensor
 
         Returns
         -------
-            Tensor with
+            Tensor with batch samples randomly dropped
         """
         return super().__call__(x)
 

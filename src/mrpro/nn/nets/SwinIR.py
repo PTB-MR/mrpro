@@ -3,11 +3,11 @@
 import torch
 from torch.nn import GELU, Module
 
+from mrpro.nn.attention.ShiftedWindowAttention import ShiftedWindowAttention
 from mrpro.nn.DropPath import DropPath
 from mrpro.nn.FiLM import FiLM
-from mrpro.nn.ndmodules import ConvND, InstanceNormND
+from mrpro.nn.ndmodules import convND, instanceNormND
 from mrpro.nn.Sequential import Sequential
-from mrpro.nn.ShiftedWindowAttention import ShiftedWindowAttention
 
 
 class SwinTransformerLayer(Module):
@@ -18,8 +18,8 @@ class SwinTransformerLayer(Module):
 
     def __init__(
         self,
-        dim: int,
-        channels: int,
+        n_dim: int,
+        n_channels: int,
         n_heads: int,
         window_size: int,
         mlp_ratio: int = 4,
@@ -30,31 +30,31 @@ class SwinTransformerLayer(Module):
 
         Parameters
         ----------
-        dim : int
-            Dimension of the input space
-        channels : int
-            Number of input/output channels
-        n_heads : int
+        n_dim
+            The number of spatial dimensions of the input tensor.
+        n_channels
+            The number of channels in the input tensor.
+        n_heads
             Number of attention heads
-        window_size : int
+        window_size
             Size of the attention window
-        mlp_ratio : int
+        mlp_ratio
             Ratio for hidden dimension expansion in MLP
-        emb_dim : int
+        emb_dim
             Dimension of conditioning input. If 0, no FiLM conditioning is used.
-        p_droppath : float
+        p_droppath
             Droppath probability for MLP
         """
         super().__init__()
-        self.norm1 = InstanceNormND(dim)(channels)
-        self.attn = ShiftedWindowAttention(dim, channels, channels, n_heads, window_size)
-        self.norm2 = Sequential(InstanceNormND(dim)(channels))
+        self.norm1 = instanceNormND(n_dim)(n_channels)
+        self.attn = ShiftedWindowAttention(n_dim, n_channels, n_channels, n_heads, window_size)
+        self.norm2 = Sequential(instanceNormND(n_dim)(n_channels))
         if emb_dim > 0:
-            self.norm2.append(FiLM(channels=channels, cond_dim=emb_dim))
+            self.norm2.append(FiLM(channels=n_channels, cond_dim=emb_dim))
         self.mlp = Sequential(
-            ConvND(dim)(channels, channels * mlp_ratio, 1),
+            convND(n_dim)(n_channels, n_channels * mlp_ratio, 1),
             GELU('tanh'),
-            ConvND(dim)(channels * mlp_ratio, channels, 1),
+            convND(n_dim)(n_channels * mlp_ratio, n_channels, 1),
             DropPath(p_droppath),
         )
 
@@ -63,9 +63,9 @@ class SwinTransformerLayer(Module):
 
         Parameters
         ----------
-        x : torch.Tensor
+        x
             Input tensor
-        cond : torch.Tensor | None, optional
+        cond
             Conditioning input
 
         Returns
@@ -91,8 +91,8 @@ class ResidualSwinTransformerBlock(Module):
 
     def __init__(
         self,
-        dim: int,
-        channels: int,
+        n_dim: int,
+        n_channels: int,
         n_heads: int,
         window_size: int,
         depth: int,
@@ -104,42 +104,42 @@ class ResidualSwinTransformerBlock(Module):
 
         Parameters
         ----------
-        dim : int
-            Dimension of the input space
-        channels : int
-            Number of input/output channels
-        n_heads : int
+        n_dim
+            The number of spatial dimensions of the input tensor.
+        n_channels
+            The number of channels in the input tensor.
+        n_heads
             Number of attention heads
-        window_size : int
+        window_size
             Size of the attention window
-        depth : int
+        depth
             Number of Swin Transformer layers
-        emb_dim : int, optional
+        emb_dim
             Dimension of conditioning input. If 0, no FiLM conditioning is used.
-        p_droppath : float, optional
+        p_droppath
             Droppath probability for MLP.
-        mlp_ratio : int, optional
+        mlp_ratio
             Ratio for hidden dimension expansion in MLP
         """
         super().__init__()
         self.layers = Sequential(
             *(
                 SwinTransformerLayer(
-                    dim, channels, n_heads, window_size, emb_dim=emb_dim, p_droppath=p_droppath, mlp_ratio=mlp_ratio
+                    n_dim, n_channels, n_heads, window_size, emb_dim=emb_dim, p_droppath=p_droppath, mlp_ratio=mlp_ratio
                 )
                 for _ in range(depth)
             )
         )
-        self.conv = ConvND(dim)(channels, channels, 3, padding=1)
+        self.conv = convND(n_dim)(n_channels, n_channels, 3, padding=1)
 
     def __call__(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the residual Swin Transformer block.
 
         Parameters
         ----------
-        x : torch.Tensor
+        x
             Input tensor
-        cond : torch.Tensor | None, optional
+        cond
             Conditioning input. If None, no FiLM conditioning is used.
 
         Returns
@@ -168,10 +168,10 @@ class SwinIR(Module):
 
     def __init__(
         self,
-        dim: int,
-        channels_in: int,
-        channels_out: int,
-        channels_per_head: int = 16,
+        n_dim: int,
+        n_channels_in: int,
+        n_channels_out: int,
+        n_channels_per_head: int = 16,
         n_heads: int = 6,
         window_size: int = 64,
         n_blocks: int = 6,
@@ -184,36 +184,36 @@ class SwinIR(Module):
 
         Parameters
         ----------
-        dim : int
-            Dimension of the input space
-        channels_in : int
-            Number of input channels
-        channels_out : int
-            Number of output channels
-        channels_per_head : int, optional
-            Number of channels per attention head
-        n_heads : int, optional
-            Number of attention heads
-        window_size : int
-            Size of the attention window. Inputs sizes must be divisible by this value.
-        n_blocks : int
-            Number of residual blocks
-        n_attn_per_block : int
-            Number of attention layers per block
-        emb_dim : int, optional
-            Dimension of conditioning input. If 0, no FiLM conditioning is used.
-        p_droppath : float, optional
-            Droppath probability for MLP.
-        mlp_ratio : int, optional
-            Ratio for hidden dimension expansion in MLP.
+        n_dim
+            The number of spatial dimensions of the input tensor.
+        n_channels_in
+            The number of input channels.
+        n_channels_out
+            The number of output channels.
+        n_channels_per_head
+            The number of channels per attention head.
+        n_heads
+            The number of attention heads.
+        window_size
+            The size of the attention window. Inputs sizes must be divisible by this value.
+        n_blocks
+            The number of residual blocks.
+        n_attn_per_block
+            The number of attention layers per block.
+        emb_dim
+            The dimension of the conditioning input. If 0, no FiLM conditioning is used.
+        p_droppath
+            The droppath probability for MLP.
+        mlp_ratio
+            The ratio for hidden dimension expansion in MLP.
         """
         super().__init__()
-        self.first = ConvND(dim)(channels_in, channels_per_head * n_heads, kernel_size=3, padding=1)
+        self.first = convND(n_dim)(n_channels_in, n_channels_per_head * n_heads, kernel_size=3, padding=1)
         self.blocks = Sequential(
             *(
                 ResidualSwinTransformerBlock(
-                    dim,
-                    channels_per_head * n_heads,
+                    n_dim,
+                    n_channels_per_head * n_heads,
                     n_heads,
                     window_size,
                     n_attn_per_block,
@@ -224,16 +224,16 @@ class SwinIR(Module):
                 for _ in range(n_blocks)
             )
         )
-        self.last = ConvND(dim)(channels_per_head * n_heads, channels_out, kernel_size=3, padding=1)
+        self.last = convND(n_dim)(n_channels_per_head * n_heads, n_channels_out, kernel_size=3, padding=1)
 
     def forward(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply SwinIR.
 
         Parameters
         ----------
-        x : torch.Tensor
+        x
             Input tensor
-        cond : torch.Tensor | None, optional
+        cond
             Conditioning input. If None, no FiLM conditioning is used.
 
         Returns

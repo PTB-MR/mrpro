@@ -6,14 +6,14 @@ from itertools import pairwise
 import torch
 from torch.nn import GELU, LeakyReLU, Module
 
+from mrpro.nn.attention.ShiftedWindowAttention import ShiftedWindowAttention
 from mrpro.nn.CondMixin import CondMixin
 from mrpro.nn.DropPath import DropPath
 from mrpro.nn.FiLM import FiLM
 from mrpro.nn.join import Concat
-from mrpro.nn.ndmodules import ConvND, ConvTransposeND, InstanceNormND
+from mrpro.nn.ndmodules import convND, convTransposeND, instanceNormND
 from mrpro.nn.nets.UNet import UNetBase, UNetDecoder, UNetEncoder
 from mrpro.nn.Sequential import Sequential
-from mrpro.nn.ShiftedWindowAttention import ShiftedWindowAttention
 
 
 class LeWinTransformerBlock(CondMixin, Module):
@@ -24,7 +24,7 @@ class LeWinTransformerBlock(CondMixin, Module):
 
     def __init__(
         self,
-        dim: int,
+        n_dim: int,
         n_channels_per_head: int,
         n_heads: int,
         window_size: int = 8,
@@ -37,10 +37,10 @@ class LeWinTransformerBlock(CondMixin, Module):
 
         Parameters
         ----------
-        dim
-            Dimension of the input, e.g. 2 or 3
+        n_dim
+            The number of spatial dimensions of the input tensor.
         n_channels_per_head
-            Number of features per head
+            The number of features per head.
         n_heads
             Number of attention heads
         window_size
@@ -57,26 +57,26 @@ class LeWinTransformerBlock(CondMixin, Module):
         super().__init__()
         channels = n_channels_per_head * n_heads
         hidden_dim = int(channels * mlp_ratio)
-        self.norm1 = InstanceNormND(dim)(channels)
+        self.norm1 = instanceNormND(n_dim)(channels)
         self.attn = ShiftedWindowAttention(
-            dim=dim,
-            channels_in=channels,
-            channels_out=channels,
+            n_dim=n_dim,
+            n_channels_in=channels,
+            n_channels_out=channels,
             n_heads=n_heads,
             window_size=window_size,
             shifted=shifted,
         )
-        self.norm2 = InstanceNormND(dim)(channels)
+        self.norm2 = instanceNormND(n_dim)(channels)
         self.ff = Sequential(
-            ConvND(dim)(channels, hidden_dim, 1),
+            convND(n_dim)(channels, hidden_dim, 1),
             GELU(),
-            ConvND(dim)(hidden_dim, hidden_dim, kernel_size=3, groups=hidden_dim, stride=1, padding=1),
+            convND(n_dim)(hidden_dim, hidden_dim, kernel_size=3, groups=hidden_dim, stride=1, padding=1),
             GELU(),
-            ConvND(dim)(hidden_dim, channels, 1),
+            convND(n_dim)(hidden_dim, channels, 1),
         )
         if cond_dim > 0:
             self.ff.append(FiLM(channels, cond_dim))
-        self.modulator = torch.nn.Parameter(torch.empty(channels, *((window_size,) * dim)))
+        self.modulator = torch.nn.Parameter(torch.empty(channels, *((window_size,) * n_dim)))
         torch.nn.init.trunc_normal_(self.modulator)
         self.drop_path = DropPath(droprate=p_droppath)
 
@@ -120,9 +120,9 @@ class Uformer(UNetBase):
 
     def __init__(
         self,
-        dim: int,
-        channels_in: int,
-        channels_out: int,
+        n_dim: int,
+        n_channels_in: int,
+        n_channels_out: int,
         n_channels_per_head: int = 32,
         n_heads: Sequence[int] = (1, 2, 4, 8),
         n_blocks: int = 2,
@@ -135,26 +135,26 @@ class Uformer(UNetBase):
 
         Parameters
         ----------
-        dim : int
-            Dimension of the input, e.g. 2 or 3
-        channels_in : int
-            Number of input channels
-        channels_out : int
-            Number of output channels
-        n_channels_per_head : int, optional
-            Number of features per head. The number of features at a resolution level is given by
+        n_dim
+            The number of spatial dimensions of the input tensor.
+        n_channels_in
+            The number of input channels.
+        n_channels_out
+            The number of output channels.
+        n_channels_per_head
+            The number of features per head. The number of features at a resolution level is given by
             `n_channels_per_head * n_heads`.
-        n_heads : Sequence[int], optional
+        n_heads
             Number of attention heads at each resolution level.
-        n_blocks : int, optional
-            Number of transformer blocks at each resolution level in the input and output path
-        cond_dim : int, optional
+        n_blocks
+            The number of transformer blocks at each resolution level in the input and output path
+        cond_dim
             Dimension of a conditioning tensor. If `0`, no FiLM layers are added.
-        window_size : int, optional
-            Size of the attention windows in the (shifted) window attention layers.
-        mlp_ratio : float, optional
+        window_size
+            The size of the attention windows in the (shifted) window attention layers.
+        mlp_ratio
             Ratio of the hidden dimension to the input dimension in the feed-forward blocks
-        max_droppath_rate : float, optional
+        max_droppath_rate
             Maximum drop path rate. As in the original implementation, the drop path rate in the input path
             is linearly increased from `0` to `max_droppath_rate` with decreasing resolution. The rate in output
             blocks is fixed to `max_droppath_rate`.
@@ -164,7 +164,7 @@ class Uformer(UNetBase):
             return Sequential(
                 *(
                     LeWinTransformerBlock(
-                        dim=dim,
+                        n_dim=n_dim,
                         n_heads=n_heads,
                         n_channels_per_head=n_channels_per_head,
                         window_size=window_size,
@@ -178,7 +178,7 @@ class Uformer(UNetBase):
             )
 
         first_block = torch.nn.Sequential(
-            ConvND(dim)(channels_in, n_channels_per_head * n_heads[0], kernel_size=3, stride=1, padding='same'),
+            convND(n_dim)(n_channels_in, n_channels_per_head * n_heads[0], kernel_size=3, stride=1, padding='same'),
             LeakyReLU(),
         )
         drop_path_rates = torch.linspace(0, max_droppath_rate, len(n_heads)).tolist()
@@ -187,7 +187,7 @@ class Uformer(UNetBase):
             for n_head, p_droppath_input in zip(n_heads[:-1], drop_path_rates[:-1], strict=True)
         ]
         down_blocks = [
-            ConvND(dim)(
+            convND(n_dim)(
                 n_channels_per_head * n_head_current,
                 n_channels_per_head * n_head_next,
                 kernel_size=4,
@@ -207,18 +207,18 @@ class Uformer(UNetBase):
         decoder_blocks = [blocks(n_heads=2 * n_head, p_droppath=max_droppath_rate) for n_head in reversed(n_heads[:-1])]
         concat_blocks = [Concat() for _ in range(len(decoder_blocks))]
         up_blocks = [
-            ConvTransposeND(dim)(
+            convTransposeND(n_dim)(
                 n_channels_per_head * n_heads[-1], n_channels_per_head * n_heads[-2], kernel_size=2, stride=2
             )
         ]
         for n_head_current, n_head_next in pairwise(reversed(n_heads[:-1])):
             up_blocks.append(
-                ConvTransposeND(dim)(
+                convTransposeND(n_dim)(
                     2 * n_channels_per_head * n_head_current, n_channels_per_head * n_head_next, kernel_size=2, stride=2
                 )
             )
-        last_block = ConvND(dim)(
-            2 * n_channels_per_head * n_heads[0], channels_out, kernel_size=3, stride=1, padding='same'
+        last_block = convND(n_dim)(
+            2 * n_channels_per_head * n_heads[0], n_channels_out, kernel_size=3, stride=1, padding='same'
         )
         decoder = UNetDecoder(
             blocks=decoder_blocks,
