@@ -24,9 +24,9 @@ class PEX(SignalModel[torch.Tensor, torch.Tensor]):
         Parameters
         ----------
         voltages
-            voltages. Shape `(Voltages, ...)`.
+            voltages. Shape `(voltage, ...)`.
         prep_delay
-            preparation delay. Shape `(...)`.
+            preparation delay. Shape `(prepdelay, ...)`.
         pulse_duration
             rect pulse duration in seconds. Shape `(...)`.
         n_tx
@@ -53,7 +53,7 @@ class PEX(SignalModel[torch.Tensor, torch.Tensor]):
 
         Returns
         -------
-            signal with shape `(voltage, *other, coils, z, y, x)`
+            signal with shape `(voltage/prepdelay, *other, coils, z, y, x)`
         """
         return super().__call__(b1, t1)
 
