@@ -52,7 +52,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     """General Linear Operator.
 
     LinearOperators have exactly one input tensors and one output tensor,
-    and fulfill :math:`f(a*x + b*y) = a*f(x) + b*f(y)`
+    and fulfill :math:`f(ax + by) = af(x) + bf(y)`
     with :math:`a`, :math:`b` scalars and :math:`x`, :math:`y` tensors.
 
     LinearOperators can be composed, added, multiplied, applied to tensors.
@@ -223,13 +223,17 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
 
     @overload
     def __matmul__(
-        self, other: Operator[Unpack[Tin2], tuple[torch.Tensor,]]
+        self, other: Operator[Unpack[Tin2], tuple[torch.Tensor,]] | Operator[Unpack[Tin2], tuple[torch.Tensor, ...]]
     ) -> Operator[Unpack[Tin2], tuple[torch.Tensor,]]: ...
 
     def __matmul__(
         self,
-        other: Operator[Unpack[Tin2], tuple[torch.Tensor,]] | LinearOperator,
-    ) -> Operator[Unpack[Tin2], tuple[torch.Tensor,]] | LinearOperator:
+        other: Operator[Unpack[Tin2], tuple[torch.Tensor,]]
+        | LinearOperator
+        | Operator[Unpack[Tin2], tuple[torch.Tensor, ...]],
+    ) -> (
+        Operator[Unpack[Tin2], tuple[torch.Tensor,]] | LinearOperator | Operator[Unpack[Tin2], tuple[torch.Tensor, ...]]
+    ):
         """Operator composition.
 
         Returns ``lambda x: self(other(x))``
@@ -250,7 +254,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
             return OperatorComposition(self, cast(Operator[Unpack[Tin2], tuple[torch.Tensor,]], other))
         return NotImplemented  # type: ignore[unreachable]
 
-    def __radd__(self, other: torch.Tensor) -> LinearOperator:
+    def __radd__(self, other: torch.Tensor | complex) -> LinearOperator:
         """Operator addition.
 
         Returns ``lambda x: self(x) + other*x``
@@ -258,7 +262,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         return self + other
 
     @overload  # type: ignore[override]
-    def __add__(self, other: LinearOperator | torch.Tensor) -> LinearOperator: ...
+    def __add__(self, other: LinearOperator | torch.Tensor | complex) -> LinearOperator: ...
 
     @overload
     def __add__(
@@ -266,14 +270,14 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     ) -> Operator[torch.Tensor, tuple[torch.Tensor,]]: ...
 
     def __add__(
-        self, other: Operator[torch.Tensor, tuple[torch.Tensor,]] | LinearOperator | torch.Tensor
+        self, other: Operator[torch.Tensor, tuple[torch.Tensor,]] | LinearOperator | torch.Tensor | complex
     ) -> Operator[torch.Tensor, tuple[torch.Tensor,]] | LinearOperator:
         """Operator addition.
 
         Returns ``lambda x: self(x) + other(x)`` if other is a operator,
         ``lambda x: self(x) + other`` if other is a tensor
         """
-        if isinstance(other, torch.Tensor):
+        if isinstance(other, torch.Tensor | complex | int | float):
             # tensor addition
             return LinearOperatorSum(self, mrpro.operators.IdentityOp() * other)
         elif isinstance(self, mrpro.operators.ZeroOp):
@@ -341,7 +345,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         """Horizontal stacking of two LinearOperators.
 
         ``A|B`` is a `~mrpro.operators.LinearOperatorMatrix` with two columns,
-        with ``(A|B)(x1,x2) == A(x1)+B(x2)``.
+        with ``(A|B)(x1,x2) == A(x1) + B(x2)``.
         See `mrpro.operators.LinearOperatorMatrix` for more information.
         """
         if not isinstance(other, LinearOperator):
@@ -383,12 +387,45 @@ class LinearOperatorComposition(LinearOperator):
         self._operator1 = operator1
         self._operator2 = operator2
 
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Linear operator composition.
+
+        Performs operator1(operator2(x)).
+
+        Parameters
+        ----------
+        x
+            Input tensor.
+
+        Returns
+        -------
+            Result of the composed operation.
+        """
+        return super().__call__(x)
+
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Linear operator composition."""
+        """Apply forward of LinearOperatorComposition.
+
+        .. note::
+            Prefer calling the instance of the LinearOperatorComposition operator as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
+        """
         return self._operator1(*self._operator2(x))
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Adjoint of the linear operator composition."""
+        """Adjoint of the linear operator composition.
+
+        The adjoint of (operator1 @ operator2) is (operator2.H @ operator1.H).
+
+        Parameters
+        ----------
+        x
+            Input tensor.
+
+        Returns
+        -------
+            Result of the adjoint operation.
+        """
         # (AB)^H = B^H A^H
         return self._operator2.adjoint(*self._operator1.adjoint(x))
 
@@ -415,12 +452,43 @@ class LinearOperatorSum(LinearOperator):
                 ops.append(op)
         self._operators = cast(list[LinearOperator], torch.nn.ModuleList(ops))
 
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Linear operator addition.
+
+        Parameters
+        ----------
+        x
+            Input tensor.
+
+        Returns
+        -------
+            Result of applying the sum of operators.
+        """
+        return super().__call__(x)
+
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Linear operator addition."""
+        """Apply forward of LinearOperatorSum.
+
+        .. note::
+            Prefer calling the instance of the LinearOperatorSum operator as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
+        """
         return (functools.reduce(operator.add, (op(x)[0] for op in self._operators)),)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Adjoint of the linear operator addition."""
+        """Adjoint of the linear operator addition.
+
+        The adjoint of (A+B) is (A.H + B.H).
+
+        Parameters
+        ----------
+        x
+            Input tensor.
+
+        Returns
+        -------
+            Result of applying the sum of adjoint operators.
+        """
         # (A+B)^H = A^H + B^H
         return (functools.reduce(operator.add, (op.adjoint(x)[0] for op in self._operators)),)
 
@@ -437,13 +505,46 @@ class LinearOperatorElementwiseProductRight(LinearOperator):
         self._operator = operator
         self._scalar = scalar
 
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Linear operator elementwise right multiplication.
+
+        Performs ``scalar * Operator(x)``.
+
+        Parameters
+        ----------
+        x
+            Input tensor.
+
+        Returns
+        -------
+            Result of the elementwise multiplication.
+        """
+        return super().__call__(x)
+
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Linear operator elementwise right multiplication."""
+        """Apply forward of LinearOperatorElementwiseProductRight.
+
+        .. note::
+            Prefer calling the instance of the LinearOperatorElementwiseProductRight operator as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
+        """
         (out,) = self._operator(x)
         return (out * self._scalar,)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Adjoint Operator elementwise multiplication with a tensor/scalar."""
+        """Adjoint of elementwise right multiplication.
+
+        The adjoint of (scalar * A) is (scalar_conj * A.H).
+
+        Parameters
+        ----------
+        x
+            Input tensor.
+
+        Returns
+        -------
+            Result of the adjoint operation.
+        """
         conj = self._scalar.conj() if isinstance(self._scalar, torch.Tensor) else self._scalar.conjugate()
         return self._operator.adjoint(x * conj)
 
@@ -472,12 +573,45 @@ class LinearOperatorElementwiseProductLeft(LinearOperator):
         self._operator = operator
         self._scalar = scalar
 
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Operator elementwise left multiplication with a tensor.
+
+        Performs ``Operator(scalar * x)``.
+
+        Parameters
+        ----------
+        x
+            Input tensor.
+
+        Returns
+        -------
+            Result of the operator acting on the scaled tensor.
+        """
+        return super().__call__(x)
+
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Linear operator elementwise left multiplication."""
+        """Apply forward of LinearOperatorElementwiseProductLeft.
+
+        .. note::
+            Prefer calling the instance of the LinearOperatorElementwiseProductLeft operator as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
+        """
         return self._operator(x * self._scalar)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Adjoint linear operator elementwise multiplication with a tensor/scalar."""
+        """Adjoint of elementwise left multiplication.
+
+        The adjoint of (A * scalar) is (A.H * scalar_conj).
+
+        Parameters
+        ----------
+        x
+            Input tensor.
+
+        Returns
+        -------
+            Result of the adjoint operation.
+        """
         conj = self._scalar.conj() if isinstance(self._scalar, torch.Tensor) else self._scalar.conjugate()
         return (self._operator.adjoint(x)[0] * conj,)
 
@@ -496,12 +630,41 @@ class AdjointLinearOperator(LinearOperator):
         super().__init__()
         self._operator = operator
 
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply the adjoint of the original LinearOperator.
+
+        Parameters
+        ----------
+        x
+            Input tensor.
+
+        Returns
+        -------
+            Tensor resulting from the adjoint operation.
+        """
+        return super().__call__(x)
+
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply the adjoint of the original LinearOperator."""
+        """Apply forward of AdjointLinearOperator.
+
+        .. note::
+            Prefer calling the instance of the AdjointLinearOperator operator as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
+        """
         return self._operator.adjoint(x)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply the adjoint of the adjoint, i.e. the original LinearOperator."""
+        """Apply the adjoint of the adjoint, i.e. the original LinearOperator.
+
+        Parameters
+        ----------
+        x
+            Input tensor.
+
+        Returns
+        -------
+            Tensor resulting from applying the original operator.
+        """
         return self._operator.forward(x)
 
     @property

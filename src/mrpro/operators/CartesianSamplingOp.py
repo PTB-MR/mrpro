@@ -10,6 +10,7 @@ from mrpro.data.enums import TrajType
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators.LinearOperator import LinearOperator
+from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.reshape import unsqueeze_left
 
 
@@ -125,18 +126,27 @@ class CartesianSamplingOp(LinearOperator):
         self._trajectory_shape = traj.shape
         self._sorted_grid_shape = sorted_grid_shape
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Forward operator which selects acquired k-space data from k-space.
 
         Parameters
         ----------
         x
             k-space, fully sampled (or zerofilled) and sorted in Cartesian dimensions
-            with shape given by encoding_matrix
+            with shape given by encoding_matrix.
 
         Returns
         -------
             Selected k-space data in acquired shape (as described by the trajectory).
+        """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply forward of CartesianSamplingOp.
+
+        .. note::
+            Prefer calling the instance of the CartesianSamplingOp operator as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         if self._sorted_grid_shape != SpatialDimension(*x.shape[-3:]):
             raise ValueError('k-space data shape mismatch')
@@ -171,11 +181,11 @@ class CartesianSamplingOp(LinearOperator):
         Parameters
         ----------
         y
-            k-space data in acquired shape
+            k-space data in acquired shape.
 
         Returns
         -------
-            K-space data sorted into encoding_space matrix.
+            k-space data sorted into encoding_space matrix. Non-acquired points are zero-filled.
         """
         if self._trajectory_shape[-3:] != y.shape[-3:]:
             raise ValueError('k-space data shape mismatch')
@@ -254,7 +264,7 @@ class CartesianSamplingOp(LinearOperator):
             enc_matrix_warning = ''
         else:
             enc_matrix_warning = (
-                '\nK-space points lie outside of the encoding_matrix and will be ignored.'
+                '\nk-space points lie outside of the encoding_matrix and will be ignored.'
                 '\nIncrease the encoding_matrix to include these points.'
             )
 
@@ -270,7 +280,7 @@ class CartesianSamplingOp(LinearOperator):
 class CartesianMaskingOp(LinearOperator):
     """Cartesian Masking Operator.
 
-    The Cartesian Masking Operator is the composition CartesianSamplingOp.H @ CartesianSamplingOp,
+    The Cartesian Masking Operator is the composition `CartesianSamplingOp.H @ CartesianSamplingOp`,
     which sets to zero all non sampled Cartesian k-space points.
     """
 
@@ -284,7 +294,25 @@ class CartesianMaskingOp(LinearOperator):
 
         """
         super().__init__()
-        self.mask = None if mask is None else mask.float()
+        self.mask = None if mask is None else reduce_repeat(mask.float())
+
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply the Gram operator (Cartesian Masking).
+
+        This operator applies a mask to the input tensor, effectively zeroing out
+        points that were not sampled according to the Cartesian trajectory.
+        It represents `CartesianSamplingOp.H @ CartesianSamplingOp`.
+
+        Parameters
+        ----------
+        x
+            Input k-space data, typically fully sampled or zero-filled.
+
+        Returns
+        -------
+            Masked k-space data.
+        """
+        return super().__call__(x)
 
     @classmethod
     def from_trajectory(cls, traj: KTrajectory, encoding_matrix: SpatialDimension[int]) -> 'CartesianMaskingOp':
@@ -320,32 +348,31 @@ class CartesianMaskingOp(LinearOperator):
         return cls(mask)
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply the Gram operator.
+        """Apply forward of CartesianMaskingOp.
 
-        Parameters
-        ----------
-        x
-            Input data
-
-        Returns
-        -------
-            Output data
+        .. note::
+            Prefer calling the instance of the CartesianMaskingOp operator as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         if self.mask is None:
             return (x,)
         return (x * self.mask,)
 
     def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply the adjoint of the Gram operator.
+        """Apply the adjoint of the Gram operator (Cartesian Masking).
+
+        Since the Cartesian Masking operator is self-adjoint (it involves
+        applying a mask, which is a real-valued multiplication), its adjoint
+        is the same as its forward operation.
 
         Parameters
         ----------
         y
-            Input data
+            Input k-space data.
 
         Returns
         -------
-            Output data
+            Masked k-space data.
         """
         return self.forward(y)
 
