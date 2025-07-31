@@ -66,8 +66,7 @@ class PEX(SignalModel[torch.Tensor, torch.Tensor]):
         """
         ndim = b1.ndim
         voltages = unsqueeze_right(self.voltages, ndim - self.voltages.ndim + 1)  # +1 are voltages
-        prep_delay = unsqueeze_right(self.prep_delay, ndim - self.prep_delay.ndim)
-        t1 = unsqueeze_right(t1, ndim - t1.ndim)
+        prep_delay = unsqueeze_right(self.prep_delay, ndim - self.prep_delay.ndim + 1)
         pulse_duration = unsqueeze_right(self.pulse_duration, ndim - self.pulse_duration.ndim)
 
         # this is mainly cos(FA), where FA = gamma * a * voltage * t

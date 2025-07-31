@@ -46,10 +46,10 @@ def test_pex_flip_angle_behavior(parameter_shape: Sequence[int] = (2, 5, 10)) ->
     prep_delay = 0.01
     pulse_duration = 0.001
     model = PEX(voltages=voltages, prep_delay=prep_delay, pulse_duration=pulse_duration)
-    a = rng.float32_tensor(parameter_shape, low=1, high=5)  # µT/sqrt(kW)
+    b1 = rng.float32_tensor(parameter_shape, low=1, high=5)  # µT/sqrt(kW)
     t1 = rng.float32_tensor(parameter_shape, low=0.5, high=2)
 
-    (signal,) = model(a, t1)
+    (signal,) = model(b1, t1)
 
     # Signal should decrease with increasing voltage (higher flip angles)
     assert torch.all(signal[0] >= signal[1])  # first voltage < second voltage
@@ -65,10 +65,10 @@ def test_pex_t1_recovery(parameter_shape: Sequence[int] = (2, 5, 10)) -> None:
     pulse_duration = 0.001
 
     model = PEX(voltages=voltages, prep_delay=prep_delay, pulse_duration=pulse_duration)
-    a = rng.float32_tensor(parameter_shape, low=1, high=5)
+    b1 = rng.float32_tensor(parameter_shape, low=1, high=5)
     t1 = rng.float32_tensor(parameter_shape, low=0.5, high=2)
 
-    (signal,) = model(a, t1)
+    (signal,) = model(b1, t1)
 
     # Signal should increase with longer prep delay (more T1 recovery)
     for i in range(len(prep_delay) - 1):
@@ -87,9 +87,9 @@ def test_pex_shape(
     pulse_duration = 0.001
 
     model = PEX(voltages=voltages, prep_delay=prep_delay, pulse_duration=pulse_duration)
-    a = rng.float32_tensor(parameter_shape, low=0.1, high=10)
+    b1 = rng.float32_tensor(parameter_shape, low=0.1, high=10)
     t1 = rng.float32_tensor(parameter_shape, low=0.01, high=2)
-    (signal,) = model(a, t1)
+    (signal,) = model(b1, t1)
     assert signal.shape == signal_shape
     assert signal.isfinite().all()
 
@@ -105,9 +105,9 @@ def test_autodiff_pex(
     pulse_duration = 0.001
 
     model = PEX(voltages=voltages, prep_delay=prep_delay, pulse_duration=pulse_duration)
-    a = rng.float32_tensor(parameter_shape, low=0.1, high=10)
+    b1 = rng.float32_tensor(parameter_shape, low=0.1, high=10)
     t1 = rng.float32_tensor(parameter_shape, low=0.01, high=2)
-    autodiff_test(model, a, t1)
+    autodiff_test(model, b1, t1)
 
 
 @pytest.mark.cuda
@@ -117,26 +117,26 @@ def test_pex_cuda(parameter_shape: Sequence[int] = (2, 5), contrast_dim_shape: S
     voltages = rng.float32_tensor(contrast_dim_shape, low=0, high=200)
     prep_delay = 0.01
     pulse_duration = 0.001
-    a = rng.float32_tensor(parameter_shape, low=0.1, high=10)
+    b1 = rng.float32_tensor(parameter_shape, low=0.1, high=10)
     t1 = rng.float32_tensor(parameter_shape, low=0.01, high=2)
 
     # Create on CPU, transfer to GPU and run on GPU
     model = PEX(voltages=voltages.tolist(), prep_delay=prep_delay, pulse_duration=pulse_duration)
     model.cuda()
-    (signal,) = model(a.cuda(), t1.cuda())
+    (signal,) = model(b1.cuda(), t1.cuda())
     assert signal.is_cuda
     assert signal.isfinite().all()
 
     # Create on GPU and run on GPU
     model = PEX(voltages=voltages.cuda(), prep_delay=prep_delay, pulse_duration=pulse_duration)
-    (signal,) = model(a.cuda(), t1.cuda())
+    (signal,) = model(b1.cuda(), t1.cuda())
     assert signal.is_cuda
     assert signal.isfinite().all()
 
     # Create on GPU, transfer to CPU and run on CPU
     model = PEX(voltages=voltages.cuda(), prep_delay=prep_delay, pulse_duration=pulse_duration)
     model.cpu()
-    (signal,) = model(a, t1)
+    (signal,) = model(b1, t1)
     assert signal.is_cpu
     assert signal.isfinite().all()
 
@@ -147,15 +147,15 @@ def test_pex_n_tx_scaling(parameter_shape: Sequence[int] = (2, 5, 10)) -> None:
     voltages = 100
     prep_delay = 0.01
     pulse_duration = 0.001
-    a = rng.float32_tensor(parameter_shape, low=1, high=5)
+    b1 = rng.float32_tensor(parameter_shape, low=1, high=5)
     t1 = rng.float32_tensor(parameter_shape, low=0.5, high=2)
 
     # Test with different n_tx values
     model_1tx = PEX(voltages=voltages, prep_delay=prep_delay, pulse_duration=pulse_duration, n_tx=1)
     model_4tx = PEX(voltages=voltages, prep_delay=prep_delay, pulse_duration=pulse_duration, n_tx=4)
 
-    (signal_1tx,) = model_1tx(a, t1)
-    (signal_4tx,) = model_4tx(a, t1)
+    (signal_1tx,) = model_1tx(b1, t1)
+    (signal_4tx,) = model_4tx(b1, t1)
 
     # With higher n_tx, the effective voltage is scaled by sqrt(n_tx), so flip angle increases
     # This should result in lower signal values
