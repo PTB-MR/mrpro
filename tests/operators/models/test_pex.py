@@ -28,10 +28,10 @@ def test_pex_special_values(
     prep_delay = 0.01  # short prep delay
 
     model = PEX(voltages=voltages, prep_delay=prep_delay, pulse_duration=pulse_duration)
-    a = rng.float32_tensor(parameter_shape, low=0.1, high=10)  # µT/sqrt(kW)
+    b1 = rng.float32_tensor(parameter_shape, low=0.1, high=10)  # µT/sqrt(kW)
     t1 = rng.float32_tensor(parameter_shape, low=0.1, high=2)
 
-    (signal,) = model(a, t1)
+    (signal,) = model(b1, t1)
 
     # For zero voltage or zero pulse duration, signal should be close to 1
     if expected_behavior == 'unity':

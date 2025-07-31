@@ -40,13 +40,13 @@ class PEX(SignalModel[torch.Tensor, torch.Tensor]):
         self.prep_delay = torch.nn.Parameter(prep_delay_, requires_grad=prep_delay_.requires_grad)
         self.pulse_duration = torch.nn.Parameter(pulse_duration_, requires_grad=pulse_duration_.requires_grad)
 
-    def __call__(self, a: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
+    def __call__(self, b1: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply PEX signal model.
 
         Parameters
         ----------
-        a
-            Parameter a in µT/sqrt(kW) translating voltage of the coil to flip angle
+        b1
+            B1+ in µT/sqrt(kW) translating voltage of the coil to flip angle
             with shape `(...)`.
         t1
             Longitudinal relaxation time.
@@ -55,16 +55,16 @@ class PEX(SignalModel[torch.Tensor, torch.Tensor]):
         -------
             signal with shape `(voltage, *other, coils, z, y, x)`
         """
-        return super().__call__(a, t1)
+        return super().__call__(b1, t1)
 
-    def forward(self, a: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
+    def forward(self, b1: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply PEX signal model.
 
         .. note::
             Prefer calling the instance of the PEX operator as ``operator(a, t1)`` over
             directly calling this method.
         """
-        ndim = a.ndim
+        ndim = b1.ndim
         voltages = unsqueeze_right(self.voltages, ndim - self.voltages.ndim + 1)  # +1 are voltages
         prep_delay = unsqueeze_right(self.prep_delay, ndim - self.prep_delay.ndim)
         t1 = unsqueeze_right(t1, ndim - t1.ndim)
@@ -74,7 +74,7 @@ class PEX(SignalModel[torch.Tensor, torch.Tensor]):
         signal = 1 - (
             1
             - torch.cos(
-                a * volt_to_sqrt_kwatt(voltages) * 1e-6 * pulse_duration * GYROMAGNETIC_RATIO_PROTON * 2 * torch.pi
+                b1 * volt_to_sqrt_kwatt(voltages) * 1e-6 * pulse_duration * GYROMAGNETIC_RATIO_PROTON * 2 * torch.pi
             )
         ) * torch.exp(-prep_delay / t1)
         return (signal,)
