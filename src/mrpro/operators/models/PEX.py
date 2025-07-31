@@ -61,7 +61,7 @@ class PEX(SignalModel[torch.Tensor, torch.Tensor]):
         """Apply PEX signal model.
 
         .. note::
-            Prefer calling the instance of the PEX operator as ``operator(a, t1)`` over
+            Prefer calling the instance of the PEX operator as ``operator(b1, t1)`` over
             directly calling this method.
         """
         ndim = b1.ndim
@@ -69,7 +69,7 @@ class PEX(SignalModel[torch.Tensor, torch.Tensor]):
         prep_delay = unsqueeze_right(self.prep_delay, ndim - self.prep_delay.ndim + 1)
         pulse_duration = unsqueeze_right(self.pulse_duration, ndim - self.pulse_duration.ndim)
 
-        # this is mainly cos(FA), where FA = gamma * a * voltage * t
+        # this is mainly cos(FA), where FA = gamma * b1 * voltage * t
         signal = 1 - (
             1
             - torch.cos(
