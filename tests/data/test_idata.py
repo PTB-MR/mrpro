@@ -148,7 +148,14 @@ def test_IData_to_dicom_folder_identical(dcm_data_fixture, request):
     idata_reloaded = IData.from_dicom_folder(dcm_data[0].filename.parent / 'test_output')
 
     torch.testing.assert_close(idata_reloaded.header.te, idata.header.te)
-    assert idata_reloaded.header.position == idata.header.position
+    torch.testing.assert_close(idata_reloaded.header.tr, idata.header.tr)
+    torch.testing.assert_close(idata_reloaded.header.fa, idata.header.fa)
+    torch.testing.assert_close(idata_reloaded.header.ti, idata.header.ti)
+
+    torch.testing.assert_close(idata_reloaded.header.position.x, idata.header.position.x)
+    torch.testing.assert_close(idata_reloaded.header.position.y, idata.header.position.y)
+    torch.testing.assert_close(idata_reloaded.header.position.z, idata.header.position.z)
+
     assert idata_reloaded.header.orientation == idata.header.orientation
     torch.testing.assert_close(idata_reloaded.data, idata.data)
 
@@ -169,11 +176,9 @@ def test_IData_to_dicom_folder(dcm_data_fixture, request):
         idata.to_dicom_folder(dcm_data[0].filename.parent / 'test_output', series_description='test_series')
     idata_reloaded = IData.from_dicom_folder(dcm_data[0].filename.parent / 'test_output')
 
-    # match dimensions
-    if idata_reloaded.ndim == 6:
-        idata = idata[None, ...]
-
     torch.testing.assert_close(idata_reloaded.header.te[0], idata.header.te[0])
-    assert idata_reloaded.header.position == idata.header.position
+    torch.testing.assert_close(idata_reloaded.header.position.x, idata.header.position.x)
+    torch.testing.assert_close(idata_reloaded.header.position.y, idata.header.position.y)
+    torch.testing.assert_close(idata_reloaded.header.position.z, idata.header.position.z)
     assert idata_reloaded.header.orientation == idata.header.orientation
     torch.testing.assert_close(idata_reloaded.data, idata.data)

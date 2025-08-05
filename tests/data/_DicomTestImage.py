@@ -11,6 +11,7 @@ import torch
 from einops import repeat
 from mrpro.data import Rotation, SpatialDimension
 from mrpro.phantoms import EllipsePhantom
+from mrpro.utils import RandomGenerator
 from mrpro.utils.unit_conversion import s_to_ms
 from pydicom.dataset import set_pixel_data
 
@@ -22,7 +23,7 @@ class DicomTestImage:
         self,
         filename: str | Path,
         matrix_size_y: int = 32,
-        matrix_size_x: int = 32,
+        matrix_size_x: int = 40,
         slice_orientation: Rotation | None = None,
         slice_offset: float | Sequence[float] = 0.0,
         cardiac_trigger_delay: float | None = None,
@@ -171,11 +172,11 @@ class DicomTestImage:
                     )
 
                 plane_position_sequence[0].ImagePositionPatient = (
-                    patient_position + slice_direction * self.slice_offset[slice_idx].numpy()
+                    patient_position + slice_direction * slice_idx * slice_thickness
                 ).tolist()
                 dataset.PerFrameFunctionalGroupsSequence[-1].PlanePositionSequence = deepcopy(plane_position_sequence)
 
-                plane_orientation_sequence[0].ImageOrientationPatient = [*readout_direction, *phase_direction]
+                plane_orientation_sequence[0].ImageOrientationPatient = [*phase_direction, *readout_direction]
                 dataset.PerFrameFunctionalGroupsSequence[-1].PlaneOrientationSequence = deepcopy(
                     plane_orientation_sequence
                 )
@@ -199,7 +200,7 @@ class DicomTestImage:
             dataset.MRAcquisitionType = '2D'
 
             dataset.ImagePositionPatient = (patient_position + slice_direction * self.slice_offset.numpy()).tolist()
-            dataset.ImageOrientationPatient = [*readout_direction, *phase_direction]
+            dataset.ImageOrientationPatient = [*phase_direction, *readout_direction]
             dataset.EchoTime = s_to_ms(self.te)
             dataset.InversionTime = 3.0
             dataset.TriggerTime = s_to_ms(self.time_after_rpeak)
@@ -210,10 +211,13 @@ class DicomTestImage:
             dataset.RepetitionTime = 25.2
             dataset.FrameReferenceDateTime = dt
 
+        random = RandomGenerator()
+        noise = random.float32_tensor(size=(n_slices, matrix_size_x, matrix_size_y))
+
         # 'MONOCHROME2' means smallest value is black, largest value is white
         set_pixel_data(
             ds=dataset,
-            arr=repeat(self.img_ref, 'y x -> slices x y', slices=n_slices).numpy().astype(np.uint16),
+            arr=(repeat(self.img_ref, 'y x -> slices x y', slices=n_slices) + noise).numpy().astype(np.uint16),
             photometric_interpretation='MONOCHROME2',
             bits_stored=16,
         )
