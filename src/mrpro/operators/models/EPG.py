@@ -695,7 +695,7 @@ class EPGSequence(torch.nn.ModuleList, EPGBlock):
     @property
     def duration(self) -> torch.Tensor:
         """Duration of the block."""
-        return sum(block.duration for block in self if isinstance(block, EPGBlock), start=torch.tensor(0.0))
+        return sum((block.duration for block in self if isinstance(block, EPGBlock)), start=torch.tensor(0.0))
 
 
 __all__ = [
