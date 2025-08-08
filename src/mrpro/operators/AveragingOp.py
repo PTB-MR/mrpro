@@ -115,7 +115,7 @@ class AveragingOp(LinearOperator):
                 n = len(group)
 
             adjoint[(*placeholder, group)] += (
-                x[(*placeholder, i, None)].expand(*x.shape[: self.dim], n, *x.shape[self.dim + 1 :]) / n  # type: ignore[index]
+                x[(*placeholder, i, None)].expand(*x.shape[: self.dim], n, *x.shape[self.dim + 1 :]) / n
             )
 
         return (adjoint,)
