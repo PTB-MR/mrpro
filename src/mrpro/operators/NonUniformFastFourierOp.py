@@ -354,7 +354,7 @@ def gram_nufft_kernel(
                     dim, torch.arange(kernel_part.size(dim) - 1, 0, -1, device=kernel.device)
                 )  # flip
 
-        kernel[[..., *slices]] = kernel_part
+        kernel[(..., *slices)] = kernel_part
 
     kernel = symmetrize(kernel, rank)
     kernel = torch.fft.hfftn(kernel, dim=list(range(-rank, 0)), norm='backward')
