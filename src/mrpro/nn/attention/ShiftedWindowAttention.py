@@ -91,7 +91,14 @@ class ShiftedWindowAttention(Module):
             x = x.moveaxis(1, -1)  # now it is features last
         if self.shifted:
             x = torch.roll(x, (-(self.window_size // 2),) * self.n_dim, dims=tuple(range(-self.n_dim - 1, -1)))
-        qkv = self.to_qkv(x)
+
+        padding = []
+        for s in x.shape[-self.n_dim - 1 : -1]:
+            target = ((s + self.window_size - 1) // self.window_size) * self.window_size
+            padding.extend([target - s, 0])
+        x_padded = torch.nn.functional.pad(x, (0, 0, *padding[::-1]), mode='circular') if any(padding) else x
+
+        qkv = self.to_qkv(x_padded)
         windowed = sliding_window(
             qkv, window_shape=self.window_size, stride=self.window_size, dim=range(-self.n_dim - 1, -1)
         )
@@ -110,7 +117,10 @@ class ShiftedWindowAttention(Module):
         attention = attention.unflatten(-2, windowed.shape[-self.n_dim - 1 : -1])
         # permute (in 3d) batch channels z y x wz wy wx -> batch channels wz z wy y wx x
         attention = attention.moveaxis(list(range(self.n_dim)), list(range(2, 2 + 2 * self.n_dim, 2)))
-        attention = attention.reshape(x.shape)
+        attention = attention.reshape(x_padded.shape)
+        if any(padding):
+            crop_idx = (Ellipsis, *[slice(0, s) for s in x.shape[-self.n_dim - 1 : -1]], slice(None))
+            attention = attention[crop_idx]
         if self.shifted:
             attention = torch.roll(
                 attention, (self.window_size // 2,) * self.n_dim, dims=tuple(range(-self.n_dim - 1, -1))
