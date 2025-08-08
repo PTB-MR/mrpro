@@ -219,7 +219,9 @@ def reduce_view(x: torch.Tensor, dim: int | Sequence[int] | None = None) -> torc
 
 
 @lru_cache
-def _reshape_idx(old_shape: tuple[int, ...], new_shape: tuple[int, ...], old_stride: tuple[int, ...]) -> tuple[slice]:
+def _reshape_idx(
+    old_shape: tuple[int, ...], new_shape: tuple[int, ...], old_stride: tuple[int, ...]
+) -> tuple[slice, ...]:
     """Get reshape reduce index (cached helper function for `reshape_broadcasted`).
 
     This function tries to group axes from new_shape and old_shape into the smallest groups that have

@@ -686,8 +686,8 @@ class EPGSequence(torch.nn.ModuleList, EPGBlock):
             EPG configuration states after the sequence of blocks and the acquired signals
         """
         signals: list[torch.Tensor] = []
-        block: EPGBlock
         for block in self:
+            assert isinstance(block, EPGBlock)  # mypy # noqa: S101
             states, signal = block(parameters, states)
             signals.extend(signal)
         return states, tuple(signals)
@@ -695,7 +695,7 @@ class EPGSequence(torch.nn.ModuleList, EPGBlock):
     @property
     def duration(self) -> torch.Tensor:
         """Duration of the block."""
-        return sum(block.duration for block in self)
+        return sum(block.duration for block in self if isinstance(block, EPGBlock), start=torch.tensor(0.0))
 
 
 __all__ = [

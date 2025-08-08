@@ -344,7 +344,7 @@ def gram_nufft_kernel(
     for flips in list(product([1, -1], repeat=rank)):
         flipped_trajectory = trajectory * torch.tensor(flips).to(trajectory).unsqueeze(-1)
         kernel_part = adjnufft(flipped_trajectory, torch.polar(weight, (shifts * flipped_trajectory).sum(-2, True)))
-        slices = []  # which part of the kernel to is currently being processed
+        slices: list[slice] = []  # which part of the kernel to is currently being processed
         for dim, flip in zip(range(-rank, 0), flips, strict=True):
             if flip > 0:  # first half in the dimension
                 slices.append(slice(0, kernel_part.size(dim)))
@@ -353,7 +353,6 @@ def gram_nufft_kernel(
                 kernel_part = kernel_part.index_select(
                     dim, torch.arange(kernel_part.size(dim) - 1, 0, -1, device=kernel.device)
                 )  # flip
-
         kernel[(..., *slices)] = kernel_part
 
     kernel = symmetrize(kernel, rank)
