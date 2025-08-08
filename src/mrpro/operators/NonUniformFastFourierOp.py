@@ -3,6 +3,7 @@
 from collections.abc import Sequence
 from functools import partial
 from itertools import product
+from types import EllipsisType
 from typing import Literal
 
 import torch
@@ -344,16 +345,16 @@ def gram_nufft_kernel(
     for flips in list(product([1, -1], repeat=rank)):
         flipped_trajectory = trajectory * torch.tensor(flips).to(trajectory).unsqueeze(-1)
         kernel_part = adjnufft(flipped_trajectory, torch.polar(weight, (shifts * flipped_trajectory).sum(-2, True)))
-        slices: list[slice] = []  # which part of the kernel to is currently being processed
+        idx: list[slice | EllipsisType] = [...]  # which part of the kernel to is currently being processed
         for dim, flip in zip(range(-rank, 0), flips, strict=True):
             if flip > 0:  # first half in the dimension
-                slices.append(slice(0, kernel_part.size(dim)))
+                idx.append(slice(0, kernel_part.size(dim)))
             else:  # second half in the dimension
-                slices.append(slice(kernel_part.size(dim) + 1, None))
+                idx.append(slice(kernel_part.size(dim) + 1, None))
                 kernel_part = kernel_part.index_select(
                     dim, torch.arange(kernel_part.size(dim) - 1, 0, -1, device=kernel.device)
                 )  # flip
-        kernel[(..., *slices)] = kernel_part
+        kernel[tuple(idx)] = kernel_part
 
     kernel = symmetrize(kernel, rank)
     kernel = torch.fft.hfftn(kernel, dim=list(range(-rank, 0)), norm='backward')
