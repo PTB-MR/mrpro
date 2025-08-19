@@ -316,7 +316,7 @@ class IHeader(Dataclass):
             header.te = ms_to_s(try_reduce_repeat(te_ms))
 
         # Dicom orientation is described by two vectors in the format (x1, y1, z1, x2, y2, z2)
-        if dcm_orientation := get_items(dataset, 'ImageOrientationPatient', lambda x: [float(val) for val in x]):
+        if dcm_orientation := get_items(dataset, 'ImageOrientationPatient', lambda x: [np.float32(val) for val in x]):
             phase_direction = torch.tensor(dcm_orientation[0][:3])  # contains (x1, y1, z1)
             readout_direction = torch.tensor(dcm_orientation[0][3:])  # contains (x2, y2, z2)
             # Calculate third basis vector by cross product
@@ -330,7 +330,7 @@ class IHeader(Dataclass):
 
         # Get dicom position: Pixel with index (0, 0, 0) for (x, y, z), i.e. voxel center in the upper left corner
         if dcm_position := SpatialDimension.from_array_xyz(
-            get_items(dataset, 'ImagePositionPatient', lambda x: [float(val) for val in x]),
+            get_items(dataset, 'ImagePositionPatient', lambda x: [np.float32(val) for val in x]),
         ):
             # Get shift and apply orientation
             n_rows = get_items(dataset, 'Rows', int)[0]
