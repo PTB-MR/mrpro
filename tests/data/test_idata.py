@@ -182,3 +182,17 @@ def test_IData_to_dicom_folder(dcm_data_fixture, request):
     torch.testing.assert_close(idata_reloaded.header.position.z, idata.header.position.z)
     assert idata_reloaded.header.orientation == idata.header.orientation
     torch.testing.assert_close(idata_reloaded.data, idata.data)
+
+
+def test_IData_from_kheader_and_tensor_to_dicom_folder(tmp_path_factory, random_kheader, random_test_data):
+    """IData from KHeader and data tensor."""
+    dicom_folder = tmp_path_factory.mktemp('dicom_from_kheader_and_tensor2') / 'test_output'
+    idata = IData.from_tensor_and_kheader(data=random_test_data, header=random_kheader)
+    idata.to_dicom_folder(dicom_folder, series_description='test_series')
+    idata_reloaded = IData.from_dicom_folder(dicom_folder)
+
+    torch.testing.assert_close(idata_reloaded.header.te[0], idata.header.te[0])
+    torch.testing.assert_close(idata_reloaded.header.position.x, idata.header.position.x)
+    torch.testing.assert_close(idata_reloaded.header.position.y, idata.header.position.y)
+    torch.testing.assert_close(idata_reloaded.header.position.z, idata.header.position.z)
+    assert idata_reloaded.header.orientation == idata.header.orientation
