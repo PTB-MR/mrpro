@@ -2,12 +2,15 @@
 
 import dataclasses
 import datetime as dt
+import re
 from collections.abc import Callable, Sequence
 from dataclasses import field
+from datetime import datetime, time
 from typing import cast
 
 import numpy as np
 import torch
+from einops import rearrange
 from pydicom.dataset import Dataset
 from pydicom.tag import Tag, TagType
 from typing_extensions import Self, TypeVar
@@ -18,11 +21,32 @@ from mrpro.data.KHeader import KHeader
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.reduce_repeat import reduce_repeat
+from mrpro.utils.reshape import unsqueeze_right
 from mrpro.utils.unit_conversion import deg_to_rad, mm_to_m, ms_to_s
 
 
 def _int_factory() -> torch.Tensor:
     return torch.zeros(1, 1, 1, 1, 1, dtype=torch.int64)  # other, coil, z, y, x
+
+
+def parse_datetime(datetime_str: str) -> datetime:
+    """Parse datetime string with or without timezone information.
+
+    Parameters
+    ----------
+    datetime_str
+        Datetime string which may has timezone information.
+
+    Returns
+    -------
+        Datetime
+    """
+    # Check if the string has a timezone (e.g., "+0000", "-0800", "Z")
+    if re.search(r'([+-]\d{2}:?\d{2}|Z)$', datetime_str):
+        dt = datetime.strptime(datetime_str, '%Y%m%d%H%M%S.%f%z')
+        return dt.replace(tzinfo=None)  # Remove timezone info
+    else:
+        return datetime.strptime(datetime_str, '%Y%m%d%H%M%S.%f')
 
 
 T = TypeVar('T')
@@ -266,32 +290,85 @@ class IHeader(Dataclass):
         if len(set(slice_thickness)) != 1:
             raise ValueError('Slice thickness needs to be defined and the same for all.')
 
+        # The only mandatory field
         resolution = SpatialDimension(
             z=slice_thickness[0],
             y=pixel_spacing[0][1],
             x=pixel_spacing[0][0],
         ).apply_(mm_to_m)
 
-        datasets_are_3d = (
-            number_of_frames and number_of_frames[0] > 1 and mr_acquisition_type and mr_acquisition_type[0] == '3D'
-        )
-        n_volumes = number_of_frames[0] if number_of_frames and datasets_are_3d else 1
+        is_3d = number_of_frames and number_of_frames[0] > 1 and mr_acquisition_type and mr_acquisition_type[0] == '3D'
+        num_slices = number_of_frames[0] if number_of_frames and is_3d else 1
+
+        header = cls(resolution=resolution)
 
         # For 3D datasets we currently want to save only one value per volume of fa, ti, tr, and te
-        fa = deg_to_rad(get_items(dataset, 'FlipAngle', float)[::n_volumes])
-        ti = ms_to_s(get_items(dataset, 'InversionTime', float)[::n_volumes])
-        tr = ms_to_s(get_items(dataset, 'RepetitionTime', float)[::n_volumes])
+        if fa := get_items(dataset, 'FlipAngle', float)[::num_slices]:
+            header.fa = deg_to_rad(try_reduce_repeat(fa))
+        if ti := get_items(dataset, 'InversionTime', float)[::num_slices]:
+            header.ti = ms_to_s(try_reduce_repeat(ti))
+        if tr := get_items(dataset, 'RepetitionTime', float)[::num_slices]:
+            header.tr = ms_to_s(try_reduce_repeat(tr))
+        # Some scanners use 'EchoTime', some use 'EffectiveEchoTime'
+        if not (te_ms := get_items(dataset, 'EchoTime', float)[::num_slices]):
+            te_ms = get_items(dataset, 'EffectiveEchoTime', float)[::num_slices]
+        if te_ms:
+            header.te = ms_to_s(try_reduce_repeat(te_ms))
 
-        te_ms = get_items(dataset, 'EchoTime', float)
-        if not te_ms:  # Some scanners use 'EchoTime', some use 'EffectiveEchoTime'
-            te_ms = get_items(dataset, 'EffectiveEchoTime', float)
-        te = ms_to_s(te_ms[::n_volumes])
+        # Dicom orientation is described by two vectors in the format (x1, y1, z1, x2, y2, z2)
+        if dcm_orientation := get_items(dataset, 'ImageOrientationPatient', lambda x: [np.float32(val) for val in x]):
+            phase_direction = torch.tensor(dcm_orientation[0][:3])  # contains (x1, y1, z1)
+            readout_direction = torch.tensor(dcm_orientation[0][3:])  # contains (x2, y2, z2)
+            # Calculate third basis vector by cross product
+            slice_direction = torch.cross(readout_direction, phase_direction, dim=-1)  # contains (x3, y3, z3)
+            # Get orientation from basis vectors, mrpro order: z, y, x
+            header.orientation = Rotation.from_directions(
+                SpatialDimension.from_array_xyz(slice_direction),
+                SpatialDimension.from_array_xyz(phase_direction),
+                SpatialDimension.from_array_xyz(readout_direction),
+            )
 
-        # TODO: Orientation, Position, AcquisitionTime, PhysiologyTimeStamps, ImageIdx, datetime
-        return cls(
-            resolution=resolution,
-            fa=fa,
-            ti=ti,
-            tr=tr,
-            te=te,
-        )
+        # Get dicom position: Pixel with index (0, 0, 0) for (x, y, z), i.e. voxel center in the upper left corner
+        if dcm_position := SpatialDimension.from_array_xyz(
+            get_items(dataset, 'ImagePositionPatient', lambda x: [np.float32(val) for val in x]),
+        ):
+            # Get shift and apply orientation
+            n_rows = get_items(dataset, 'Rows', int)[0]
+            n_cols = get_items(dataset, 'Columns', int)[0]
+            shift_rotated = SpatialDimension.from_array_xyz(torch.zeros(3))
+            if n_rows and n_cols:
+                # Get shift in [m]
+                shift = resolution * SpatialDimension(x=n_rows, y=n_cols, z=0) / 2
+                # Get the shift vector for image position by applying the fov rotation
+                shift_rotated = header.orientation(shift)
+
+            # Get dicom image position in [m] and apply shift defined in [m]
+            dcm_position = dcm_position.rearrange('(other z) -> other 1 z 1 1', z=num_slices)
+            position = dcm_position.apply(mm_to_m) + shift_rotated
+            if is_3d and num_slices > 1:
+                z_shift = (
+                    header.orientation.as_directions()[0] * (-num_slices / 2 + torch.arange(num_slices)) * resolution
+                )
+                z_shift = z_shift.rearrange('z -> 1 1 z 1 1')
+                position = position - z_shift
+            header.position = position
+
+        # Calculate acquisition time stamps in s according to the reference time 0:00 am
+        if frame_time_dt := get_items(dataset, 'FrameReferenceDateTime', parse_datetime)[::num_slices]:
+            t0 = datetime.combine(frame_time_dt[0].date(), time(0, 0))
+            time_stamp = torch.tensor([(ft - t0).total_seconds() for ft in frame_time_dt])
+            header.acquisition_time_stamp = unsqueeze_right(time_stamp, 4)
+
+        if dcm_cardiac_trigger := get_items(dataset, 'NominalCardiacTriggerDelayTime', float):
+            header.physiology_time_stamps = PhysiologyTimestamps(timestamp1=ms_to_s(torch.tensor(dcm_cardiac_trigger)))
+
+        # The in stack position accounts for the slice position for multi-file data with cardiac phases,
+        # as well as for single file dicom with multiple slices. Index is reduced by 1 to start indexing at 0.
+        if phase_idx := get_items(dataset, 'TemporalPositionIndex', int):
+            phase_idx_tensor = torch.tensor(try_reduce_repeat(phase_idx)) - 1
+            header.idx.phase = rearrange(phase_idx_tensor, '(other z) -> other 1 z 1 1', z=num_slices)
+        if slice_idx := get_items(dataset, 'InStackPositionNumber', int):
+            slice_idx_tensor = torch.tensor(try_reduce_repeat(slice_idx)) - 1
+            header.idx.slice = rearrange(slice_idx_tensor, '(other z) -> other 1 z 1 1', z=num_slices)
+
+        return header

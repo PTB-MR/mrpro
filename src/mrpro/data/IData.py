@@ -126,8 +126,8 @@ class IData(Dataclass):
 
         data = torch.stack([_dcm_pixelarray_to_tensor(ds) for ds in datasets])
 
-        # NumberofFrames (0028|0008) he total number of frames contained within a Multi-frame Image
-        number_of_frames = [item.value for item in datasets[0].iterall() if item.tag == 0x00280008]
+        # NumberofFrames (0028|0008): The total number of frames contained within a Multi-frame Image
+        number_of_frames = [item.value for ds in datasets for item in ds.iterall() if item.tag == 0x00280008]
 
         if len(number_of_frames) > 0 and float(number_of_frames[0]) > 1:  # multi-frame data
             # MRAcquisitionType (0018|0023) is 1D/2D/3D
@@ -135,8 +135,12 @@ class IData(Dataclass):
 
             if len(mr_acquisition_type) > 0 and mr_acquisition_type[0] == '3D':  # multi-frame 3D data
                 data = repeat(data, 'other z x y -> other coils z y x', coils=1)
-            else:  # multi-frame 2D data
-                data = repeat(data, 'other frame x y -> other frame coils z y x', coils=1, z=1)
+            else:  # multi-frame 2D data, rearrange data and header
+                if data.shape[0] == 1:  # if other dimension is singleton, there is only frame dimension
+                    data = repeat(data, '1 frame x y -> frame coils z y x', coils=1, z=1)
+                else:
+                    data = repeat(data, 'other frame x y -> other frame coils z y x', coils=1, z=1)
+                    header = header.rearrange('other coils frame x y -> other frame coils z y x', z=1)
         else:  # single-frame data
             data = repeat(data, 'other x y -> other coils z y x', coils=1, z=1)
 
