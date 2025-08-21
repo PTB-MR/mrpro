@@ -167,7 +167,7 @@ def main() -> None:
             for workflow_run in payload.get('workflow_runs'):
                 run_id = workflow_run.get('id')
                 # check if there is a job for such run_id in slurm
-                if 'mrpro-runner-{run_id}' in running_job_names:
+                if f'mrpro-runner-{run_id}' in running_job_names:
                     logger.info(f'[run_id={run_id}]: already queued')
                     continue
                 # this means there is no runner dispatched for the run
