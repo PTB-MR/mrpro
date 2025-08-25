@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout mrpro repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - id: set-matrix
         run: |
@@ -48,7 +48,7 @@ jobs:
         notebook_path: ${{ fromJson(needs.get_notebooks.outputs.notebook_paths) }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install mrpro and dependencies
         run: pip install --index-url=https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple/ --upgrade --upgrade-strategy "eager" -e .[notebooks]
@@ -107,7 +107,7 @@ jobs:
       options: --user runner
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0 # fetch history for github links
           fetch-tags: true
@@ -117,7 +117,7 @@ jobs:
 
       - name: Download executed notebook ipynb files
         id: download
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           path: ./docs/source/_notebooks/
           merge-multiple: true
