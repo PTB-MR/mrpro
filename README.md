@@ -12,6 +12,8 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Coverage Bagde](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/ckolbPTB/48e334a10caf60e6708d7c712e56d241/raw/coverage.json)](https://github.com/PTB-MR/mrpro/actions?query=workflow%3A%22%22Report+PyTest%22%22)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14509598.svg)](https://doi.org/10.5281/zenodo.14509598)
+[![arXiv](https://img.shields.io/badge/arXiv-2507.23129-b31b1b.svg)](https://arxiv.org/abs/2507.23129)
+
 
 MR image reconstruction and processing package specifically developed for PyTorch.
 
