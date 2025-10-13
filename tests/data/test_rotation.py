@@ -35,7 +35,6 @@
 import copy
 import math
 import pickle
-import re
 from collections.abc import Sequence
 from itertools import permutations
 from math import sqrt
@@ -1281,7 +1280,7 @@ def test_len_and_bool() -> None:
     assert len(rotation_multi_empty) == 0
     assert len(rotation_multi_one) == 1
     assert len(rotation_multi) == 2
-    with pytest.raises(TypeError, match=re.escape('Single rotation has no len().')):
+    with pytest.raises(TypeError, match=r'Single rotation has no len\(\)\.'):
         len(rotation_single)
 
     # Rotation should always be truthy. See scigh-16663
