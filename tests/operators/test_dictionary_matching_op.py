@@ -1,5 +1,7 @@
 """Tests for the Dictionary Matching Operator."""
 
+import re
+
 import pytest
 import torch
 from mrpro.operators import DictionaryMatchOp
@@ -84,5 +86,7 @@ def test_dictionary_matching_op_empty_dictionary(index_of_scaling_parameter: int
 
     operator = DictionaryMatchOp(model, index_of_scaling_parameter=index_of_scaling_parameter)
     y = torch.zeros(5, 5, 4, 3)
-    with pytest.raises(KeyError, match='No keys in the dictionary. Please first add some x values using `append`.'):
+    with pytest.raises(
+        KeyError, match=re.escape('No keys in the dictionary. Please first add some x values using `append`.')
+    ):
         _ = operator(y)

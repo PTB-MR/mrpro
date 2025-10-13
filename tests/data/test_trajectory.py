@@ -1,5 +1,7 @@
 """Tests for KTrajectory class."""
 
+import re
+
 import pytest
 import torch
 from einops import rearrange
@@ -244,7 +246,7 @@ def test_traj_from_ismrmrd_normalize(ismrmrd_rad) -> None:
 
 def test_traj_from_ismrmrd_filter(ismrmrd_cart_bodycoil_and_surface_coil) -> None:
     """Test reading trajectory from ISMRMRD file using a filter."""
-    with pytest.raises(ValueError, match='No matching acquisitions found.'):
+    with pytest.raises(ValueError, match=re.escape('No matching acquisitions found.')):
         _ = KTrajectory.from_ismrmrd(
             ismrmrd_cart_bodycoil_and_surface_coil.filename,
             acquisition_filter_criterion=lambda x: has_n_coils(1, x),  # there are no 1-coil acquisitions

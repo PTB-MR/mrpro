@@ -36,7 +36,7 @@ class _AutogradWrapper(torch.autograd.Function):
         inputs: tuple[Callable[[torch.Tensor], torch.Tensor], Callable[[torch.Tensor], torch.Tensor], torch.Tensor],
         _output: torch.Tensor,
     ) -> None:
-        ctx.fw, ctx.bw, x = inputs
+        ctx.fw, ctx.bw, _ = inputs
         return None
 
     @staticmethod

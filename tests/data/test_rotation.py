@@ -35,6 +35,7 @@
 import copy
 import math
 import pickle
+import re
 from collections.abc import Sequence
 from itertools import permutations
 from math import sqrt
@@ -949,7 +950,7 @@ def test_align_vectors_rssd_sensitivity() -> None:
     sens_expected = torch.tensor([[0.2, 0.0, 0.0], [0.0, 1.5, 1.0], [0.0, 1.0, 1.0]])
     a = [[0, 1, 0], [0, 1, 1], [0, 1, 1]]
     b = [[1.0, 0.0, 0.0], [1.0, 1.1, 0.0], [1.0, 0.9, 0.0]]
-    rot, rssd, sens = Rotation.align_vectors(a, b, return_sensitivity=True)
+    _, rssd, sens = Rotation.align_vectors(a, b, return_sensitivity=True)
     assert math.isclose(rssd, rssd_expected, abs_tol=1e-6, rel_tol=1e-4)
     assert torch.allclose(sens, sens_expected, atol=1e-6, rtol=1e-4)
 
@@ -1280,7 +1281,7 @@ def test_len_and_bool() -> None:
     assert len(rotation_multi_empty) == 0
     assert len(rotation_multi_one) == 1
     assert len(rotation_multi) == 2
-    with pytest.raises(TypeError, match='Single rotation has no len().'):
+    with pytest.raises(TypeError, match=re.escape('Single rotation has no len().')):
         len(rotation_single)
 
     # Rotation should always be truthy. See scigh-16663
