@@ -13,7 +13,7 @@
 [![Coverage Bagde](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/ckolbPTB/48e334a10caf60e6708d7c712e56d241/raw/coverage.json)](https://github.com/PTB-MR/mrpro/actions?query=workflow%3A%22%22Report+PyTest%22%22)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14509598.svg)](https://doi.org/10.5281/zenodo.14509598)
 [![arXiv](https://img.shields.io/badge/arXiv-2507.23129-b31b1b.svg)](https://arxiv.org/abs/2507.23129)
-
+[![FAIR checklist badge](https://fairsoftwarechecklist.net/badge.svg)](https://fairsoftwarechecklist.net/v0.2?f=31&a=32113&i=21322&r=133)
 
 MR image reconstruction and processing package specifically developed for PyTorch.
 
@@ -102,4 +102,4 @@ You can find more information on "fork and pull requests" on the [GitHub documen
 Please also look at our [contributor guide](https://ptb-mr.github.io/mrpro/contributor_guide.html) for more information on the repository structure, naming conventions, and other useful information.
 
 > [!NOTE]  
-> There are a few things which cannot be modified as "fork and pull requests" such as modifications of the docker images. If you think something needs to be changed there, please open up an issue first. 
+> There are a few things which cannot be modified as "fork and pull requests" such as modifications of the docker images. If you think something needs to be changed there, please open up an issue first.
