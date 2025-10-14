@@ -637,7 +637,7 @@ class DelayBlock(EPGBlock):
 
 
 class EPGSequence(torch.nn.ModuleList, EPGBlock):
-    """Sequene of EPG blocks.
+    """Sequence of EPG blocks.
 
     A sequence as multiple blocks, such as preparation pulses, acquisition blocks and delays.
 

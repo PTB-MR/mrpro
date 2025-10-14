@@ -130,7 +130,7 @@ class FastMRIImageDataset(torch.utils.data.Dataset):
             individual files.
         coil_combine : bool
             Whether to perform coil combination sensitivity maps obtained using the Inati method.
-            Note that this is **not** comonly used as the target for FastMRI challenges. Instead,
+            Note that this is **not** commonly used as the target for FastMRI challenges. Instead,
             as target the RSS combination of the coil images is used.
         augment
             Augmentation function. Will be called with the image and the index of the slices.

@@ -75,7 +75,7 @@ class ElementaryFunctional(Operator[torch.Tensor, tuple[torch.Tensor]], ABC):
             the tensor `weight ( x - target)`. If true, the functional is thus calculated as the mean,
             else the sum.
         keepdim
-            if true, the dimension(s) of the input indexed by `dim` are maintained and collapsed to singeltons,
+            if true, the dimension(s) of the input indexed by `dim` are maintained and collapsed to singletons,
             else they are removed from the result.
 
         """
