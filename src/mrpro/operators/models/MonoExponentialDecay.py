@@ -14,6 +14,8 @@ class MonoExponentialDecay(SignalModel[torch.Tensor, torch.Tensor]):
     def __init__(self, decay_time: float | torch.Tensor | Sequence[float]):
         """Initialize mono-exponential signal model.
 
+        Can, for example, be used to model T2.
+
         Parameters
         ----------
         decay_time
@@ -24,21 +26,36 @@ class MonoExponentialDecay(SignalModel[torch.Tensor, torch.Tensor]):
         decay_time = torch.as_tensor(decay_time)
         self.decay_time = torch.nn.Parameter(decay_time, requires_grad=decay_time.requires_grad)
 
-    def forward(self, m0: torch.Tensor, decay_constant: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply mono-exponential signal model.
+    def __call__(self, m0: torch.Tensor, decay_constant: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply the mono-exponential decay signal model.
+
+        Calculates the signal based on the formula:
+        :math:`S(t) = M_0 e^{-t / T}`,
+        where `t` are the decay times and `T` is the decay constant.
 
         Parameters
         ----------
         m0
-            equilibrium signal / proton density
-            with shape `(*other, coils, z, y, x)`
+            Equilibrium signal / proton density.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
         decay_constant
-            exponential decay constant (e.g. T2, T2* or T1rho)
-            with shape `(*other, coils, z, y, x)`
+            Exponential decay constant (e.g., T2, T2*, T1rho).
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
 
         Returns
         -------
-            signal with shape `(time, *other, coils, z, y, x)`
+            Signal calculated for each decay time.
+            Shape `(times ...)`, for example `(times, *other, coils, z, y, x)`, or `(times, samples)`
+            where `times` is the number of decay times.
+        """
+        return super().__call__(m0, decay_constant)
+
+    def forward(self, m0: torch.Tensor, decay_constant: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply forward of MonoExponentialDecay.
+
+        .. note::
+            Prefer calling the instance of the MonoExponentialDecay as ``operator(x)`` over directly calling this
+            method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         ndim = max(m0.ndim, decay_constant.ndim)
         decay_time = unsqueeze_right(self.decay_time, ndim - self.decay_time.ndim + 1)  # leftmost is time
