@@ -90,7 +90,7 @@ jobs:
           echo "IPYNB_EXECUTED=$(basename $notebook)" >> $GITHUB_OUTPUT
 
       - name: Upload notebook
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: ${{ steps.artifact_names.outputs.ARTIFACT_NAME }}
@@ -117,7 +117,7 @@ jobs:
 
       - name: Download executed notebook ipynb files
         id: download
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           path: ./docs/source/_notebooks/
           merge-multiple: true
@@ -129,7 +129,7 @@ jobs:
 
       - name: Upload documentation artifact
         id: upload_docs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: Documentation
           path: docs/build/html/
@@ -142,7 +142,7 @@ jobs:
 
       - name: Upload docs-metadata artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: artifact_url
           path: artifact_url
