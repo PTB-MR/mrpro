@@ -9,7 +9,7 @@ class L1Norm(ElementaryProximableFunctional):
     r"""Functional class for the L1 Norm.
 
     This implements the functional given by
-    :math:`f: C^N -> [0, \infty), x ->  \| W (x-b)\|_1`,
+    :math:`f: C^N \rightarrow [0, \infty), x \rightarrow  \| W (x-b)\|_1`,
     where W is a either a scalar or tensor that corresponds to a (block-) diagonal operator
     that is applied to the input.
 
@@ -18,22 +18,38 @@ class L1Norm(ElementaryProximableFunctional):
     The norm of the vector is computed along the dimensions given at initialization.
     """
 
-    def forward(
+    def __call__(
         self,
         x: torch.Tensor,
     ) -> tuple[torch.Tensor]:
-        """Forward method.
+        """Compute the L1 norm of the input tensor.
 
-        Compute the L1 norm of the input.
+        Calculates :math:`|| W * (x - b) ||_1`, where :math:`W` is `weight` and :math:`b` is `target`.
+        The norm is computed along dimensions specified by `dim`.
+        If `divide_by_n` is true, the result is averaged over these dimensions;
+        otherwise, it's summed.
 
         Parameters
         ----------
         x
-            input tensor
+            Input tensor.
 
         Returns
         -------
-            L1 norm of the input tensor
+            The L1 norm. If `keepdim` is true, the dimensions `dim` are retained
+            with size 1; otherwise, they are reduced.
+        """
+        return super().__call__(x)
+
+    def forward(
+        self,
+        x: torch.Tensor,
+    ) -> tuple[torch.Tensor]:
+        """Apply forward of L1Norm.
+
+        .. note::
+            Prefer calling the instance of the L1Norm as ``operator(x)`` over directly calling this method.
+            See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         value = (self.weight * (x - self.target)).abs()
 
