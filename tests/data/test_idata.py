@@ -187,12 +187,20 @@ def test_IData_to_dicom_folder(dcm_data_fixture, request):
 def test_IData_from_kheader_and_tensor_to_dicom_folder(tmp_path_factory, random_kheader, random_test_data):
     """IData from KHeader and data tensor."""
     dicom_folder = tmp_path_factory.mktemp('dicom_from_kheader_and_tensor2') / 'test_output'
-    idata = IData.from_tensor_and_kheader(data=random_test_data, header=random_kheader)
+    idata = IData.from_tensor_and_kheader(data=random_test_data, header=random_kheader)  # shape: [2, 8, 16, 32, 64]
     idata.to_dicom_folder(dicom_folder, series_description='test_series')
-    idata_reloaded = IData.from_dicom_folder(dicom_folder)
+    idata_reloaded = IData.from_dicom_folder(dicom_folder)  # shape: [16, 1, 16, 32, 64]
 
     torch.testing.assert_close(idata_reloaded.header.te[0], idata.header.te[0])
     torch.testing.assert_close(idata_reloaded.header.position.x, idata.header.position.x)
     torch.testing.assert_close(idata_reloaded.header.position.y, idata.header.position.y)
     torch.testing.assert_close(idata_reloaded.header.position.z, idata.header.position.z)
     assert idata_reloaded.header.orientation == idata.header.orientation
+
+    # Compare image pixel values
+    other, coil = idata.shape[:2]
+    idata_reloaded_ra = idata_reloaded.rearrange('(other coil) 1 z y x -> other coil z y x', other=other, coil=coil)
+    idata_reloaded_px = idata_reloaded_ra.data.abs() / (2**16 - 1)
+    idata_px = idata.data.abs()
+
+    torch.testing.assert_close(idata_px, idata_reloaded_px, rtol=1e-4, atol=1e-4)

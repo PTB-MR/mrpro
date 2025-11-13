@@ -1,6 +1,7 @@
 """MR image data (IData) class."""
 
 import datetime
+import re
 import warnings
 from collections.abc import Generator, Sequence
 from pathlib import Path
@@ -9,7 +10,6 @@ import numpy as np
 import pydicom
 import torch
 from einops import rearrange, repeat
-from natsort import natsorted
 from pydicom import dcmread
 from pydicom.dataset import Dataset
 from pydicom.pixels import set_pixel_data
@@ -49,6 +49,17 @@ def _dcm_pixelarray_to_tensor(dataset: Dataset) -> torch.Tensor:
 
     # Image data is 2D np.array of Uint16, which cannot directly be converted to tensor
     return slope * torch.as_tensor(dataset.pixel_array.astype(np.complex64)) + intercept
+
+
+def _natural_key(s: str | Path) -> list[int | str]:
+    """Key for natural sorting of strings with numbers.
+
+    Example:
+        >>> strings = ['img_1.dcm', 'img_10.dcm', 'img_2.dcm']
+        >>> sorted(strings, key=_natural_key)
+        ['img_1.dcm', 'img_2.dcm', 'img_10.dcm']
+    """
+    return [int(t) if t.isdigit() else t for t in re.split(r'(\d+)', str(s))]
 
 
 class IData(Dataclass):
@@ -116,7 +127,7 @@ class IData(Dataclass):
             datasets = [dcmread(filenames)]
         else:
             # Use natsort to ensure correct order of filenames like img_1.dcm, img_2.dcm, ..., img_10.dcm
-            datasets = [dcmread(filename) for filename in natsorted(filenames)]
+            datasets = [dcmread(filename) for filename in sorted(filenames, key=_natural_key)]
         if not datasets:  # check datasets (not filenames) to allow for filenames to be a Generator
             raise ValueError('No dicom files specified')
 
