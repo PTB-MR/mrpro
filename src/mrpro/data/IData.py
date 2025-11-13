@@ -9,6 +9,7 @@ import numpy as np
 import pydicom
 import torch
 from einops import rearrange, repeat
+from natsort import natsorted
 from pydicom import dcmread
 from pydicom.dataset import Dataset
 from pydicom.pixels import set_pixel_data
@@ -114,7 +115,8 @@ class IData(Dataclass):
         if isinstance(filenames, str | Path):
             datasets = [dcmread(filenames)]
         else:
-            datasets = [dcmread(filename) for filename in filenames]
+            # Use natsort to ensure correct order of filenames like img_1.dcm, img_2.dcm, ..., img_10.dcm
+            datasets = [dcmread(filename) for filename in natsorted(filenames)]
         if not datasets:  # check datasets (not filenames) to allow for filenames to be a Generator
             raise ValueError('No dicom files specified')
 
