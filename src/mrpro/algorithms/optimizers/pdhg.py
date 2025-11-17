@@ -43,8 +43,8 @@ def pdhg(
     initial_values: Sequence[torch.Tensor],
     max_iterations: int = 32,
     tolerance: float = 0,
-    primal_stepsize: float | None = None,
-    dual_stepsize: float | None = None,
+    primal_stepsize: float | torch.Tensor | None = None,
+    dual_stepsize: float | torch.Tensor | None = None,
     relaxation: float = 1.0,
     initial_relaxed: Sequence[torch.Tensor] | None = None,
     initial_duals: Sequence[torch.Tensor] | None = None,
@@ -166,8 +166,6 @@ def pdhg(
         # choose primal and dual step size such that their product is 1/|operator|**2
         # to ensure convergence
         operator_norm = operator_matrix.operator_norm(*[torch.randn_like(v) for v in initial_values]).amax()
-        primal_stepsize_: float | torch.Tensor
-        dual_stepsize_: float | torch.Tensor
         if primal_stepsize is None and dual_stepsize is None:
             primal_stepsize_ = dual_stepsize_ = 1.0 / operator_norm
         elif primal_stepsize is None and dual_stepsize is not None:
