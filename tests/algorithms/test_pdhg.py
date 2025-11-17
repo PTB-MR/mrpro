@@ -242,8 +242,8 @@ def test_stepsizes() -> None:
 
     # choose primal and dual stepsizes on purpose too high, such that the other one
     # is assigned accordingly within the algorithm to ensure that PDHG converges
-    primal_stepsize = 10.0 / operator_norm
-    dual_stepsize = 10.0 / operator_norm
+    primal_stepsize = float(10.0 / operator_norm)
+    dual_stepsize = float(10.0 / operator_norm)
 
     (pdhg_solution_no_step_sizes,) = pdhg(
         f=f,
