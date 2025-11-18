@@ -61,7 +61,7 @@ jobs:
 
       - name: Upload PyTest Coverage Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: pytest-report-selfhosted
           path: |
@@ -90,7 +90,7 @@ jobs:
 
       - name: Upload PyTest Coverage Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: pytest-report-selfhosted
           path: |
