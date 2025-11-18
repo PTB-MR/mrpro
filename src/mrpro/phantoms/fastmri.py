@@ -70,7 +70,7 @@ class FastMRIKDataDataset(torch.utils.data.Dataset):
             slice_idx: int | slice = slice(None)
         else:
             file_idx = int(torch.searchsorted(self._accum_slices, idx + 1))
-            slice_idx = idx - self._accum_slices[file_idx]
+            slice_idx = int(idx - self._accum_slices[file_idx])
         with h5py.File(self._filenames[file_idx], 'r') as file:
             # data is sometimes zero-padded, we remove the padding
             data = torch.as_tensor(np.array(file['kspace'][slice_idx]))
