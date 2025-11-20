@@ -162,12 +162,12 @@ def pdhg(
     if len(g_sum) != n_columns:
         raise ValueError('Number of columns in operator does not match number of functionals in g')
 
+    primal_stepsize_: float | torch.Tensor
+    dual_stepsize_: float | torch.Tensor
     if primal_stepsize is None or dual_stepsize is None:
         # choose primal and dual step size such that their product is 1/|operator|**2
         # to ensure convergence
         operator_norm = operator_matrix.operator_norm(*[torch.randn_like(v) for v in initial_values]).amax()
-        primal_stepsize_: float | torch.Tensor
-        dual_stepsize_: float | torch.Tensor
         if primal_stepsize is None and dual_stepsize is None:
             primal_stepsize_ = dual_stepsize_ = 1.0 / operator_norm
         elif primal_stepsize is None and dual_stepsize is not None:
