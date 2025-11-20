@@ -50,7 +50,7 @@ jobs:
 
       - name: Post PyTest Coverage Comment
         id: coverage_comment
-        uses: MishaKav/pytest-coverage-comment@v1.1.59
+        uses: MishaKav/pytest-coverage-comment@v1.2.0
         with:
           issue-number: ${{ steps.pr-context.outputs.number }}
           pytest-coverage-path: pytest-coverage.txt
@@ -93,7 +93,7 @@ jobs:
 
       - name: Post PyTest Coverage Comment on push main
         id: coverage_comment
-        uses: MishaKav/pytest-coverage-comment@v1.1.59
+        uses: MishaKav/pytest-coverage-comment@v1.2.0
         with:
           pytest-coverage-path: pytest-coverage.txt
           junitxml-path: pytest.xml
