@@ -20,7 +20,7 @@ jobs:
           python-version: "3.x"
 
       - name: Checkout Code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Check if VERSION file is modified compared to main
         uses: dorny/paths-filter@v3
@@ -113,7 +113,7 @@ jobs:
       version: ${{ steps.get_version.outputs.version }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v6
