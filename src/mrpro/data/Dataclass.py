@@ -60,9 +60,9 @@ class InconsistentDeviceError(RuntimeError):
 
 
 class InconsistentShapeError(RuntimeError):
-    """Raised if fields are not broadastable.
+    """Raised if fields are not broadcastable.
 
-    The fields cannot be broadasted to a common shape.
+    The fields cannot be broadcasted to a common shape.
     """
 
     def __init__(self, *shapes):

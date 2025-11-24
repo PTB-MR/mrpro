@@ -18,7 +18,7 @@ jobs:
       docker_tasks: ${{ steps.set-matrix.outputs.docker_tasks }}
     steps:
       - name: Checkout mrpro repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Check if files in docker or the toml file has been modified
         uses: dorny/paths-filter@v3
@@ -63,7 +63,7 @@ jobs:
         docker_task: ${{ fromJson(needs.get_dockerfiles.outputs.docker_tasks) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Get image basename
         id: image_name
@@ -108,7 +108,7 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Install mrpro and dependencies
         run: |
@@ -142,7 +142,7 @@ jobs:
         docker_task: ${{ fromJson(needs.get_dockerfiles.outputs.docker_tasks) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Login to GitHub Packages
         uses: docker/login-action@v3
