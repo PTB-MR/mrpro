@@ -5,7 +5,8 @@ from collections.abc import Sequence
 from typing import Literal
 
 import torch
-import torch.nn.functional as F  # noqa: N812
+
+from mrpro.utils.reshape import unsqueeze_left
 
 
 def normalize_index(ndim: int, index: int) -> int:
@@ -35,7 +36,7 @@ def pad_or_crop(
     data: torch.Tensor,
     new_shape: Sequence[int] | torch.Size,
     dim: None | Sequence[int] = None,
-    mode: Literal['constant', 'replicate', 'circular'] = 'constant',
+    mode: Literal['constant', 'reflect', 'replicate', 'circular'] = 'constant',
     value: float = 0.0,
 ) -> torch.Tensor:
     """Change shape of data by center cropping or symmetric padding.
@@ -50,9 +51,9 @@ def pad_or_crop(
         Dimensions the `new_shape` corresponds to.
         `None` is interpreted as last ``len(new_shape)`` dimensions.
     mode
-        Mode for padding.
+        Mode to use for padding.
     value
-        Value to use for padding.
+        Value to use for constant padding.
 
     Returns
     -------
@@ -72,15 +73,33 @@ def pad_or_crop(
         # Update elements in data.shape at indices specified in dim with corresponding elements from new_shape
         new_shape = tuple(new_shape[dim.index(i)] if i in dim else s for i, s in enumerate(data.shape))
 
-    npad = []
+    npad: list[int] = []
     for old, new in zip(data.shape, new_shape, strict=True):
         diff = new - old
         after = math.trunc(diff / 2)
         before = diff - after
-        npad.append(before)
-        npad.append(after)
+        if before or after or npad:
+            npad.append(before)
+            npad.append(after)
+
+    n_extended_dims = 0
+    if mode != 'constant':
+        # See https://docs.pytorch.org/docs/stable/generated/torch.nn.functional.pad.html for supported shapes.
+        while len(npad) // 2 < data.ndim - 2:
+            npad = [0, 0, *npad]
+
+        n_extended_dims = max(0, len(npad) // 2 - (data.ndim - 2))
+        if n_extended_dims:  # We need to extend data such that the padding is supported.
+            data = unsqueeze_left(data, n_extended_dims)
+
+        if len(npad) > 6:  # TODO: reshape and call multiple times
+            raise ValueError('Non-constant padding is only supported for up to the last 3 dimensions.')
 
     if any(npad):
         # F.pad expects paddings in reversed order
-        data = F.pad(data, npad[::-1], mode=mode, value=value)
+        data = torch.nn.functional.pad(data, npad[::-1], value=value, mode=mode)
+
+    if n_extended_dims:
+        idx = n_extended_dims * (0,)
+        data = data[idx]
     return data
