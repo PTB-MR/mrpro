@@ -33,9 +33,8 @@ from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.Rotation import Rotation
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 from mrpro.data.traj_calculators.KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
+from mrpro.utils.summarize import summarize_object
 from mrpro.utils.typing import FileOrPath
-
-from ..utils.summarize import summarize_object
 
 RotationOrTensor = TypeVar('RotationOrTensor', bound=torch.Tensor | Rotation)
 
@@ -274,19 +273,23 @@ class KData(Dataclass):
         """
         shape = self.shape
 
-        def expand(x: T) -> T:
-            return x.expand(*shape[:-4], -1, shape[-3], shape[-2], -1)
+        def flatten_idx(x: T) -> T:
+            """Expand collapsed dimensions and flatten all indices to into "other" dimension."""
+            x = x.expand(*shape[:-4], -1, shape[-3], shape[-2], -1)
+            return rearrange(x, '... coils k2 k1 k0 -> (... k2 k1) coils 1 1 k0')
 
         # First, determine if we can split into k2 and k1 and how large these should be
         acq_indices_other = torch.stack(
-            [expand(getattr(self.header.acq_info.idx, label)) for label in OTHER_LABELS],
+            [flatten_idx(getattr(self.header.acq_info.idx, label)) for label in OTHER_LABELS],
             dim=0,
         )
         _, n_acqs_per_other = torch.unique(acq_indices_other, dim=1, return_counts=True)
         # unique counts of acquisitions for each combination of the label values in "other"
         n_acqs_per_other = torch.unique(n_acqs_per_other)
 
-        acq_indices_other_k2 = torch.cat((acq_indices_other, expand(self.header.acq_info.idx.k2).unsqueeze(0)), dim=0)
+        acq_indices_other_k2 = torch.cat(
+            (acq_indices_other, flatten_idx(self.header.acq_info.idx.k2).unsqueeze(0)), dim=0
+        )
         _, n_acqs_per_other_and_k2 = torch.unique(acq_indices_other_k2, dim=1, return_counts=True)
         # unique counts of acquisitions for each combination of other **and k2**
         n_acqs_per_other_and_k2 = torch.unique(n_acqs_per_other_and_k2)
@@ -324,14 +327,14 @@ class KData(Dataclass):
 
         # Second, determine the sorting order
         acq_indices = np.stack(
-            [expand(getattr(self.header.acq_info.idx, label)).ravel() for label in KDIM_SORT_LABELS],
+            [flatten_idx(getattr(self.header.acq_info.idx, label)).ravel() for label in KDIM_SORT_LABELS],
             axis=0,
         )
         sort_idx = torch.as_tensor(np.lexsort(acq_indices))  # torch has no lexsort as of pytorch 2.6 (March 2025)
 
         # Finally, reshape and sort the tensors in acqinfo and acqinfo.idx, and kdata.
         def sort(x: T) -> T:
-            flat = cast(T, rearrange(expand(x), '... coils k2 k1 k0 -> (... k2 k1) coils k0'))
+            flat = cast(T, rearrange(flatten_idx(x), '... coils k2 k1 k0 -> (... k2 k1) coils k0'))
             return cast(
                 T, rearrange(flat[sort_idx], '(other k2 k1) coils k0 -> other coils k2 k1 k0', k1=n_k1, k2=n_k2)
             )
