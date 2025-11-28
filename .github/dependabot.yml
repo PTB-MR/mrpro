@@ -1,10 +1,14 @@
 version: 2
 updates:
-
-- package-ecosystem: "github-actions"
-  directory: "/"
-  schedule:
-    interval: "daily"
-  groups:
-    all-actions:
-      patterns: [ "*" ]
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    groups:
+      all-actions:
+        patterns: ["*"]
+    ignore:
+      - # Ignore all updates for actions in pytest_selfhosted as the self hosted runner might not support them
+        update-types: ["version-update:semver-major", "version-update:semver-minor", "version-update:patch"]
+        dependency-name: "*"
+        manifest-file: ".github/workflows/pytest_selfhosted.yml.yml"
