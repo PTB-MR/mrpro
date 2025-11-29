@@ -61,7 +61,8 @@ SBATCH_SUBMIT_COMMAND = """#!/bin/bash
 #SBATCH -o /home/{USER_NAME}/slurm_output/slurm.%j.out # file to save job's STDOUT (%j = JobId)
 #SBATCH -e /home/{USER_NAME}/slurm_output/slurm.%j.err # file to save job's STDERR (%j = JobId)
 #SBATCH --export=NONE   # Purge the job-submitting shell environment
-#SBATCH --gres=gpu:L40S:1 # Request GPU of L40S type
+#SBATCH --gres=gpu:A100mig:1 # Reserved GPU
+#SBATCH --qos=urgent # High priority
 #SBATCH -p equipment_typeG # Request GPU
 
 # display the config file
