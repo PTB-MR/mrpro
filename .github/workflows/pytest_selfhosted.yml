@@ -47,7 +47,7 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4 # Don't change without a reason. Self hosted runner update might be broken.
+        uses: actions/checkout@v6 # Don't change without a reason. Self hosted runner update might be broken.
 
       - name: Install MRpro and Dependencies
         run: pip install --upgrade --upgrade-strategy eager .[tests]
@@ -61,7 +61,7 @@ jobs:
 
       - name: Upload PyTest Coverage Report
         if: always()
-        uses: actions/upload-artifact@v4 # Don't change without a reason. Self hosted runner update might be broken.
+        uses: actions/upload-artifact@v5 # Don't change without a reason. Self hosted runner update might be broken.
         with:
           name: pytest-report-selfhosted
           path: |
@@ -76,7 +76,7 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4 # Don't change without a reason. Self hosted runner update might be broken.
+        uses: actions/checkout@v6 # Don't change without a reason. Self hosted runner update might be broken.
 
       - name: Install MRpro and Dependencies
         run: pip install --upgrade --upgrade-strategy eager .[tests]
@@ -90,7 +90,7 @@ jobs:
 
       - name: Upload PyTest Coverage Report
         if: always()
-        uses: actions/upload-artifact@v4 # Don't change without a reason. Self hosted runner update might be broken.
+        uses: actions/upload-artifact@v5 # Don't change without a reason. Self hosted runner update might be broken.
         with:
           name: pytest-report-selfhosted
           path: |
