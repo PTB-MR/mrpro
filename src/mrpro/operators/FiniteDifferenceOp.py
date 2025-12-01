@@ -10,7 +10,49 @@ from mrpro.utils.filters import filter_separable
 
 
 class FiniteDifferenceOp(LinearOperator):
-    """Finite Difference Operator."""
+    r"""Finite Difference Operator.
+
+    This pointwise operator, denoted as :math:`\nabla_h`, acts on a discrete image defined on
+    a regular :math:`d`-dimensional grid and returns, at each pixel or voxel, a vector of finite differences of the
+    image along a user-selected set of coordinate directions ``dim``
+    (using forward, backward, or central finite difference stencils).
+
+    Let :math:`u : \Omega_h \subset \mathbb{Z}^d \to \mathcal{K}` be a discrete image
+    with values in :math:`\mathcal{K} \in \{\mathbb{R}, \mathbb{C}\}` and let ``dim`` :math:`\subset \{1,\dots,d\}`
+    denote the set of active directions along which finite differences are computed.
+    For a pixel or voxel :math:`x \in \Omega_h` and :math:`i \in` ``dim``, the forward finite difference
+    (assuming unit spacing) in direction :math:`i` is
+
+    .. math::
+
+        (\nabla_h^{\mathrm{fwd}} u)_i(x) = u(x + e_i) - u(x),
+
+    where :math:`e_i` is the unit vector in direction :math:`i`.
+    Analogous formulas are used for the backward and central modes.
+
+    In the continuous setting, for a function :math:`u : \Omega \subset \mathbb{R}^d \to \mathcal{K}`, the gradient is
+
+    .. math::
+
+        (\nabla u)_i(x) = \partial_{x_i} u(x),
+
+    and :math:`\nabla_h` is the standard finite difference discretisation of :math:`\nabla`
+    along the chosen directions ``dim``.
+
+    As a simple 2D scalar example, an image :math:`u = u(x, y)` can be viewed as
+    a function :math:`u : \mathbb{R}^2 \to \mathcal{K}` with
+
+    .. math::
+
+        \nabla u(x, y) = \bigl( \partial_x u(x, y), \partial_y u(x, y) \bigr),
+
+    while :math:`\nabla_h u` replaces the partial derivatives by the corresponding finite differences
+    in :math:`x` and :math:`y`. The operator implemented here applies this construction to the discrete image array
+    and returns, at each pixel, the vector of directional differences along the active directions ``dim``.
+
+    This finite difference gradient is used, for example, in :class:`mrpro.operators.SymmetrizedGradientOp`,
+    where a discrete symmetrized gradient is formed from :math:`\nabla_h`.
+    """
 
     @staticmethod
     def finite_difference_kernel(mode: Literal['central', 'forward', 'backward']) -> torch.Tensor:
@@ -28,14 +70,14 @@ class FiniteDifferenceOp(LinearOperator):
         Raises
         ------
         `ValueError`
-            If mode is not central, forward, backward or doublecentral
+            If mode is not forward, backward or central
         """
-        if mode == 'central':
-            kernel = torch.tensor((-1, 0, 1)) / 2
-        elif mode == 'forward':
+        if mode == 'forward':
             kernel = torch.tensor((0, -1, 1))
         elif mode == 'backward':
             kernel = torch.tensor((-1, 1, 0))
+        elif mode == 'central':
+            kernel = torch.tensor((-1, 0, 1)) / 2
         else:
             raise ValueError(f'mode should be one of (central, forward, backward), not {mode}')
         return kernel
@@ -43,7 +85,7 @@ class FiniteDifferenceOp(LinearOperator):
     def __init__(
         self,
         dim: Sequence[int],
-        mode: Literal['central', 'forward', 'backward'] = 'central',
+        mode: Literal['central', 'forward', 'backward'] = 'forward',
         pad_mode: Literal['zeros', 'circular'] = 'zeros',
     ) -> None:
         """Finite difference operator.
@@ -51,7 +93,7 @@ class FiniteDifferenceOp(LinearOperator):
         Parameters
         ----------
         dim
-            Dimension along which finite differences are calculated.
+            Dimensions along which finite differences are calculated.
         mode
             Type of finite difference operator
         pad_mode
