@@ -201,7 +201,7 @@ class ProximableFunctionalSeparableSum(Operator[Unpack[T], tuple[torch.Tensor]])
     ) -> ProximableFunctionalSeparableSum:
         """Separable sum of functionals.
         
-        ``f & g`` is a ~mrpro.operators.ProximableFunctional,
+        ``f & g`` is a ~mrpro.operators.ProximableFunctionalSeparableSum,
         with ``(f&g)(x,y) == f(x) + g(y)``.
         """
         if isinstance(other, ProximableFunctionalSeparableSum):
