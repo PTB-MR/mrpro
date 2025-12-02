@@ -5,7 +5,7 @@ from collections.abc import Sequence
 import torch
 
 from mrpro.operators.LinearOperator import LinearOperator
-from mrpro.utils import pad_or_crop
+from mrpro.utils.pad_or_crop import pad_or_crop
 
 
 class ZeroPadOp(LinearOperator):
