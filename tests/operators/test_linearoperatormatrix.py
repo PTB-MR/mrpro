@@ -295,6 +295,7 @@ def test_linearoperatormatrix_stacking_error():
     with pytest.raises(ValueError, match='Shape mismatch'):
         matrix1 | op  # vertical stacking with operator needs 1-column matrix
 
+
 def test_linearoperatormatrix_error_nonlinearop():
     """Test error if trying to create a LinearOperatorMatrix with non linear operator."""
     op: Any = [[MagnitudeOp()]]  # Any is used to hide this error from mypy
