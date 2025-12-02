@@ -382,7 +382,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
     def __and__(self, other: LinearOperator | LinearOperatorMatrix) -> Self:
         """Horizontal stacking."""
         if isinstance(other, LinearOperator):
-            if cols := self.shape[1] > 1:
+            if (cols := self.shape[1]) > 1:
                 raise ValueError(
                     f'Shape mismatch in horizontal stacking:cannot stack LinearOperator and matrix with {cols} columns.'
                 )
@@ -399,7 +399,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
 
     def __rand__(self, other: LinearOperator) -> Self:
         """Horizontal stacking."""
-        if cols := self.shape[1] > 1:
+        if (cols := self.shape[1]) > 1:
             raise ValueError(
                 f'Shape mismatch in horizontal stacking: cannot stack LinearOperator and matrix with {cols} columns.'
             )
