@@ -337,7 +337,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         See `mrpro.operators.LinearOperatorMatrix` for more information.
         """
         if not isinstance(other, mrpro.operators.LinearOperator):
-            return NotImplemented # type: ignore[unreachable]
+            return NotImplemented  # type: ignore[unreachable]
         operators = [[self, other]]
         return mrpro.operators.LinearOperatorMatrix(operators)
 
@@ -349,7 +349,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         See `mrpro.operators.LinearOperatorMatrix` for more information.
         """
         if not isinstance(other, mrpro.operators.LinearOperator):
-            return NotImplemented # type: ignore[unreachable]
+            return NotImplemented  # type: ignore[unreachable]
         operators = [[self], [other]]
         return mrpro.operators.LinearOperatorMatrix(operators)
 
