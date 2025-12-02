@@ -396,7 +396,6 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
                 )
             operators = [*self._operators, *other._operators]
             return self.__class__(operators)
-            
 
     def __ror__(self, other: LinearOperator) -> Self:
         """Vertical stacking."""
