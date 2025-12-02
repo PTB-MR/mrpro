@@ -336,7 +336,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         with ``(A&B)(x1,x2) == A(x1) + B(x2)``.
         See `mrpro.operators.LinearOperatorMatrix` for more information.
         """
-        if not isinstance(other, mrpro.operators.LinearOperator):
+        if not isinstance(other, LinearOperator):
             return NotImplemented  # type: ignore[unreachable]
         operators = [[self, other]]
         return mrpro.operators.LinearOperatorMatrix(operators)
@@ -348,7 +348,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         with ``(A|B)(x) == (A(x), B(x))``.
         See `mrpro.operators.LinearOperatorMatrix` for more information.
         """
-        if not isinstance(other, mrpro.operators.LinearOperator):
+        if not isinstance(other, LinearOperator):
             return NotImplemented  # type: ignore[unreachable]
         operators = [[self], [other]]
         return mrpro.operators.LinearOperatorMatrix(operators)
