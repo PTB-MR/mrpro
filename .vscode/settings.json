@@ -1,6 +1,5 @@
 {
     "autoDocstring.docstringFormat": "numpy-notypes",
-    "python.languageServer": "Pylance",
     "python.testing.unittestArgs": [
         "-v",
         "-s",

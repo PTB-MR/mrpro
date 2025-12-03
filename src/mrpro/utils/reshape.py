@@ -219,7 +219,9 @@ def reduce_view(x: torch.Tensor, dim: int | Sequence[int] | None = None) -> torc
 
 
 @lru_cache
-def _reshape_idx(old_shape: tuple[int, ...], new_shape: tuple[int, ...], old_stride: tuple[int, ...]) -> list[slice]:
+def _reshape_idx(
+    old_shape: tuple[int, ...], new_shape: tuple[int, ...], old_stride: tuple[int, ...]
+) -> tuple[slice, ...]:
     """Get reshape reduce index (cached helper function for `reshape_broadcasted`).
 
     This function tries to group axes from new_shape and old_shape into the smallest groups that have
@@ -265,7 +267,7 @@ def _reshape_idx(old_shape: tuple[int, ...], new_shape: tuple[int, ...], old_str
             # preserve dimension
             idx.extend([slice(None)] * len(group))
     idx = idx[::-1]  # we worked right to left, but our index should be left to right
-    return idx
+    return tuple(idx)
 
 
 def reshape_broadcasted(tensor: torch.Tensor, *shape: int) -> torch.Tensor:
@@ -394,10 +396,10 @@ def broadcasted_rearrange(
 
     """
     tensor = tensor.broadcast_to(broadcasted_shape) if broadcasted_shape is not None else tensor
-    # the broadcast-preservation is done by patching the reshape method of the tensor
-    original_reshape, tensor.reshape = tensor.reshape, lambda shape: reshape_broadcasted(tensor, *shape)  # type: ignore[method-assign, assignment]
+    # the broadcast-preservation is done by patching the reshape method of the einops backend
+    einops._backends.TorchBackend.reshape = lambda _, tensor, shape: reshape_broadcasted(tensor, *shape)  # type: ignore[method-assign]
     new_tensor = einops.repeat(tensor, pattern, **axes_lengths)  # allows both repeat and rearrange
-    tensor.reshape = original_reshape  # type: ignore[method-assign]
+    del einops._backends.TorchBackend.reshape  # resets to inherited method
     if reduce_views:
         new_tensor = reduce_view(new_tensor)
     return new_tensor
@@ -458,7 +460,7 @@ def broadcasted_concatenate(tensors: Sequence[torch.Tensor], dim: int, reduce_vi
             broadcasted_shape.append(tensors[0].size(n))
             idx.append(slice(None))
 
-    tensors = [t[idx] for t in tensors]
+    tensors = [t[tuple(idx)] for t in tensors]
     result = torch.cat(tensors, dim=dim)
 
     if not reduce_views:  # dimensions are already reduced, we would undo this here.

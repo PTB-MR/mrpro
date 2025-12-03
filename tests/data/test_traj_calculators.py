@@ -136,10 +136,10 @@ def test_KTrajectoryCartesian() -> None:
 
 
 def test_KTrajectoryCartesian_bipolar() -> None:
-    """Verify that the readout for the second part of a bipolar readout is reversed"""
-    n_k0 = 30
-    n_k1 = 20
-    n_k2 = 10
+    """Partial fourier and reversed readout"""
+    n_k0 = 428
+    n_k1 = 3
+    n_k2 = 2
     k2_idx = torch.arange(n_k2)[:, None, None]
     k1_idx = torch.arange(n_k1)[:, None]
 
@@ -149,15 +149,17 @@ def test_KTrajectoryCartesian_bipolar() -> None:
     trajectory_calculator = KTrajectoryCartesian()
     trajectory = trajectory_calculator(
         n_k0=n_k0,
-        k0_center=n_k0 // 2,
+        k0_center=172,
         k1_idx=k1_idx,
         k1_center=n_k1 // 2,
         k2_idx=k2_idx,
         k2_center=n_k2 // 2,
         reversed_readout_mask=reversed_readout_mask,
     )
-
-    torch.testing.assert_close(trajectory.kx[..., 0, :], torch.flip(trajectory.kx[..., 1, :], dims=(-1,)))
+    assert trajectory.kx[..., 0, 172] == 0  # normal readout
+    assert trajectory.kx[..., 0, 0] == -172
+    assert trajectory.kx[..., 1, 171] == 0  # reversed readout
+    assert trajectory.kx[..., 1, 0] == 171
 
 
 def test_KTrajectoryIsmrmrdRadial(ismrmrd_rad) -> None:
@@ -198,14 +200,9 @@ def test_KTrajectoryPulseq(pulseq_example_rad_seq) -> None:
     torch.testing.assert_close(trajectory.ky.to(torch.float32), ky_test.to(torch.float32), atol=1e-2, rtol=1e-3)
 
 
-@pytest.mark.parametrize(
-    'acceleration',
-    [
-        2,
-    ],
-)
-def test_KTrajectoryCartesian_random(acceleration: int, n_k=64) -> None:
+def test_KTrajectoryCartesian_random(acceleration: int = 2, n_k: int = 64) -> None:
     """Test the generation of a 2D gaussian variable density pattern"""
+
     traj = KTrajectoryCartesian.gaussian_variable_density(n_k, acceleration=acceleration, n_other=(2, 3), n_center=8)
 
     assert traj.kx.shape == (1, 1, 1, 1, 1, n_k)
@@ -220,6 +217,18 @@ def test_KTrajectoryCartesian_random(acceleration: int, n_k=64) -> None:
         assert center_idx in lines1
 
 
+def test_KTrajectoryCartesian_fullysampled() -> None:
+    """Test the generation of a fully sampled Cartesian trajectory"""
+    traj = KTrajectoryCartesian.fullysampled(SpatialDimension(10, 64, 64))
+    assert traj.kx.shape == (1, 1, 1, 1, 64)
+    assert traj.ky.shape == (1, 1, 1, 64, 1)
+    assert traj.kz.shape == (1, 1, 10, 1, 1)
+    assert len(traj.kx.unique()) == 64
+    assert len(traj.ky.unique()) == 64
+    assert len(traj.kz.unique()) == 10
+    assert traj.kx.diff().unique() == 1
+
+
 @pytest.mark.parametrize('acceleration', [1, 16])
 def test_KTrajectoryCartesian_random_edgecases(acceleration: int, n_k=128) -> None:
     """Test the generation of a 2D gaussian variable density pattern"""
@@ -232,7 +241,7 @@ def test_KTrajectoryCartesian_random_edgecases(acceleration: int, n_k=128) -> No
         assert center_idx in traj.ky.ravel()
 
 
-def test_KTrajectorySpiral():
+def test_KTrajectorySpiral() -> None:
     """Test the generation of a 2D spiral trajectory"""
     trajectory_calculator = KTrajectorySpiral2D()
     trajectory = trajectory_calculator(

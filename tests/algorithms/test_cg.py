@@ -127,7 +127,7 @@ def test_cg_stopping_after_one_iteration(system) -> None:
 @pytest.mark.parametrize('use_preconditioner', [True, False], ids=['with preconditioner', 'without preconditioner'])
 def test_compare_cg_to_scipy(system, max_iterations: int, use_preconditioner: bool) -> None:
     """Test if our implementation is close to the one of scipy."""
-    operator, right_hand_side, solution, initial_value = system
+    operator, right_hand_side, _, initial_value = system
 
     if operator.matrix.ndim == 2:
         operator_sp = operator.matrix.numpy()
@@ -181,7 +181,7 @@ def test_invalid_shapes(system) -> None:
 def test_callback(system) -> None:
     """Test if the callback function is called if a callback function is set."""
     # create operator, right-hand side
-    operator, right_hand_side, _, initial_value = system
+    operator, right_hand_side, _, _ = system
 
     # callback function; if the function is called during the iterations, the
     # test is successful

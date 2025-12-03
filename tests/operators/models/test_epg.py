@@ -269,13 +269,13 @@ def test_EpgFisp_cuda(parameter_shape: Sequence[int] = (2,)) -> None:
     assert signal.isfinite().all()
 
     # Create on GPU and run on GPU
-    model = EpgFispModel(flip_angles.cuda(), rf_phases.cuda(), tr.cuda(), te.cuda())
+    model = EpgFispModel(flip_angles.cuda(), rf_phases.cuda(), tr, te.cuda())
     (signal,) = model(m0.cuda(), t1.cuda(), t2.cuda(), relative_b1.cuda())
     assert signal.is_cuda
     assert signal.isfinite().all()
 
     # Create on GPU, transfer to CPU and run on CPU
-    model = EpgFispModel(flip_angles.cuda(), rf_phases.cuda(), tr.cuda(), te.cuda())
+    model = EpgFispModel(flip_angles.cuda(), rf_phases.cuda(), tr.cuda(), te)
     model.cpu()
     (signal,) = model(m0, t1, t2, relative_b1)
     assert signal.is_cpu

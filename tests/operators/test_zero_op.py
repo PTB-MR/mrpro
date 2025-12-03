@@ -95,7 +95,7 @@ def test_zero_op_adjoint_scalar() -> None:
     u = rng.complex64_tensor(2, 3, 4)
     v = rng.complex64_tensor(2, 3, 4)
     # We can't test the operator directly, because the adjointness is only after
-    # broadcasting the scalar to the shape of the input and expading the dtype.
+    # broadcasting the scalar to the shape of the input and expanding the dtype.
     # We achieve this by instead testing ZeroOp + IdentityOp
     # We can't use '+' because it would short-circuit to IdentityOp,
     # as ZeroOp is the neutral element of the addition.
