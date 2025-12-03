@@ -13,6 +13,26 @@ from mrpro.utils.reshape import unsqueeze_tensors_right
 from mrpro.utils.TensorAttributeMixin import TensorAttributeMixin
 
 
+def move_tensors_to_gpu_if_any_on_gpu(*tensors: torch.Tensor) -> tuple[torch.Tensor, ...]:
+    """Move tensors to the GPU if any of them is on the GPU.
+
+    Parameters
+    ----------
+    tensors
+        Tensors to move to the GPU if any of them is on the GPU. If none of the tensors is on the GPU, they are
+        returned unchanged.
+
+    Returns
+    -------
+        List of tensors moved to the GPU if any of them is on the GPU, otherwise the original tensors.
+    """
+    for t in tensors:
+        if t.is_cuda:
+            device = t.device
+            return tuple(tensor.to(device) for tensor in tensors)
+    return tensors
+
+
 class Parameters(Dataclass):
     """Tissue parameters for EPG simulation."""
 
@@ -119,14 +139,14 @@ def rf(state: torch.Tensor, matrix: torch.Tensor) -> torch.Tensor:
     Parameters
     ----------
     state
-        EPG configuration states. Shape `..., 3 (f_plus, f_minus, z), n`
+        EPG configuration states. Shape `(..., 3 (f_plus, f_minus, z), n)`
     matrix
         Rotation matrix describing the mixing of the EPG configuration states due to an RF pulse.
-        Shape `..., 3, 3`
+        Shape `(..., 3, 3)`
 
     Returns
     -------
-        EPG configuration states after RF pulse. Shape `..., 3 (f_plus, f_minus, z), n`
+        EPG configuration states after RF pulse. Shape `(..., 3 (f_plus, f_minus, z), n)`
     """
     return matrix.to(state) @ state
 
@@ -138,14 +158,14 @@ def gradient_dephasing(state: torch.Tensor) -> torch.Tensor:
     Parameters
     ----------
     state
-        EPG configuration states. Shape `..., 3 (f_plus, f_minus, z), n`
+        EPG configuration states. Shape `(..., 3 (f_plus, f_minus, z), n)`
         with n being the number of configuration states > 1
 
     Returns
     -------
-        EPG configuration states after gradient. Shape `..., 3 (f_plus, f_minus, z), n`
+        EPG configuration states after gradient. Shape `(..., 3 (f_plus, f_minus, z), n)`
     """
-    zero = state.new_zeros(state.shape[:-2] + (1,))
+    zero = state.new_zeros(state.shape[:-2] + (1,))  # noqa: RUF005 # not supported in torchscript
     f_plus = torch.cat((state[..., 1, 1:2].conj(), state[..., 0, :-1]), dim=-1)
     f_minus = torch.cat((state[..., 1, 1:], zero), -1)
     z = state[..., 2, :]
@@ -182,7 +202,7 @@ def relax(states: torch.Tensor, relaxation_matrix: torch.Tensor, t1_recovery: bo
     Parameters
     ----------
     states
-        EPG configuration states. Shape `..., 3 (f_plus, f_minus, z), n`
+        EPG configuration states. Shape `(..., 3 (f_plus, f_minus, z), n)`
     relaxation_matrix
         matrix describing EPG relaxation
     t1_recovery
@@ -191,7 +211,7 @@ def relax(states: torch.Tensor, relaxation_matrix: torch.Tensor, t1_recovery: bo
     Returns
     -------
         EPG configuration states after relaxation and recovery.
-        Shape `..., 3 (f_plus, f_minus, z), n`
+        Shape `(..., 3 (f_plus, f_minus, z), n)`
     """
     relaxation_matrix = relaxation_matrix.to(states)
     states = relaxation_matrix[..., None] * states
@@ -224,7 +244,7 @@ def initial_state(
 
     Returns
     -------
-        Initial EPG state tensor. Shape `*shape, 3 (f_plus, f_minus, z), n`
+        Initial EPG state tensor. Shape `(*shape, 3 (f_plus, f_minus, z), n)`
     """
     if n_states < 2:
         raise ValueError('Number of states should be at least 2.')
@@ -420,6 +440,11 @@ class FispBlock(EPGBlock):
                 f'Shapes of flip_angles ({flip_angles_.shape}), rf_phases ({rf_phases_.shape}), te ({te_.shape}) and '
                 f'tr ({tr_.shape}) cannot be broadcasted.',
             ) from None
+
+        self.flip_angles, self.rf_phases, self.te, self.tr = move_tensors_to_gpu_if_any_on_gpu(
+            self.flip_angles, self.rf_phases, self.te, self.tr
+        )
+
         if (self.te > self.tr).any():
             raise ValueError(f'echotime ({self.te}) should be smaller than repetition time ({self.tr}).')
         if (self.te < 0).any():
@@ -612,7 +637,7 @@ class DelayBlock(EPGBlock):
 
 
 class EPGSequence(torch.nn.ModuleList, EPGBlock):
-    """Sequene of EPG blocks.
+    """Sequence of EPG blocks.
 
     A sequence as multiple blocks, such as preparation pulses, acquisition blocks and delays.
 
@@ -661,8 +686,8 @@ class EPGSequence(torch.nn.ModuleList, EPGBlock):
             EPG configuration states after the sequence of blocks and the acquired signals
         """
         signals: list[torch.Tensor] = []
-        block: EPGBlock
         for block in self:
+            assert isinstance(block, EPGBlock)  # mypy # noqa: S101
             states, signal = block(parameters, states)
             signals.extend(signal)
         return states, tuple(signals)
@@ -670,7 +695,7 @@ class EPGSequence(torch.nn.ModuleList, EPGBlock):
     @property
     def duration(self) -> torch.Tensor:
         """Duration of the block."""
-        return sum(block.duration for block in self)
+        return sum((block.duration for block in self if isinstance(block, EPGBlock)), start=torch.tensor(0.0))
 
 
 __all__ = [

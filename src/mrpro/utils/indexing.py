@@ -383,7 +383,7 @@ class Indexer:
                 fancy_index.append(idx)
             tensor_index += 1
 
-        tensor = tensor[fancy_index]
+        tensor = tensor[tuple(fancy_index)]
 
         if self.move_axes[0]:
             # handle the special case of a single and integer index, where we need to move the new
