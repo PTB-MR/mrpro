@@ -131,7 +131,7 @@ from cmap import Colormap
 
 def show_image(t1: torch.Tensor, t2: torch.Tensor) -> None:
     """Show the cMRF $T_1$ and $T_2$ maps."""
-    fig, ax = plt.subplots(2, 1)
+    _, ax = plt.subplots(2, 1)
 
     im = ax[0].imshow(t1.numpy(force=True), vmin=0, vmax=2, cmap=Colormap('lipari').to_mpl())
     ax[0].set_title('cMRF T1 (s)')

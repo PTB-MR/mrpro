@@ -16,7 +16,7 @@ jobs:
       imagenames: ${{ steps.set-matrix.outputs.imagenames }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Retrieve Docker Image Names
         id: set-matrix
@@ -62,7 +62,7 @@ jobs:
       options: --user runner
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install MRpro and Dependencies
         # use cpu version of torch
@@ -91,7 +91,7 @@ jobs:
 
       - name: Upload PyTest Coverage Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: pytest-report-${{ matrix.imagename }}
           path: |

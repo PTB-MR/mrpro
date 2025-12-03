@@ -576,7 +576,8 @@ class KData(Dataclass):
     ) -> Self:
         """Select a subset from the other dimension of KData.
 
-        Note: This function will be deprecated in the future.
+        .. warning::
+            This function will be deprecated in the future.
 
         Parameters
         ----------
