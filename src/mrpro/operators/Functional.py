@@ -177,7 +177,7 @@ class ProximableFunctional(Operator[torch.Tensor, tuple[torch.Tensor]], ABC):
             return NotImplemented
         return ScaledProximableFunctional(self, scalar)
 
-    def __or__(
+    def __and__(
         self, other: ProximableFunctional
     ) -> mrpro.operators.ProximableFunctionalSeparableSum[torch.Tensor, torch.Tensor]:
         """Create a ProximableFunctionalSeparableSum object from two proximable functionals.

@@ -32,7 +32,7 @@ def test_optimizer_op_gradcheck() -> None:
         signal: torch.Tensor,
     ) -> FunctionalType[torch.Tensor, torch.Tensor]:
         dc = L2NormSquared(signal) @ InversionRecovery((0.5, 1.0, 1.5, 3)).double()
-        reg = lambda_m0 * L2NormSquared(m0_reg) | lambda_t1 * L2NormSquared(t1_reg)
+        reg = lambda_m0 * L2NormSquared(m0_reg) & lambda_t1 * L2NormSquared(t1_reg)
         return (dc + reg) @ constraints_op
 
     op = OptimizerOp(
