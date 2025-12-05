@@ -1416,7 +1416,7 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
               `q[i]` and `output` contains `N` rotations.
         """
         if not isinstance(other, Rotation):
-            return NotImplemented  # type: ignore[unreachable]
+            return NotImplemented
 
         p = self._quaternions
         q = other._quaternions
