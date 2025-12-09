@@ -6,30 +6,8 @@ from typing import Literal
 
 import torch
 
+from mrpro.utils.indexing import normalize_index
 from mrpro.utils.reshape import unsqueeze_left
-
-
-def normalize_index(ndim: int, index: int) -> int:
-    """Normalize possibly negative indices.
-
-    Parameters
-    ----------
-    ndim
-        number of dimensions
-    index
-        index to normalize. negative indices count from the end.
-
-    Raises
-    ------
-    `IndexError`
-        if index is outside ``[-ndim,ndim)``
-    """
-    if 0 <= index < ndim:
-        return index
-    elif -ndim <= index < 0:
-        return ndim + index
-    else:
-        raise IndexError(f'Invalid index {index} for {ndim} data dimensions')
 
 
 def pad_or_crop(
