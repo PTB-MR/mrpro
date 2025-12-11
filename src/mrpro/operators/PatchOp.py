@@ -61,18 +61,30 @@ class PatchOp(LinearOperator):
         self.dilation = check(dilation, 'dilation')
         self.domain_size = check(domain_size, 'domain_size') if domain_size is not None else None
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Extract patches.
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Extract N-dimensional patches from an input tensor using a sliding window.
 
         Parameters
         ----------
         x
-            Input tensor to extract patches from.
+            Input tensor from which to extract patches.
 
         Returns
         -------
-            Tensor with shape
-            `(n_patches,... patch_size_1, ... patch_size_2, ...)`
+            A tensor containing the extracted patches. The first dimension
+            represents the number of patches, followed by the original
+            tensor dimensions (excluding those used for patching), and then
+            the patch dimensions themselves.
+            Shape: `(n_patches, ... , patch_size_dim1, patch_size_dim2, ...)`.
+        """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply forward of PatchOp.
+
+        .. note::
+            Prefer calling the instance of the PatchOp operator as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         domain_size = tuple(x.shape[dim] for dim in self.dim)
         if self.domain_size is None:
@@ -95,18 +107,23 @@ class PatchOp(LinearOperator):
         self,
         patches: torch.Tensor,
     ) -> tuple[torch.Tensor,]:
-        """Perform the adjoint operation, i.e. assemble the patches.
+        """Assemble patches back into an image (adjoint operation).
+
+        This method reconstructs an image by summing the provided patches
+        at their respective locations, effectively reversing the patch
+        extraction process. Overlapping areas are summed.
 
         Parameters
         ----------
         patches
-            Patches to assemble. Shape `(n_patches,... patch_size_1, ... patch_size_2, ...)`
+            Tensor of patches to be assembled. Expected shape is
+            `(n_patches, ..., patch_size_dim1, patch_size_dim2, ...)`.
 
         Returns
         -------
-            Assembled image. The patch dimension will be removed and `patch_size_n` will be replaced by
-            `domain_size[n]`, i.e. matching the original image shape.
-
+            The assembled image. Its shape will match the original image
+            from which patches would have been extracted, with patch dimensions
+            replaced by the original domain sizes along those dimensions.
         """
         if self.domain_size is None:
             raise ValueError('Domain size is not set. Please call forward first or set it at initialization.')

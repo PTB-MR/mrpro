@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import operator
 from collections.abc import Callable, Iterator, Sequence
-from functools import reduce
+from functools import cached_property, reduce
 from types import EllipsisType
 from typing import cast
 
@@ -66,17 +66,33 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
         """Shape of the Operator Matrix (rows, columns)."""
         return self._shape
 
-    def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
-        """Apply the operator to the input.
+    def __call__(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        """Apply the linear operator matrix to a sequence of input tensors.
+
+        The i-th output tensor is calculated as the sum over j of
+        `operators[i][j](x[j])`, where `operators[i][j]` is the
+        linear operator in the i-th row and j-th column, and `x[j]` is
+        the j-th input tensor.
 
         Parameters
         ----------
-        x
-            Input tensors. Requires the same number of tensors as the operator has columns.
+        *x
+            Input tensors. The number of input tensors must match the
+            number of columns in the operator matrix.
 
         Returns
         -------
-            Output tensors. The same number of tensors as the operator has rows.
+            Output tensors. The number of output tensors will match the
+            number of rows in the operator matrix.
+        """
+        return super().__call__(*x)
+
+    def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        """Apply forward of LinearOperatorMatrix.
+
+        .. note::
+            Prefer calling the instance of the LinearOperatorMatrix operator as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         if len(x) != self.shape[1]:
             raise ValueError('Input should be the same number of tensors as the LinearOperatorMatrix has columns.')
@@ -144,7 +160,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
         return f'LinearOperatorMatrix(shape={self._shape}, operators={self._operators})'
 
     # Note: The type ignores are needed because we currently cannot do arithmetic operations with non-linear operators.
-    def __add__(self, other: Self | LinearOperator | torch.Tensor) -> Self:  # type: ignore[override]
+    def __add__(self, other: Self | LinearOperator | torch.Tensor | complex) -> Self:  # type: ignore[override]
         """Addition."""
         operators: list[list[LinearOperator]] = []
         if isinstance(other, LinearOperatorMatrix):
@@ -152,7 +168,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
                 raise ValueError('OperatorMatrix shapes do not match.')
             for self_row, other_row in zip(self._operators, other._operators, strict=False):
                 operators.append([s + o for s, o in zip(self_row, other_row, strict=False)])
-        elif isinstance(other, LinearOperator | torch.Tensor):
+        elif isinstance(other, LinearOperator | torch.Tensor | complex):
             if not self.shape[0] == self.shape[1]:
                 raise NotImplementedError('Cannot add a LinearOperator to a non-square OperatorMatrix.')
             for i, self_row in enumerate(self._operators):
@@ -161,14 +177,14 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
             return NotImplemented  # type: ignore[unreachable]
         return self.__class__(operators)
 
-    def __radd__(self, other: Self | LinearOperator | torch.Tensor) -> Self:
+    def __radd__(self, other: Self | LinearOperator | torch.Tensor | complex) -> Self:
         """Right addition."""
         return self.__add__(other)
 
     def __mul__(self, other: torch.Tensor | Sequence[torch.Tensor | complex] | complex) -> Self:
         """LinearOperatorMatrix*Tensor multiplication.
 
-        Example: ([A,B]*c)(x) = [A*c, B*c](x) = A(c*x) + B(c*x)
+        Example: :math:`([A,B]c)(x) = [Ac, Bc](x) = A(cx) + B(cx)`
         """
         if isinstance(other, torch.Tensor | complex | float | int):
             other_: Sequence[torch.Tensor | complex] = (other,) * self.shape[1]
@@ -184,7 +200,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
     def __rmul__(self, other: torch.Tensor | Sequence[torch.Tensor] | complex) -> Self:
         """Tensor*LinearOperatorMatrix multiplication.
 
-        Example: (c*[A,B])(x) = [c*A, c*B](x) = c*A(x) + c*B(x)
+        Example: (c[A,B])(x) = [cA, cB](x) = cA(x) + cB(x)
         """
         if isinstance(other, torch.Tensor | complex | float | int):
             other_: Sequence[torch.Tensor | complex] = (other,) * self.shape[0]
@@ -225,17 +241,37 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
         """Adjoints of the operators."""
         return self.__class__([[op.H for op in row] for row in zip(*self._operators, strict=True)])
 
+    @cached_property
+    def gram(self) -> Self:
+        """Gram matrix of the operators."""
+        n, m = self.shape
+        operators: list[list[LinearOperator]] = [[ZeroOp() for _ in range(m)] for _ in range(m)]
+        for j in range(m):
+            operators[j][j] = reduce(operator.add, (self._operators[i][j].gram for i in range(n)), ZeroOp())
+            for k in range(j + 1, m):
+                operators[j][k] = reduce(
+                    operator.add, (self._operators[i][j].H @ self._operators[i][k] for i in range(n)), ZeroOp()
+                )
+                operators[k][j] = operators[j][k].H
+        return self.__class__(operators)
+
     def adjoint(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
-        """Apply the adjoint of the operator to the input.
+        """Apply the adjoint of the linear operator matrix.
+
+        This is achieved by applying the matrix composed of the adjoints of each
+        individual operator (i.e., `self.H`) to the input tensors `*x`.
+        The k-th output tensor is `sum_i self.operators[i][k].H(x[i])`.
 
         Parameters
         ----------
-        x
-            Input tensors. Requires the same number of tensors as the operator has rows.
+        *x
+            Input tensors. The number of input tensors must match the
+            number of rows in the original operator matrix.
 
         Returns
         -------
-            Output tensors. The same number of tensors as the operator has columns.
+            Output tensors. The number of output tensors will match the
+            number of columns in the original operator matrix.
         """
         return self.H(*x)
 
@@ -265,9 +301,9 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
         absolute_tolerance: float = 1e-5,
         callback: Callable[[torch.Tensor], None] | None = None,
     ) -> torch.Tensor:
-        """Upper bound of operator norm of the Matrix.
+        r"""Upper bound of operator norm of the Matrix.
 
-        Uses the bounds :math:`||[A, B]^T|||<=sqrt(||A||^2 + ||B||^2)` and :math:`||[A, B]|||<=max(||A||,||B||)`
+        Uses the bounds :math:`||[A, B]^T||\leq\sqrt{(||A||^2 + ||B||^2)}` and :math:`||[A, B]||\leq\max(||A||,||B||)`
         to estimate the operator norm of the matrix.
         First,  operator_norm is called on each element of the matrix.
         Next, the norm is estimated for each column using the first bound.

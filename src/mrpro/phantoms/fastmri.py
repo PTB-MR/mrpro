@@ -70,7 +70,7 @@ class FastMRIKDataDataset(torch.utils.data.Dataset):
             slice_idx: int | slice = slice(None)
         else:
             file_idx = int(torch.searchsorted(self._accum_slices, idx + 1))
-            slice_idx = idx - self._accum_slices[file_idx]
+            slice_idx = int(idx - self._accum_slices[file_idx])
         with h5py.File(self._filenames[file_idx], 'r') as file:
             # data is sometimes zero-padded, we remove the padding
             data = torch.as_tensor(np.array(file['kspace'][slice_idx]))
@@ -89,7 +89,7 @@ class FastMRIKDataDataset(torch.utils.data.Dataset):
                 n_k0=n_k0,
                 k0_center=n_k0 // 2,
                 k1_idx=info.idx.k1,
-                k1_center=n_k1 // 2,
+                k1_center=first + n_k1 // 2,
                 k2_idx=torch.tensor(0),
                 k2_center=0,
             )
@@ -130,7 +130,7 @@ class FastMRIImageDataset(torch.utils.data.Dataset):
             individual files.
         coil_combine : bool
             Whether to perform coil combination sensitivity maps obtained using the Inati method.
-            Note that this is **not** comonly used as the target for FastMRI challenges. Instead,
+            Note that this is **not** commonly used as the target for FastMRI challenges. Instead,
             as target the RSS combination of the coil images is used.
         augment
             Augmentation function. Will be called with the image and the index of the slices.
@@ -212,4 +212,4 @@ class FastMRIImageDataset(torch.utils.data.Dataset):
                 img = (img * csm.conj()).sum(dim=0, keepdim=True)
             if self.augment is not None:
                 img = self.augment(img, idx)
-            return rearrange(img, 'coils y x -> 1 coils 1 y x')  # , rearrange(csm, 'coils y x -> 1 coils 1 y x')
+            return rearrange(img, 'coils y x -> 1 coils 1 y x')

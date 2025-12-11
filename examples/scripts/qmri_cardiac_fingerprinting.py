@@ -11,8 +11,9 @@
 # $T_1$ and $T_2$ maps are estimated. This example uses data from [Schuenke et al., 2024](in submission) of a phantom
 # consisting of 9 tubes. Average $T_1$ and $T_2$ are calculated for each tube.
 #
-# The fingerprinting sequence, as described by [Hamilton et al., 2017](https://doi.org/10.1002/mrm.26668) and
-# [Schuenke et al., 2024](in submission), consists of three repetitions of the following 5-block structure:
+# The fingerprinting sequence, as described by [Hamilton et al., 2017](https://doi.org/10.1002/mrm.26216) and
+# [Schuenke et al., 2024](https://doi.org/10.1007/s10334-025-01269-9), consists of three repetitions of the following
+# 5-block structure:
 # %%
 # Block 0          Block 1          Block 2          Block 3          Block 4
 # R-peak           R-peak           R-peak           R-peak           R-peak
@@ -43,11 +44,10 @@ from pathlib import Path
 
 import zenodo_get
 
-dataset = '15182376'
-
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
-zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
+zenodo_get.download(record='15726937', retry_attempts=5, output_dir=data_folder)
+
 
 # %% [markdown]
 # ## Reconstruct qualitative images
@@ -94,7 +94,7 @@ img = recon(kdata_split)
 # %%
 model = mrpro.operators.AveragingOp(dim=0, idx=split_indices) @ mrpro.operators.models.CardiacFingerprinting(
     kdata.header.acq_info.acquisition_time_stamp.squeeze(),
-    echo_time=0.00155,
+    echo_time=0.001555,
     repetition_time=0.01,
     t2_prep_echo_times=(0.03, 0.05, 0.1),
 )
@@ -131,16 +131,14 @@ from cmap import Colormap
 
 def show_image(t1: torch.Tensor, t2: torch.Tensor) -> None:
     """Show the cMRF $T_1$ and $T_2$ maps."""
-    cmap_t1 = Colormap('lipari')
-    cmap_t2 = Colormap('navia')
-    fig, ax = plt.subplots(2, 1)
+    _, ax = plt.subplots(2, 1)
 
-    im = ax[0].imshow(t1.numpy(force=True), vmin=0, vmax=2, cmap=cmap_t1.to_mpl())
+    im = ax[0].imshow(t1.numpy(force=True), vmin=0, vmax=2, cmap=Colormap('lipari').to_mpl())
     ax[0].set_title('cMRF T1 (s)')
     ax[0].set_axis_off()
     plt.colorbar(im)
 
-    im = ax[1].imshow(t2.numpy(force=True), vmin=0, vmax=0.2, cmap=cmap_t2.to_mpl())
+    im = ax[1].imshow(t2.numpy(force=True), vmin=0, vmax=0.2, cmap=Colormap('navia').to_mpl())
     ax[1].set_title('cMRF T2 (s)')
     ax[1].set_axis_off()
     plt.colorbar(im)

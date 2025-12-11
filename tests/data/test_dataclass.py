@@ -380,6 +380,23 @@ def test_dataclass_split_invalid() -> None:
         a.split(dim=0, size=-2)
 
 
+def test_dataclass_stack() -> None:
+    """Test stacking of dataclasses."""
+    a = A()
+    b = A()
+    c = A()
+
+    stacked1 = a.stack(b, c)
+    assert stacked1.shape == (1, 10, 20)  # repeats get reduced.
+
+    a.floattensor = torch.ones(10, 20) * 1
+    b.floattensor = torch.ones(10, 20) * 2
+    c.floattensor = torch.ones(10, 20) * 3
+    stacked2 = a.stack(b, c)
+    assert stacked2.shape == (3, 10, 20)  # different values, no reduction.
+    assert stacked2.split(dim=0, size=1) == (a[None], b[None], c[None])
+
+
 def test_dataclass_concatenate() -> None:
     """Test concatenation of dataclasses."""
     a = A()
@@ -402,6 +419,14 @@ def test_dataclass_equal() -> None:
     assert b == a
     b.floattensor[0, 0] = 123
     assert b != a  # different values
+
+
+def test_dataclass_swapdims() -> None:
+    """Test swapdims method of the dataclass."""
+    a = A()
+    b = a.swapdims(0, 1)
+    assert b.shape == (20, 10)
+    assert a.shape == (10, 20)
 
 
 def test_dataclass_rearrange_permute() -> None:
@@ -431,3 +456,26 @@ def test_dataclass_rearrange_einops() -> None:
     a = A()
     with pytest.raises(NotImplementedError, match='rearrange method'):
         einops.rearrange(a, 'dim1 dim2 -> dim2 dim1')
+
+
+def test_dataclass_shape() -> None:
+    """Test shape property of the dataclass."""
+    a = A()
+    assert a.shape == (10, 20)
+    assert len(a) == 10
+
+
+def test_dataclass_detach() -> None:
+    """Test detach method of the dataclass."""
+    b = B()
+    original = b.child.floattensor.clone()
+    parameter1 = torch.tensor(2.0, requires_grad=True)
+    parameter2 = torch.tensor(3.0, requires_grad=True)
+    b.child.floattensor = b.child.floattensor * parameter1
+    detached = b.detach()
+    detached.child.floattensor = detached.child.floattensor * parameter2
+    detached.child.floattensor.sum().backward()
+
+    torch.testing.assert_close(b.child.floattensor, original * parameter1 * parameter2, msg='data is not shared.')
+    assert parameter1.grad is None, 'detached after multiplication -> no gradient should be computed'
+    assert parameter2.grad is not None, 'used after the detach -> gradient should be computed'

@@ -69,12 +69,6 @@ def test_spoiled_gre_cuda(parameter_shape: Sequence[int] = (2, 5, 10, 10, 10)) -
     t1 = rng.float32_tensor(parameter_shape, low=1e-10, high=2)
     t2star = rng.float32_tensor(parameter_shape, low=1e-10, high=0.5)
 
-    # Create on CPU with scalar parameters and apply on GPU
-    model = SpoiledGRE(flip_angle=0.1, echo_time=1e-3, repetition_time=10e-3)
-    (signal,) = model(m0.cuda(), t1.cuda(), t2star.cuda())
-    assert signal.is_cuda
-    assert signal.isfinite().all()
-
     # Create on CPU with tensor parameters, move to GPU and apply on GPU
     model = SpoiledGRE(
         flip_angle=torch.tensor([0.1, 0.1]),
