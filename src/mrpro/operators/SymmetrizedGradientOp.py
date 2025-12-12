@@ -11,56 +11,37 @@ from mrpro.operators.RearrangeOp import RearrangeOp
 
 
 class SymmetrizedGradientOp(LinearOperator):
-    r"""Discrete symmetrized gradient operator based on finite differences.
+    r"""Discrete symmetrized gradient operator using finite differences.
 
-    This pointwise operator, denoted as :math:`\mathcal{E}_h`, acts on a discrete vector field defined on
-    a regular :math:`d`-dimensional grid and returns, at each pixel or voxel, the symmetric part of
-    the discrete gradient of the field (with respect to a a user-selected set of coordinate directions ``dim``).
-    In other words, this operator takes, at each pixel, the matrix of directional finite differences of the
-    vector field (along the active directions ``dim``) and symmetrizes it by averaging each pair of entries
-    ``(i, j)`` and ``(j, i)``.
+    Based on finite differences along the axes listed in ``dim``
+    (e.g. ``dim=(-2, -1)`` for the last two axes, see :class:`mrpro.operators.FiniteDifferenceOp`),
+    this pointwise operator computes the symmetrized gradient of a discrete vector field,
+    i.e. a :math:`(d+1)`-dimensional tensor ``v`` (``v.shape[0] == len(dim)``),
+    where each ``v[j]`` is a :math:`d`-dimensional vector component.
+    The output is a :math:`(d+2)`-dimensional tensor ``w``
+    (``w.shape[0] == w.shape[1] == len(dim)``) where each ``w[i, j]``
+    contains the symmetric part of the discrete gradient of ``v``,
+    computed along the axes listed in ``dim``.
+    Note that ``dim`` must not contain the :math:`0^{\text{th}}` axis.
 
-    Let :math:`v : \Omega_h \subset \mathbb{Z}^d \to \mathcal{K}^d` be a discrete vector field defined on
-    an image grid :math:`\Omega_h` (equivalently, a stack of :math:`d` scalar images, for example
-    the auxiliary field in TGV), with values in :math:`\mathcal{K} \in \{\mathbb{R}, \mathbb{C}\}`.
-    Let :math:`\nabla_h v` denote the discrete gradient obtained by applying the finite difference operator
-    :class:`mrpro.operators.FiniteDifferenceOp`.
-    For each grid point :math:`x \in \Omega_h` the discrete symmetrized gradient is defined by
+    The symmetrized gradient ``E(v)`` using the finite difference operator ``nabla`` can be written as
 
-    .. math::
+    .. code-block:: python
 
-        \mathcal{E}_h v(x) = \frac{1}{2} \bigl( \nabla_h v(x) + \nabla_h v(x)^{\top} \bigr).
+        w = E(v) = 0.5 * (nabla(v) + nabla(v).transpose(0, 1))
 
-    Again, note that the operator acts pointwise, meaning that at each grid point :math:`x` it takes
-    the local finite difference matrix :math:`\nabla_h v(x)` and replaces it by
-    its symmetric part :math:`\frac{1}{2}(\nabla_h v(x) + \nabla_h v(x)^{\top})`.
+    or more explicitly as
 
-    In the continuous setting, for a vector field :math:`v : \Omega \subset \mathbb{R}^d \to \mathcal{K}^d`,
-    the symmetrized gradient :math:`\mathcal{E} v` is given by
+    .. code-block:: python
 
-    .. math::
+        w[i, j] = E(v)[i, j] = 0.5 * (nabla(v)[i, j] + nabla(v)[j, i])
 
-        \mathcal{E} v(x) = \frac{1}{2} \bigl( \nabla v(x) + \nabla v(x)^{\top} \bigr),
+    for every ``i``, ``j`` in ``[0, ..., len(dim) - 1]``.
 
-    where :math:`\nabla v(x)` is the matrix of partial derivatives :math:`(\partial_{x_i} v_j(x))_{i,j=1}^d`.
-    The discrete symmetrized gradient  operator :math:`\mathcal{E}_h` implemented here is the standard finite
-    difference discretisation of :math:`\mathcal{E}`, obtained by replacing :math:`\nabla` with :math:`\nabla_h`.
+    Finite difference modes and boundary handling follow :class:`mrpro.operators.FiniteDifferenceOp`.
 
-    In 2D, for example, a vector field :math:`v(x, y) = (v_1(x, y), v_2(x, y))` has continuous symmetrized gradient
-
-    .. math::
-
-        \mathcal{E} v(x, y)
-        = \frac{1}{2}
-          \begin{pmatrix}
-            \partial_x v_1 & \partial_y v_1 + \partial_x v_2 \\
-            \partial_y v_1 + \partial_x v_2 & \partial_y v_2
-          \end{pmatrix},
-
-    while :math:`\mathcal{E}_h v` uses the corresponding finite differences in place of the partial derivatives.
-
-    This discrete symmetrized gradient is used, for example, in Total Generalized Variation (TGV) regularization with
-    the 2D case shown in [TGV]_.
+    A common use case of the symmetrized gradient is Total Generalized Variation (TGV) regularization,
+    with the 2D case (i.e. ``len(dim) == 2``) shown in [TGV]_.
 
     References
     ----------
@@ -76,12 +57,13 @@ class SymmetrizedGradientOp(LinearOperator):
         mode: Literal['central', 'forward', 'backward'] = 'backward',
         pad_mode: Literal['zeros', 'circular'] = 'zeros',
     ) -> None:
-        """Symmetrized gradient operator.
+        r"""Symmetrized gradient operator.
 
         Parameters
         ----------
         dim
             Dimensions along which finite differences are calculated.
+            It must not contain the :math:`0^{\text{th}}` axis.
         mode
             Type of finite difference operator
         pad_mode
@@ -93,20 +75,21 @@ class SymmetrizedGradientOp(LinearOperator):
         self._operator = 0.5 * (1 + transpose_op) @ finite_difference_op
 
     def __call__(self, v: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply forward of symmetrized gradient operator.
+        r"""Apply forward of symmetrized gradient operator.
 
-        Since v is assumed to be the finite difference of a tensor d-dimensional tensor x (i.e., v = ∇x),
-        the first dimension of v must match the number of dimensions specified in `dim` during initialization.
+        The length of the first axis of ``v`` (``v.shape[0]``) must match
+        the number of dimensions specified in ``dim`` during initialization.
 
         Parameters
         ----------
         v
-            d-dimensional input tensor
+            :math:`(d+1)`-dimensional input tensor with
+            the first dimension indexing the :math:`d` vector components.
 
         Returns
         -------
-        w
-            A single-element tuple containing a (d+1)-dimensional tensor of the symmetrized gradient of v.
+            A single-element tuple (``w``, ) containing a :math:`(d+2)`-dimensional tensor ``w``
+            which represents the symmetrized gradient of ``v``.
         """
         return super().__call__(v)
 
@@ -120,16 +103,19 @@ class SymmetrizedGradientOp(LinearOperator):
         return self._operator(v)
 
     def adjoint(self, w: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply adjoint of symmetrized gradient operator.
+        r"""Apply adjoint of symmetrized gradient operator.
+
+        The lengths of the first two axes of ``w`` (``w.shape[0]`` and ``w.shape[1]``) must equal each other and
+        match the number of dimensions specified in ``dim`` during initialization.
 
         Parameters
         ----------
         w
-            (d+1)-dimensional input tensor
+            :math:`(d+2)`-dimensional input tensor representing the symmetrized gradient.
 
         Returns
         -------
-        v
-            A single-element tuple containing the d-dimensional tensor of the adjoint of the symmetrized gradient.
+            A single-element tuple (``v``, ) containing the :math:`(d+1)`-dimensional tensor ``v``
+            which represents the adjoint of the symmetrized gradient.
         """
         return self._operator.adjoint(w)

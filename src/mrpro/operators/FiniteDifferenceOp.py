@@ -10,48 +10,28 @@ from mrpro.utils.filters import filter_separable
 
 
 class FiniteDifferenceOp(LinearOperator):
-    r"""Finite Difference Operator.
+    r"""Finite difference operator.
 
-    This pointwise operator, denoted as :math:`\nabla_h`, acts on a discrete image defined on
-    a regular :math:`d`-dimensional grid and returns, at each pixel or voxel, a vector of finite differences of the
-    image along a user-selected set of coordinate directions ``dim``
-    (using forward, backward, or central finite difference stencils).
+    This pointwise operator computes finite differences of a discrete :math:`d`-dimensional tensor ``x``.
+    Differences are computed along the axes listed in ``dim``
+    (e.g. ``dim=(-2, -1)`` for the last two axes)
+    by means of a separable convolution with appropriate filters
+    (supported modes are ``forward``, ``backward``, and ``central``).
+    The output is a :math:`(d+1)`-dimensional tensor ``y``
+    (``y.shape[0] == len(dim)``)
+    where each ``y[i]`` is the finite difference tensor along the selected axis ``dim[i]``.
 
-    Let :math:`u : \Omega_h \subset \mathbb{Z}^d \to \mathcal{K}` be a discrete image
-    with values in :math:`\mathcal{K} \in \{\mathbb{R}, \mathbb{C}\}` and let ``dim`` :math:`\subset \{1,\dots,d\}`
-    denote the set of active directions along which finite differences are computed.
-    For a pixel or voxel :math:`x \in \Omega_h` and :math:`i \in` ``dim``, the forward finite difference
-    (assuming unit spacing) in direction :math:`i` is
+    For example, the forward finite difference ``nabla(x)`` along a chosen axis ``dim[i]`` can be written as
 
-    .. math::
+    .. code-block:: python
 
-        (\nabla_h^{\mathrm{fwd}} u)_i(x) = u(x + e_i) - u(x),
+        y[i, *k] = nabla(x)[i, *k] = x[*(k + e_i)] - x[*k]
 
-    where :math:`e_i` is the unit vector in direction :math:`i`.
-    Analogous formulas are used for the backward and central modes.
+    for every coordinate ``k = (k_1, ..., k_d)`` in the grid.
+    Here ``e_i = (e_i_1, ..., e_i_d)`` is the unit vector in direction ``dim[i]``,
+    i.e. ``e_i[j] = 1`` if ``j == dim[i]`` else ``0``.
 
-    In the continuous setting, for a function :math:`u : \Omega \subset \mathbb{R}^d \to \mathcal{K}`, the gradient is
-
-    .. math::
-
-        (\nabla u)_i(x) = \partial_{x_i} u(x),
-
-    and :math:`\nabla_h` is the standard finite difference discretisation of :math:`\nabla`
-    along the chosen directions ``dim``.
-
-    As a simple 2D scalar example, an image :math:`u = u(x, y)` can be viewed as
-    a function :math:`u : \mathbb{R}^2 \to \mathcal{K}` with
-
-    .. math::
-
-        \nabla u(x, y) = \bigl( \partial_x u(x, y), \partial_y u(x, y) \bigr),
-
-    while :math:`\nabla_h u` replaces the partial derivatives by the corresponding finite differences
-    in :math:`x` and :math:`y`. The operator implemented here applies this construction to the discrete image array
-    and returns, at each pixel, the vector of directional differences along the active directions ``dim``.
-
-    This finite difference gradient is used, for example, in :class:`mrpro.operators.SymmetrizedGradientOp`,
-    where a discrete symmetrized gradient is formed from :math:`\nabla_h`.
+    Boundary handling (e.g. when coordinate ``k + e_i`` is outside the grid) is controlled by ``pad_mode``.
     """
 
     @staticmethod
