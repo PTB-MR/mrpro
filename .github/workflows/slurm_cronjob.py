@@ -57,17 +57,16 @@ SBATCH_SUBMIT_COMMAND = """#!/bin/bash
 #SBATCH --job-name=mrpro-runner-{RUN_ID} # name of the job
 #SBATCH --ntasks=6  # number of "tasks" (default: allocates 1 core per task)
 #SBATCH --mem=64G
-#SBATCH -t 0-00:15:00   # time in d-hh:mm:ss
-#SBATCH -o /home/{USER_NAME}/slurm_output/slurm.%j.out # file to save job's STDOUT (%j = JobId)
-#SBATCH -e /home/{USER_NAME}/slurm_output/slurm.%j.err # file to save job's STDERR (%j = JobId)
+#SBATCH -t 0-00:60:00   # time in d-hh:mm:ss
+#SBATCH -o /home/%u/slurm_output/slurm.%j.out # file to save job's STDOUT (%j = JobId)
+#SBATCH -e /home/%u/slurm_output/slurm.%j.err # file to save job's STDERR (%j = JobId)
 #SBATCH --export=NONE   # Purge the job-submitting shell environment
 #SBATCH --gres=gpu:A100mig:1 # reserved gpu
-#SBATCH --reservation=ag_schwabe
 #SBATCH --qos=urgent # priority
 #SBATCH -p equipment_typeG # Request GPU
 
 # display the config file
-singularity exec --nv --pwd /actions-runner --writable-tmpfs --contain mrpro-runner.sif\
+singularity exec --nv --pwd /actions-runner --writable-tmpfs --contain docker://hpcharbor.berlin.ptb.de/abt81/mrpro_runner:latest\
     /actions-runner/entrypoint.sh {RUNNER_TOKEN} {GITHUB_OWNER} {RUN_ID} {RUNNER_GROUP}
 sleep 15"""
 
