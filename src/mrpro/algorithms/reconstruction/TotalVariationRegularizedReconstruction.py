@@ -10,11 +10,11 @@ from mrpro.algorithms.optimizers.pdhg import pdhg
 from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
 from mrpro.algorithms.reconstruction.DirectReconstruction import DirectReconstruction
 from mrpro.data.CsmData import CsmData
-from mrpro.data.DcfData import DcfData
 from mrpro.data.IData import IData
 from mrpro.data.KData import KData
 from mrpro.data.KNoise import KNoise
 from mrpro.operators import LinearOperatorMatrix, ProximableFunctionalSeparableSum
+from mrpro.operators.DensityCompensationOp import DensityCompensationOp
 from mrpro.operators.FiniteDifferenceOp import FiniteDifferenceOp
 from mrpro.operators.functionals import L1NormViewAsReal, L2NormSquared
 from mrpro.operators.LinearOperator import LinearOperator
@@ -49,7 +49,7 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
         fourier_op: LinearOperator | None = None,
         csm: Callable | CsmData | None = CsmData.from_idata_walsh,
         noise: KNoise | None = None,
-        dcf: DcfData | None = None,
+        dcf_op: DensityCompensationOp | None = None,
         *,
         max_iterations: int = 100,
         tolerance: float = 0,
@@ -74,9 +74,9 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
             or `~mrpro.data.CsmData.from_idata_inati`.
         noise
             KNoise used for prewhitening. If `None`, no prewhitening is performed
-        dcf
-            K-space sampling density compensation. If `None`, set up based on `kdata`. The `dcf` is only used to
-            calculate a starting estimate for PDHG.
+        dcf_op
+            Instance of the `~mrpro.operators.DensityCompensationOp` to compensate for the k-space sampling density.
+            If `None`, set up based on `kdata`. The `dcf` is only used to calculate a starting estimate for PDHG.
         max_iterations
             Maximum number of PDHG iterations
         tolerance
@@ -96,7 +96,7 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
         ValueError
             If the length of `regularization_dim` and `regularization_weight` do not match
         """
-        super().__init__(kdata, fourier_op, csm, noise, dcf)
+        super().__init__(kdata, fourier_op, csm, noise, dcf_op)
         self.max_iterations = max_iterations
         self.tolerance = tolerance
 
@@ -137,9 +137,7 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
         l1_norm = L1NormViewAsReal(weight=unsqueeze_right(self.regularization_weight, kdata.data.ndim))
         operator = LinearOperatorMatrix(((acquisition_operator,), (nabla_operator,)))
 
-        initial_value = acquisition_operator.H(
-            self.dcf.as_operator()(kdata.data)[0] if self.dcf is not None else kdata.data
-        )[0]
+        initial_value = acquisition_operator.H(self.dcf_op(kdata.data)[0] if self.dcf_op is not None else kdata.data)[0]
 
         (img_tensor,) = pdhg(
             f=ProximableFunctionalSeparableSum(l2_norm_squared, l1_norm),

@@ -197,7 +197,7 @@ operator = acquisition_operator.gram + mrpro.operators.IdentityOp() * regulariza
 # We use a tolerance of $1e-7$ for the residual as a stopping criterion.
 
 # %%
-dcf_operator = mrpro.data.DcfData.from_traj_voronoi(kdata_undersampled.traj).as_operator()
+dcf_operator = mrpro.operators.DensityCompensationOp.from_traj_voronoi(kdata_undersampled.traj)
 (initial_value,) = (acquisition_operator.H @ dcf_operator)(kdata_undersampled.data)
 (img_manual,) = mrpro.algorithms.optimizers.cg(operator, right_hand_side, initial_value=initial_value, tolerance=1e-7)
 
