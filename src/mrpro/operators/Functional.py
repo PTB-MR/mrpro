@@ -193,7 +193,7 @@ class ProximableFunctional(Operator[torch.Tensor, tuple[torch.Tensor]], ABC):
         """
         if isinstance(other, ProximableFunctional):
             return mrpro.operators.ProximableFunctionalSeparableSum(self, other)
-        return NotImplemented  # type: ignore[unreachable]
+        return NotImplemented
 
 
 class ElementaryProximableFunctional(ElementaryFunctional, ProximableFunctional):
