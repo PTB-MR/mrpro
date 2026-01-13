@@ -88,11 +88,11 @@ plt.show()
 # - Perform direct reconstruction
 
 # ### Calculate density compensation using the trajectory
-# We use a Voronoi tessellation of the trajectory to calculate the `~mrpro.data.DcfData` and obtain
+# We use a Voronoi tessellation of the trajectory to calculate the density compensation values and obtain
 # a `~mrpro.operators.DensityCompensationOp` operator.
 
 # %%
-dcf_operator = mrpro.data.DcfData.from_traj_voronoi(kdata.traj).as_operator()
+dcf_operator = mrpro.operators.DensityCompensationOp.from_traj_voronoi(kdata.traj)
 
 # %% [markdown]
 # ### Setup Fourier Operator

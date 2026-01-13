@@ -4,10 +4,10 @@ from collections.abc import Callable
 
 from mrpro.algorithms.reconstruction.Reconstruction import Reconstruction
 from mrpro.data.CsmData import CsmData
-from mrpro.data.DcfData import DcfData
 from mrpro.data.IData import IData
 from mrpro.data.KData import KData
 from mrpro.data.KNoise import KNoise
+from mrpro.operators.DensityCompensationOp import DensityCompensationOp
 from mrpro.operators.FourierOp import FourierOp
 from mrpro.operators.LinearOperator import LinearOperator
 
@@ -21,7 +21,7 @@ class DirectReconstruction(Reconstruction):
         fourier_op: LinearOperator | None = None,
         csm: Callable[[IData], CsmData] | CsmData | None = CsmData.from_idata_walsh,
         noise: KNoise | None = None,
-        dcf: DcfData | None = None,
+        dcf_op: DensityCompensationOp | None = None,
     ):
         """Initialize DirectReconstruction.
 
@@ -48,8 +48,9 @@ class DirectReconstruction(Reconstruction):
             or `~mrpro.data.CsmData.from_idata_inati`.
         noise
             Noise used for prewhitening. If `None`, no prewhitening is performed
-        dcf
-            K-space sampling density compensation. If `None`, set up based on `kdata`.
+        dcf_op
+            Instance of the `~mrpro.operators.DensityCompensationOp` to compensate for the k-space sampling density.
+            If `None`, set up based on `kdata`.
 
         Raises
         ------
@@ -64,10 +65,10 @@ class DirectReconstruction(Reconstruction):
         else:
             self.fourier_op = fourier_op
 
-        if kdata is not None and dcf is None:
-            self.dcf = DcfData.from_traj_voronoi(kdata.traj)
+        if kdata is not None and dcf_op is None:
+            self.dcf_op = DensityCompensationOp.from_traj_voronoi(kdata.traj)
         else:
-            self.dcf = dcf
+            self.dcf_op = dcf_op
 
         self.noise = noise
 
