@@ -11,6 +11,7 @@ from mrpro.data import IData
     ('dcm_data_fixture'),
     [
         'dcm_2d',
+        'dcm_2d_with_empty_field',
         'dcm_3d',
         'dcm_2d_multi_echo_times',
         'dcm_2d_multi_echo_times_multi_folders',
