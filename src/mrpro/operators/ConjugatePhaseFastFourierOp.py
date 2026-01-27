@@ -1,7 +1,6 @@
 """Conjugate Phase Fast Fourier Transform operator."""
 
 import torch
-from einops import rearrange
 
 from mrpro.operators.FastFourierOp import FastFourierOp
 from mrpro.operators.LinearOperator import LinearOperator
@@ -28,10 +27,10 @@ class ConjugatePhaseFastFourierOp(LinearOperator):
         # Identify Unique Frequencies
         self.unique_freqs, _ = torch.unique(b0_map, return_inverse=True)
 
-        # Reshape freqs for broadcasting against 3D map: (L) -> (L, 1, 1, 1)
-        freqs_bc = rearrange(self.unique_freqs, 'l -> l 1 1 1')
+        # Reshape freqs for broadcasting against map: (L) -> (L, 1, 1, ...)
+        freqs_bc = self.unique_freqs.view(-1, *([1] * b0_map.ndim))
 
-        # Create Masks: Compare (1, Z, Y, X) with (L, 1, 1, 1) -> Result (L, Z, Y, X)
+        # Create Masks: Result (L, ..., Z, Y, X)
         self.masks = (b0_map.unsqueeze(0) == freqs_bc).type(torch.complex64)
 
         # Calculate Phase: 2 * pi * f * t
@@ -44,28 +43,27 @@ class ConjugatePhaseFastFourierOp(LinearOperator):
         self._fft_op = FastFourierOp()
 
     def forward(self, image: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Image (Z,Y,X) -> k-space (Z,Y,X)."""
-        # Spatial Segmentation with shape (L, 1, Z, Y, X) * (1, B, Z, Y, X)
-        x_seg = torch.einsum('...zyx, lzyx -> l...zyx', image, self.masks)
+        """Image (..., Z, Y, X) -> k-space (..., Z, Y, X)."""
+        # Spatial Segmentation: (L, ..., Z, Y, X)
+        x_seg = torch.einsum('l...zyx, ...zyx -> l...zyx', self.masks, image)
 
-        # 3D FFT applied to each segment
+        # FFT applied to each segment
         (k_seg,) = self._fft_op(x_seg)
 
-        # Multiply k-space (L, ..., Z, Y, X) with Phasor (L, X)
-        # The 'x' dim matches. 'z' and 'y' are broadcast. Sum over 'l' (the segmentation dim)
+        # Multiply with Phasor and sum over segments: (L, ..., Z, Y, X) * (L, X) -> (..., Z, Y, X)
         res = torch.einsum('l...zyx, lx -> ...zyx', k_seg, self.phasor)
 
         return (res,)
 
     def adjoint(self, kspace: torch.Tensor) -> tuple[torch.Tensor,]:
-        """k-space (Z,Y,X) -> Image (Z,Y,X)."""
-        # Multiply k-space (..., Z, Y, X) with Conj Phasor (L, X) -> (L, ..., Z, Y, X)
+        """k-space (..., Z, Y, X) -> Image (..., Z, Y, X)."""
+        # Multiply with Conj Phasor: (..., Z, Y, X) * (L, X) -> (L, ..., Z, Y, X)
         k_expanded = torch.einsum('...zyx, lx -> l...zyx', kspace, self.phasor.conj())
 
-        # 3D IFFT applied to each segment
+        # IFFT applied to each segment
         (img_seg,) = self._fft_op.adjoint(k_expanded)
 
-        # Multiply Image Segments (L, ..., Z, Y, X) with Masks (L, Z, Y, X) and sum over segments L
-        res = torch.einsum('l...zyx, lzyx -> ...zyx', img_seg, self.masks)
+        # Multiply with Masks and sum over segments: (L, ..., Z, Y, X) * (L, ..., Z, Y, X) -> (..., Z, Y, X)
+        res = torch.einsum('l...zyx, l...zyx -> ...zyx', img_seg, self.masks.conj())
 
         return (res,)

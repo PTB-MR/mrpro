@@ -94,16 +94,16 @@ class TimeSegmentedFastFourierOp(LinearOperator):
         # ...zyx    Input x (Batch, Z, Y, X)
         # lzyx      Basis (L, Z, Y, X)
         # l...zyx   Result (L, Batch, Z, Y, X)
-        x_seg = torch.einsum('...zyx, lzyx -> l...zyx', x, self._basis)
+        x_seg = torch.einsum('...zyx, l...zyx -> l...zyx', x, self._basis)
 
         # FFT (applied to L and Batch dimensions independently)
         (ksp_seg,) = self._fft_op(x_seg)
 
         # Multiply with Interpolator and Sum
-        # l...x   K-space segment (L, Batch, Z, Y, X_readout)
-        # lx      Interpolator (L, X_readout)
-        # ...x    Result (Batch, Z, Y, X_readout) - Summed over L
-        res = torch.einsum('l...x, lx -> ...x', ksp_seg, self._interpolator)
+        # l...zyx   k-space segment (L, Batch, Z, Y, X_readout)
+        # lx        Interpolator (L, X_readout)
+        # ...zyx    Result (Batch, Z, Y, X_readout) - Summed over L
+        res = torch.einsum('l...zyx, lx -> ...zyx', ksp_seg, self._interpolator)
 
         return (res,)
 
@@ -112,10 +112,10 @@ class TimeSegmentedFastFourierOp(LinearOperator):
         # y shape: (Batch..., Z, Y, X_kspace)
 
         # Multiply K-space with Conjugate Interpolator
-        # ...x      Input y (Batch, Z, Y, X)
+        # ...zyx    Input y (Batch, Z, Y, X)
         # lx        Interpolator (L, X)
-        # l...x     Result (L, Batch, Z, Y, X)
-        y_seg = torch.einsum('...x, lx -> l...x', y, self._interpolator.conj())
+        # l...zyx   Result (L, Batch, Z, Y, X)
+        y_seg = torch.einsum('...zyx, lx -> l...zyx', y, self._interpolator.conj())
 
         # Adjoint FFT
         (img_seg,) = self._fft_op.adjoint(y_seg)
@@ -124,6 +124,6 @@ class TimeSegmentedFastFourierOp(LinearOperator):
         # l...zyx   Image segment (L, Batch, Z, Y, X)
         # lzyx      Basis (L, Z, Y, X)
         # ...zyx    Result (Batch, Z, Y, X) - Summed over L
-        res = torch.einsum('l...zyx, lzyx -> ...zyx', img_seg, self._basis.conj())
+        res = torch.einsum('l...zyx, l...zyx -> ...zyx', img_seg, self._basis.conj())
 
         return (res,)
