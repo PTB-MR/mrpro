@@ -1407,17 +1407,20 @@ def test_axis_order_zyx() -> None:
 
 def test_from_to_directions() -> None:
     """Test that from_directions and as_directions are inverse operations"""
-    one = torch.ones(1, 2, 3, 4)
-
     # must be a rotation
-    b1 = SpatialDimension(one * (0.8146), one * (0.4707), one * (-0.3388))
-    b2 = SpatialDimension(one * (-0.4432), one * (0.8820), one * (0.1599))
-    b3 = SpatialDimension(one * (-0.3741), one * (-0.0199), one * (-0.9272))
+    b1 = SpatialDimension(*(torch.as_tensor(v) for v in ([-0.1235, -0.1230], [-0.1411, -0.1639], [0.9823, 0.9788])))
+    b2 = SpatialDimension(*(torch.as_tensor(v) for v in ([-0.0186, -0.0186], [0.99, 0.9865], [0.1399, 0.1629])))
+    b3 = SpatialDimension(*(torch.as_tensor(v) for v in ([0.9922, 0.9922], [0.0010, -0.0018], [0.1249, 0.1245])))
 
     r = Rotation.from_directions(b1, b2, b3)
     torch.testing.assert_close(b1.zyx, r.as_directions()[0].zyx, atol=1e-4, rtol=0)
-    torch.testing.assert_close(b2.zyx, r.as_directions()[1].zyx, atol=1e-4, rtol=0)
-    torch.testing.assert_close(b3.zyx, r.as_directions()[2].zyx, atol=1e-4, rtol=0)
+    # b2 and b3 need broadcasting because of dim=1 along z
+    torch.testing.assert_close(torch.broadcast_to(b2.z, (2,)), r.as_directions()[1].z, atol=1e-4, rtol=0)
+    torch.testing.assert_close(b2.y, r.as_directions()[1].y, atol=1e-4, rtol=0)
+    torch.testing.assert_close(b2.x, r.as_directions()[1].x, atol=1e-4, rtol=0)
+    torch.testing.assert_close(torch.broadcast_to(b3.z, (2,)), r.as_directions()[2].z, atol=1e-4, rtol=0)
+    torch.testing.assert_close(b3.y, r.as_directions()[2].y, atol=1e-4, rtol=0)
+    torch.testing.assert_close(b3.x, r.as_directions()[2].x, atol=1e-4, rtol=0)
 
 
 def test_as_directions() -> None:
