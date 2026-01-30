@@ -8,7 +8,7 @@ import ismrmrd
 import pytest
 import torch
 from ismrmrd import xsd
-from mrpro.data import AcqIdx, AcqInfo, KData, KHeader, KTrajectory, SpatialDimension
+from mrpro.data import AcqIdx, AcqInfo, IHeader, KData, KHeader, KTrajectory, SpatialDimension
 from mrpro.data.enums import AcqFlags
 from mrpro.utils import RandomGenerator
 from mrpro.utils.reshape import unsqueeze_tensors_left
@@ -193,6 +193,12 @@ def random_kheader(request, random_full_ismrmrd_header, random_acq_info) -> KHea
         defaults={'trajectory': trajectory},
     )
     return kheader
+
+
+@pytest.fixture(params=({'seed': 0},))
+def random_iheader(request, random_kheader) -> IHeader:
+    """Random (not necessarily valid) IHeader."""
+    return IHeader.from_kheader(random_kheader)
 
 
 @pytest.fixture

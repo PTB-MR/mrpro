@@ -8,8 +8,6 @@ import torch
 from typing_extensions import Self
 
 from mrpro.data.IData import IData
-from mrpro.data.QData import QData
-from mrpro.data.QHeader import QHeader
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.interpolate import apply_lowres
 
@@ -48,7 +46,7 @@ def get_downsampled_size(
     )
 
 
-class CsmData(QData, init=False):
+class CsmData(IData, init=False):
     """Coil sensitivity map class."""
 
     @classmethod
@@ -137,7 +135,7 @@ class CsmData(QData, init=False):
         csm_tensor = csm_fun(idata.data.flatten(end_dim=-5)).reshape(idata.data.shape)
         # upsampled csm requires normalization
         csm_tensor = torch.nn.functional.normalize(csm_tensor, p=2, dim=-4, eps=1e-9)
-        csm = cls(header=QHeader.from_iheader(idata.header), data=csm_tensor)
+        csm = cls(header=idata.header, data=csm_tensor)
         return csm
 
     @classmethod
@@ -225,7 +223,7 @@ class CsmData(QData, init=False):
         csm_tensor = csm_fun(idata.data.flatten(end_dim=-5)).reshape(idata.data.shape)
         # upsampled csm requires normalization
         csm_tensor = torch.nn.functional.normalize(csm_tensor, p=2, dim=-4, eps=1e-9)
-        csm = cls(header=QHeader.from_iheader(idata.header), data=csm_tensor)
+        csm = cls(header=idata.header, data=csm_tensor)
         return csm
 
     def as_operator(self) -> SensitivityOp:
