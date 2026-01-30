@@ -68,7 +68,12 @@ def get_items(datasets: Sequence[Dataset], name: TagType, target_type: Callable[
     -------
         A list of converted items.
     """
-    return [target_type(item.value) for ds in datasets for item in ds.iterall() if item.tag == Tag(name)]
+    return [
+        target_type(item.value)
+        for ds in datasets
+        for item in ds.iterall()
+        if (item.tag == Tag(name)) and item.value is not None
+    ]
 
 
 def try_reduce_repeat(value: T) -> T:
