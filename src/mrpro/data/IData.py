@@ -16,9 +16,10 @@ from pydicom.pixels import set_pixel_data
 from typing_extensions import Self
 
 from mrpro.data.Dataclass import Dataclass
-from mrpro.data.IHeader import IHeader
+from mrpro.data.IHeader import IHeader, get_items
 from mrpro.data.KHeader import KHeader
 from mrpro.data.SpatialDimension import SpatialDimension
+from mrpro.utils.reshape import unsqueeze_right
 from mrpro.utils.unit_conversion import m_to_mm, rad_to_deg, s_to_ms
 
 
@@ -28,27 +29,24 @@ def _dcm_pixelarray_to_tensor(dataset: Dataset) -> torch.Tensor:
     Rescale intercept, (0028|1052), and rescale slope (0028|1053) are
     DICOM tags that specify the linear transformation from pixels in
     their stored on disk representation to their in memory
-    representation.     U = m*SV + b where U is in output units, m is
+    representation. U = m*SV + b where U is in output units, m is
     the rescale slope, SV is the stored value, and b is the rescale
     intercept [RES]_.
+
+    Rescale intercept and rescale slope can be defined for each frame in a 3D/M2D dicom file, as a global value or
+    not at all.
 
     References
     ----------
     .. [RES] Rescale intercept and slope https://www.kitware.com/dicom-rescale-intercept-rescale-slope-and-itk/
     """
-    slope = (
-        float(element.value)
-        if 'RescaleSlope' in dataset and (element := dataset.data_element('RescaleSlope')) is not None
-        else 1.0
-    )
-    intercept = (
-        float(element.value)
-        if 'RescaleIntercept' in dataset and (element := dataset.data_element('RescaleIntercept')) is not None
-        else 0.0
-    )
+    slope = sl if (sl := get_items([dataset], 'RescaleSlope', lambda x: float(x))) else [1.0]
+    slope_tensor = unsqueeze_right(torch.as_tensor(slope), dataset.pixel_array.ndim - 1)
+    intercept = ic if (ic := get_items([dataset], 'RescaleIntercept', lambda x: float(x))) else [0.0]
+    intercept_tensor = unsqueeze_right(torch.as_tensor(intercept), dataset.pixel_array.ndim - 1)
 
-    # Image data is 2D np.array of Uint16, which cannot directly be converted to tensor
-    return slope * torch.as_tensor(dataset.pixel_array.astype(np.complex64)) + intercept
+    # Image data is 2D or 3D np.array of Uint16, which cannot directly be converted to tensor
+    return slope_tensor * torch.as_tensor(dataset.pixel_array.astype(np.complex64)) + intercept_tensor
 
 
 def _natural_key(s: str | Path) -> list[int | str]:
