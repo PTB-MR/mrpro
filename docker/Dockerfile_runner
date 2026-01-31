@@ -5,7 +5,7 @@ FROM ${BASE_IMAGE} AS base
 # GITHUB_OWNER
 # GITHUB_REPOSITORY
 
-ARG ACTION_RUNNER_URL=https://github.com/actions/runner/releases/download/v2.330.0/actions-runner-linux-x64-2.330.0.tar.gz
+ARG ACTION_RUNNER_URL=https://github.com/actions/runner/releases/download/v2.331.0/actions-runner-linux-x64-2.331.0.tar.gz
 
 ARG DEBIAN_FRONTEND=noninteractive
 
