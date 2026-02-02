@@ -174,7 +174,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
             for i, self_row in enumerate(self._operators):
                 operators.append([op + other if i == j else op for j, op in enumerate(self_row)])
         else:
-            return NotImplemented  # type: ignore[unreachable]
+            return NotImplemented
         return self.__class__(operators)
 
     def __radd__(self, other: Self | LinearOperator | torch.Tensor | complex) -> Self:
@@ -234,7 +234,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
                     new_row.append(LinearOperatorSum(*elements))
                 new_operators.append(new_row)
             return self.__class__(new_operators)
-        return NotImplemented  # type: ignore[unreachable]
+        return NotImplemented
 
     @property
     def H(self) -> Self:  # noqa N802

@@ -81,7 +81,6 @@ class Parameters(Dataclass):
         return ndim
 
 
-@torch.jit.script
 def rf_matrix(
     flip_angle: torch.Tensor,
     phase: torch.Tensor,
@@ -151,7 +150,6 @@ def rf(state: torch.Tensor, matrix: torch.Tensor) -> torch.Tensor:
     return matrix.to(state) @ state
 
 
-@torch.jit.script
 def gradient_dephasing(state: torch.Tensor) -> torch.Tensor:
     """Propagate EPG states through a "unit" gradient.
 
@@ -172,7 +170,6 @@ def gradient_dephasing(state: torch.Tensor) -> torch.Tensor:
     return torch.stack((f_plus, f_minus, z), -2)
 
 
-@torch.jit.script
 def relax_matrix(relaxation_time: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor) -> torch.Tensor:
     """Calculate relaxation vector.
 
@@ -195,7 +192,6 @@ def relax_matrix(relaxation_time: torch.Tensor, t1: torch.Tensor, t2: torch.Tens
     return torch.stack([e2, e2, e1], dim=-1)
 
 
-@torch.jit.script
 def relax(states: torch.Tensor, relaxation_matrix: torch.Tensor, t1_recovery: bool = True) -> torch.Tensor:
     """Propagate EPG states through a period of relaxation and recovery.
 

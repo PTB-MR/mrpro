@@ -252,7 +252,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         elif isinstance(other, Operator):
             # cast due to https://github.com/python/mypy/issues/16335
             return OperatorComposition(self, cast(Operator[Unpack[Tin2], tuple[torch.Tensor,]], other))
-        return NotImplemented  # type: ignore[unreachable]
+        return NotImplemented
 
     def __radd__(self, other: torch.Tensor | complex) -> LinearOperator:
         """Operator addition.
@@ -293,7 +293,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
             # for general operators
             return OperatorSum(self, other)
         else:
-            return NotImplemented  # type: ignore[unreachable]
+            return NotImplemented
 
     def __mul__(self, other: torch.Tensor | complex) -> LinearOperator:
         """Operator elementwise left multiplication with tensor/scalar.
@@ -310,7 +310,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         elif isinstance(other, torch.Tensor):
             return LinearOperatorElementwiseProductLeft(self, other)
         else:
-            return NotImplemented  # type: ignore[unreachable]
+            return NotImplemented
 
     def __rmul__(self, other: torch.Tensor | complex) -> LinearOperator:
         """Operator elementwise right multiplication with tensor/scalar.
@@ -327,7 +327,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         elif isinstance(other, torch.Tensor):
             return LinearOperatorElementwiseProductRight(self, other)
         else:
-            return NotImplemented  # type: ignore[unreachable]
+            return NotImplemented
 
     def __and__(self, other: LinearOperator) -> mrpro.operators.LinearOperatorMatrix:
         """Horizontal stacking of two LinearOperators.
@@ -337,8 +337,8 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         See `mrpro.operators.LinearOperatorMatrix` for more information.
         """
         if not isinstance(other, LinearOperator):
-            return NotImplemented  # type: ignore[unreachable]
-        operators = [[self, other]]
+            return NotImplemented
+        operators = [[self], [other]]
         return mrpro.operators.LinearOperatorMatrix(operators)
 
     def __or__(self, other: LinearOperator) -> mrpro.operators.LinearOperatorMatrix:
@@ -349,8 +349,8 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         See `mrpro.operators.LinearOperatorMatrix` for more information.
         """
         if not isinstance(other, LinearOperator):
-            return NotImplemented  # type: ignore[unreachable]
-        operators = [[self], [other]]
+            return NotImplemented
+        operators = [[self, other]]
         return mrpro.operators.LinearOperatorMatrix(operators)
 
     @property

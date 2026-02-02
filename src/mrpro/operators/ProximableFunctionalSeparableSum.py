@@ -209,7 +209,7 @@ class ProximableFunctionalSeparableSum(Operator[Unpack[T], tuple[torch.Tensor]])
         elif isinstance(other, ProximableFunctional):
             return self.__class__(*self.functionals, other)
         else:
-            return NotImplemented  # type: ignore[unreachable]
+            return NotImplemented
 
     def __rand__(
         self: ProximableFunctionalSeparableSum[Unpack[T]], other: ProximableFunctional
@@ -220,7 +220,7 @@ class ProximableFunctionalSeparableSum(Operator[Unpack[T], tuple[torch.Tensor]])
                 ProximableFunctionalSeparableSum[torch.Tensor, Unpack[T]], self.__class__(other, *self.functionals)
             )
         else:
-            return NotImplemented  # type: ignore[unreachable]
+            return NotImplemented
 
     def __iter__(self) -> Iterator[ProximableFunctional]:
         """Iterate over the functionals."""
