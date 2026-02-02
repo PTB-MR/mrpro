@@ -27,7 +27,7 @@ class DicomTestImage:
         slice_orientation: Rotation | None = None,
         slice_offset: float | Sequence[float] = 0.0,
         cardiac_trigger_delay: float | None = None,
-        te: float = 0.037,
+        te: float | None = 0.037,
         time_after_rpeak: float = 0.333,
         phantom: EllipsePhantom | None = None,
         series_description: str = 'dicom_test_images',
@@ -181,7 +181,7 @@ class DicomTestImage:
                     plane_orientation_sequence
                 )
 
-                mr_echo_sequence[0].EffectiveEchoTime = s_to_ms(self.te)
+                mr_echo_sequence[0].EffectiveEchoTime = s_to_ms(self.te) if self.te is not None else None
                 dataset.PerFrameFunctionalGroupsSequence[-1].MREchoSequence = deepcopy(mr_echo_sequence)
 
                 pixel_measure_sequence[0].SliceThickness = slice_thickness
@@ -201,7 +201,7 @@ class DicomTestImage:
 
             dataset.ImagePositionPatient = (patient_position + slice_direction * self.slice_offset.numpy()).tolist()
             dataset.ImageOrientationPatient = [*phase_direction, *readout_direction]
-            dataset.EchoTime = s_to_ms(self.te)
+            dataset.EchoTime = s_to_ms(self.te) if self.te is not None else None
             dataset.InversionTime = 3.0
             dataset.TriggerTime = s_to_ms(self.time_after_rpeak)
             dataset.PixelSpacing = [inplane_resolution, inplane_resolution]
