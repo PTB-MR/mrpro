@@ -94,6 +94,17 @@ def dcm_2d(ellipse_phantom, tmp_path_factory):
 
 
 @pytest.fixture(scope='session')
+def dcm_2d_rescale(ellipse_phantom, tmp_path_factory):
+    """Single 2D dicom image with rescaling."""
+    dcm_filename = tmp_path_factory.mktemp('mrpro_2d_rescale') / 'dicom.dcm'
+    return (
+        DicomTestImage(
+            filename=dcm_filename, phantom=ellipse_phantom.phantom, rescale_slope=10.0, rescale_intercept=-100
+        ),
+    )
+
+
+@pytest.fixture(scope='session')
 def dcm_2d_with_empty_field(ellipse_phantom, tmp_path_factory):
     """Single 2D dicom image with an empty dicom field."""
     dcm_filename = tmp_path_factory.mktemp('mrpro_2d_empty_field') / 'dicom.dcm'
@@ -153,6 +164,22 @@ def dcm_3d(ellipse_phantom, tmp_path_factory):
     path = tmp_path_factory.mktemp('mrpro_3d')
     dcm_filename = path / 'dicom.dcm'
     return (DicomTestImage(filename=dcm_filename, phantom=ellipse_phantom.phantom, slice_offset=[-2.0, 0.0, 2.0, 4.0]),)
+
+
+@pytest.fixture(scope='session')
+def dcm_3d_rescale(ellipse_phantom, tmp_path_factory):
+    """3D dicom image in a single dicom file."""
+    path = tmp_path_factory.mktemp('mrpro_3d_rescale')
+    dcm_filename = path / 'dicom.dcm'
+    return (
+        DicomTestImage(
+            filename=dcm_filename,
+            phantom=ellipse_phantom.phantom,
+            slice_offset=[-2.0, 0.0, 2.0, 4.0],
+            rescale_slope=10.0,
+            rescale_intercept=-100,
+        ),
+    )
 
 
 @pytest.fixture(scope='session')

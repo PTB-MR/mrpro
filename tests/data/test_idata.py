@@ -13,6 +13,8 @@ from mrpro.data import IData
         'dcm_2d',
         'dcm_2d_with_empty_field',
         'dcm_3d',
+        'dcm_2d_rescale',
+        'dcm_3d_rescale',
         'dcm_2d_multi_echo_times',
         'dcm_2d_multi_echo_times_multi_folders',
         'dcm_cardiac_2d',
@@ -28,7 +30,10 @@ def test_IData_content_from_dcm(dcm_data_fixture, request):
     idata = IData.from_dicom_folder(dcm_data[0].filename.parent)
     # IData uses complex values but dicom only supports real values
     first_img = torch.real(idata.data.flatten(end_dim=-3)[0])
-    torch.testing.assert_close(first_img, dcm_data[0].img_ref)
+    # Rescaling can lead to loss of precision due to uint16 storage
+    torch.testing.assert_close(
+        first_img, dcm_data[0].img_ref, atol=dcm_data[0].rescale_slope, rtol=dcm_data[0].rescale_slope / (2**16 - 1)
+    )
 
 
 def test_IData_from_dcm_file(dcm_2d):
