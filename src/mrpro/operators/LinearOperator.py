@@ -338,7 +338,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         """
         if not isinstance(other, LinearOperator):
             return NotImplemented
-        operators = [[self], [other]]
+        operators = [[self, other]]
         return mrpro.operators.LinearOperatorMatrix(operators)
 
     def __or__(self, other: LinearOperator) -> mrpro.operators.LinearOperatorMatrix:
@@ -350,7 +350,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         """
         if not isinstance(other, LinearOperator):
             return NotImplemented
-        operators = [[self, other]]
+        operators = [[self], [other]]
         return mrpro.operators.LinearOperatorMatrix(operators)
 
     @property
