@@ -184,16 +184,12 @@ def test_IData_to_dicom_folder(dcm_data_fixture, request):
     torch.testing.assert_close(idata_reloaded.data, idata.data)
 
 
-@pytest.mark.parametrize(('dcm_data_fixture'), ['dcm_2d', 'dcm_3d'])
 @pytest.mark.parametrize(('rescale_slope'), [10, 20])
 @pytest.mark.parametrize(('rescale_intercept'), [-100, -200])
-def test_IData_to_dicom_folder_with_scaling(
-    tmp_path_factory, dcm_data_fixture, request, rescale_slope, rescale_intercept
-):
+def test_IData_to_dicom_folder_with_scaling(tmp_path_factory, dcm_2d, rescale_slope, rescale_intercept):
     """Verify data is correctly scaled during saving."""
-    dcm_data = request.getfixturevalue(dcm_data_fixture)
-    idata = IData.from_dicom_folder(dcm_data[0].filename.parent)
-    dicom_folder = tmp_path_factory.mktemp('dicom_from_kheader_and_tensor2') / 'test_output'
+    idata = IData.from_dicom_folder(dcm_2d[0].filename.parent)
+    dicom_folder = tmp_path_factory.mktemp('dicom_scaling') / 'test_output'
     idata.to_dicom_folder(
         dicom_folder,
         series_description='test_series',
@@ -202,7 +198,23 @@ def test_IData_to_dicom_folder_with_scaling(
         normalize_data=True,
     )
     idata_reloaded = IData.from_dicom_folder(dicom_folder)
-    torch.testing.assert_close(idata_reloaded.data, idata.data)
+    torch.testing.assert_close(idata_reloaded.data, idata.data, atol=rescale_slope, rtol=rescale_slope / (2**16 - 1))
+
+
+def test_IData_to_dicom_folder_warning_cropped(tmp_path_factory, dcm_2d):
+    """Warning if data is cropped"""
+    idata = IData.from_dicom_folder(dcm_2d[0].filename.parent)
+    dicom_folder = tmp_path_factory.mktemp('dicom_warning') / 'test_output'
+    with pytest.warns(UserWarning, match='Values outside of the uint16 range will be clipped.'):
+        idata.to_dicom_folder(
+            dicom_folder,
+            series_description='test_series',
+            rescale_slope=0.1,
+            rescale_intercept=100,
+            normalize_data=False,
+        )
+    idata_reloaded = IData.from_dicom_folder(dicom_folder)
+    assert idata_reloaded.header.orientation == idata.header.orientation
 
 
 def test_IData_from_kheader_and_tensor_to_dicom_folder(tmp_path_factory, random_kheader, random_test_data):

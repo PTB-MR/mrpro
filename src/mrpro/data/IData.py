@@ -320,6 +320,12 @@ class IData(Dataclass):
                     timing_parameters.RepetitionTime = s_to_ms(repetition_time)
                 frame_info.MRTimingAndRelatedParametersSequence = pydicom.Sequence([timing_parameters])
 
+                pixel_value_transformation = Dataset()
+                pixel_value_transformation.RescaleSlope = rescale_slope
+                pixel_value_transformation.RescaleIntercept = rescale_intercept
+                pixel_value_transformation.RescaleType = 'US'
+                frame_info.PixelValueTransformationSequence = pydicom.Sequence([pixel_value_transformation])
+
                 dataset.PerFrameFunctionalGroupsSequence.append(frame_info)
 
             # (frames, rows, columns) for multi-frame grayscale data
