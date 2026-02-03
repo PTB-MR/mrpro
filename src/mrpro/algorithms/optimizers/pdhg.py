@@ -43,8 +43,8 @@ def pdhg(
     initial_values: Sequence[torch.Tensor],
     max_iterations: int = 32,
     tolerance: float = 0,
-    primal_stepsize: float | None = None,
-    dual_stepsize: float | None = None,
+    primal_stepsize: float | torch.Tensor | None = None,
+    dual_stepsize: float | torch.Tensor | None = None,
     relaxation: float = 1.0,
     initial_relaxed: Sequence[torch.Tensor] | None = None,
     initial_duals: Sequence[torch.Tensor] | None = None,
@@ -170,13 +170,13 @@ def pdhg(
             primal_stepsize_ = dual_stepsize_ = 1.0 / operator_norm
         elif primal_stepsize is None and dual_stepsize is not None:
             primal_stepsize_ = 1 / (operator_norm * dual_stepsize)
-            dual_stepsize_ = dual_stepsize
+            dual_stepsize_ = torch.as_tensor(dual_stepsize)
         elif dual_stepsize is None and primal_stepsize is not None:
             dual_stepsize_ = 1 / (operator_norm * primal_stepsize)
-            primal_stepsize_ = primal_stepsize
+            primal_stepsize_ = torch.as_tensor(primal_stepsize)
     else:
-        primal_stepsize_ = primal_stepsize
-        dual_stepsize_ = dual_stepsize
+        primal_stepsize_ = torch.as_tensor(primal_stepsize)
+        dual_stepsize_ = torch.as_tensor(dual_stepsize)
 
     primals_relaxed = initial_values if initial_relaxed is None else initial_relaxed
     duals = (0 * operator_matrix)(*initial_values) if initial_duals is None else initial_duals

@@ -60,9 +60,9 @@ class InconsistentDeviceError(RuntimeError):
 
 
 class InconsistentShapeError(RuntimeError):
-    """Raised if fields are not broadastable.
+    """Raised if fields are not broadcastable.
 
-    The fields cannot be broadasted to a common shape.
+    The fields cannot be broadcasted to a common shape.
     """
 
     def __init__(self, *shapes):
@@ -116,7 +116,7 @@ class Dataclass:
         init
             If `True`, an automatic init function will be added. Set to `False` to use a custom init.
         """
-        dataclasses.dataclass(cls, repr=False, eq=False, init=init)  # type: ignore[call-overload]
+        dataclasses.dataclass(cls, repr=False, eq=False, init=init)
         super().__init_subclass__(**kwargs)
         child_post_init = vars(cls).get('__post_init__')
 
@@ -759,6 +759,26 @@ class Dataclass:
 
         new = shallowcopy(self)
         return new.apply_(apply_rearrange, memo=memo, recurse=False)
+
+    def swapdims(self, dim0: int, dim1: int) -> Self:
+        """Swap two dimensions of the dataclass.
+
+        Parameters
+        ----------
+        dim0
+            First dimension to swap.
+        dim1
+            Second dimension to swap.
+
+        Returns
+        -------
+            The dataclass with the dimensions swapped.
+        """
+        axes = [f'dim{i}' for i in range(self.ndim)]
+        input_pattern = ' '.join(axes)
+        axes[dim0], axes[dim1] = axes[dim1], axes[dim0]
+        output_pattern = ' '.join(axes)
+        return self.rearrange(f'{input_pattern} -> {output_pattern}')
 
     def split(self, dim: int, size: int = 1, overlap: int = 0, dilation: int = 1) -> tuple[Self, ...]:
         """Split the dataclass along a dimension.

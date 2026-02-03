@@ -91,17 +91,27 @@ class ProximableFunctionalSeparableSum(Operator[Unpack[T], tuple[torch.Tensor]])
         super().__init__()
         self.functionals = functionals
 
-    def forward(self, *x: Unpack[T]) -> tuple[torch.Tensor]:
-        """Apply the functionals to the inputs.
+    def __call__(self, *x: Unpack[T]) -> tuple[torch.Tensor]:
+        """Evaluate the sum of separable functionals.
 
         Parameters
         ----------
-        x
-            The inputs to the functionals
+        *x
+            Input tensors. The number of input tensors must match the number
+            of functionals in the sum.
 
         Returns
         -------
-            The sum of the functionals applied to the inputs
+            Sum of the functionals applied to their respective inputs.
+        """
+        return super().__call__(*x)
+
+    def forward(self, *x: Unpack[T]) -> tuple[torch.Tensor]:
+        """Apply forward of ProximableFunctionalSeparableSum.
+
+        .. note::
+            Prefer calling the instance of the ProximableFunctionalSeparableSum operator as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         if len(x) != len(self.functionals):
             raise ValueError('The number of inputs must match the number of functionals.')
@@ -195,7 +205,7 @@ class ProximableFunctionalSeparableSum(Operator[Unpack[T], tuple[torch.Tensor]])
         elif isinstance(other, ProximableFunctional):
             return self.__class__(*self.functionals, other)
         else:
-            return NotImplemented  # type: ignore[unreachable]
+            return NotImplemented
 
     def __ror__(
         self: ProximableFunctionalSeparableSum[Unpack[T]], other: ProximableFunctional
@@ -206,7 +216,7 @@ class ProximableFunctionalSeparableSum(Operator[Unpack[T], tuple[torch.Tensor]])
                 ProximableFunctionalSeparableSum[torch.Tensor, Unpack[T]], self.__class__(other, *self.functionals)
             )
         else:
-            return NotImplemented  # type: ignore[unreachable]
+            return NotImplemented
 
     def __iter__(self) -> Iterator[ProximableFunctional]:
         """Iterate over the functionals."""
