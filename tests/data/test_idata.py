@@ -138,13 +138,7 @@ def test_IData_rss(random_kheader, random_test_data):
     torch.testing.assert_close(idata.rss(keepdim=False), expected.squeeze(-4))
 
 
-@pytest.mark.parametrize(
-    ('dcm_data_fixture'),
-    [
-        'dcm_2d',
-        'dcm_3d',
-    ],
-)
+@pytest.mark.parametrize(('dcm_data_fixture'), ['dcm_2d', 'dcm_3d'])
 def test_IData_to_dicom_folder_identical(dcm_data_fixture, request):
     """Verify saving of different dicom types."""
     dcm_data = request.getfixturevalue(dcm_data_fixture)
@@ -186,6 +180,27 @@ def test_IData_to_dicom_folder(dcm_data_fixture, request):
     torch.testing.assert_close(idata_reloaded.header.position.y, idata.header.position.y)
     torch.testing.assert_close(idata_reloaded.header.position.z, idata.header.position.z)
     assert idata_reloaded.header.orientation == idata.header.orientation
+    torch.testing.assert_close(idata_reloaded.data, idata.data)
+
+
+@pytest.mark.parametrize(('dcm_data_fixture'), ['dcm_2d', 'dcm_3d'])
+@pytest.mark.parametrize(('rescale_slope'), [10, 20])
+@pytest.mark.parametrize(('rescale_intercept'), [-100, -200])
+def test_IData_to_dicom_folder_with_scaling(
+    tmp_path_factory, dcm_data_fixture, request, rescale_slope, rescale_intercept
+):
+    """Verify data is correctly scaled during saving."""
+    dcm_data = request.getfixturevalue(dcm_data_fixture)
+    idata = IData.from_dicom_folder(dcm_data[0].filename.parent)
+    dicom_folder = tmp_path_factory.mktemp('dicom_from_kheader_and_tensor2') / 'test_output'
+    idata.to_dicom_folder(
+        dicom_folder,
+        series_description='test_series',
+        rescale_slope=rescale_slope,
+        rescale_intercept=rescale_intercept,
+        normalize_data=True,
+    )
+    idata_reloaded = IData.from_dicom_folder(dicom_folder)
     torch.testing.assert_close(idata_reloaded.data, idata.data)
 
 
