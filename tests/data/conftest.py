@@ -105,6 +105,13 @@ def dcm_2d_rescale(ellipse_phantom, tmp_path_factory):
 
 
 @pytest.fixture(scope='session')
+def dcm_2d_with_empty_field(ellipse_phantom, tmp_path_factory):
+    """Single 2D dicom image with an empty dicom field."""
+    dcm_filename = tmp_path_factory.mktemp('mrpro_2d_empty_field') / 'dicom.dcm'
+    return (DicomTestImage(filename=dcm_filename, phantom=ellipse_phantom.phantom, te=None),)
+
+
+@pytest.fixture(scope='session')
 def dcm_2d_multi_echo_times(ellipse_phantoms, tmp_path_factory):
     """Multiple 2D dicom images with different echo times."""
     path = tmp_path_factory.mktemp('mrpro_2d_multi_echo')
