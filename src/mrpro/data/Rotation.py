@@ -624,12 +624,8 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         rotation
             Object containing the rotations represented by the basis vectors.
         """
-        basis_broadcast_shape = torch.broadcast_shapes(*(v_.shape for v_ in basis))
         b1, b2, b3 = (
-            torch.stack(
-                [torch.broadcast_to(torch.as_tensor(getattr(v_, axis)), basis_broadcast_shape) for axis in AXIS_ORDER],
-                -1,
-            )
+            torch.stack(torch.broadcast_tensors(*(torch.as_tensor(getattr(v_, ax)) for ax in AXIS_ORDER)), dim=-1)
             for v_ in basis
         )
         matrix = torch.stack((b1, b2, b3), -1)
