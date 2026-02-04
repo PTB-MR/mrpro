@@ -152,7 +152,7 @@ def test_spd_compare_to_scipy(
     algorithm: Callable,
 ) -> None:
     """Test if our implementation is close to the one of scipy."""
-    operator, right_hand_side, solution, initial_value = spd_system
+    operator, right_hand_side, _, initial_value = spd_system
 
     if operator.matrix.ndim == 2:
         operator_sp = operator.matrix.numpy()
@@ -219,7 +219,7 @@ def test_callback(
 ) -> None:
     """Test if the callback function is called if a callback function is set."""
     # create operator, right-hand side
-    operator, right_hand_side, _, initial_value = spd_system
+    operator, right_hand_side, _, _ = spd_system
 
     # callback function; if the function is called during the iterations, the
     # test is successful
