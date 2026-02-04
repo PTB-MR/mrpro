@@ -178,7 +178,7 @@ class IData(Dataclass):
         # Pass on sorted file list as order of dicom files is often the same as the required order
         return cls.from_dicom_files(filenames=sorted(file_paths))
 
-    def save_as_nifti(self, filename: str | Path, magnitude_only: bool = False) -> None:
+    def to_nifti(self, filename: str | Path, magnitude_only: bool = False) -> None:
         """Save image data as NIFTI file.
 
         Parameters

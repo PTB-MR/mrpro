@@ -45,10 +45,10 @@ def test_IData_from_dcm_file(dcm_2d):
 
 
 @pytest.mark.parametrize('magnitude_only', [True, False])
-def test_IData_save_as_nifti(dcm_2d, tmp_path, magnitude_only: bool) -> None:
+def test_IData_to_nifti(dcm_2d, tmp_path, magnitude_only: bool) -> None:
     """Save image data as NIFTI 1/2 file."""
     idata = IData.from_dicom_files(dcm_2d[0].filename)
-    idata.save_as_nifti(tmp_path / 'test.nii', magnitude_only=magnitude_only)
+    idata.to_nifti(tmp_path / 'test.nii', magnitude_only=magnitude_only)
     assert (tmp_path / 'test.nii').exists()
 
 
