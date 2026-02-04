@@ -2030,6 +2030,9 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
            https://link.springer.com/article/10.1007/s11263-012-0601-0
 
         """
+        if self._single:
+            return self.__class__(self._quaternions[0], inversion=self._is_improper, normalize=False)
+
         if weights is None:
             weights = torch.ones(*self.shape)
         else:

@@ -1298,6 +1298,15 @@ def test_mean(theta: float) -> None:
     assert math.isclose(r.mean().magnitude(), 0.0, abs_tol=1e-7)
 
 
+def test_mean_single() -> None:
+    """Test mean with a single rotation"""
+    r = Rotation.from_rotvec([0, 0, 0])
+    mean = r.mean()
+    assert r.mean() == mean
+    assert r is not mean
+    assert mean.single
+
+
 @pytest.mark.parametrize('theta', [0.0, np.pi / 8, np.pi / 4, np.pi / 3, np.pi / 2])
 def test_weighted_mean(theta: float) -> None:
     """Test that doubling a weight is equivalent to including a rotation twice."""
