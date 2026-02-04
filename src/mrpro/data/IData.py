@@ -19,9 +19,9 @@ from typing_extensions import Self
 from mrpro.data.Dataclass import Dataclass
 from mrpro.data.IHeader import IHeader, get_items
 from mrpro.data.KHeader import KHeader
-from mrpro.utils.summarize import summarize_values
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.reshape import unsqueeze_right
+from mrpro.utils.summarize import summarize_values
 from mrpro.utils.unit_conversion import m_to_mm, rad_to_deg, s_to_ms
 
 
@@ -223,6 +223,7 @@ class IData(Dataclass):
             f'Device: {device}\n{self.header}'
         )
         return out
+
     def to_dicom_folder(
         self,
         foldername: str | Path,
