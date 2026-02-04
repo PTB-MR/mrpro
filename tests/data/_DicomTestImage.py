@@ -27,11 +27,13 @@ class DicomTestImage:
         slice_orientation: Rotation | None = None,
         slice_offset: float | Sequence[float] = 0.0,
         cardiac_trigger_delay: float | None = None,
-        te: float = 0.037,
+        te: float | None = 0.037,
         time_after_rpeak: float = 0.333,
         phantom: EllipsePhantom | None = None,
         series_description: str = 'dicom_test_images',
         series_instance_uid: str | None = None,
+        rescale_slope: float = 1.0,
+        rescale_intercept: float = 0.0,
     ):
         """Initialize DicomTestImage.
 
@@ -63,6 +65,10 @@ class DicomTestImage:
         series_instance_uid
             UID identifying a series, i.e. a set of images which belong together (e.g. multiple slices).
             If None, a new UID is generated.
+        rescale_slope
+            rescale slope for pixel data
+        rescale_intercept
+            rescale intercept for pixel data
         """
 
         if not phantom:
@@ -81,6 +87,8 @@ class DicomTestImage:
         self.slice_orientation: Sequence[SpatialDimension] = (
             transversal_orientation if slice_orientation is None else slice_orientation.as_directions()
         )
+        self.rescale_slope = rescale_slope
+        self.rescale_intercept = rescale_intercept
         self.slice_offset = torch.atleast_1d(torch.as_tensor(slice_offset))
         self.te = te
         self.time_after_rpeak = time_after_rpeak
@@ -148,6 +156,8 @@ class DicomTestImage:
             mr_echo_sequence.append(pydicom.Dataset())
             pixel_measure_sequence = pydicom.Sequence()
             pixel_measure_sequence.append(pydicom.Dataset())
+            pixel_value_transformation_sequence = pydicom.Sequence()
+            pixel_value_transformation_sequence.append(pydicom.Dataset())
             mr_timing_parameters_sequence = pydicom.Sequence()
             mr_timing_parameters_sequence.append(pydicom.Dataset())
 
@@ -181,12 +191,19 @@ class DicomTestImage:
                     plane_orientation_sequence
                 )
 
-                mr_echo_sequence[0].EffectiveEchoTime = s_to_ms(self.te)
+                mr_echo_sequence[0].EffectiveEchoTime = s_to_ms(self.te) if self.te is not None else None
                 dataset.PerFrameFunctionalGroupsSequence[-1].MREchoSequence = deepcopy(mr_echo_sequence)
 
                 pixel_measure_sequence[0].SliceThickness = slice_thickness
                 pixel_measure_sequence[0].PixelSpacing = [inplane_resolution, inplane_resolution]
                 dataset.PerFrameFunctionalGroupsSequence[-1].PixelMeasuresSequence = deepcopy(pixel_measure_sequence)
+
+                pixel_value_transformation_sequence[0].RescaleSlope = rescale_slope
+                pixel_value_transformation_sequence[0].RescaleIntercept = rescale_intercept
+                pixel_value_transformation_sequence[0].RescaleType = 'US'
+                dataset.PerFrameFunctionalGroupsSequence[-1].PixelValueTransformationSequence = deepcopy(
+                    pixel_value_transformation_sequence
+                )
 
                 mr_timing_parameters_sequence[0].FlipAngle = 15.0
                 mr_timing_parameters_sequence[0].InversionTime = 3.0
@@ -201,7 +218,7 @@ class DicomTestImage:
 
             dataset.ImagePositionPatient = (patient_position + slice_direction * self.slice_offset.numpy()).tolist()
             dataset.ImageOrientationPatient = [*phase_direction, *readout_direction]
-            dataset.EchoTime = s_to_ms(self.te)
+            dataset.EchoTime = s_to_ms(self.te) if self.te is not None else None
             dataset.InversionTime = 3.0
             dataset.TriggerTime = s_to_ms(self.time_after_rpeak)
             dataset.PixelSpacing = [inplane_resolution, inplane_resolution]
@@ -211,13 +228,21 @@ class DicomTestImage:
             dataset.RepetitionTime = 25.2
             dataset.FrameReferenceDateTime = dt
 
+            dataset.RescaleSlope = rescale_slope
+            dataset.RescaleIntercept = rescale_intercept
+            dataset.RescaleType = 'US'
+
         random = RandomGenerator()
         noise = random.float32_tensor(size=(n_slices, matrix_size_x, matrix_size_y))
 
         # 'MONOCHROME2' means smallest value is black, largest value is white
         set_pixel_data(
             ds=dataset,
-            arr=(repeat(self.img_ref, 'y x -> slices x y', slices=n_slices) + noise).numpy().astype(np.uint16),
+            arr=(
+                repeat((self.img_ref - rescale_intercept) / rescale_slope, 'y x -> slices x y', slices=n_slices) + noise
+            )
+            .numpy()
+            .astype(np.uint16),
             photometric_interpretation='MONOCHROME2',
             bits_stored=16,
         )

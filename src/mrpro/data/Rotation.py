@@ -624,7 +624,10 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         rotation
             Object containing the rotations represented by the basis vectors.
         """
-        b1, b2, b3 = (torch.stack([torch.as_tensor(getattr(v_, axis)) for axis in AXIS_ORDER], -1) for v_ in basis)
+        b1, b2, b3 = (
+            torch.stack(torch.broadcast_tensors(*(torch.as_tensor(getattr(v_, ax)) for ax in AXIS_ORDER)), dim=-1)
+            for v_ in basis
+        )
         matrix = torch.stack((b1, b2, b3), -1)
         det = torch.linalg.det(matrix)
         if not allow_improper and (det < 0).any():
@@ -2027,6 +2030,9 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
            https://link.springer.com/article/10.1007/s11263-012-0601-0
 
         """
+        if self._single:
+            return self.__class__(self._quaternions[0], inversion=self._is_improper, normalize=False)
+
         if weights is None:
             weights = torch.ones(*self.shape)
         else:
