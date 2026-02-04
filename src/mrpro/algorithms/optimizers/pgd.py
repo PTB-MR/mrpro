@@ -33,8 +33,9 @@ def pgd(
 ) -> tuple[torch.Tensor, ...]:
     r"""Proximal gradient descent algorithm for solving problem :math:`min_x f(x) + g(x)`.
 
-    f is convex, differentiable, and with L-Lispchitz gradient.
+    f is convex, differentiable, and with L-Lipschitz gradient.
     g is convex, possibly non-smooth with computable proximal map.
+    g can be a single functional or a `~mrpro.operators.ProximableFunctionalSeparableSum` (e.g. ``g = g1 | g2``).
 
     For fixed stepsize t, pgd converges globally when :math:`t \in (0, 1/L)`,
     where L is the Lipschitz constant of the gradient of f.
