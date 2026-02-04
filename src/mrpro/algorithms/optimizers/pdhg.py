@@ -71,7 +71,8 @@ def pdhg(
     are the primal and dual step sizes, respectively (see further below) and :math:`\theta\in [0,1]`.
 
     The operator can be supplied as a `~mrpro.operators.LinearOperator` or as a
-    :math:`m\times n` -`~mrpro.operators.LinearOperatorMatrix` (use ``A | B`` for horizontal, ``A % B`` for vertical stacking).
+    :math:`m\times n` -`~mrpro.operators.LinearOperatorMatrix`
+    (you can use ``A | B`` for horizontal, ``A % B`` for vertical stacking).
     :math:`f` and :math:`g` can be single functionals or a `~mrpro.operators.ProximableFunctionalSeparableSum` of m or n
     functionals, respectively (build with ``f | g``).
 
