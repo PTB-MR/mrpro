@@ -179,8 +179,12 @@ class IData(Dataclass):
     def to_dicom_folder(
         self,
         foldername: str | Path,
+        *,
         series_description: str | None = None,
         reference_patient_table_position: SpatialDimension | None = None,
+        rescale_slope: float = 1.0,
+        rescale_intercept: float = 0.0,
+        normalize_data: bool = True,
     ) -> None:
         """Write the image data to DICOM files in a folder.
 
@@ -195,6 +199,12 @@ class IData(Dataclass):
         reference_patient_table_position
             If provided, the image position is calculated relative to this table positiion. This ensures that the
             image position is consistent across different scans even if the patient table has moved.
+        rescale_slope
+            Slope of linear scaling of data. Data is save as (data - intercept)/slope.
+        rescale_intercept
+            Intercept of linear scaling of data. Data is save as (data - intercept)/slope.
+        normalize_data
+            Normalize data prior to applying scaling.
         """
         if not isinstance(foldername, Path):
             foldername = Path(foldername)
@@ -310,12 +320,27 @@ class IData(Dataclass):
                     timing_parameters.RepetitionTime = s_to_ms(repetition_time)
                 frame_info.MRTimingAndRelatedParametersSequence = pydicom.Sequence([timing_parameters])
 
+                pixel_value_transformation = Dataset()
+                pixel_value_transformation.RescaleSlope = rescale_slope
+                pixel_value_transformation.RescaleIntercept = rescale_intercept
+                pixel_value_transformation.RescaleType = 'US'
+                frame_info.PixelValueTransformationSequence = pydicom.Sequence([pixel_value_transformation])
+
                 dataset.PerFrameFunctionalGroupsSequence.append(frame_info)
 
             # (frames, rows, columns) for multi-frame grayscale data
             pixel_data = dcm_file_idata.data.abs().cpu().numpy()
-            pixel_data = pixel_data / pixel_data.max() * (2**16 - 1)
+            pixel_data = pixel_data / pixel_data.max() * (2**16 - 1) if normalize_data else pixel_data
+            pixel_data = (pixel_data - rescale_intercept) / rescale_slope
             pixel_data = rearrange(pixel_data[0, 0, ...], 'frames y x -> frames x y')
+
+            if np.any(clipped_idx := (pixel_data < 0) | (pixel_data > 65535)):
+                clipped_data = pixel_data[clipped_idx]
+                warnings.warn(
+                    'Values outside of the uint16 range will be clipped. '
+                    + f'Data range [{clipped_data.min()} - {clipped_data.max()}]',
+                    stacklevel=2,
+                )
 
             # 'MONOCHROME2' means smallest value is black, largest value is white
             set_pixel_data(
