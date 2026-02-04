@@ -11,7 +11,10 @@ from mrpro.data import IData
     ('dcm_data_fixture'),
     [
         'dcm_2d',
+        'dcm_2d_with_empty_field',
         'dcm_3d',
+        'dcm_2d_rescale',
+        'dcm_3d_rescale',
         'dcm_2d_multi_echo_times',
         'dcm_2d_multi_echo_times_multi_folders',
         'dcm_cardiac_2d',
@@ -27,7 +30,10 @@ def test_IData_content_from_dcm(dcm_data_fixture, request):
     idata = IData.from_dicom_folder(dcm_data[0].filename.parent)
     # IData uses complex values but dicom only supports real values
     first_img = torch.real(idata.data.flatten(end_dim=-3)[0])
-    torch.testing.assert_close(first_img, dcm_data[0].img_ref)
+    # Rescaling can lead to loss of precision due to uint16 storage
+    torch.testing.assert_close(
+        first_img, dcm_data[0].img_ref, atol=dcm_data[0].rescale_slope, rtol=dcm_data[0].rescale_slope / (2**16 - 1)
+    )
 
 
 def test_IData_from_dcm_file(dcm_2d):
@@ -133,13 +139,7 @@ def test_IData_rss(random_kheader, random_test_data):
     torch.testing.assert_close(idata.rss(keepdim=False), expected.squeeze(-4))
 
 
-@pytest.mark.parametrize(
-    ('dcm_data_fixture'),
-    [
-        'dcm_2d',
-        'dcm_3d',
-    ],
-)
+@pytest.mark.parametrize(('dcm_data_fixture'), ['dcm_2d', 'dcm_3d'])
 def test_IData_to_dicom_folder_identical(dcm_data_fixture, request):
     """Verify saving of different dicom types."""
     dcm_data = request.getfixturevalue(dcm_data_fixture)
@@ -182,6 +182,39 @@ def test_IData_to_dicom_folder(dcm_data_fixture, request):
     torch.testing.assert_close(idata_reloaded.header.position.z, idata.header.position.z)
     assert idata_reloaded.header.orientation == idata.header.orientation
     torch.testing.assert_close(idata_reloaded.data, idata.data)
+
+
+@pytest.mark.parametrize(('rescale_slope'), [10, 20])
+@pytest.mark.parametrize(('rescale_intercept'), [-100, -200])
+def test_IData_to_dicom_folder_with_scaling(tmp_path_factory, dcm_2d, rescale_slope, rescale_intercept):
+    """Verify data is correctly scaled during saving."""
+    idata = IData.from_dicom_folder(dcm_2d[0].filename.parent)
+    dicom_folder = tmp_path_factory.mktemp('dicom_scaling') / 'test_output'
+    idata.to_dicom_folder(
+        dicom_folder,
+        series_description='test_series',
+        rescale_slope=rescale_slope,
+        rescale_intercept=rescale_intercept,
+        normalize_data=True,
+    )
+    idata_reloaded = IData.from_dicom_folder(dicom_folder)
+    torch.testing.assert_close(idata_reloaded.data, idata.data, atol=rescale_slope, rtol=rescale_slope / (2**16 - 1))
+
+
+def test_IData_to_dicom_folder_warning_cropped(tmp_path_factory, dcm_2d):
+    """Warning if data is cropped"""
+    idata = IData.from_dicom_folder(dcm_2d[0].filename.parent)
+    dicom_folder = tmp_path_factory.mktemp('dicom_warning') / 'test_output'
+    with pytest.warns(UserWarning, match='Values outside of the uint16 range will be clipped.'):
+        idata.to_dicom_folder(
+            dicom_folder,
+            series_description='test_series',
+            rescale_slope=0.1,
+            rescale_intercept=100,
+            normalize_data=False,
+        )
+    idata_reloaded = IData.from_dicom_folder(dicom_folder)
+    assert idata_reloaded.header.orientation == idata.header.orientation
 
 
 def test_IData_from_kheader_and_tensor_to_dicom_folder(tmp_path_factory, random_kheader, random_test_data):
