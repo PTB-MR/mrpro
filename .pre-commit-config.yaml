@@ -15,14 +15,14 @@ repos:
       - id: mixed-line-ending
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.10
+    rev: v0.14.14
     hooks:
       - id: ruff # linter
         args: [--fix]
       - id: ruff-format # formatter
 
   - repo: https://github.com/crate-ci/typos
-    rev: v1.41.0
+    rev: v1.43.0
     hooks:
       - id: typos
         args: [] # empty, to remove write-changes from the default arguments.
@@ -35,7 +35,7 @@ repos:
         exclude: ^tests/
 
   - repo: https://github.com/kynan/nbstripout
-    rev: 0.8.2
+    rev: 0.9.0
     hooks:
     # cleans the .ipynbs (removes outputs, resets all cell-ids to 0..N, cleans steps)
     # also clean any kernel information left after execution
@@ -72,7 +72,7 @@ repos:
        types_or: [python]
 
   - repo: https://github.com/kynan/nbstripout
-    rev: 0.8.2
+    rev: 0.9.0
     hooks:
     # cleans the .ipynbs (removes outputs, resets all cell-ids to 0..N, cleans steps)
     # also clean any kernel information left after execution
