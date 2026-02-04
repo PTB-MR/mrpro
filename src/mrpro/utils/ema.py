@@ -42,12 +42,11 @@ class EMADict:
         """Set the value of the EMA dict for a given key."""
         if key in self._data:
             old_v = self._data[key]
-            if isinstance(value, torch.Tensor):
-                if isinstance(old_v, torch.Tensor) and isinstance(value, torch.Tensor):
-                    if torch.is_floating_point(old_v) or torch.is_complex(old_v):
-                        old_v.mul_(self.decay).add_(value.detach().to(old_v.device), alpha=1.0 - self.decay)
-                    else:
-                        old_v.copy_(value)
+            if isinstance(old_v, torch.Tensor) and isinstance(value, torch.Tensor):
+                if torch.is_floating_point(old_v) or torch.is_complex(old_v):
+                    old_v.mul_(self.decay).add_(value.detach().to(old_v.device), alpha=1.0 - self.decay)
+                else:
+                    old_v.copy_(value)
                 return
             elif isinstance(old_v, float) and isinstance(value, float):  # noqa: SIM114
                 self._data[key] = self.decay * old_v + (1.0 - self.decay) * value
@@ -55,10 +54,12 @@ class EMADict:
             elif isinstance(old_v, complex) and isinstance(value, complex):
                 self._data[key] = self.decay * old_v + (1.0 - self.decay) * value
                 return
+
         if isinstance(value, torch.Tensor):
             self._data[key] = value.detach().clone()
-        else:
-            self._data[key] = value
+            return
+
+        self._data[key] = value
 
     def __delitem__(self, key: str) -> None:
         """Delete a key from the EMA dict."""
