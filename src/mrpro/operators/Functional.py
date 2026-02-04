@@ -177,10 +177,12 @@ class ProximableFunctional(Operator[torch.Tensor, tuple[torch.Tensor]], ABC):
             return NotImplemented
         return ScaledProximableFunctional(self, scalar)
 
-    def __and__(
+    def __or__(
         self, other: ProximableFunctional
     ) -> mrpro.operators.ProximableFunctionalSeparableSum[torch.Tensor, torch.Tensor]:
-        """Create a ProximableFunctionalSeparableSum object from two proximable functionals.
+        """Create a ProximableFunctionalSeparableSum from two proximable functionals.
+
+        ``f | g`` is a separable sum with ``(f|g)(x,y) == f(x) + g(y)``.
 
         Parameters
         ----------

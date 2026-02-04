@@ -329,11 +329,11 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         else:
             return NotImplemented
 
-    def __and__(self, other: LinearOperator) -> mrpro.operators.LinearOperatorMatrix:
+    def __or__(self, other: LinearOperator) -> mrpro.operators.LinearOperatorMatrix:
         """Horizontal stacking of two LinearOperators.
 
-        ``A&B`` is a `~mrpro.operators.LinearOperatorMatrix` with two columns,
-        with ``(A&B)(x1,x2) == A(x1) + B(x2)``.
+        ``A|B`` is a `~mrpro.operators.LinearOperatorMatrix` with two columns,
+        with ``(A|B)(x1,x2) == A(x1) + B(x2)``.
         See `mrpro.operators.LinearOperatorMatrix` for more information.
         """
         if not isinstance(other, LinearOperator):
@@ -341,11 +341,11 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         operators = [[self, other]]
         return mrpro.operators.LinearOperatorMatrix(operators)
 
-    def __or__(self, other: LinearOperator) -> mrpro.operators.LinearOperatorMatrix:
+    def __mod__(self, other: LinearOperator) -> mrpro.operators.LinearOperatorMatrix:
         """Vertical stacking of two LinearOperators.
 
-        ``A|B`` is a `~mrpro.operators.LinearOperatorMatrix` with two rows,
-        with ``(A|B)(x) == (A(x), B(x))``.
+        ``A%B`` is a `~mrpro.operators.LinearOperatorMatrix` with two rows,
+        with ``(A%B)(x) == (A(x), B(x))``.
         See `mrpro.operators.LinearOperatorMatrix` for more information.
         """
         if not isinstance(other, LinearOperator):

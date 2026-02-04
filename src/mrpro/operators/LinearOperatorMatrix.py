@@ -35,6 +35,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
     If indexing returns a single element, it is returned as a `~mrpro.operators.LinearOperator`.
 
     Basic arithmetic operations are supported with `~mrpro.operators.LinearOperator` and Tensors.
+    Use ``A | B`` for horizontal stacking (side-by-side columns) and ``A % B`` for vertical stacking (stacked rows).
 
     """
 
@@ -353,7 +354,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
         norm = norms.square().sum(0).sqrt().amax(0)
         return norm
 
-    def __and__(self, other: LinearOperator | LinearOperatorMatrix) -> Self:
+    def __or__(self, other: LinearOperator | LinearOperatorMatrix) -> Self:
         """Horizontal stacking."""
         if isinstance(other, LinearOperator):
             if (rows := self.shape[0]) > 1:
@@ -370,7 +371,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
             operators = [[*self_row, *other_row] for self_row, other_row in zip(self, other, strict=True)]
             return self.__class__(operators)
 
-    def __rand__(self, other: LinearOperator) -> Self:
+    def __ror__(self, other: LinearOperator) -> Self:
         """Horizontal stacking."""
         if (rows := self.shape[0]) > 1:
             raise ValueError(
@@ -379,7 +380,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
         operators = [[other, *self._operators[0]]]
         return self.__class__(operators)
 
-    def __or__(self, other: LinearOperator | LinearOperatorMatrix) -> Self:
+    def __mod__(self, other: LinearOperator | LinearOperatorMatrix) -> Self:
         """Vertical stacking."""
         if isinstance(other, LinearOperator):
             if (cols := self.shape[1]) > 1:
@@ -397,7 +398,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
             operators = [*self._operators, *other._operators]
             return self.__class__(operators)
 
-    def __ror__(self, other: LinearOperator) -> Self:
+    def __rmod__(self, other: LinearOperator) -> Self:
         """Vertical stacking."""
         if (cols := self.shape[1]) > 1:
             raise ValueError(
