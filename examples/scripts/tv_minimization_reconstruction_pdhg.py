@@ -53,6 +53,7 @@
 
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show download details"}
 # Download raw data from Zenodo
+import os
 import tempfile
 from pathlib import Path
 
@@ -60,7 +61,9 @@ import zenodo_get
 
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
-zenodo_get.download(record='14617082', retry_attempts=5, output_dir=data_folder)
+zenodo_get.download(
+    record='14617082', retry_attempts=5, output_dir=data_folder, access_token=os.environ.get('ZENODO_TOKEN')
+)
 
 # %%
 import mrpro
