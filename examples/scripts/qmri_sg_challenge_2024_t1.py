@@ -13,6 +13,7 @@
 # ### Get data from Zenodo
 
 # %%
+import os
 import tempfile
 import zipfile
 from pathlib import Path
@@ -21,7 +22,9 @@ import zenodo_get
 
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
-zenodo_get.download(record='10868350', retry_attempts=5, output_dir=data_folder)
+zenodo_get.download(
+    record='10868350', retry_attempts=5, output_dir=data_folder, access_token=os.environ.get('ZENODO_TOKEN')
+)
 with zipfile.ZipFile(data_folder / Path('T1 IR.zip'), 'r') as zip_ref:
     zip_ref.extractall(data_folder)
 
@@ -41,6 +44,7 @@ if idata_multi_ti.header.ti is None:
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show plotting details"}
 import matplotlib.pyplot as plt
 import torch
+from cmap import Colormap
 
 
 def show_images(*images: torch.Tensor, titles: list[str] | None = None) -> None:
@@ -131,7 +135,7 @@ axes[0, 0].set_title('$M_0$ start values')
 axes[0, 0].set_axis_off()
 fig.colorbar(im, ax=axes[0, 0], label='a.u.')
 
-im = axes[0, 1].imshow(t1_start[0, 0], vmin=0, vmax=2.5, cmap='magma')
+im = axes[0, 1].imshow(t1_start[0, 0], vmin=0, vmax=2.5, cmap=Colormap('lipari').to_mpl())
 axes[0, 1].set_title('$T_1$ start values')
 axes[0, 1].set_axis_off()
 fig.colorbar(im, ax=axes[0, 1], label='s')
@@ -188,7 +192,7 @@ axes[0, 0].set_title('$M_0$')
 axes[0, 0].set_axis_off()
 fig.colorbar(im, ax=axes[0, 0], label='a.u.')
 
-im = axes[0, 1].imshow(t1[0, 0], vmin=0, vmax=2.5, cmap='magma')
+im = axes[0, 1].imshow(t1[0, 0], vmin=0, vmax=2.5, cmap=Colormap('lipari').to_mpl())
 axes[0, 1].set_title('$T_1$')
 axes[0, 1].set_axis_off()
 fig.colorbar(im, ax=axes[0, 1], label='s')

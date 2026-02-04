@@ -43,8 +43,8 @@ def pdhg(
     initial_values: Sequence[torch.Tensor],
     max_iterations: int = 32,
     tolerance: float = 0,
-    primal_stepsize: float | None = None,
-    dual_stepsize: float | None = None,
+    primal_stepsize: float | torch.Tensor | None = None,
+    dual_stepsize: float | torch.Tensor | None = None,
     relaxation: float = 1.0,
     initial_relaxed: Sequence[torch.Tensor] | None = None,
     initial_duals: Sequence[torch.Tensor] | None = None,
@@ -71,8 +71,10 @@ def pdhg(
     are the primal and dual step sizes, respectively (see further below) and :math:`\theta\in [0,1]`.
 
     The operator can be supplied as a `~mrpro.operators.LinearOperator` or as a
-    :math:`m\times n` -`~mrpro.operators.LinearOperatorMatrix`, :math:`f` and :math:`g` can either be single functionals
-    or `~mrpro.operators.ProximableFunctionalSeparableSum` of m, or n, respectively, functionals.
+    :math:`m\times n` -`~mrpro.operators.LinearOperatorMatrix`
+    (you can use ``A | B`` for horizontal, ``A % B`` for vertical stacking).
+    :math:`f` and :math:`g` can be single functionals or a `~mrpro.operators.ProximableFunctionalSeparableSum` of m or n
+    functionals, respectively (build with ``f | g``).
 
     Thus, this implementation solves the problem
 
@@ -143,7 +145,7 @@ def pdhg(
 
     # We always use a separable sum for homogeneous handling, even if it is just a ZeroFunctional
     if f is None:
-        f_sum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * n_rows)
+        f_sum: ProximableFunctionalSeparableSum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * n_rows)
     elif isinstance(f, ProximableFunctional):
         f_sum = ProximableFunctionalSeparableSum(f)
     else:
@@ -153,7 +155,7 @@ def pdhg(
         raise ValueError('Number of rows in operator does not match number of functionals in f')
 
     if g is None:
-        g_sum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * n_columns)
+        g_sum: ProximableFunctionalSeparableSum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * n_columns)
     elif isinstance(g, ProximableFunctional):
         g_sum = ProximableFunctionalSeparableSum(g)
     else:
@@ -170,13 +172,13 @@ def pdhg(
             primal_stepsize_ = dual_stepsize_ = 1.0 / operator_norm
         elif primal_stepsize is None and dual_stepsize is not None:
             primal_stepsize_ = 1 / (operator_norm * dual_stepsize)
-            dual_stepsize_ = dual_stepsize
+            dual_stepsize_ = torch.as_tensor(dual_stepsize)
         elif dual_stepsize is None and primal_stepsize is not None:
             dual_stepsize_ = 1 / (operator_norm * primal_stepsize)
-            primal_stepsize_ = primal_stepsize
+            primal_stepsize_ = torch.as_tensor(primal_stepsize)
     else:
-        primal_stepsize_ = primal_stepsize
-        dual_stepsize_ = dual_stepsize
+        primal_stepsize_ = torch.as_tensor(primal_stepsize)
+        dual_stepsize_ = torch.as_tensor(dual_stepsize)
 
     primals_relaxed = initial_values if initial_relaxed is None else initial_relaxed
     duals = (0 * operator_matrix)(*initial_values) if initial_duals is None else initial_duals

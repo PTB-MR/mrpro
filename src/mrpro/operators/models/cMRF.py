@@ -23,10 +23,10 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
         |----------------|----------------|----------------|----------------|----------------
          [INV 30ms][ACQ]           [ACQ]   [T2-prep][ACQ]   [T2-prep][ACQ]  [T2-prep][ACQ]
 
-    .. note::
-
-       This model is on purpose not flexible in all design choices. Instead, consider writing a custom
-       `~mrpro.operators.SignalModel` based on this implementation if you need to simulate a different sequence.
+    Note
+    ----
+    This model is on purpose not flexible in all design choices. Instead, consider writing a custom
+    `~mrpro.operators.SignalModel` based on this implementation if you need to simulate a different sequence.
 
     References
     ----------
@@ -94,22 +94,36 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
             sequence.append(block)
         self.sequence = sequence.to(device=block_time.device)
 
-    def forward(self, m0: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor) -> tuple[torch.Tensor]:
-        """Simulate the Cardiac MR Fingerprinting signal.
+    def __call__(self, m0: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor) -> tuple[torch.Tensor]:
+        """Simulate the Cardiac MR Fingerprinting (cMRF) signal.
 
         Parameters
         ----------
         m0
-            steady state magnetization (complex)
+            Equilibrium signal / proton density. (complex).
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
         t1
-            longitudinal relaxation time T1 in s
+            Longitudinal (T1) relaxation time in seconds.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
         t2
-            transversal relaxation time T2 in s
-
+            Transversal (T2) relaxation time in seconds.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
 
         Returns
         -------
-            Simulated Cardiac MR Fingerprinting signal with the different acquisitions in the first dimension.
+            Simulated Cardiac MR Fingerprinting signal.
+            Shape `(acquisitions ...)`, for example `(acquisitions, *other, coils, z, y, x)` or
+            `(acquisitions, samples)` where `acquisitions` corresponds to the different acquisitions
+            in the sequence.
+        """
+        return super().__call__(m0, t1, t2)
+
+    def forward(self, m0: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply forward of CardiacFingerprinting.
+
+        .. note::
+            Prefer calling the instance of the CardiacFingerprinting as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         parameters = Parameters(m0, t1, t2)
         _, signals = self.sequence(parameters, states=20)

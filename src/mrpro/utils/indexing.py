@@ -11,6 +11,29 @@ from mrpro.utils.reshape import reduce_view
 from mrpro.utils.typing import TorchIndexerType
 
 
+def normalize_index(ndim: int, index: int) -> int:
+    """Normalize possibly negative indices.
+
+    Parameters
+    ----------
+    ndim
+        number of dimensions
+    index
+        index to normalize. negative indices count from the end.
+
+    Raises
+    ------
+    `IndexError`
+        if index is outside ``[-ndim,ndim)``
+    """
+    if 0 <= index < ndim:
+        return index
+    elif -ndim <= index < 0:
+        return ndim + index
+    else:
+        raise IndexError(f'Invalid index {index} for {ndim} data dimensions')
+
+
 @runtime_checkable
 class HasIndex(Protocol):
     """Objects that can be indexed with an `Indexer`."""
@@ -360,7 +383,7 @@ class Indexer:
                 fancy_index.append(idx)
             tensor_index += 1
 
-        tensor = tensor[fancy_index]
+        tensor = tensor[tuple(fancy_index)]
 
         if self.move_axes[0]:
             # handle the special case of a single and integer index, where we need to move the new

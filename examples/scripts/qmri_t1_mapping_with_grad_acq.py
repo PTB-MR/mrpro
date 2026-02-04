@@ -56,6 +56,7 @@
 #
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show download details"}
 # Download raw data in ISMRMRD format from zenodo into a temporary directory
+import os
 import tempfile
 from pathlib import Path
 
@@ -63,7 +64,9 @@ import zenodo_get
 
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
-zenodo_get.download(record='13207352', retry_attempts=5, output_dir=data_folder)
+zenodo_get.download(
+    record='13207352', retry_attempts=5, output_dir=data_folder, access_token=os.environ.get('ZENODO_TOKEN')
+)
 # %% [markdown]
 # We will use the following libraries:
 # %%
@@ -237,6 +240,8 @@ m0, t1, flip_angle = (p.detach().cpu().squeeze() for p in constraints_op(*result
 # Finally, we can take a look at the estimated $M_0$, $T_1$, and flip angle maps:
 # %%
 # Visualize parametric maps
+from cmap import Colormap
+
 fig, axes = plt.subplots(1, 3, figsize=(10, 2), squeeze=False)
 
 im = axes[0, 0].imshow(m0.abs(), cmap='gray')
@@ -244,7 +249,7 @@ axes[0, 0].set_title('$|M_0|$')
 axes[0, 0].set_axis_off()
 fig.colorbar(im, ax=axes[0, 0])
 
-im = axes[0, 1].imshow(t1, vmin=0, vmax=2, cmap='magma')
+im = axes[0, 1].imshow(t1, vmin=0, vmax=2, cmap=Colormap('lipari').to_mpl())
 axes[0, 1].set_title('$T_1$ (s)')
 axes[0, 1].set_axis_off()
 fig.colorbar(im, ax=axes[0, 1])

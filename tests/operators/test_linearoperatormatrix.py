@@ -233,17 +233,17 @@ def test_linearoperatormatrix_shorthand_vertical():
     op2 = random_linearop((4, 10), rng)
     x1 = rng.complex64_tensor((10,))
 
-    matrix1 = op1 & op2
+    matrix1 = op1 % op2
     assert matrix1.shape == (2, 1)
 
     actual = matrix1(x1)
     expected = (*op1(x1), *op2(x1))
     torch.testing.assert_close(actual, expected)
 
-    matrix2 = op2 & (matrix1 & op1)
+    matrix2 = op2 % (matrix1 % op1)
     assert matrix2.shape == (4, 1)
 
-    matrix3 = matrix2 & matrix2
+    matrix3 = matrix2 % matrix2
     assert matrix3.shape == (8, 1)
 
     actual = matrix3(x1)
@@ -287,13 +287,13 @@ def test_linearoperatormatrix_stacking_error():
     matrix3 = random_linearoperatormatrix((2, 4), (3, 10), rng)
     op = random_linearop((3, 10), rng)
     with pytest.raises(ValueError, match='Shape mismatch'):
-        matrix1 & matrix2
+        matrix1 % matrix2  # vertical stacking needs same columns
     with pytest.raises(ValueError, match='Shape mismatch'):
-        matrix1 | matrix3
+        matrix1 | matrix3  # horizontal stacking needs same rows
     with pytest.raises(ValueError, match='Shape mismatch'):
-        matrix1 | op
+        matrix1 | op  # horizontal stacking with operator needs 1-row matrix
     with pytest.raises(ValueError, match='Shape mismatch'):
-        matrix1 & op
+        matrix1 % op  # vertical stacking with operator needs 1-column matrix
 
 
 def test_linearoperatormatrix_error_nonlinearop():
@@ -320,3 +320,13 @@ def test_linearoperatormatrix_from_diagonal():
     actual = matrix(*xs)
     expected = tuple(op(x)[0] for op, x in zip(ops, xs, strict=False))
     torch.testing.assert_close(actual, expected)
+
+
+def test_linearoperatormatrix_gram():
+    """Test gram of LinearOperatorMatrix."""
+    rng = RandomGenerator(0)
+    matrix = random_linearoperatormatrix((3, 2), (4, 10), rng)
+    vector = tuple(rng.complex64_tensor((2, 10)))
+    result = matrix.gram(*vector)
+    expected = (matrix.H @ matrix)(*vector)
+    torch.testing.assert_close(result, expected)
