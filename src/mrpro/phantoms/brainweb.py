@@ -156,7 +156,7 @@ def augment(
         scale *= 1 + max_random_scaling_factor * rand[3]
         translate = rand[4:6]  # subpixel translation for edge aliasing
         if trim:
-            data = data[[slice(None), *trim_indices(data.sum(0) > 0.1 * data.amax())]]
+            data = data[(slice(None), *trim_indices(data.sum(0) > 0.1 * data.amax()))]
 
         data = torchvision.transforms.functional.affine(
             data,
@@ -304,7 +304,7 @@ def download_brainweb(
         sum_values = sum(values)
         values.pop(ALL_CLASSES.index('bck'))  # noqa: typos
         for i, x in enumerate(values):
-            x = np.divide(x, sum_values, where=sum_values != 0)
+            x = np.divide(x, sum_values, out=np.zeros_like(x, dtype=float), where=sum_values != 0)
             x[sum_values == 0] = 0
             x = (x * (2**8 - 1)).astype(np.uint8)
             values[i] = x
