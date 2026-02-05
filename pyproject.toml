@@ -65,6 +65,7 @@ dependencies = [
     "ismrmrd>=1.14.1",
     "einops>=0.7.0",
     "pydicom>=3.0.1",
+    "nibabel>=4.0",
     "pypulseq>=1.4.2",
     "pytorch-finufft>=0.1.0",
     "cufinufft>=2.4.1; platform_system=='Linux'",
@@ -148,6 +149,7 @@ module = [
     "pywt.*",
     "torchvision.*",
     "platformdirs",
+    "nibabel",
     "cmap",
 ]
 ignore_missing_imports = true
