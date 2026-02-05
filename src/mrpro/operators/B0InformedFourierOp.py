@@ -1,4 +1,4 @@
-"""Conjugate Phase Fast Fourier Transform operator."""
+"""B0-Informed Fourier Operator."""
 
 import torch
 
@@ -7,11 +7,19 @@ from mrpro.operators.LinearOperator import LinearOperator
 
 
 class B0InformedFourierOp(LinearOperator):
-    """Optimized 3D B0 Informed Reconstruction Operator."""
+    """B0-informed (fast) Fourier operator class.
 
-    _basis: torch.Tensor
-    _phasor: torch.Tensor
-    _fft_op: FastFourierOp
+    This operator implements a B0-informed Fourier transform that accounts for off-resonance effects.
+    It supports different modes of operation dependent on the input parameters:
+
+    .. note:
+        If `num_time_points` and `num_frequencies` are both `None` or `0`,
+        exact conjugate phase reconstruction with all individual frequencies is performed.
+        If only `num_time_points` is set, time-segmented approximation is used for efficient computation.
+        If only `num_frequencies` is set, conjugate phase reconstruction with frequency binning is performed.
+        If both `num_time_points` and `num_frequencies` are set, time-segmented approximation with frequency
+        binning is applied.
+    """
 
     def __init__(
         self,
@@ -20,14 +28,24 @@ class B0InformedFourierOp(LinearOperator):
         fft_op: FastFourierOp,
         num_time_points: int | None = None,
         num_frequencies: int | None = None,
+        b0_decimals: int = 0,
     ) -> None:
-        """Initialize Conjugate Phase Operator.
+        """Initialize B0 informed Fourier operator.
 
-        Args:
-            b0_map (torch.Tensor): Off-resonance map in Hz. Shape (..., Z, Y, X).
-            readout_times (torch.Tensor): Readout time vector in seconds. Shape (X,).
-            num_time_points (int | None): Number of time segments for approximation.
-            num_frequencies (int | None): Number of frequency bins.
+        Parameters
+        ----------
+        b0_map
+            Off-resonance map in Hz. Shape (..., Z, Y, X).
+        readout_times
+            Readout time vector in seconds. Shape (X,).
+        fft_op
+            Underlying Fast Fourier Transform operator.
+        num_time_points
+            Number of time segments for approximation.
+        num_frequencies
+            Number of frequency bins.
+        b0_decimals
+            Number of decimals to round B0 map values to after converting to radians/sec.
         """
         super().__init__()
 
@@ -36,8 +54,8 @@ class B0InformedFourierOp(LinearOperator):
             raise ValueError('readout_times must have same size as last dim of b0_map')
 
         device = b0_map.device
-        ndim = b0_map.ndim
-        self._fft_op = fft_op.to(device)
+        self._fft_op: FastFourierOp = fft_op.to(device)
+        b0_map_rad = torch.round(2 * torch.pi * b0_map, decimals=b0_decimals)  # Convert to radians/sec
 
         # Mode 1: Time-Segmented Approximation
         # Solves for an interpolator (C) such that: Basis(t_seg) @ C ≈ Basis(t_readout)
@@ -50,11 +68,11 @@ class B0InformedFourierOp(LinearOperator):
             # Otherwise, we use all Unique Frequencies (weighted by their occurrence count).
             if num_frequencies is not None and num_frequencies > 0:
                 q_steps = torch.linspace(0, 1, num_frequencies, device=device)
-                frequencies = torch.quantile(b0_map.flatten(), q_steps)
+                frequencies_rad = torch.quantile(b0_map_rad.flatten(), q_steps)
                 weights = None
             else:
-                frequencies, counts = torch.unique(b0_map, return_counts=True)
-                weights = counts.to(dtype=b0_map.dtype).sqrt()
+                frequencies_rad, counts = torch.unique(b0_map_rad, return_counts=True)
+                weights = counts.to(dtype=b0_map_rad.dtype).sqrt()
 
             # Solve for Interpolator C: Solve the system A @ C = B in a least-squares sense.
             # A (Segment Phase): exp(-i * w * t_seg)
@@ -62,9 +80,9 @@ class B0InformedFourierOp(LinearOperator):
 
             # Broadcasting: w (N_freq, 1) * t (1, N_time) -> (N_freq, N_time)
             # Segmented phase values from segmented time vector with shape (N_freqs, L)
-            phase_segments = torch.exp(-2j * torch.pi * frequencies[:, None] * t_seg[None, :])
+            phase_segments = torch.exp(-1j * frequencies_rad[:, None] * t_seg[None, :])
             # Target phase values from readout times with shape (N_freqs, N_ro)
-            phase_readout = torch.exp(-2j * torch.pi * frequencies[:, None] * readout_times[None, :])
+            phase_readout = torch.exp(-1j * frequencies_rad[:, None] * readout_times[None, :])
 
             # Apply weighting to the system if using Unique mode
             if weights is not None:
@@ -72,11 +90,11 @@ class B0InformedFourierOp(LinearOperator):
                 phase_readout *= weights[:, None]
 
             # Interpolator obtained by pinv(phase_segments) @ phase_readout with shape (L, N_ro)
-            phasor = torch.linalg.lstsq(phase_segments, phase_readout, rcond=1e-15).solution
+            temporal_basis = torch.linalg.lstsq(phase_segments, phase_readout, rcond=1e-15).solution
 
             # Precompute spatial basis functions B_l(r) = exp(-i * w(r) * t_seg_l)
             # with shape (L, ..., Z, Y, X) where ... are the spatial dimensions of b0_map.
-            basis = torch.exp(-1j * 2 * torch.pi * torch.einsum('l, ... -> l...', t_seg, b0_map))
+            spatial_basis = torch.exp(-1j * torch.einsum('l, ... -> l...', t_seg, b0_map_rad))
 
         # Mode 2: Exact CPR with or without Frequency Binning
         # Uses spatial masks (basis) and exact temporal evolution (phasor)
@@ -85,34 +103,34 @@ class B0InformedFourierOp(LinearOperator):
             if num_frequencies is not None and num_frequencies > 0:
                 # Quantile Binning
                 q_steps = torch.linspace(0, 1, num_frequencies + 1, device=device)
-                boundaries = torch.quantile(b0_map.flatten(), q_steps)
+                boundaries = torch.quantile(b0_map_rad.flatten(), q_steps)
 
                 # Use bin centers for frequency evolution
-                frequencies = (boundaries[:-1] + boundaries[1:]) / 2
+                frequencies_rad = (boundaries[:-1] + boundaries[1:]) / 2
 
-                # Digitizing the map (Bucketize)
-                # indices will range [0, num_frequencies-1]
-                indices = torch.bucketize(b0_map, boundaries[:-1], right=True) - 1
+                # Quantize/bucketize the map, indices will range [0, num_frequencies-1]
+                indices = torch.bucketize(b0_map_rad, boundaries[:-1], right=True) - 1
                 indices.clamp_(0, num_frequencies - 1)
             else:
                 # Exact Unique Frequencies
-                frequencies, indices = torch.unique(b0_map, return_inverse=True)
-                indices = indices.view(b0_map.shape)
+                frequencies_rad, indices = torch.unique(b0_map_rad, return_inverse=True)
+                indices = indices.view(b0_map_rad.shape)
 
-            frequencies = 2 * torch.pi * frequencies
-            num_bins = len(frequencies)
+            num_bins = len(frequencies_rad)
 
             # Compute Phasor (Temporal Evolution) with shape: (N_bins, N_readout)
-            phasor = torch.exp(-1j * frequencies[:, None] * readout_times[None, :])
+            temporal_basis = torch.exp(-1j * torch.einsum('l, x -> lx', frequencies_rad, readout_times))
 
-            # Compute Basis (One-Hot Masks) with shape: (N_bins, Z, Y, X)
-            # WARNING: This can be memory intensive if num_bins is large (Exact mode)
-            idx_range = torch.arange(num_bins, device=device).view(-1, *([1] * ndim))
-            basis = (indices.unsqueeze(0) == idx_range).to(dtype=torch.complex64)
+            # Compute Basis (One-Hot Masks) with shape: (number of frequencies/bins, *b0map shape)
+            # WARNING: This can be memory intensive if number of bins, i.e. the number of frequencies is large
+            idx_range = torch.arange(num_bins, device=device).view(-1, *([1] * b0_map_rad.ndim))
+            spatial_basis = (indices.unsqueeze(0) == idx_range).to(dtype=torch.complex64)
 
         # Register buffers
-        self.register_buffer('_basis', basis)  # Time-Seg -> Complex Maps | Binning -> Boolean Masks
-        self.register_buffer('_phasor', phasor)  # Time-Seg -> Interpolator | Binning -> Time Evolution
+        self._spatial_basis: torch.Tensor
+        self._temporal_basis: torch.Tensor
+        self.register_buffer('_spatial_basis', spatial_basis)  # Time-Seg -> Complex Maps | Binning -> Boolean Masks
+        self.register_buffer('_temporal_basis', temporal_basis)  # Time-Seg -> Interpolator | Binning -> Time Evolution
 
     def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply B0-informed Fourier transform to input tensor (image to k-space).
@@ -139,13 +157,13 @@ class B0InformedFourierOp(LinearOperator):
             directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         # Multiply with masks / basis functions
-        x_l = torch.einsum('...zyx, l...zyx -> l...zyx', x, self._basis)
+        x_l = torch.einsum('...zyx, l...zyx -> l...zyx', x, self._spatial_basis)
 
         # Apply Fourier transform to each segment
         (k_l,) = self._fft_op(x_l)
 
         # Multiply with phasor and sum over segments
-        res = torch.einsum('l...zyx, lx -> ...zyx', k_l, self._phasor)
+        res = torch.einsum('l...zyx, lx -> ...zyx', k_l, self._temporal_basis)
 
         return (res,)
 
@@ -166,12 +184,12 @@ class B0InformedFourierOp(LinearOperator):
             Reconstructed image tensor in signal space with shape (..., z, y, x).
         """
         # Multiply with conjugate phasor
-        y_l = torch.einsum('...zyx, lx -> l...zyx', y, self._phasor.conj())
+        y_l = torch.einsum('...zyx, lx -> l...zyx', y, self._temporal_basis.conj())
 
         # Inverse Fourier operator applied to each segment
         (x_l,) = self._fft_op.adjoint(y_l)
 
         # Multiply with Masks and sum over segments
-        res = torch.einsum('l...zyx, l...zyx -> ...zyx', x_l, self._basis.conj())
+        res = torch.einsum('l...zyx, l...zyx -> ...zyx', x_l, self._spatial_basis.conj())
 
         return (res,)
