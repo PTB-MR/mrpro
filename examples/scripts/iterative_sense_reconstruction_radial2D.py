@@ -94,7 +94,7 @@ img_direct = direct_reconstruction(kdata)
 iterative_sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction(
     fourier_op=direct_reconstruction.fourier_op,
     csm=direct_reconstruction.csm,
-    dcf=direct_reconstruction.dcf,
+    dcf_op=direct_reconstruction.dcf_op,
     n_iterations=4,
 )
 
@@ -132,7 +132,7 @@ fourier_operator = mrpro.operators.FourierOp(
 # We use the Voronoi tessellation to calculate the density compensation.
 
 # %%
-dcf_operator = mrpro.data.DcfData.from_traj_voronoi(kdata.traj).as_operator()
+dcf_operator = mrpro.operators.DensityCompensationOp.from_traj_voronoi(kdata.traj)
 img_coilwise = mrpro.data.IData.from_tensor_and_kheader(*fourier_operator.H(*dcf_operator(kdata.data)), kdata.header)
 csm_data = mrpro.data.CsmData.from_idata_walsh(img_coilwise)
 csm_operator = csm_data.as_operator()

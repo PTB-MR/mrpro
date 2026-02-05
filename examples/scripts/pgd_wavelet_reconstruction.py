@@ -127,7 +127,7 @@ sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSEReconstruct
     kdata_24spokes,
     n_iterations=8,
     csm=direct_reconstruction_24.csm,
-    dcf=direct_reconstruction_24.dcf,
+    dcf_op=direct_reconstruction_24.dcf_op,
 )
 img_sense_24 = sense_reconstruction(kdata_24spokes)
 
