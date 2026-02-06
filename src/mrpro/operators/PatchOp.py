@@ -43,7 +43,7 @@ class PatchOp(LinearOperator):
         self.dim = (dim,) if isinstance(dim, int) else dim
 
         if len(set(self.dim)) != len(self.dim):
-            raise ValueError('Duplicate values in axis are not allowed')
+            raise ValueError('must be unique')
 
         def check(param: int | Sequence[int], name: str) -> tuple[int, ...]:
             if isinstance(param, int):

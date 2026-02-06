@@ -6,8 +6,7 @@ from typing import Literal
 
 import torch
 
-from mrpro.utils.indexing import normalize_index
-from mrpro.utils.reshape import unsqueeze_left
+from mrpro.utils.reshape import normalize_index, unsqueeze_left
 
 
 def pad_or_crop(

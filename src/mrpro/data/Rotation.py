@@ -59,7 +59,7 @@ from typing_extensions import Self, Unpack, overload
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.indexing import Indexer
 from mrpro.utils.reduce_repeat import reduce_repeat
-from mrpro.utils.reshape import broadcasted_rearrange
+from mrpro.utils.reshape import broadcasted_rearrange, normalize_indices
 from mrpro.utils.typing import NestedSequence, TorchIndexerType
 from mrpro.utils.vmf import sample_vmf
 
@@ -2055,11 +2055,7 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
             weights = weights.reshape(-1)
             dim = list(range(len(self.shape)))
         else:
-            dim = (
-                [d % (quaternions.ndim - 1) for d in dim]
-                if isinstance(dim, Sequence)
-                else [dim % (quaternions.ndim - 1)]
-            )
+            dim = normalize_indices(quaternions.ndim - 1, dim)
             batch_dims = [i for i in range(quaternions.ndim - 1) if i not in dim]
             permute_dims = (*batch_dims, *dim)
             quaternions = quaternions.permute(*permute_dims, -1).flatten(start_dim=len(batch_dims), end_dim=-2)
