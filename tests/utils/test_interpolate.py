@@ -37,7 +37,7 @@ def test_interpolate_size_dim_mismatch() -> None:
 
 def test_interpolate_unique_dim() -> None:
     """Test non-unique interpolate dimensions."""
-    with pytest.raises(ValueError, match='Dim must be unique'):
+    with pytest.raises(IndexError, match='unique'):
         interpolate(torch.randn((2, 2, 2)), dim=(-1, -2, 1), size=(2, 2, 2))
 
 
