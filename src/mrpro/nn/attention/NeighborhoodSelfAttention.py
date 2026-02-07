@@ -22,6 +22,7 @@ else:
         """Dummy class for older PyTorch versions."""
 
 
+@torch._dynamo.disable()
 @torch.compiler.disable(recursive=True)
 def uncompiled_flex_attention(
     query: torch.Tensor,
@@ -34,12 +35,16 @@ def uncompiled_flex_attention(
     kernel_options: Any = None,  # noqa: ANN401
 ) -> torch.Tensor:
     """Wrap flex_attention to disable compilation."""
-    return cast(
+    old, torch._dynamo.config.disable = torch._dynamo.config.disable, True
+    result = cast(
         torch.Tensor,
         flex_attention(query, key, value, score_mod, block_mask, scale, enable_gqa, kernel_options=kernel_options),
     )
+    torch._dynamo.config.disable = old
+    return result
 
 
+@torch.compiler.disable(recursive=True)
 @cache
 def neighborhood_mask(
     device: str,
@@ -239,6 +244,7 @@ class NeighborhoodSelfAttention(Module):
             # Keep the CPU path explicitly uncompiled. flex_attention currently has fragile
             # torch.compile behavior on CPU for this call pattern.
             # https://github.com/pytorch/pytorch/issues/148752
+            torch._dynamo.graph_break()
             out: torch.Tensor = uncompiled_flex_attention(query, key, value, block_mask=mask)
         else:
             out = cast(torch.Tensor, flex_attention(query, key, value, block_mask=mask))
