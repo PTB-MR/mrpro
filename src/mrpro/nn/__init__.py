@@ -14,6 +14,7 @@ from mrpro.nn.ResBlock import ResBlock
 from mrpro.nn.Residual import Residual
 from mrpro.nn.SeparableResBlock import SeparableResBlock
 from mrpro.nn.Sequential import Sequential
+from mrpro.nn import data_consistency
 from mrpro.nn import nets
 from mrpro.nn.ndmodules import (
     adaptiveAvgPoolND,
@@ -45,6 +46,7 @@ __all__ = [
     'batchNormND',
     'convND',
     'convTransposeND',
+    'data_consistency',
     'instanceNormND',
     'maxPoolND',
     'nets',
