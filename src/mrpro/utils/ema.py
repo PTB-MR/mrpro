@@ -31,7 +31,7 @@ class EMADict:
         """
         self.decay: float = decay
         if not 0 <= decay <= 1:
-            raise ValueError(f'Decay must be between 0 and 1, got {decay}')
+            raise ValueError(f"Decay must be between 0 and 1, got {decay}")
         self._data: dict[str, Any] = {}
 
     def __getitem__(self, key: str) -> Any:  # noqa: ANN401
@@ -44,7 +44,9 @@ class EMADict:
             old_v = self._data[key]
             if isinstance(old_v, torch.Tensor) and isinstance(value, torch.Tensor):
                 if torch.is_floating_point(old_v) or torch.is_complex(old_v):
-                    old_v.mul_(self.decay).add_(value.detach().to(old_v.device), alpha=1.0 - self.decay)
+                    old_v.mul_(self.decay).add_(
+                        value.detach().to(old_v.device), alpha=1.0 - self.decay
+                    )
                 else:
                     old_v.copy_(value)
                 return
