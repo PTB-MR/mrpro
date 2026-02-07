@@ -75,7 +75,7 @@ class ElementaryFunctional(Operator[torch.Tensor, tuple[torch.Tensor]], ABC):
             the tensor `weight ( x - target)`. If true, the functional is thus calculated as the mean,
             else the sum.
         keepdim
-            if true, the dimension(s) of the input indexed by `dim` are maintained and collapsed to singeltons,
+            if true, the dimension(s) of the input indexed by `dim` are maintained and collapsed to singletons,
             else they are removed from the result.
 
         """
@@ -180,7 +180,9 @@ class ProximableFunctional(Operator[torch.Tensor, tuple[torch.Tensor]], ABC):
     def __or__(
         self, other: ProximableFunctional
     ) -> mrpro.operators.ProximableFunctionalSeparableSum[torch.Tensor, torch.Tensor]:
-        """Create a ProximableFunctionalSeparableSum object from two proximable functionals.
+        """Create a ProximableFunctionalSeparableSum from two proximable functionals.
+
+        ``f | g`` is a separable sum with ``(f|g)(x,y) == f(x) + g(y)``.
 
         Parameters
         ----------
@@ -193,7 +195,7 @@ class ProximableFunctional(Operator[torch.Tensor, tuple[torch.Tensor]], ABC):
         """
         if isinstance(other, ProximableFunctional):
             return mrpro.operators.ProximableFunctionalSeparableSum(self, other)
-        return NotImplemented  # type: ignore[unreachable]
+        return NotImplemented
 
 
 class ElementaryProximableFunctional(ElementaryFunctional, ProximableFunctional):

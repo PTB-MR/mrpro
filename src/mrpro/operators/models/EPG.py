@@ -48,6 +48,9 @@ class Parameters(Dataclass):
     relative_b1: torch.Tensor | None = None
     """Relative B1 scaling factor (complex)"""
 
+    t1_rho: torch.Tensor | None = None
+    """T1 rho relaxation time [s]"""
+
     @property
     def device(self) -> torch.device:
         """Device of the parameters."""
@@ -81,7 +84,6 @@ class Parameters(Dataclass):
         return ndim
 
 
-@torch.jit.script
 def rf_matrix(
     flip_angle: torch.Tensor,
     phase: torch.Tensor,
@@ -151,7 +153,6 @@ def rf(state: torch.Tensor, matrix: torch.Tensor) -> torch.Tensor:
     return matrix.to(state) @ state
 
 
-@torch.jit.script
 def gradient_dephasing(state: torch.Tensor) -> torch.Tensor:
     """Propagate EPG states through a "unit" gradient.
 
@@ -172,7 +173,6 @@ def gradient_dephasing(state: torch.Tensor) -> torch.Tensor:
     return torch.stack((f_plus, f_minus, z), -2)
 
 
-@torch.jit.script
 def relax_matrix(relaxation_time: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor) -> torch.Tensor:
     """Calculate relaxation vector.
 
@@ -195,7 +195,6 @@ def relax_matrix(relaxation_time: torch.Tensor, t1: torch.Tensor, t2: torch.Tens
     return torch.stack([e2, e2, e1], dim=-1)
 
 
-@torch.jit.script
 def relax(states: torch.Tensor, relaxation_matrix: torch.Tensor, t1_recovery: bool = True) -> torch.Tensor:
     """Propagate EPG states through a period of relaxation and recovery.
 
@@ -487,6 +486,99 @@ class FispBlock(EPGBlock):
         return states, tuple(signal)
 
 
+class TseBlock(EPGBlock):
+    """TSE data acquisition block.
+
+    The block consists of a 90° excitation pulse followed by a series of refocusing pulses with different flip angles
+    and phases followed by an acquisition:
+        - rf excitation with 90° and phase 90°
+        - relax for te/2
+        - gradient_dephasing
+        - rf with flip_angle[i] and rf_phase[i]
+        - gradient_dephasing
+        - relax for te/2
+        - acquisition
+    """
+
+    refocusing_flip_angles: torch.Tensor
+    refocusing_rf_phases: torch.Tensor
+    te: torch.Tensor
+
+    def __init__(
+        self,
+        refocusing_flip_angles: torch.Tensor | float,
+        refocusing_rf_phases: torch.Tensor | float,
+        te: float,
+    ) -> None:
+        """Initialize the TSE block.
+
+        Parameters
+        ----------
+        refocusing_flip_angles
+            Flip angles of the refocusing RF pulses in rad
+        refocusing_rf_phases
+            Phase of the refocusing RF pulses in rad
+        te
+            Echo time
+        """
+        super().__init__()
+
+        refocusing_flip_angles_, refocusing_rf_phases_ = map(
+            torch.as_tensor, (refocusing_flip_angles, refocusing_rf_phases)
+        )
+        try:
+            self.refocusing_flip_angles, self.refocusing_rf_phases = torch.broadcast_tensors(
+                refocusing_flip_angles_, refocusing_rf_phases_
+            )
+        except RuntimeError:
+            raise ValueError(
+                f'Shapes of flip_angles ({refocusing_flip_angles_.shape}) and rf_phases ({refocusing_rf_phases_.shape})'
+                f' cannot be broadcasted.',
+            ) from None
+
+        self.te = torch.as_tensor(te)
+        if (self.te < 0).any():
+            raise ValueError(f'Negative echo time ({self.te.amin()}) not allowed.')
+
+    @property
+    def duration(self) -> torch.Tensor:
+        """Duration of the block."""
+        return self.te * self.refocusing_flip_angles.shape[0]
+
+    def forward(
+        self,
+        parameters: Parameters,
+        states: torch.Tensor,
+    ) -> tuple[torch.Tensor, tuple[torch.Tensor, ...]]:
+        """Apply the TSE block to the EPG state.
+
+        Parameters
+        ----------
+        parameters
+            Tissue parameters
+        states
+            EPG configuration states
+
+        Returns
+        -------
+            EPG configuration states after the block and the acquired signals
+        """
+        signal = []
+        # +1 for time dimension
+        unsqueezed = unsqueeze_tensors_right(
+            self.refocusing_flip_angles, self.refocusing_rf_phases, ndim=parameters.ndim + 1
+        )
+        states = rf(states, rf_matrix(torch.tensor(torch.pi / 2), torch.tensor(torch.pi / 2), parameters.relative_b1))
+        for refocusing_flip_angle, refocusing_rf_phase in zip(*unsqueezed, strict=True):
+            states = relax(states, relax_matrix(self.te / 2, parameters.t1, parameters.t2))
+            states = gradient_dephasing(states)
+            states = rf(states, rf_matrix(refocusing_flip_angle, refocusing_rf_phase, parameters.relative_b1))
+            states = gradient_dephasing(states)
+            states = relax(states, relax_matrix(self.te / 2, parameters.t1, parameters.t2))
+            signal.append(acquisition(states, parameters.m0))
+        return states, tuple(signal)
+
+
 class InversionBlock(EPGBlock):
     """T1 Inversion Preparation Block.
 
@@ -592,6 +684,61 @@ class T2PrepBlock(EPGBlock):
         return self.te
 
 
+class T1RhoPrepBlock(EPGBlock):
+    """T1 Rho Preparation Block.
+
+    Consists of a 90° pulse, then T1rho relaxation during a spin-lock pulse followed by a -90° pulse.
+
+    The pulses are assumed to be B1 insensitive.
+    """
+
+    def __init__(self, spin_lock_duration: torch.Tensor | float) -> None:
+        """Initialize the T1 Rho preparation block.
+
+        Parameters
+        ----------
+        spin_lock_duration
+            Duration of the spin-lock pulse
+        """
+        super().__init__()
+
+        self.spin_lock_duration = torch.as_tensor(spin_lock_duration)
+
+    def forward(
+        self,
+        parameters: Parameters,
+        states: torch.Tensor,
+    ) -> tuple[torch.Tensor, tuple[torch.Tensor, ...]]:
+        """Apply the T1 Rho preparation block to the EPG state.
+
+        Parameters
+        ----------
+        parameters
+            Tissue parameters
+        states
+            EPG configuration states
+
+        Returns
+        -------
+            EPG configuration states after the block and an empty list
+        """
+        if parameters.t1_rho is not None:
+            # 90° pulse -> T1 rho relaxation during spin lock pulse -> -90° pulse
+            states = rf(states, rf_matrix(torch.tensor(torch.pi / 2), torch.tensor(0.0)))
+            e_t1_rho = torch.exp(-self.spin_lock_duration / parameters.t1_rho)
+            t1_rho_relax_matrix = torch.stack([e_t1_rho, e_t1_rho, torch.ones_like(e_t1_rho)], dim=-1)
+            states = relax(states, t1_rho_relax_matrix, t1_recovery=False)
+            states = rf(states, rf_matrix(torch.tensor(torch.pi / 2), -torch.tensor(torch.pi)))
+            # Spoiler
+            states = gradient_dephasing(states)
+        return states, ()
+
+    @property
+    def duration(self) -> torch.Tensor:
+        """Duration of the block."""
+        return self.spin_lock_duration
+
+
 class DelayBlock(EPGBlock):
     """Delay Block."""
 
@@ -637,7 +784,7 @@ class DelayBlock(EPGBlock):
 
 
 class EPGSequence(torch.nn.ModuleList, EPGBlock):
-    """Sequene of EPG blocks.
+    """Sequence of EPG blocks.
 
     A sequence as multiple blocks, such as preparation pulses, acquisition blocks and delays.
 
@@ -707,6 +854,8 @@ __all__ = [
     'InversionBlock',
     'Parameters',
     'RFBlock',
+    'T1RhoPrepBlock',
     'T2PrepBlock',
+    'TseBlock',
     'initial_state',
 ]

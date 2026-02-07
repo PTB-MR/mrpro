@@ -39,7 +39,7 @@ class MSE(L2NormSquared):
             If `True`, the result is scaled by the number of elements of the dimensions in the
             tensor `weight ( x - target)` indexed by `dim`. The functional is thus calculated as the mean, else the sum.
         keepdim
-            If `True`, the dimension(s) of the input indexed by dim are maintained and collapsed to singeltons,
+            If `True`, the dimension(s) of the input indexed by dim are maintained and collapsed to singletons,
             else they are removed from the result.
 
         """

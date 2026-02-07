@@ -6,30 +6,8 @@ from typing import Literal
 
 import torch
 
+from mrpro.utils.indexing import normalize_index
 from mrpro.utils.reshape import unsqueeze_left
-
-
-def normalize_index(ndim: int, index: int) -> int:
-    """Normalize possibly negative indices.
-
-    Parameters
-    ----------
-    ndim
-        number of dimensions
-    index
-        index to normalize. negative indices count from the end.
-
-    Raises
-    ------
-    `IndexError`
-        if index is outside ``[-ndim,ndim)``
-    """
-    if 0 <= index < ndim:
-        return index
-    elif -ndim <= index < 0:
-        return ndim + index
-    else:
-        raise IndexError(f'Invalid index {index} for {ndim} data dimensions')
 
 
 def pad_or_crop(
@@ -84,7 +62,7 @@ def pad_or_crop(
 
     n_extended_dims = 0
     if mode != 'constant':
-        # See https://docs.pytorch.org/docs/stable/generated/torch.nn.functional.pad.html for the supported shapes
+        # See https://docs.pytorch.org/docs/stable/generated/torch.nn.functional.pad.html for supported shapes.
         while len(npad) // 2 < data.ndim - 2:
             npad = [0, 0, *npad]
 
@@ -93,7 +71,7 @@ def pad_or_crop(
             data = unsqueeze_left(data, n_extended_dims)
 
         if len(npad) > 6:  # TODO: reshape and call multiple times
-            raise ValueError('replicate and circular padding are only supported for up to the last 3 dimensions.')
+            raise ValueError('Non-constant padding is only supported for up to the last 3 dimensions.')
 
     if any(npad):
         # F.pad expects paddings in reversed order

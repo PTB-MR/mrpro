@@ -4,7 +4,7 @@ import pytest
 import torch
 from mrpro.algorithms.optimizers import pgd
 from mrpro.data.SpatialDimension import SpatialDimension
-from mrpro.operators import FastFourierOp, LinearOperatorMatrix, ProximableFunctionalSeparableSum, WaveletOp
+from mrpro.operators import FastFourierOp, LinearOperatorMatrix, WaveletOp
 from mrpro.operators.functionals import L1NormViewAsReal, L2NormSquared
 from mrpro.phantoms import EllipsePhantom
 from mrpro.utils import RandomGenerator
@@ -153,8 +153,8 @@ def test_pgd_behavior_singular_vs_multiple_inputs() -> None:
 
     # to check on multiple inputs, we will use the same input twice
     pgd_solution_multiple = pgd(
-        f=ProximableFunctionalSeparableSum(l2, l2) @ LinearOperatorMatrix.from_diagonal(fourier_op, fourier_op),
-        g=ProximableFunctionalSeparableSum(l1, l1),
+        f=(l2 | l2) @ LinearOperatorMatrix.from_diagonal(fourier_op, fourier_op),
+        g=(l1 | l1),
         initial_value=(torch.ones_like(image), torch.ones_like(image)),
         stepsize=0.5,
         max_iterations=200,

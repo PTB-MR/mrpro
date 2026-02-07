@@ -91,7 +91,7 @@ def ssim3d(
         # Set weights to 0 for windows that are not fully inside the mask
         weight = weight * ~torch.isclose(weight, torch.tensor(0, dtype=weight.dtype)).any((-3, -2, -1), keepdim=True)
         weight = weight.mean((-1, -2, -3), dtype=torch.float32).moveaxis((0, 1, 2), (-3, -2, -1))
-        weight /= weight.sum(dim=(-3, -2, -1), keepdim=True)  # Normlization for mean
+        weight /= weight.sum(dim=(-3, -2, -1), keepdim=True)  # Normalization for mean
 
     else:
         target, prediction = cast(tuple[torch.Tensor, torch.Tensor], torch.broadcast_tensors(target, prediction))

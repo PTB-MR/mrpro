@@ -35,6 +35,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
     If indexing returns a single element, it is returned as a `~mrpro.operators.LinearOperator`.
 
     Basic arithmetic operations are supported with `~mrpro.operators.LinearOperator` and Tensors.
+    Use ``A | B`` for horizontal stacking (side-by-side columns) and ``A % B`` for vertical stacking (stacked rows).
 
     """
 
@@ -174,7 +175,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
             for i, self_row in enumerate(self._operators):
                 operators.append([op + other if i == j else op for j, op in enumerate(self_row)])
         else:
-            return NotImplemented  # type: ignore[unreachable]
+            return NotImplemented
         return self.__class__(operators)
 
     def __radd__(self, other: Self | LinearOperator | torch.Tensor | complex) -> Self:
@@ -234,7 +235,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
                     new_row.append(LinearOperatorSum(*elements))
                 new_operators.append(new_row)
             return self.__class__(new_operators)
-        return NotImplemented  # type: ignore[unreachable]
+        return NotImplemented
 
     @property
     def H(self) -> Self:  # noqa N802
@@ -354,54 +355,54 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
         return norm
 
     def __or__(self, other: LinearOperator | LinearOperatorMatrix) -> Self:
-        """Vertical stacking."""
+        """Horizontal stacking."""
         if isinstance(other, LinearOperator):
-            if rows := self.shape[0] > 1:
+            if (rows := self.shape[0]) > 1:
                 raise ValueError(
-                    f'Shape mismatch in vertical stacking : cannot stack LinearOperator and matrix with {rows} rows.'
+                    f'Shape mismatch in horizontal stacking : cannot stack LinearOperator and matrix with {rows} rows.'
                 )
             operators = [[*self._operators[0], other]]
             return self.__class__(operators)
         else:
             if (rows_self := self.shape[0]) != (rows_other := other.shape[0]):
                 raise ValueError(
-                    f'Shape mismatch in vertical stacking: cannot stack matrices with {rows_self} and {rows_other}.'
+                    f'Shape mismatch in horizontal stacking: cannot stack matrices with {rows_self} and {rows_other}.'
                 )
             operators = [[*self_row, *other_row] for self_row, other_row in zip(self, other, strict=True)]
             return self.__class__(operators)
 
     def __ror__(self, other: LinearOperator) -> Self:
-        """Vertical stacking."""
-        if rows := self.shape[0] > 1:
+        """Horizontal stacking."""
+        if (rows := self.shape[0]) > 1:
             raise ValueError(
-                f'Shape mismatch in vertical stacking: cannot stack LinearOperator and matrix with {rows} rows.'
+                f'Shape mismatch in horizontal stacking: cannot stack LinearOperator and matrix with {rows} rows.'
             )
         operators = [[other, *self._operators[0]]]
         return self.__class__(operators)
 
-    def __and__(self, other: LinearOperator | LinearOperatorMatrix) -> Self:
-        """Horizontal stacking."""
+    def __mod__(self, other: LinearOperator | LinearOperatorMatrix) -> Self:
+        """Vertical stacking."""
         if isinstance(other, LinearOperator):
-            if cols := self.shape[1] > 1:
+            if (cols := self.shape[1]) > 1:
                 raise ValueError(
-                    f'Shape mismatch in horizontal stacking:cannot stack LinearOperator and matrix with {cols} columns.'
+                    f'Shape mismatch in vertical stacking:cannot stack LinearOperator and matrix with {cols} columns.'
                 )
             operators = [*self._operators, [other]]
             return self.__class__(operators)
         else:
             if (cols_self := self.shape[1]) != (cols_other := other.shape[1]):
                 raise ValueError(
-                    'Shape mismatch in horizontal stacking:'
+                    'Shape mismatch in vertical stacking:'
                     f'cannot stack matrices with {cols_self} and {cols_other} columns.'
                 )
-            operators = [*self._operators, *other]
+            operators = [*self._operators, *other._operators]
             return self.__class__(operators)
 
-    def __rand__(self, other: LinearOperator) -> Self:
-        """Horizontal stacking."""
-        if cols := self.shape[1] > 1:
+    def __rmod__(self, other: LinearOperator) -> Self:
+        """Vertical stacking."""
+        if (cols := self.shape[1]) > 1:
             raise ValueError(
-                f'Shape mismatch in horizontal stacking: cannot stack LinearOperator and matrix with {cols} columns.'
+                f'Shape mismatch in vertical stacking: cannot stack LinearOperator and matrix with {cols} columns.'
             )
         operators = [[other], *self._operators]
         return self.__class__(operators)
