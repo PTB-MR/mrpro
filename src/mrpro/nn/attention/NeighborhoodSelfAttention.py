@@ -22,6 +22,7 @@ else:
         """Dummy class for older PyTorch versions."""
 
 
+@torch.compiler.allow_in_graph
 @cache
 def neighborhood_mask(
     device: str,
