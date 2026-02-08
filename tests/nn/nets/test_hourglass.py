@@ -9,6 +9,7 @@ from tests.conftest import minimal_torch_26
 
 
 @minimal_torch_26
+@torch.no_grad()
 @pytest.mark.parametrize('torch_compile', [True, False], ids=['compiled', 'uncompiled'])
 @pytest.mark.parametrize(
     'device',
@@ -40,6 +41,7 @@ def test_hourglass_forward(torch_compile: bool, device: str) -> None:
 
 
 @minimal_torch_26
+@pytest.mark.cuda
 def test_hourglass_backward() -> None:
     hourglass = HourglassTransformer(
         n_dim=1,
@@ -48,10 +50,10 @@ def test_hourglass_backward() -> None:
         n_features=64,
         attention_neighborhood=(7, 7, None),
         cond_dim=32,
-    )
+    ).cuda()
 
-    x = torch.zeros(1, 1, 16, requires_grad=True)
-    cond = torch.zeros(1, 32, requires_grad=True)
+    x = torch.zeros(1, 1, 16, requires_grad=True).cuda()
+    cond = torch.zeros(1, 32, requires_grad=True).cuda()
     y = hourglass(x, cond=cond)
     y.sum().backward()
     assert x.grad is not None, 'x.grad is None'
