@@ -22,12 +22,18 @@ else:
         """Dummy class for older PyTorch versions."""
 
 
-@torch.compiler.allow_in_graph
+_compiled_flex_attention = torch.compile(
+    lambda q, k, v, mask: flex_attention(q, k, v, block_mask=mask),
+    dynamic=False,
+)
+
+
+@torch.compiler.disable
 @cache
 def neighborhood_mask(
     device: str,
     input_size: torch.Size,
-    kernel_size: int | tuple[int, ...],  # tuples instead of Sequence for cache
+    kernel_size: int | tuple[int, ...],
     dilation: int | tuple[int, ...] = 1,
     circular: bool | tuple[bool, ...] = False,
 ) -> BlockMask:  # pragma: no cover
@@ -70,7 +76,7 @@ def neighborhood_mask(
         coords = []
         for dim in reversed(input_size):
             coords.append(idx % dim)
-            idx = (idx / dim).floor().long()
+            idx = torch.div(idx, dim, rounding_mode='floor').long()
         coords.reverse()
         return tuple(coords)
 
@@ -110,7 +116,7 @@ def neighborhood_mask(
         return reduce(lambda x, y: x & y, masks)
 
     qkv_len = input_size.numel()
-    return torch.compile(create_block_mask)(mask, B=None, H=None, Q_LEN=qkv_len, KV_LEN=qkv_len, device=device)
+    return create_block_mask(mask, B=None, H=None, Q_LEN=qkv_len, KV_LEN=qkv_len, device=torch.device(device))
 
 
 class NeighborhoodSelfAttention(Module):
@@ -175,11 +181,11 @@ class NeighborhoodSelfAttention(Module):
         if parse_version(torch.__version__) < parse_version('2.6.0'):
             raise NotImplementedError('NeighborhoodSelfAttention requires PyTorch 2.6.0 or higher')
         super().__init__()
-        self.n_head: int = n_heads
-        self.kernel_size: int | tuple[int, ...] = kernel_size if isinstance(kernel_size, int) else tuple(kernel_size)
-        self.dilation: int | tuple[int, ...] = dilation if isinstance(dilation, int) else tuple(dilation)
-        self.circular: bool | tuple[bool, ...] = circular if isinstance(circular, bool) else tuple(circular)
-        self.features_last: bool = features_last
+        self.n_head = n_heads
+        self.kernel_size = kernel_size if isinstance(kernel_size, int) else tuple(kernel_size)
+        self.dilation = dilation if isinstance(dilation, int) else tuple(dilation)
+        self.circular = circular if isinstance(circular, bool) else tuple(circular)
+        self.features_last = features_last
         channels_per_head = n_channels_in // n_heads
         self.to_qkv = Linear(n_channels_in, 3 * channels_per_head * n_heads)
         self.to_out = Linear(channels_per_head * n_heads, n_channels_out)
@@ -203,12 +209,13 @@ class NeighborhoodSelfAttention(Module):
         spatial_shape = x.shape[1:-1]
         qkv = self.to_qkv(x)
         query, key, value = rearrange(
-            qkv, 'batch ... (qkv heads channels) -> qkv batch heads (...) channels', qkv=3, heads=self.n_head
+            qkv,
+            'batch ... (qkv heads channels) -> qkv batch heads (...) channels',
+            qkv=3,
+            heads=self.n_head,
         )
-        query, key = self.rope(query, key)  # NO-OP if rope_embed_fraction is 0.0
+        query, key = self.rope(query, key)
         query, key, value = query.contiguous(), key.contiguous(), value.contiguous()
-        # the mask depends on the input size. To be more flexible if used within CNNs, we compute it here.
-        # The computation is cached..
         device = str(qkv.device)
         mask = neighborhood_mask(
             device=device,
@@ -217,8 +224,11 @@ class NeighborhoodSelfAttention(Module):
             dilation=self.dilation,
             circular=self.circular,
         )
-
-        out = cast(torch.Tensor, torch.compile(flex_attention, dynamic=False)(query, key, value, block_mask=mask))
+        mask = torch.compiler.assume_constant_result(mask)
+        if torch.compiler.is_compiling():
+            out = cast(torch.Tensor, flex_attention(query, key, value, block_mask=mask))
+        else:
+            out = cast(torch.Tensor, _compiled_flex_attention(query, key, value, mask))
         out = rearrange(out, 'batch head sequence channels -> batch sequence (head channels)')
         out = self.to_out(out)
         out = out.unflatten(-2, spatial_shape)
