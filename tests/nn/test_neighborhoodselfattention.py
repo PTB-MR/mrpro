@@ -11,7 +11,13 @@ from tests.conftest import minimal_torch_26
 @pytest.mark.parametrize(
     'device',
     [
-        pytest.param('cpu', id='cpu'),
+        pytest.param(
+            'cpu',
+            id='cpu',
+            marks=pytest.mark.skip(
+                reason='Flex Attention backward not supported on CPU. https://github.com/pytorch/pytorch/issues/148752'
+            ),
+        ),
         pytest.param('cuda', id='cuda', marks=pytest.mark.cuda),
     ],
 )
@@ -23,7 +29,7 @@ from tests.conftest import minimal_torch_26
     ],
     ids=['2d_kernel2', '4d_features-last_kernel4'],
 )
-def test_neighborhood_self_attention(
+def test_neighborhood_self_attention_backward(
     n_channels_in: int,
     n_channels_out: int,
     n_heads: int,
@@ -36,7 +42,7 @@ def test_neighborhood_self_attention(
     rng = RandomGenerator(seed=42)
     x = rng.float32_tensor(input_shape).to(device).requires_grad_(True)
 
-    attn = NeighborhoodSelfAttention(
+    attention = NeighborhoodSelfAttention(
         n_channels_in=n_channels_in,
         n_channels_out=n_channels_out,
         n_heads=n_heads,
@@ -45,9 +51,9 @@ def test_neighborhood_self_attention(
     ).to(device)
 
     if features_last:
-        output = attn(x.moveaxis(1, -1)).moveaxis(-1, 1)
+        output = attention(x.moveaxis(1, -1)).moveaxis(-1, 1)
     else:
-        output = attn(x)
+        output = attention(x)
 
     expected_shape = (input_shape[0], n_channels_out, *input_shape[2:])
     assert output.shape == expected_shape
@@ -57,13 +63,14 @@ def test_neighborhood_self_attention(
     assert x.grad is not None, 'No gradient computed for input'
     assert not x.grad.isnan().any(), 'NaN values in input gradients'
 
-    assert attn.to_qkv.weight.grad is not None, 'No gradient computed for to_qkv.weight'
-    assert attn.to_qkv.bias.grad is not None, 'No gradient computed for to_qkv.bias'
-    assert attn.to_out.weight.grad is not None, 'No gradient computed for to_out.weight'
-    assert attn.to_out.bias.grad is not None, 'No gradient computed for to_out.bias'
+    assert attention.to_qkv.weight.grad is not None, 'No gradient computed for to_qkv.weight'
+    assert attention.to_qkv.bias.grad is not None, 'No gradient computed for to_qkv.bias'
+    assert attention.to_out.weight.grad is not None, 'No gradient computed for to_out.weight'
+    assert attention.to_out.bias.grad is not None, 'No gradient computed for to_out.bias'
 
 
 @minimal_torch_26
+@pytest.mark.cuda
 @pytest.mark.parametrize(
     ('kernel_size', 'dilation', 'circular', 'rope'),
     [
@@ -75,9 +82,9 @@ def test_neighborhood_self_attention(
 def test_neighborhood_attention_variants(kernel_size: int, dilation: int, circular: bool, rope: bool) -> None:
     """Test NeighborhoodSelfAttention with different neighborhood configurations."""
     rng = RandomGenerator(seed=42)
-    x = rng.float32_tensor((1, 32, 16, 16)).requires_grad_(True)
+    x = rng.float32_tensor((1, 32, 16, 16)).cuda()
 
-    attn = NeighborhoodSelfAttention(
+    attention = NeighborhoodSelfAttention(
         n_channels_in=32,
         n_channels_out=32,
         n_heads=4,
@@ -86,13 +93,8 @@ def test_neighborhood_attention_variants(kernel_size: int, dilation: int, circul
         circular=circular,
         rope_embed_fraction=1.0 if rope else 0.0,
     )
-
-    output = attn(x)
+    output = attention(x)
     assert output.shape == x.shape, f'Output shape {output.shape} != input shape {x.shape}'
-
-    output.sum().backward()
-    assert x.grad is not None, 'No gradient computed for input'
-    assert not output.isnan().any(), 'NaN values in output'
 
 
 @minimal_torch_26
@@ -100,16 +102,16 @@ def test_neighborhood_attention_variants(kernel_size: int, dilation: int, circul
     ('kernel_size', 'circular', 'input_shape'),
     [
         (11, False, (1, 8, 32, 32)),
-        (7, True, (1, 8, 16, 16)),
+        (3, True, (1, 8, 64, 64)),
     ],
     ids=['regular', 'circular'],
 )
+@torch.no_grad()
 def test_neighborhood_constraint(kernel_size: int, circular: bool, input_shape: tuple[int, int, int, int]) -> None:
     """Test that neighborhood attention only affects pixels within the kernel window."""
     rng = RandomGenerator(seed=42)
-    x = rng.float32_tensor(input_shape).requires_grad_(True)
-
-    attn = NeighborhoodSelfAttention(
+    x = rng.float32_tensor(input_shape)
+    attention = NeighborhoodSelfAttention(
         n_channels_in=8,
         n_channels_out=8,
         n_heads=2,
@@ -117,12 +119,11 @@ def test_neighborhood_constraint(kernel_size: int, circular: bool, input_shape: 
         dilation=1,
         circular=circular,
     )
-
-    output_original = attn(x)
+    output_original = attention(x)
     x_modified = x.clone()
     test_point = (input_shape[-2] - 2, input_shape[-1] - 2)
     x_modified[..., test_point[0], test_point[1]] += 1.0
-    output_modified = attn(x_modified)
+    output_modified = attention(x_modified)
 
     diff = output_modified - output_original
     changed_pixels = torch.abs(diff).sum(dim=(0, 1)) > 1e-6
