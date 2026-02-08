@@ -2,7 +2,7 @@
 
 from collections.abc import Sequence
 from functools import cache, reduce
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, TypeVar, cast
 
 import torch
 from einops import rearrange
@@ -22,29 +22,6 @@ else:
         """Dummy class for older PyTorch versions."""
 
 
-@torch._dynamo.disable()
-@torch.compiler.disable(recursive=True)
-def uncompiled_flex_attention(
-    query: torch.Tensor,
-    key: torch.Tensor,
-    value: torch.Tensor,
-    score_mod: Any = None,  # noqa: ANN401
-    block_mask: BlockMask | None = None,
-    scale: float | None = None,
-    enable_gqa: bool = False,
-    kernel_options: Any = None,  # noqa: ANN401
-) -> torch.Tensor:
-    """Wrap flex_attention to disable compilation."""
-    old, torch._dynamo.config.disable = torch._dynamo.config.disable, True
-    result = cast(
-        torch.Tensor,
-        flex_attention(query, key, value, score_mod, block_mask, scale, enable_gqa, kernel_options=kernel_options),
-    )
-    torch._dynamo.config.disable = old
-    return result
-
-
-@torch.compiler.disable(recursive=True)
 @cache
 def neighborhood_mask(
     device: str,
@@ -240,14 +217,7 @@ class NeighborhoodSelfAttention(Module):
             circular=self.circular,
         )
 
-        if device == 'cpu':
-            # Keep the CPU path explicitly uncompiled. flex_attention currently has fragile
-            # torch.compile behavior on CPU for this call pattern.
-            # https://github.com/pytorch/pytorch/issues/148752
-            torch._dynamo.graph_break()
-            out: torch.Tensor = uncompiled_flex_attention(query, key, value, block_mask=mask)
-        else:
-            out = cast(torch.Tensor, flex_attention(query, key, value, block_mask=mask))
+        out = cast(torch.Tensor, torch.compile(flex_attention, dynamic=False)(query, key, value, block_mask=mask))
         out = rearrange(out, 'batch head sequence channels -> batch sequence (head channels)')
         out = self.to_out(out)
         out = out.unflatten(-2, spatial_shape)
