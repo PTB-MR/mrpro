@@ -1,10 +1,9 @@
+# %%
 # ruff: noqa: D102, ANN201
-
-import collections
 from collections.abc import Sequence
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Literal, TypedDict, cast
+from typing import Any, Literal, TypedDict
 
 import einops
 import matplotlib.pyplot as plt
@@ -15,9 +14,6 @@ import torch
 import torch.utils.data._utils
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint  # type:ignore[import-not-found]
 from pytorch_lightning.loggers import NeptuneLogger  # type:ignore[import-not-found]
-from pytorch_lightning.strategies import DDPStrategy  # type:ignore[import-not-found]
-
-# mrpro.phantoms.brainweb.download_brainweb(workers=2, progress=True)
 
 
 class BatchType(TypedDict):
@@ -104,10 +100,11 @@ class Dataset(torch.utils.data.Dataset):
             header.ti = self.signalmodel.ti.tolist()
 
         fourier_op = mrpro.operators.FourierOp(self.encoding_matrix, self.encoding_matrix, traj)
-        csm = mrpro.data.CsmData(
-            mrpro.phantoms.coils.birdcage_2d(self.n_coils, self.encoding_matrix),
-            header,
-        )
+        if self.n_coils > 1:
+            csm_tensor = mrpro.phantoms.coils.birdcage_2d(self.n_coils, self.encoding_matrix)
+        else:
+            csm_tensor = torch.ones(1, 1, *self.encoding_matrix.zyx)
+        csm = mrpro.data.CsmData(csm_tensor, header)
         images = einops.rearrange(images, 't y x -> t 1 1 y x')
         (data,) = (fourier_op @ csm.as_operator())(images)
         data = data + torch.randn_like(data) * torch.rand(1) * self.max_noise * data.std()
@@ -120,7 +117,7 @@ def collate_fn(batch: Any):  # noqa: ANN401
     return torch.utils.data._utils.collate.collate(
         batch,
         collate_fn_map={
-            mrpro.data.Dataclass: lambda batch, *, _collate_fn_map: batch[0].stack(*batch[1:]),
+            mrpro.data.Dataclass: lambda batch, *, collate_fn_map: batch[0].stack(*batch[1:]),  # noqa: ARG005
             **torch.utils.data._utils.collate.default_collate_fn_map,
         },
     )
@@ -330,7 +327,7 @@ class DataModule(pl.LightningDataModule):
     def val_dataloader(self):
         return torch.utils.data.DataLoader(
             self.val_dataset,
-            batch_size=1,
+            batch_size=4,
             shuffle=False,
             num_workers=self.num_workers,
             pin_memory=False,
@@ -372,7 +369,7 @@ class PinqiModule(pl.LightningModule):
             n_features_image_net=n_features_image_net,
         )
 
-        self.validation_step_outputs: dict[str, list] = collections.defaultdict(list)
+        self.validation_step_outputs: dict[str, list] = {}
         self.baseline = Baseline(signalmodel, constraints_op, parameter_is_complex)
 
     def forward(self, kdata: mrpro.data.KData, csm: mrpro.data.CsmData):
@@ -418,7 +415,7 @@ class PinqiModule(pl.LightningModule):
         loss = self.loss(parameters, batch)
 
         pred_m0, pred_t1 = parameters[-1]
-        target_t1, target_m0 = batch['t1'], batch['m0']
+        target_t1, target_m0 = batch['t1'][:, None, None], batch['m0'][:, None, None]
         mask = batch['mask']
         batch_size = len(batch['mask'])
         (ssim_t1,) = mrpro.operators.functionals.SSIM(target_t1, mask)(pred_t1)
@@ -429,31 +426,27 @@ class PinqiModule(pl.LightningModule):
         self.log('val/l1_m0', l1_m0, on_epoch=True, sync_dist=True, batch_size=batch_size)
         self.log('val/loss', loss, on_epoch=True, sync_dist=True, batch_size=batch_size)
 
-        if batch_idx == 0:
-            self.validation_step_outputs['target_t1'].append(batch['t1'])
-            self.validation_step_outputs['pred_t1'].append(pred_t1)
-            self.validation_step_outputs['pred_m0'].append(pred_m0)
-            self.validation_step_outputs['target_m0'].append(target_m0)
-            self.validation_step_outputs['mask'].append(batch['mask'])
+        if batch_idx == 0 and self.trainer.is_global_zero:
+            self.validation_step_outputs['target_t1'] = batch['t1'].cpu()
+            self.validation_step_outputs['pred_t1'] = pred_t1.cpu()
+            self.validation_step_outputs['pred_m0'] = pred_m0.cpu()
+            self.validation_step_outputs['target_m0'] = target_m0.cpu()
+            self.validation_step_outputs['mask'] = batch['mask'].cpu()
             baseline_m0, baseline_t1 = self.baseline(batch['kdata'], batch['csm'])
-            self.validation_step_outputs['baseline_t1'].append(baseline_t1)
-            self.validation_step_outputs['baseline_m0'].append(baseline_m0)
+            self.validation_step_outputs['baseline_t1'] = baseline_t1.cpu()
+            self.validation_step_outputs['baseline_m0'] = baseline_m0.cpu()
 
     def on_validation_epoch_end(self):
         """Validate.
 
         Needs to be adapted for other signal models than Saturation Recovery.
         """
-        outputs = {k: torch.cat(v) for k, v in self.validation_step_outputs.items()}
-        self.validation_step_outputs.clear()
-        outputs = cast(dict[str, torch.Tensor], self.all_gather(outputs))
-
         if not self.trainer.is_global_zero:
             return
-        outputs = {k: v.flatten(0, 1).cpu() for k, v in outputs.items()}
+        outputs = self.validation_step_outputs
 
         samples = len(outputs['mask'])
-        fig, axes = plt.subplots(4, samples, figsize=(4 * samples, 16))
+        fig, axes = plt.subplots(4, samples, figsize=(4 * samples, 16), squeeze=False)
 
         for i in range(samples):
             self.result_plot(
@@ -481,6 +474,7 @@ class PinqiModule(pl.LightningModule):
         fig.suptitle(f'$|M_0|$ Epoch {self.current_epoch}')
         self.logger.run['val/images/m0'].log(fig)
         plt.close(fig)
+        self.validation_step_outputs.clear()
 
     def result_plot(
         self,
@@ -496,7 +490,6 @@ class PinqiModule(pl.LightningModule):
         pred = pred.squeeze().detach().cpu()
         mask = mask.squeeze().detach().bool().cpu()
         baseline = baseline.squeeze().detach().cpu()
-
         target[~mask] = torch.nan
         pred[~mask] = torch.nan
         baseline[~mask] = torch.nan
@@ -624,15 +617,24 @@ class LogLambdasCallback(pl.Callback):
 
 
 if __name__ == '__main__':
+    import os
+
+    os.environ['NEPTUNE_API_TOKEN'] = (
+        'eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiIyOTdlYTM3NS0wMWU1LTRlMzMtYWU1Ny01MzMzN2ExNTcwMDcifQ=='
+    )
+    os.environ['NEPTUNE_PROJECT'] = 'ptb/pinqi'
     torch.multiprocessing.set_sharing_strategy('file_system')
     torch.set_float32_matmul_precision('high')
     torch._inductor.config.compile_threads = 4
     torch._inductor.config.worker_start_method = 'fork'
     torch._dynamo.config.capture_scalar_outputs = True
     torch._dynamo.config.cache_size_limit = 256
-    torch._functorch.config.activation_memory_budget = 0.95
+    torch._functorch.config.activation_memory_budget = 0.8
 
-    data_folder = Path('/scratch/zimmer08/brainweb')
+    data_folder = Path(' /echo/zimmer08/brainweb')
+    if not data_folder.exists():
+        data_folder.mkdir(parents=True, exist_ok=True)
+        mrpro.phantoms.brainweb.download_brainweb(output_directory=data_folder, workers=2, progress=True)
 
     signalmodel = mrpro.operators.models.SaturationRecovery((0.5, 1.0, 1.5, 2.0, 8.0))
     constraints_op = mrpro.operators.ConstraintsOp(
@@ -648,12 +650,12 @@ if __name__ == '__main__':
         folder=data_folder,
         signalmodel=signalmodel,
         n_images=n_images,
-        batch_size=16,
-        num_workers=16,
+        batch_size=4,
+        num_workers=4,
         size=192,
         acceleration=8,
-        n_coils=8,
-        max_noise=0.1,
+        n_coils=1,
+        max_noise=0.3,
     )
 
     model = PinqiModule(
@@ -678,11 +680,11 @@ if __name__ == '__main__':
         save_last=True,
     )
 
-    strategy = DDPStrategy(find_unused_parameters=False)
+    strategy = 'auto'  # DDPStrategy(find_unused_parameters=False)
     trainer = pl.Trainer(
         max_epochs=100,
         accelerator='gpu',
-        devices=4,
+        devices=1,
         strategy=strategy,
         logger=neptune_logger,
         callbacks=[
@@ -696,3 +698,5 @@ if __name__ == '__main__':
     )
 
     trainer.fit(model, datamodule=dm)
+
+# %%
