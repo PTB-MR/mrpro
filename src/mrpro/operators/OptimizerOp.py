@@ -98,7 +98,7 @@ class OptimizerFunction(torch.autograd.Function):
         hessian_inverse_grad = cg(hvp, grad_outputs, max_iterations=50, tolerance=1e-6)
         with torch.enable_grad():
             dobjective_dsolution = torch.autograd.grad(objective(*solution), solution, create_graph=True)
-            # - d^2_obective / d_solution d_params Hessian^-1 * grad
+            # - d^2_objective / d_solution d_params Hessian^-1 * grad
             grad_params = list(torch.autograd.grad(dobjective_dsolution, dparams, hessian_inverse_grad))
         grad_inputs: list[torch.Tensor | None] = [None, None, None]  # factory, x0, optimize
         for need_grad in ctx.needs_input_grad[3:]:

@@ -6,7 +6,7 @@ from mrpro.utils import unit_conversion
 from mrpro.utils.fill_range import fill_range_
 from mrpro.utils.smap import smap
 from mrpro.utils.reduce_repeat import reduce_repeat
-from mrpro.utils.indexing import Indexer
+from mrpro.utils.indexing import Indexer, normalize_index
 from mrpro.utils.pad_or_crop import pad_or_crop
 from mrpro.utils.split_idx import split_idx
 from mrpro.utils.sliding_window import sliding_window
@@ -28,6 +28,7 @@ __all__ = [
     "broadcasted_rearrange",
     "fill_range_",
     "interpolate",
+    "normalize_index",
     "pad_or_crop",
     "ravel_multi_index",
     "reduce_repeat",

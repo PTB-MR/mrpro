@@ -51,7 +51,7 @@ def test_restormer_backward() -> None:
 
     x = torch.zeros(1, 1, 16, requires_grad=True)
     cond = torch.zeros(1, 32, requires_grad=True)
-    y = restormer(x, cond)
+    y = restormer(x, cond=cond)
     y.sum().backward()
     assert x.grad is not None, 'x.grad is None'
     assert not x.grad.isnan().any(), 'x.grad is NaN'

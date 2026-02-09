@@ -42,7 +42,8 @@ class AxialRoPE(Module):
     Applies rotary position embeddings along each axis independently.
     """
 
-    freqs: torch.Tensor
+    embed_fraction: float
+    freqs: torch.Tensor  # explicit annotation kept for static type checking
 
     def __init__(
         self,
@@ -56,7 +57,7 @@ class AxialRoPE(Module):
             Fraction of channels used for embedding
         """
         super().__init__()
-        self.embed_fraction = embed_fraction
+        self.embed_fraction: float = float(embed_fraction)
         if embed_fraction < 0 or embed_fraction > 1:
             raise ValueError('embed_fraction must be between 0 and 1')
 

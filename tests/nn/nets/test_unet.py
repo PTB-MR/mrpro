@@ -53,7 +53,7 @@ def test_unet_backward() -> None:
 
     x = torch.zeros(1, 1, 16, requires_grad=True)
     cond = torch.zeros(1, 32, requires_grad=True)
-    y = unet(x, cond)
+    y = unet(x, cond=cond)
     y.sum().backward()
     assert x.grad is not None, 'x.grad is None'
     assert not x.grad.isnan().any(), 'x.grad is NaN'
@@ -105,7 +105,7 @@ def test_gated_unet_backward() -> None:
 
     x = torch.zeros(1, 1, 16, requires_grad=True)
     cond = torch.zeros(1, 32, requires_grad=True)
-    y = unet(x, cond)
+    y = unet(x, cond=cond)
     y.sum().backward()
     assert x.grad is not None, 'x.grad is None'
     assert not x.grad.isnan().any(), 'x.grad is NaN'

@@ -11,7 +11,7 @@ from mrpro.nn.nets.UNet import UNetBase, UNetDecoder, UNetEncoder
 from mrpro.nn.PixelShuffle import PixelShuffleUpsample, PixelUnshuffleDownsample
 from mrpro.nn.Sequential import Sequential
 from mrpro.operators.RearrangeOp import RearrangeOp
-from mrpro.utils import to_tuple
+from mrpro.utils.to_tuple import to_tuple
 
 
 class HourglassTransformer(UNetBase):

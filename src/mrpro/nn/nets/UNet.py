@@ -167,7 +167,7 @@ class UNetBase(Module):
         else:
             self.skip_blocks.extend(skip_blocks)
 
-    def forward(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply to Network."""
         xs = self.encoder(x, cond=cond)
         xs = tuple(
@@ -177,7 +177,7 @@ class UNetBase(Module):
         x = self.decoder(xs, cond=cond)
         return x
 
-    def __call__(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
+    def __call__(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply to Network.
 
         Parameters

@@ -19,7 +19,14 @@ from mrpro.nn.Sequential import Sequential
 class GDFN(Module):
     """Gated depthwise feed forward network.
 
-    As used in the Restormer architecture.
+    Feed-forward block used in Restormer [ZAM22]_. It first expands channels,
+    applies a depthwise convolution, then uses a gated interaction between two
+    channel splits before projecting back to the input width.
+
+    References
+    ----------
+    .. [ZAM22] Zamir, Syed Waqas, et al. "Restormer: Efficient transformer for
+       high-resolution image restoration." CVPR 2022.
     """
 
     def __init__(self, n_dim: int, n_channels: int, mlp_ratio: float):
@@ -94,7 +101,7 @@ class RestormerBlock(CondMixin, Module):
         if cond_dim > 0:
             self.norm2.append(FiLM(channels=n_channels, cond_dim=cond_dim))
 
-    def __call__(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
+    def __call__(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply Restormer block.
 
         Parameters

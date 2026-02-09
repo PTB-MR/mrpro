@@ -1,5 +1,7 @@
 """Test PixelShuffle and PixelUnshuffle."""
 
+from typing import cast
+
 import torch
 from mrpro.nn.PixelShuffle import PixelShuffle, PixelShuffleUpsample, PixelUnshuffle, PixelUnshuffleDownsample
 from mrpro.utils import RandomGenerator
@@ -77,10 +79,14 @@ def test_pixelshuffleupsample_pixelunshuffledownsample() -> None:
     downsample = PixelUnshuffleDownsample(3, 1, 3**3, downscale_factor=3, residual=False)
     upsample = PixelShuffleUpsample(3, 3**3, 1, upscale_factor=3, residual=False)
     # Only if the convs are Identity, the upsample and downsample are inverses.
-    torch.nn.init.dirac_(downsample.projection.weight)
-    torch.nn.init.dirac_(upsample.projection.weight)
-    torch.nn.init.zeros_(downsample.projection.bias)  # type: ignore[arg-type]
-    torch.nn.init.zeros_(upsample.projection.bias)  # type: ignore[arg-type]
+    torch.nn.init.dirac_(cast(torch.Tensor, downsample.projection.weight))
+    torch.nn.init.dirac_(cast(torch.Tensor, upsample.projection.weight))
+    downsample_bias = cast(torch.Tensor | None, downsample.projection.bias)
+    upsample_bias = cast(torch.Tensor | None, upsample.projection.bias)
+    if downsample_bias is not None:
+        torch.nn.init.zeros_(downsample_bias)
+    if upsample_bias is not None:
+        torch.nn.init.zeros_(upsample_bias)
     y = downsample(upsample(x))
     assert y.shape == (1, 3**3, 3, 4, 5)
     torch.testing.assert_close(y, x, msg='Upsample and downsample are not inverses.')

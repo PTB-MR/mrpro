@@ -60,9 +60,9 @@ class InconsistentDeviceError(RuntimeError):
 
 
 class InconsistentShapeError(RuntimeError):
-    """Raised if fields are not broadastable.
+    """Raised if fields are not broadcastable.
 
-    The fields cannot be broadasted to a common shape.
+    The fields cannot be broadcasted to a common shape.
     """
 
     def __init__(self, *shapes):
@@ -116,7 +116,7 @@ class Dataclass:
         init
             If `True`, an automatic init function will be added. Set to `False` to use a custom init.
         """
-        dataclasses.dataclass(cls, repr=False, eq=False, init=init)  # type: ignore[call-overload]
+        dataclasses.dataclass(cls, repr=False, eq=False, init=init)
         super().__init_subclass__(**kwargs)
         child_post_init = vars(cls).get('__post_init__')
 

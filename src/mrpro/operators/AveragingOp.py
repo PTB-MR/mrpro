@@ -24,7 +24,7 @@ class AveragingOp(LinearOperator):
     def __init__(
         self,
         dim: int,
-        idx: Sequence[Sequence[int] | torch.Tensor | slice] | torch.Tensor = (slice(None),),  # noqa: B008
+        idx: Sequence[Sequence[int] | torch.Tensor | slice] | torch.Tensor = (slice(None),),
         domain_size: int | None = None,
     ) -> None:
         """Initialize the averaging operator.
@@ -115,7 +115,7 @@ class AveragingOp(LinearOperator):
                 n = len(group)
 
             adjoint[(*placeholder, group)] += (
-                x[(*placeholder, i, None)].expand(*x.shape[: self.dim], n, *x.shape[self.dim + 1 :]) / n  # type: ignore[index]
+                x[(*placeholder, i, None)].expand(*x.shape[: self.dim], n, *x.shape[self.dim + 1 :]) / n
             )
 
         return (adjoint,)

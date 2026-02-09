@@ -222,7 +222,7 @@ def test_fourier_op_not_supported_traj(
     """Test trajectory not supported by Fourier operator."""
 
     # generate random images and k-space trajectories
-    img, trajectory = create_data(img_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    _, trajectory = create_data(img_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
 
     # create operator
     recon_matrix = SpatialDimension(img_shape[-3], img_shape[-2], img_shape[-1])

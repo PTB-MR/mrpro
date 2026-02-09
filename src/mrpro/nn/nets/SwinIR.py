@@ -58,7 +58,7 @@ class SwinTransformerLayer(Module):
             DropPath(p_droppath),
         )
 
-    def __call__(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
+    def __call__(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the Swin Transformer layer.
 
         Parameters
@@ -73,9 +73,9 @@ class SwinTransformerLayer(Module):
         torch.Tensor
             Output tensor
         """
-        return super().__call__(x, cond)
+        return super().__call__(x, cond=cond)
 
-    def forward(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the Swin Transformer layer."""
         x = x + self.attn(self.norm1(x))
         x = x + self.mlp(self.norm2(x, cond=cond))
@@ -132,7 +132,7 @@ class ResidualSwinTransformerBlock(Module):
         )
         self.conv = convND(n_dim)(n_channels, n_channels, 3, padding=1)
 
-    def __call__(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
+    def __call__(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the residual Swin Transformer block.
 
         Parameters
@@ -147,9 +147,9 @@ class ResidualSwinTransformerBlock(Module):
         torch.Tensor
             Output tensor
         """
-        return super().__call__(x, cond)
+        return super().__call__(x, cond=cond)
 
-    def forward(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the residual Swin Transformer block."""
         return x + self.conv(self.layers(x, cond=cond))
 
@@ -226,7 +226,7 @@ class SwinIR(Module):
         )
         self.last = convND(n_dim)(n_channels_per_head * n_heads, n_channels_out, kernel_size=3, padding=1)
 
-    def forward(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply SwinIR.
 
         Parameters

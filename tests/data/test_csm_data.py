@@ -17,7 +17,7 @@ def create_matching_idata_kdata(ismrmrd_cart_single_rep):
     """Create matching idata and kdata for csm tests."""
     kdata = KData.from_file(ismrmrd_cart_single_rep.filename, KTrajectoryCartesian())
     ellipses = EllipsePhantomTestData(n_y=kdata.header.recon_matrix.y, n_x=kdata.header.recon_matrix.x)
-    idata, csm_ref = multi_coil_image(n_coils=4, ph_ellipse=ellipses, random_kheader=kdata.header)
+    idata, _ = multi_coil_image(n_coils=4, ph_ellipse=ellipses, random_kheader=kdata.header)
     fourier_op = FourierOp.from_kdata(kdata)
     kdata = KData(kdata.header, fourier_op(idata.data)[0], traj=kdata.traj)
     return idata, kdata
@@ -28,7 +28,7 @@ def test_CsmData_smoothing_width(
     csm_method: Callable, ellipse_phantom: EllipsePhantomTestData, random_kheader: KHeader
 ) -> None:
     """CsmData SpatialDimension and int for smoothing width."""
-    idata, csm_ref = multi_coil_image(n_coils=4, ph_ellipse=ellipse_phantom, random_kheader=random_kheader)
+    idata, _ = multi_coil_image(n_coils=4, ph_ellipse=ellipse_phantom, random_kheader=random_kheader)
 
     # Estimate coil sensitivity maps using SpatialDimension for smoothing width
     smoothing_width = SpatialDimension(z=1, y=5, x=5)
@@ -60,7 +60,7 @@ def test_CsmData_downsampling(
     csm_method: Callable, ellipse_phantom: EllipsePhantomTestData, random_kheader: KHeader
 ) -> None:
     """CsmData downsampling does not change smooth coil sensitivity maps."""
-    idata, csm_ref = multi_coil_image(n_coils=4, ph_ellipse=ellipse_phantom, random_kheader=random_kheader)
+    idata, _ = multi_coil_image(n_coils=4, ph_ellipse=ellipse_phantom, random_kheader=random_kheader)
 
     # Estimate coil sensitivity maps on original image size with smoothing width = 3
     smoothing_width = SpatialDimension(z=1, y=3, x=3)

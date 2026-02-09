@@ -13,20 +13,20 @@ from mrpro.utils import RandomGenerator
     ],
 )
 @pytest.mark.parametrize(
-    ('dim', 'window_size', 'shifted'),
+    ('n_dim', 'window_size', 'shifted'),
     [
         (2, 8, False),
         (4, 4, True),
     ],
 )
-def test_shifted_window_attention(dim: int, window_size: int, shifted: bool, device: str) -> None:
+def test_shifted_window_attention(n_dim: int, window_size: int, shifted: bool, device: str) -> None:
     """Test ShiftedWindowAttention output shape and backpropagation."""
     n_batch, n_channels, n_heads = 2, 8, 2
-    spatial_shape = (window_size * 4,) * dim
+    spatial_shape = (window_size * 4,) * n_dim
     rng = RandomGenerator(13)
     x = rng.float32_tensor((n_batch, n_channels, *spatial_shape)).to(device).requires_grad_(True)
     swin = ShiftedWindowAttention(
-        n_dim=dim,
+        n_dim=n_dim,
         n_channels_in=n_channels,
         n_channels_out=n_channels,
         n_heads=n_heads,
@@ -41,3 +41,21 @@ def test_shifted_window_attention(dim: int, window_size: int, shifted: bool, dev
     assert not x.grad.isnan().any(), 'NaN values in input gradients'
     assert swin.to_qkv.weight.grad is not None, 'No gradient computed for to_qkv.weight'
     assert swin.relative_position_bias_table.grad is not None, 'No gradient computed for relative_position_bias_table'
+
+
+@pytest.mark.parametrize('shifted', [True, False], ids=['shifted', 'non-shifted'])
+def test_shifted_window_attention_size_mismatch(shifted: bool):
+    n_batch, n_channels, n_heads, n_dim, window_size = 3, 4, 2, 2, 7
+    spatial_shape = (window_size * 4 + 1,) * n_dim
+    rng = RandomGenerator(13)
+    x = rng.float32_tensor((n_batch, n_channels, *spatial_shape))
+    swin = ShiftedWindowAttention(
+        n_dim=n_dim,
+        n_channels_in=n_channels,
+        n_channels_out=n_channels,
+        n_heads=n_heads,
+        window_size=window_size,
+        shifted=shifted,
+    )
+    out = swin(x)
+    assert out.shape == x.shape, f'Output shape {out.shape} != input shape {x.shape}'

@@ -87,7 +87,7 @@ class BasicCNN(Sequential):
 
             self.append(convND(n_dim)(c_in, c_out, kernel_size=3, padding='same'))
 
-    def __call__(self, x: torch.Tensor, cond: torch.Tensor | None = None) -> torch.Tensor:  # type: ignore[override]
+    def __call__(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:  # type: ignore[override]
         """Apply the basic CNN to the input tensor.
 
         Parameters

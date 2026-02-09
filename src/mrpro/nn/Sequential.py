@@ -57,4 +57,4 @@ class Sequential(CondMixin, torch.nn.Sequential):
         if isinstance(idx, slice):
             return Sequential(OrderedDict(list(self._modules.items())[idx]))
         else:
-            return self._get_item_by_idx(self._modules.values(), idx)
+            return cast(Sequential, self._get_item_by_idx(self._modules.values(), idx))

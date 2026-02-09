@@ -65,6 +65,7 @@ dependencies = [
     "ismrmrd>=1.14.1",
     "einops>=0.7.0",
     "pydicom>=3.0.1",
+    "nibabel>=4.0",
     "pypulseq>=1.4.2",
     "pytorch-finufft>=0.1.0",
     "cufinufft>=2.4.1; platform_system=='Linux'",
@@ -118,11 +119,14 @@ testpaths = ["tests"]
 filterwarnings = [
     "error",
     "ignore:'write_like_original':DeprecationWarning:pydicom:",
-    "ignore:Anomaly Detection has been enabled:UserWarning",                   # torch.autograd
-    "ignore:allow_ops_in_compiled_graph failed to import torch:ImportWarning", # einops and dynamo<2.5
+    "ignore:Anomaly Detection has been enabled:UserWarning",                                                     # torch.autograd
+    "ignore:allow_ops_in_compiled_graph failed to import torch:ImportWarning",                                   # einops and dynamo<2.5
     "ignore:TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled:UserWarning", # torch cuda
-    "ignore:.*In the future, this object will be coerced as if it was first converted using.*:FutureWarning", # numpy 1.2
-    "ignore:.*load_module.*:DeprecationWarning", # torch compile in torch<2.6
+    "ignore:.*In the future, this object will be coerced as if it was first converted using.*:FutureWarning",    # numpy 1.2
+    "ignore:.*load_module.*:DeprecationWarning",                                                                 # torch compile in torch<2.6
+    "ignore:The \\.grad attribute of a Tensor that is not a leaf Tensor is being accessed:UserWarning",          # torch dynamo bug in flex attention
+    "ignore:`torch.jit.script` is deprecated:DeprecationWarning",                                                # torch 2.10
+    "ignore:`torch.jit.script_method` is deprecated",                                                            # torch 2.10
 ]
 addopts = "-n auto --dist loadfile --maxprocesses=8"
 markers = ["cuda : Tests only to be run when cuda device is available"]
@@ -150,6 +154,7 @@ module = [
     "pywt.*",
     "torchvision.*",
     "platformdirs",
+    "nibabel",
     "cmap",
 ]
 ignore_missing_imports = true
