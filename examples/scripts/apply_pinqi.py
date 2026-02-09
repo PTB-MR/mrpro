@@ -3,24 +3,29 @@
 # A recent DL approach, PINQI, approaches learned quantitative MRI by half quadratic splitting to alternate between two
 # subproblems. The first is a linear image reconstruction task
 # $$
-# \underset{\mathbf{x}}{\min} \frac{1}{2} \| \mathbf{A} \mathbf{x} - \mathbf{y} \|_2^2 + \frac{\lambda_\mathbf{x}}{2} \left\| \mathbf{x} - \mathbf{x}_{\text{reg}} \right\|_2^2 + \frac{\lambda_{\mathbf{q}}}{2} \left\| \mathbf{q}(\mathbf{p}) - \mathbf{x} \right\|_2^2
+# \underset{\mathbf{x}}{\min} \frac{1}{2} \| \mathbf{A} \mathbf{x} - \mathbf{y} \|_2^2
+# + \frac{\lambda_\mathbf{x}}{2} \left\| \mathbf{x} - \mathbf{x}_{\text{reg}} \right\|_2^2
+# + \frac{\lambda_{\mathbf{q}}}{2} \left\| \mathbf{q}(\mathbf{p}) - \mathbf{x} \right\|_2^2
 # $$
 # with $\mathbf{x}$ being intermediary qualitative images, $\lambda_{\mathbf{x}}$ and $\lambda_{\mathbf{q}}$ being
 # regularization strengths and $\mathbf{x}_{\text{reg}}$ denoting an image prior for regularization.
 # The second, non-linear, subproblem is finding the quantitative parameters by solving
 # $$
-# \underset{\mathbf{p}}{\min} \frac{\lambda_{\mathbf{q}}}{2}\left \| \mathbf{q}(\vec{p}) - \mathbf{x} \right\|_2^2 + \frac{\lambda_{\mathbf{p}}}{2} \left\| \mathbf{p} - \mathbf{p}_{\text{reg}} \right\|_2^2.
+# \underset{\mathbf{p}}{\min} \frac{\lambda_{\mathbf{q}}}{2}\left \| \mathbf{q}(\vec{p}) - \mathbf{x} \right\|_2^2
+# + \frac{\lambda_{\mathbf{p}}}{2} \left\| \mathbf{p} - \mathbf{p}_{\text{reg}} \right\|_2^2.
 # $$
-# Here, $\mathbf{p}_{\text{reg}}$ is a prior on the parameter maps and $\lambda_{\mathbf{p}}$ the associated weight for regularization.
-# In PINQI, a solution is found by iterating between both subproblems. In each iteration $k=1,\ldots,T$, the image and parameter priors are updated by
-# U-Nets. The network parameters and the regularization strengths are trained end-to-end.
-# Here, we apply a trained PINQI model to a validation set. We first define the dataset, then define the PINQI model, before loading the model weights
-# and applying it to the dataset.
+# Here, $\mathbf{p}_{\text{reg}}$ is a prior on the parameter maps and $\lambda_{\mathbf{p}}$ the associated weight for
+# regularization.
+# In PINQI, a solution is found by iterating between both subproblems. In each iteration $k=1,\ldots,T$,
+# the image and parameter priors are updated by U-Nets. The network parameters and the regularization strengths
+# are trained end-to-end.
+# Here, we apply a trained PINQI model to a validation set. We first define the dataset, then define the PINQI model,
+# before loading the model weights and applying it to the dataset.
 
 # %% [markdown]
 # ## Dataset
-# We base the dataset on the BrainWeb phantom (`mrpro.phantoms.brainweb.BrainwebSlices`) and simulate Cartesian random undersampling in phase
-# encode direction.
+# We base the dataset on the BrainWeb phantom (`mrpro.phantoms.brainweb.BrainwebSlices`) and simulate Cartesian random
+# undersampling in phase encode direction.
 
 # %%
 from collections.abc import Sequence
@@ -182,7 +187,7 @@ class PINQI(torch.nn.Module):
             lambda_parameters: torch.Tensor,
             image: torch.Tensor,
             *parameter_reg: torch.Tensor,
-        ):
+        ) -> torch.operators.Operator:
             dc = mrpro.operators.functionals.L2NormSquared(image) @ self.signalmodel
             reg = mrpro.operators.ProximableFunctionalSeparableSum(
                 *[mrpro.operators.functionals.L2NormSquared(r) for r in parameter_reg]
@@ -195,7 +200,7 @@ class PINQI(torch.nn.Module):
         )
         # This can be done once, as the signal model is the same for all samples.
 
-    def get_linear_solver(self, gram: mrpro.operators.LinearOperator):
+    def get_linear_solver(self, gram: mrpro.operators.LinearOperator) -> mrpro.operators.ConjugateGradientOp:
         """Set up the linear solver."""
         # This needs to be done for each sample, as the undersampling pattern and csm are different for each sample,
         # thus the gram operator of the acquisition operator is different for each sample.
@@ -253,7 +258,7 @@ class PINQI(torch.nn.Module):
         image = einops.rearrange(image, '(batch t) complex y x-> batch t 1 1 y x complex', batch=batch)
         return torch.view_as_complex(image.contiguous())
 
-    def forward(self, kdata: mrpro.data.KData, csm: mrpro.data.CsmData):
+    def forward(self, kdata: mrpro.data.KData, csm: mrpro.data.CsmData) -> tuple[torch.Tensor, ...]:
         """Estimate the quantitative parameters.
 
         Parameters
@@ -294,8 +299,9 @@ class PINQI(torch.nn.Module):
 
 
 # %%
-# As a baseline methods for comparision, we use a simple non-learned approach. We reconstruct the qualitative images at different saturation times using iterative SENSE.
-# We then perform a  constrained non-linear least squares regression usingL-BFGS to obtain the parameter maps.
+# As a baseline methods for comparison, we use a simple non-learned approach. We reconstruct the qualitative images at
+# different saturation times using iterative SENSE. We then perform a  constrained non-linear least squares regression
+# using L-BFGS to obtain the parameter maps.
 # %%
 def baseline_solution(
     signalmodel: mrpro.operators.SignalModel,
@@ -453,10 +459,3 @@ fig.savefig(
     bbox_inches='tight',
     pad_inches=0,
 )
-
-
-# %%
-
-1
-# %%
-# %%

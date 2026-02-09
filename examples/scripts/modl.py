@@ -12,22 +12,49 @@ from tqdm import tqdm
 
 
 class BatchType(TypedDict):
+    """A single Batch."""
+
     data: mrpro.data.KData
     target: mrpro.data.IData
     csm: mrpro.data.CsmData
 
 
 class AcceleratedFastMRI(torch.utils.data.Dataset):
+    """An undersampled FastMRI Dataset."""
+
     def __init__(self, path: Path, acceleration: float = 12, noise_level: float = 0.1):
+        """Create an undersampled FastMRI Dataset.
+
+        Parameters
+        ----------
+        path
+            Path to the FastMRI dataset.
+        acceleration
+            Undersampling factor; higher values mean more acceleration. Default is 12.
+        noise_level
+            Level of additive Gaussian noise applied to the FastMRI dataset. Default is 0.1.
+        """
         self.acceleration = acceleration
         files = list(path.glob('*AXT1*'))
         self.dataset = mrpro.phantoms.FastMRIKDataDataset(files)
         self.noise_level = noise_level
 
     def __len__(self):
+        """Get length of the dataset."""
         return len(self.dataset)
 
     def __getitem__(self, index: int) -> BatchType:
+        """Get a single batch of data.
+
+        Parameters
+        ----------
+        index
+            Index of the batch.
+
+        Returns
+        -------
+        A single batch of data with keys 'data', 'target', and 'csm'.and
+        """
         data = self.dataset[index]
         data = data.remove_readout_os()
         data.data /= data.data.std()
@@ -52,7 +79,18 @@ class AcceleratedFastMRI(torch.utils.data.Dataset):
 
 
 class MODL(torch.nn.Module):
+    """MODL network."""
+
     def __init__(self, iterations: int = 8, n_features: Sequence[int] = (64, 64, 64, 64)):
+        """Initialize MODL network.
+
+        Parameters
+        ----------
+        iterations
+            Number of iterations.
+        n_features
+            Number of features in the network.
+        """
         super().__init__()
         cnn = mrpro.nn.nets.BasicCNN(
             dim=2,
@@ -67,9 +105,23 @@ class MODL(torch.nn.Module):
         self.regularization_weights = torch.nn.Parameter(0.2 * torch.ones(iterations))
 
     def __call__(self, kdata: mrpro.data.KData, csm: mrpro.data.CsmData) -> mrpro.data.IData:
+        """Apply MODL network.
+
+        Parameters
+        ----------
+        kdata
+            The k-space data.
+        csm
+            The coil sensitivity maps.
+
+        Returns
+        -------
+        The reconstructed image.
+        """
         return super().__call__(kdata, csm)
 
     def forward(self, kdata: mrpro.data.KData, csm: mrpro.data.CsmData) -> mrpro.data.IData:
+        """Apply the MODL network."""
         fourier_op = mrpro.operators.FourierOp.from_kdata(kdata)
         acquisition_op = fourier_op @ csm.as_operator()
         (zero_filled_image,) = acquisition_op.H(kdata.data)
@@ -87,7 +139,7 @@ class MODL(torch.nn.Module):
         return mrpro.data.IData(image, header=mrpro.data.IHeader.from_kheader(kdata.header))
 
 
-def plot(batch: BatchType, prediction: mrpro.data.IData, step: int):
+def plot(batch: BatchType, prediction: mrpro.data.IData, step: int) -> None:
     """Plot the direct, sense, and modl reconstructions."""
     target = batch['target'].rss().cpu().squeeze()
     direct = mrpro.algorithms.reconstruction.DirectReconstruction(batch['data'], csm=batch['csm'])(batch['data'])

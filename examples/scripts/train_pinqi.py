@@ -10,12 +10,12 @@ import einops
 import matplotlib.pyplot as plt
 import mrpro
 import numpy as np
-import pytorch_lightning as pl
+import pytorch_lightning as pl  # type:ignore[import-not-found]
 import torch
 import torch.utils.data._utils
-from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
-from pytorch_lightning.loggers import NeptuneLogger
-from pytorch_lightning.strategies import DDPStrategy
+from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint  # type:ignore[import-not-found]
+from pytorch_lightning.loggers import NeptuneLogger  # type:ignore[import-not-found]
+from pytorch_lightning.strategies import DDPStrategy  # type:ignore[import-not-found]
 
 # mrpro.phantoms.brainweb.download_brainweb(workers=2, progress=True)
 
@@ -120,7 +120,7 @@ def collate_fn(batch: Any):  # noqa: ANN401
     return torch.utils.data._utils.collate.collate(
         batch,
         collate_fn_map={
-            mrpro.data.Dataclass: lambda batch, *, collate_fn_map: batch[0].stack(*batch[1:]),
+            mrpro.data.Dataclass: lambda batch, *, _collate_fn_map: batch[0].stack(*batch[1:]),
             **torch.utils.data._utils.collate.default_collate_fn_map,
         },
     )
@@ -360,7 +360,8 @@ class PinqiModule(pl.LightningModule):
         self.save_hyperparameters(ignore=['signalmodel', 'constraints_op'])
         if len(loss_weights) != n_iterations + 1:
             raise ValueError(f'loss_weights must be of length {n_iterations + 1} for {n_iterations} iterations')
-        signalmodel, constraints_op = map(deepcopy, (signalmodel, constraints_op))
+        signalmodel = deepcopy(signalmodel)
+        constraints_op = deepcopy(constraints_op)
         self.pinqi = PINQI(
             signalmodel=signalmodel,
             constraints_op=constraints_op,
@@ -371,7 +372,7 @@ class PinqiModule(pl.LightningModule):
             n_features_image_net=n_features_image_net,
         )
 
-        self.validation_step_outputs = collections.defaultdict(list)
+        self.validation_step_outputs: dict[str, list] = collections.defaultdict(list)
         self.baseline = Baseline(signalmodel, constraints_op, parameter_is_complex)
 
     def forward(self, kdata: mrpro.data.KData, csm: mrpro.data.CsmData):
@@ -395,7 +396,7 @@ class PinqiModule(pl.LightningModule):
 
     def training_step(self, batch: BatchType, _batch_idx: int) -> torch.Tensor:
         """Training step."""
-        images, parameters = self(batch['kdata'], batch['csm'])
+        _images, parameters = self(batch['kdata'], batch['csm'])
         loss = self.loss(parameters, batch)
         self.log(
             'train/loss',
@@ -413,7 +414,7 @@ class PinqiModule(pl.LightningModule):
 
         Needs to be adapted for other signal models than Saturation Recovery.
         """
-        images, parameters = self(batch['kdata'], batch['csm'])
+        _images, parameters = self(batch['kdata'], batch['csm'])
         loss = self.loss(parameters, batch)
 
         pred_m0, pred_t1 = parameters[-1]
@@ -491,16 +492,16 @@ class PinqiModule(pl.LightningModule):
         label: str,
     ) -> None:
         """Plot the results."""
-        target = target.squeeze().numpy()
-        pred = pred.squeeze().detach().numpy()
-        mask = mask.squeeze().detach().numpy().astype(bool)
-        baseline = baseline.squeeze().detach().numpy()
+        target = target.squeeze().cpu()
+        pred = pred.squeeze().detach().cpu()
+        mask = mask.squeeze().detach().bool().cpu()
+        baseline = baseline.squeeze().detach().cpu()
 
-        target[~mask] = np.nan
-        pred[~mask] = np.nan
-        baseline[~mask] = np.nan
+        target[~mask] = torch.nan
+        pred[~mask] = torch.nan
+        baseline[~mask] = torch.nan
         difference = (target - pred) / target * 100
-        vmax = np.nanmax(target)
+        vmax = np.nanmax(target.numpy())
 
         im0 = axes[0].imshow(target, vmin=0, vmax=vmax)
         axes[0].set_title('Ground Truth')
@@ -517,7 +518,7 @@ class PinqiModule(pl.LightningModule):
         axes[2].axis('off')
         plt.colorbar(im2, ax=axes[2], fraction=0.046, pad=0.04, label=label)
 
-        diff_vmax = np.nanpercentile(np.abs(difference), 90)
+        diff_vmax = np.nanpercentile(difference.abs().numpy(), 90)
         im3 = axes[3].imshow(difference, cmap='coolwarm', vmin=-diff_vmax, vmax=diff_vmax)
         axes[3].set_title('rel. Error')
         axes[3].axis('off')
