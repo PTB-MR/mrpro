@@ -19,7 +19,11 @@ class FiLM(CondMixin, Module):
       conditioning layer." AAAI (2018). https://arxiv.org/abs/1709.07871
     """
 
-    def __init__(self, channels: int, cond_dim: int) -> None:
+    features_last: bool
+
+    def __init__(
+        self, channels: int, cond_dim: int, features_last: bool = False
+    ) -> None:
         """Initialize FiLM.
 
         Parameters
@@ -28,11 +32,17 @@ class FiLM(CondMixin, Module):
             The number of channels in the input tensor.
         cond_dim
             The dimension of the conditioning tensor.
+        features_last
+            Whether the features are in the last dimension of the input tensor (e.g. transformer tokens)
+            or in the second dimension (e.g. image tensors).
         """
         super().__init__()
         self.project = Linear(cond_dim, 2 * channels) if cond_dim > 0 else None
+        self.features_last = features_last
 
-    def __call__(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
+    def __call__(
+        self, x: torch.Tensor, *, cond: torch.Tensor | None = None
+    ) -> torch.Tensor:
         """Apply FiLM.
 
         Parameters
@@ -44,11 +54,21 @@ class FiLM(CondMixin, Module):
         """
         return super().__call__(x, cond=cond)
 
-    def forward(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
+    def forward(
+        self, x: torch.Tensor, *, cond: torch.Tensor | None = None
+    ) -> torch.Tensor:
         """Apply FiLM."""
         if cond is None or self.project is None:
             return x
-        scale, shift = self.project(cond).chunk(2, dim=1)
 
+        if self.features_last:
+            x = x.moveaxis(-1, 1)
+
+        scale, shift = self.project(cond).chunk(2, dim=1)
         scale, shift = unsqueeze_tensors_right(scale, shift, ndim=x.ndim)
-        return x * (1 + scale) + shift
+        x = x * (1 + scale) + shift
+
+        if self.features_last:
+            x = x.moveaxis(1, -1)
+
+        return x
