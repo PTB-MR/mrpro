@@ -39,14 +39,18 @@ class CirculantPreconditioner(LinearOperator):
             density compensation weights
         """
         super().__init__()
-        delta_image = torch.zeros(nufft_operator._im_size, dtype=torch.complex64)
-        center_indices = tuple(d // 2 for d in nufft_operator._im_size)
-        delta_image[center_indices] = 1.0
-        delta_image = delta_image.to(dcf.device)
+        device = dcf.device if dcf.device is not None else nufft_operator._omega.device
+        im_shape_zyx = [1, 1, 1]
+        for dim, size in zip(nufft_operator._direction_zyx, nufft_operator._im_size, strict=True):
+            im_shape_zyx[dim + 3] = size
+
+        delta_image = torch.zeros((1, *im_shape_zyx), dtype=torch.complex64, device=device)
+        center_indices = tuple(size // 2 for size in im_shape_zyx)
+        delta_image[(0, *center_indices)] = 1.0
         (k,) = nufft_operator(delta_image)
         k = k * dcf.data
         (psf,) = nufft_operator.adjoint(k)
-        kernel = torch.fft.fftn(psf, dim=(-1, -2, -3))
+        kernel = torch.fft.fftn(torch.fft.ifftshift(psf, dim=(-1, -2, -3)), dim=(-1, -2, -3))
         kernel = torch.polar(kernel.abs().clamp(min=1e-5), kernel.angle()).reciprocal()
         self.kernel = kernel
 
@@ -57,9 +61,9 @@ class CirculantPreconditioner(LinearOperator):
         x = torch.fft.ifftn(x, dim=(-1, -2, -3))
         return (x,)
 
-    def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
+    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the adjoint of the inverse of the preconditioner."""
-        y = torch.fft.fftn(y, dim=(-1, -2, -3))
-        y = y * self.kernel.conj()
-        y = torch.fft.ifftn(y, dim=(-1, -2, -3))
-        return (y,)
+        x = torch.fft.fftn(x, dim=(-1, -2, -3))
+        x = x * self.kernel.conj()
+        x = torch.fft.ifftn(x, dim=(-1, -2, -3))
+        return (x,)
