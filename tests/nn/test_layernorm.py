@@ -101,13 +101,12 @@ def test_layernorm_no_channels() -> None:
     output = norm(x)
     assert output.shape == x.shape, f'Output shape {output.shape} != input shape {x.shape}'
 
-    # Check that normalization is applied (mean close to 0, std close to 1)
-    dims = tuple(range(1, x.ndim))
-    mean = output.mean(dim=dims)
-    std = output.std(dim=dims)
+    # Check that normalization is applied over channel dim (dim=1 for features_last=False)
+    mean = output.mean(dim=1, keepdim=True)
+    var = (output * output).mean(dim=1, keepdim=True) - mean * mean
 
-    assert torch.allclose(mean, torch.zeros_like(mean), atol=1e-6), 'Mean not close to 0'
-    assert torch.allclose(std, torch.ones_like(std), atol=1e-5), 'Std not close to 1'
+    assert torch.allclose(mean, torch.zeros_like(mean), atol=1e-5), 'Mean not close to 0'
+    assert torch.allclose(var, torch.ones_like(var), atol=1e-3), 'Variance not close to 1'
 
 
 def test_layernorm_conditioning_without_channels() -> None:

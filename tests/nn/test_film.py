@@ -3,6 +3,7 @@
 from collections.abc import Sequence
 
 import pytest
+import torch
 from mrpro.nn.FiLM import FiLM
 from mrpro.utils import RandomGenerator
 
@@ -40,3 +41,18 @@ def test_film(
     assert not cond.grad.isnan().any(), 'NaN values in conditioning gradients'
     assert film.project is not None, 'Linear layer is not initialized'
     assert next(film.project.parameters()).grad is not None, 'No gradient computed for Linear layer'
+
+
+def test_film_features_last() -> None:
+    """Test FiLM with features_last=True vs features_last=False."""
+    rng = RandomGenerator(seed=42)
+    x = rng.float32_tensor((1, 3, 4, 5))
+    cond = rng.float32_tensor((1, 8))
+
+    film_last = FiLM(channels=3, cond_dim=8, features_last=True)
+    film = FiLM(channels=3, cond_dim=8, features_last=False)
+    film.load_state_dict(film_last.state_dict())
+
+    y_last = film_last(x.moveaxis(1, -1), cond=cond)
+    y = film(x, cond=cond)
+    torch.testing.assert_close(y, y_last.moveaxis(-1, 1))
