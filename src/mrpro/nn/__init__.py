@@ -1,6 +1,8 @@
 """Neural network modules and utilities."""
 
 from mrpro.nn.ComplexAsChannel import ComplexAsChannel
+from mrpro.nn.AbsolutePositionEncoding import AbsolutePositionEncoding
+from mrpro.nn.AxialRoPE import AxialRoPE
 from mrpro.nn.CondMixin import CondMixin
 from mrpro.nn.DropPath import DropPath
 from mrpro.nn.FiLM import FiLM
@@ -12,6 +14,7 @@ from mrpro.nn.PermutedBlock import PermutedBlock
 from mrpro.nn.RMSNorm import RMSNorm
 from mrpro.nn.Residual import Residual
 from mrpro.nn.Sequential import Sequential
+from mrpro.nn import attention
 from mrpro.nn import data_consistency
 from mrpro.nn.ndmodules import (
     adaptiveAvgPoolND,
@@ -24,6 +27,8 @@ from mrpro.nn.ndmodules import (
 )
 
 __all__ = [
+    'AbsolutePositionEncoding',
+    'AxialRoPE',
     'ComplexAsChannel',
     'CondMixin',
     'DropPath',
@@ -37,6 +42,7 @@ __all__ = [
     'Residual',
     'Sequential',
     'adaptiveAvgPoolND',
+    'attention',
     'avgPoolND',
     'batchNormND',
     'convND',
