@@ -82,7 +82,7 @@ def test_pca_compression_op_wrong_shapes() -> None:
     with pytest.raises(RuntimeError, match='Matrix'):
         pca_comp_op(input_data)
 
-    with pytest.raises(RuntimeError, match='Matrix.H'):
+    with pytest.raises(RuntimeError, match=r'Matrix\^H'):
         pca_comp_op.adjoint(input_data)
 
 

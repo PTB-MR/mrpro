@@ -5,7 +5,7 @@ from collections.abc import Sequence
 import torch
 
 from mrpro.operators.SignalModel import SignalModel
-from mrpro.utils import unsqueeze_right
+from mrpro.utils.reshape import unsqueeze_right
 
 
 class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
@@ -92,24 +92,41 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
             delay_after_preparation_tensor, requires_grad=delay_after_preparation_tensor.requires_grad
         )
 
-    def forward(self, m0: torch.Tensor, t1: torch.Tensor, flip_angle: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply transient steady state signal model.
+    def __call__(self, m0: torch.Tensor, t1: torch.Tensor, flip_angle: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply the transient steady-state signal model with preparation.
+
+        Calculates the signal based on the formula:
+        :math:`M_z(t) = M_0^* + (M_{init} - M_0^*) * exp(-t / T_1^*)`,
+        where :math:`M_{init}` is the magnetization after preparation and initial delay,
+        :math:`M_0^*` is the effective steady-state magnetization, and :math:`T_1^*` is the
+        effective T1 relaxation time during continuous acquisition.
 
         Parameters
         ----------
         m0
-            equilibrium signal / proton density
-            with shape `(*other, coils, z, y, x)`
+            Equilibrium signal / proton density.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
         t1
-            longitudinal relaxation time T1
-            with shape `(*other, coils, z, y, x)`
+            Longitudinal relaxation time T1.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
         flip_angle
-            flip angle of data acquisition in rad
-            with shape `(*other, coils, z, y, x)`
+            Flip angle of data acquisition rf pulses in radians.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
 
         Returns
         -------
-            signal with shape `(time, *other, coils, z, y, x)`
+            Signal calculated for each sampling time.
+            Shape `(times ...)`, for example `(times, *other, coils, z, y, x)`, or `(times, samples)`
+            where `times` is the number of sampling times.
+        """
+        return super().__call__(m0, t1, flip_angle)
+
+    def forward(self, m0: torch.Tensor, t1: torch.Tensor, flip_angle: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply forward of TransientSteadyStateWithPreparation.
+
+        .. note::
+            Prefer calling the instance of the TransientSteadyStateWithPreparation as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         ndim = max(m0.ndim, t1.ndim, flip_angle.ndim)
         repetition_time = unsqueeze_right(self.repetition_time, ndim - self.repetition_time.ndim)

@@ -4,6 +4,7 @@ import concurrent.futures
 import gzip
 import io
 import re
+import time
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from os import PathLike
@@ -32,7 +33,8 @@ URL_TEMPLATE = (
 # includes background
 ALL_CLASSES = ('bck', 'skl', 'gry', 'wht', 'csf', 'mrw', 'dura', 'fat', 'fat2', 'mus', 'm-s', 'ves')  # noqa: typos
 VERSION = 1
-CACHE_DIR = platformdirs.user_cache_dir('mrpro')  #  ~/.cache/mrpro on Linux, %AppData%\Local\mrpro on Windows
+# ~/.cache/mrpro/brainweb on Linux, %AppData%\Local\mrpro\brainweb on Windows
+CACHE_DIR_BRAINWEB = Path(platformdirs.user_cache_dir('mrpro')) / 'brainweb'
 K = TypeVar('K')
 TClassNames = Literal['skl', 'gry', 'wht', 'csf', 'mrw', 'dura', 'fat', 'fat2', 'mus', 'm-s', 'ves']  # noqa: typos
 BRAINWEBSHAPE = (362, 434, 362)
@@ -154,7 +156,7 @@ def augment(
         scale *= 1 + max_random_scaling_factor * rand[3]
         translate = rand[4:6]  # subpixel translation for edge aliasing
         if trim:
-            data = data[trim_indices(data.sum(-1) > 0.1 * data.amax())]
+            data = data[(slice(None), *trim_indices(data.sum(0) > 0.1 * data.amax()))]
 
         data = torchvision.transforms.functional.affine(
             data,
@@ -242,12 +244,16 @@ VALUES_3T_RANDOMIZED: Mapping[TClassNames, BrainwebTissue] = MappingProxyType(
 )
 """Tissue values for 3T with wide randomization ranges."""
 
-DEFAULT_VALUES = {'r1': 0.0, 'm0': 0.0, 'r2': 0.0, 'mask': 0, 'tissueclass': -1}
+DEFAULT_VALUES = {'r1': 0.0, 'm0': 0.0, 'r2': 0.0, 'mask': 0, 'tissueclass': -1, 't1': 10.0, 't2': 0.0}
 """Default values for masked out regions."""
 
 
 def download_brainweb(
-    output_directory: str | PathLike = CACHE_DIR, workers: int = 4, progress: bool = False, compress: bool = False
+    output_directory: str | PathLike = CACHE_DIR_BRAINWEB,
+    workers: int = 4,
+    progress: bool = False,
+    compress: bool = False,
+    n_files: int = 20,
 ) -> None:
     """Download Brainweb data.
 
@@ -262,13 +268,30 @@ def download_brainweb(
     compress
         Use compression for HDF5 files. Saves disk space but might slow down (or speed up) access,
         depending on the system and access pattern.
+    n_files
+        Number of files to download. Can be used to download only a subset of the files.
+        Cannot be greater than 20.
     """
+    if n_files > 20:
+        raise ValueError('Cannot download more than 20 files.')
 
-    def load_file(url: str, timeout: float = 60) -> bytes:
-        """Load url content."""
-        response = requests.get(url, timeout=timeout)
-        response.raise_for_status()
-        return response.content
+    def load_file(
+        url: str,
+        timeout: float = 60,
+        max_retries: int = 3,
+        retry_delay: float = 30,
+    ) -> bytes:
+        """Load url content with retries for network errors."""
+        for attempt in range(max_retries):
+            try:
+                response = requests.get(url, timeout=timeout)
+                response.raise_for_status()
+                return response.content
+            except requests.exceptions.RequestException:
+                if attempt == max_retries - 1:
+                    break
+                time.sleep(retry_delay)
+        raise ConnectionError(f'Failed to download {url} after {max_retries} attempts.')
 
     def unpack(data: bytes, dtype: np.typing.DTypeLike, shape: Sequence[int]) -> np.ndarray:
         """Unpack gzipped data."""
@@ -281,7 +304,7 @@ def download_brainweb(
         sum_values = sum(values)
         values.pop(ALL_CLASSES.index('bck'))  # noqa: typos
         for i, x in enumerate(values):
-            x = np.divide(x, sum_values, where=sum_values != 0)
+            x = np.divide(x, sum_values, out=np.zeros_like(x, dtype=float), where=sum_values != 0)
             x[sum_values == 0] = 0
             x = (x * (2**8 - 1)).astype(np.uint8)
             values[i] = x
@@ -314,7 +337,7 @@ def download_brainweb(
             f.attrs['version'] = VERSION
 
     page = requests.get(OVERVIEW_URL, timeout=5)
-    subjects = re.findall(r'option value=(\d*)>', page.text)
+    subjects = re.findall(r'option value=(\d*)>', page.text)[:n_files]
     output_directory = Path(output_directory)
     output_directory.mkdir(parents=True, exist_ok=True)
 
@@ -352,7 +375,10 @@ class BrainwebVolumes(torch.utils.data.Dataset):
 
     @staticmethod
     def download(
-        output_directory: str | PathLike = CACHE_DIR, workers: int = 4, progress: bool = False, compress: bool = False
+        output_directory: str | PathLike = CACHE_DIR_BRAINWEB,
+        workers: int = 4,
+        progress: bool = False,
+        compress: bool = False,
     ) -> None:
         """Download Brainweb data.
 
@@ -373,7 +399,7 @@ class BrainwebVolumes(torch.utils.data.Dataset):
 
     def __init__(
         self,
-        folder: str | Path = CACHE_DIR,
+        folder: str | Path = CACHE_DIR_BRAINWEB,
         what: Sequence[Literal['r1', 'r2', 'm0', 't1', 't2', 'mask', 'tissueclass'] | TClassNames] = ('m0', 'r1', 'r2'),
         parameters: Mapping[TClassNames, BrainwebTissue] = VALUES_3T_RANDOMIZED,
         mask_values: Mapping[str, float | None] = DEFAULT_VALUES,
@@ -501,7 +527,10 @@ class BrainwebSlices(torch.utils.data.Dataset):
 
     @staticmethod
     def download(
-        output_directory: str | PathLike = CACHE_DIR, workers: int = 4, progress: bool = False, compress: bool = False
+        output_directory: str | PathLike = CACHE_DIR_BRAINWEB,
+        workers: int = 4,
+        progress: bool = False,
+        compress: bool = False,
     ) -> None:
         """Download Brainweb data.
 
@@ -522,10 +551,14 @@ class BrainwebSlices(torch.utils.data.Dataset):
 
     def __init__(
         self,
-        folder: str | Path = CACHE_DIR,
+        folder: str | Path = CACHE_DIR_BRAINWEB,
         what: Sequence[Literal['r1', 'r2', 'm0', 't1', 't2', 'mask', 'tissueclass'] | TClassNames] = ('m0', 'r1', 'r2'),
         parameters: Mapping[TClassNames, BrainwebTissue] = VALUES_3T_RANDOMIZED,
-        orientation: Literal['axial', 'coronal', 'sagittal'] = 'axial',
+        orientation: Literal['axial', 'coronal', 'sagittal'] | Sequence[Literal['axial', 'coronal', 'sagittal']] = (
+            'axial',
+            'coronal',
+            'sagittal',
+        ),
         skip_slices: tuple[tuple[int, int], tuple[int, int], tuple[int, int]] = ((80, 80), (100, 100), (100, 100)),
         step: int = 1,
         slice_preparation: Callable[[torch.Tensor, torch.Generator | None], torch.Tensor] = DEFAULT_AUGMENT_256,
@@ -582,23 +615,36 @@ class BrainwebSlices(torch.utils.data.Dataset):
         self.what = what
         self.mask_values = mask_values
 
+        if isinstance(orientation, str):
+            orientation = [orientation]
+        elif len(orientation) != len(set(orientation)):
+            raise ValueError('Orientations must be unique.')
         try:
-            self._axis = {'axial': 0, 'coronal': 1, 'sagittal': 2}[orientation]
+            self.axes = [{'axial': 0, 'coronal': 1, 'sagittal': 2}[o] for o in orientation]
         except KeyError:
             raise ValueError(f'Invalid axis: {orientation}.') from None
-        self._skip_slices = skip_slices[self._axis]
 
-        files = []
-        ns_slices = [0]
-        for fn in Path(folder).glob('s??.h5'):
-            with h5py.File(fn) as f:
-                n_slices = f['classes'].shape[self._axis] - self._skip_slices[0] - self._skip_slices[1]
-                ns_slices.append(n_slices)
-                files.append(fn)
-        if not files:
+        self.skip_slices = skip_slices
+
+        files_and_axes = []
+        ns_slices = []
+        h5_files = sorted(Path(folder).glob('s??.h5'))
+        if not h5_files:
             raise FileNotFoundError(f'No files found in {folder}.')
-        self._files = tuple(files)
-        self._ns_slices = np.cumsum(ns_slices)
+
+        for axis in self.axes:
+            skip_start, skip_end = self.skip_slices[axis]
+            for fn in h5_files:
+                with h5py.File(fn) as f:
+                    n_slices = f['classes'].shape[axis] - skip_start - skip_end
+                if n_slices > 0:
+                    files_and_axes.append((fn, axis))
+                    ns_slices.append(n_slices)
+        if not files_and_axes:
+            raise FileNotFoundError(f'After skipping {self.skip_slices} slices, no images are left.')
+
+        self._files_and_axes = tuple(files_and_axes)
+        self._ns_slices = np.cumsum([0, *ns_slices])
 
         self.slice_preparation = slice_preparation
 
@@ -617,21 +663,19 @@ class BrainwebSlices(torch.utils.data.Dataset):
         self, index: int
     ) -> dict[Literal['r1', 'r2', 'm0', 't1', 't2', 'mask', 'tissueclass'] | TClassNames, torch.Tensor]:
         """Get a single slice."""
-        if index * self.step >= self._ns_slices[-1]:
+        if index < 0:
+            index = len(self) + index
+        if not 0 <= index < len(self):
             raise IndexError
-        elif index < 0:
-            index = self._ns_slices[-1] + index * self.step
-        else:
-            index = index * self.step
+        index = index * self.step
 
-        file_id = np.searchsorted(self._ns_slices, index, 'right') - 1
-        slice_id = index - self._ns_slices[file_id] + self._skip_slices[0]
+        chunk_id = np.searchsorted(self._ns_slices, index, 'right') - 1
+        file_path, axis = self._files_and_axes[chunk_id]
+        slice_id = index - self._ns_slices[chunk_id] + self.skip_slices[axis][0]
 
-        with h5py.File(self._files[file_id]) as file:
-            where = [slice(self._skip_slices[0], file['classes'].shape[i] - self._skip_slices[1]) for i in range(3)] + [
-                slice(None)
-            ]
-            where[self._axis] = slice_id
+        with h5py.File(file_path) as file:
+            where = [slice(None)] * 3
+            where[axis] = slice_id
             data = torch.as_tensor(np.array(file['classes'][tuple(where)], dtype=np.uint8))
             classnames = tuple(file.attrs['classnames'])
 
@@ -663,9 +707,10 @@ class BrainwebSlices(torch.utils.data.Dataset):
             elif el in classnames:
                 result[el] = data[..., classnames.index(el)]
             elif el == 'mask':
-                result[el] = ~(
+                result[el] = (
                     torch.nn.functional.conv2d((~mask)[None, None].float(), torch.ones(1, 1, 3, 3), padding=1)[0, 0] < 1
                 )
+
             else:
                 raise NotImplementedError(f'what=({el},) is not implemented.')
 

@@ -2,14 +2,14 @@
 
 import torch
 
-from mrpro.operators.Functional import ElementaryProximableFunctional
+from mrpro.operators.Functional import ElementaryProximableFunctional, throw_if_negative_or_complex
 
 
 class L1NormViewAsReal(ElementaryProximableFunctional):
-    r"""Functional class for the L1 Norm, where C is identified with R^2.
+    r"""Functional class for the L1 Norm, where C is identified with :math:`R^2`.
 
     This implements the functional given by
-    :math:`f: C^N -> [0, \infty), x ->  \|W_r * Re(x-b) )\|_1 + \|( W_i * Im(x-b) )\|_1`,
+    :math:`f: C^N \rightarrow [0, \infty), x \rightarrow \|W_r * \mathrm{Re}(x-b))\|_1 +\|( W_i *\mathrm{Im}(x-b))\|_1`,
     where :math:`W_r` and :math:`W_i` are a either scalars or tensors and `*` denotes element-wise multiplication.
 
     If the parameter `weight` is real-valued, :math:`W_r` and :math:`W_i` are both set to `weight`.
@@ -20,22 +20,39 @@ class L1NormViewAsReal(ElementaryProximableFunctional):
     The norm of the vector is computed along the dimensions set at initialization.
     """
 
-    def forward(
+    def __call__(
         self,
         x: torch.Tensor,
     ) -> tuple[torch.Tensor]:
-        """Forward method.
+        r"""Compute the L1 norm, viewing complex numbers as R^2.
 
-        Compute the L1 norm of the input with :math:`C` identified as :math:`R^2`.
+        Calculates :math:`\|W_r * \mathrm{Re}(x-b)\|_1 + \|W_i * \mathrm{Im}(x-b)\|_1`.
+        If `weight` is real, :math:`W_r = W_i = \mathrm{weight}`.
+        If `weight` is complex, :math:`W_r = \mathrm{Re}(\mathrm{weight})` and :math:`W_i=\mathrm{Im}(\mathrm{weight})`.
+        `b` is `target`. The norm is computed along `dim`.
+        If `divide_by_n` is `True`, the result is averaged; otherwise, summed.
 
         Parameters
         ----------
         x
-            input tensor
+            Input tensor.
 
         Returns
         -------
-            L1 norm of the input tensor, where :math:`C` is identified as :math:`R^2`.
+            The L1 norm. If `keepdim` is `True`, the dimensions `dim` are retained
+            with size 1; otherwise, they are reduced.
+        """
+        return super().__call__(x)
+
+    def forward(
+        self,
+        x: torch.Tensor,
+    ) -> tuple[torch.Tensor]:
+        """Apply forward of L1NormViewAsReal.
+
+        .. note::
+            Prefer calling the instance of the L1NormViewAsReal operator as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         dtype = torch.promote_types(self.target.dtype, x.dtype)
         x = x.to(dtype)
@@ -69,7 +86,7 @@ class L1NormViewAsReal(ElementaryProximableFunctional):
         -------
             Proximal mapping applied to the input tensor
         """
-        self._throw_if_negative_or_complex(sigma)
+        throw_if_negative_or_complex(sigma)
         diff = x - self.target
         threshold = self._divide_by_n(self.weight * sigma, torch.broadcast_shapes(x.shape, self.weight.shape))
         out = torch.sgn(diff.real) * torch.relu(diff.real.abs() - threshold.real.abs())

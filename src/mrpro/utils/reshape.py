@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from functools import lru_cache
 from math import prod
 
+import einops
 import torch
 
 from mrpro.utils.typing import endomorph
@@ -218,7 +219,9 @@ def reduce_view(x: torch.Tensor, dim: int | Sequence[int] | None = None) -> torc
 
 
 @lru_cache
-def _reshape_idx(old_shape: tuple[int, ...], new_shape: tuple[int, ...], old_stride: tuple[int, ...]) -> list[slice]:
+def _reshape_idx(
+    old_shape: tuple[int, ...], new_shape: tuple[int, ...], old_stride: tuple[int, ...]
+) -> tuple[slice, ...]:
     """Get reshape reduce index (cached helper function for `reshape_broadcasted`).
 
     This function tries to group axes from new_shape and old_shape into the smallest groups that have
@@ -264,7 +267,7 @@ def _reshape_idx(old_shape: tuple[int, ...], new_shape: tuple[int, ...], old_str
             # preserve dimension
             idx.extend([slice(None)] * len(group))
     idx = idx[::-1]  # we worked right to left, but our index should be left to right
-    return idx
+    return tuple(idx)
 
 
 def reshape_broadcasted(tensor: torch.Tensor, *shape: int) -> torch.Tensor:
@@ -336,3 +339,130 @@ def ravel_multi_index(multi_index: Sequence[torch.Tensor], dims: Sequence[int]) 
     for idx, dim in zip(multi_index[1:], dims[1:], strict=True):
         flat_index = flat_index * dim + idx
     return flat_index
+
+
+def broadcasted_rearrange(
+    tensor: torch.Tensor,
+    pattern: str,
+    broadcasted_shape: Sequence[int] | None = None,
+    *,
+    reduce_views: bool = True,
+    **axes_lengths: int,
+) -> torch.Tensor:
+    """Rearrange a tensor with broadcasting.
+
+    Performs the einops rearrange or repeat operation on a tensor while preserving broadcasting.
+
+    Rearranging is a smart element reordering for multidimensional tensors.
+    This operation includes functionality of transpose (axes permutation),
+    reshape (view), squeeze, unsqueeze, repeat, and tile functions.
+
+    If a tensor has stride-0 dimensions, by default they will be preserved as stride-0
+    if possible and not made contiguous, thus saving memory.
+    If `reduce_views` is True, then stride-0 dimensions will be reduced to singleton dimensions after rearranging.
+    Optionally performs broadcasting to a specified shape before rearranging.
+
+    Examples
+    --------
+    ```python
+    >>> tensor = torch.randn(1, 16, 1, 768, 256)
+    >>> broadcasted_rearrange(tensor, '... (phase k1) k0 -> phase ... k1 k0', phase=8, reduce_views=False).shape
+    torch.Size([8, 1, 16, 1, 96, 256])
+
+    >>> tensor=torch.randn(1, 1, 1, 768, 1)
+    >>> broadcasted_rearrange(tensor, '... (phase k1) k0 -> phase ... k1 k0',
+    >>>    broadcasted_shape=(1, 16, 1, 768, 256), phase=8, reduce_views=False).shape
+    torch.Size([8, 1, 16, 1, 96, 256]) # Behaves as-if the tensor was of shape (1, 16, 1, 768, 256)
+
+    >>> tensor=torch.randn(1, 1, 1, 768, 1)
+    >>> broadcasted_rearrange(tensor, '... (phase k1) k0 -> phase ... k1 k0',
+    >>>    broadcasted_shape=(1, 16, 1, 768, 256) phase=8, reduce_views=True).shape
+    torch.Size([8, 1, 1, 1, 96, 1]) # Dimensions that are stride-0 are reduced to singleton dimensions
+    ```
+
+    Parameters
+    ----------
+    tensor
+        The input tensor to rearrange.
+    pattern
+        The rearrange pattern. See `einops` documentation for more information.
+    broadcasted_shape
+        The shape to broadcast the tensor to before rearranging. If `None`, no additional broadcasting is performed.
+    reduce_views
+        If `True`, reduce stride-0 dimensions to singleton dimensions after rearranging.
+    axes_lengths
+        The lengths of the axes in the pattern. See `einops` documentation for more information.
+
+
+    """
+    tensor = tensor.broadcast_to(broadcasted_shape) if broadcasted_shape is not None else tensor
+    # the broadcast-preservation is done by patching the reshape method of the einops backend
+    einops._backends.TorchBackend.reshape = lambda _, tensor, shape: reshape_broadcasted(tensor, *shape)  # type: ignore[method-assign]
+    new_tensor = einops.repeat(tensor, pattern, **axes_lengths)  # allows both repeat and rearrange
+    del einops._backends.TorchBackend.reshape  # resets to inherited method
+    if reduce_views:
+        new_tensor = reduce_view(new_tensor)
+    return new_tensor
+
+
+def expand_dim(tensor: torch.Tensor, dim: int, size: int) -> torch.Tensor:
+    """Expand a tensor in one dimension.
+
+    Parameters
+    ----------
+    tensor
+        The tensor to expand.
+    dim
+        The dimension to expand.
+    size
+        The size to expand to.
+    """
+    new_shape = list(tensor.shape)
+    new_shape[dim] = size
+    return tensor.expand(new_shape)
+
+
+def broadcasted_concatenate(tensors: Sequence[torch.Tensor], dim: int, reduce_views: bool = True) -> torch.Tensor:
+    """Concatenate tensors while preserving broadcasting.
+
+    Parameters
+    ----------
+    tensors
+        The tensors to concatenate.
+    dim
+        The dimension to concatenate along.
+    reduce_views
+        If `True`, reduce stride-0 dimensions to singleton dimensions after concatenating.
+
+    Returns
+    -------
+        The concatenated tensor.
+    """
+    n_dim = tensors[0].ndim
+    if any(t.ndim != n_dim for t in tensors):
+        raise ValueError('All tensors must have the same number of dimensions')
+    if not (-n_dim <= dim < n_dim):
+        raise ValueError(f'Dimension {dim} out of range for tensor of dimension {n_dim}')
+    dim = dim % n_dim
+
+    broadcasted_shape = []
+    idx = []
+    for n in range(n_dim):
+        if n != dim and any(t.size(n) != tensors[0].size(n) for t in tensors):
+            raise ValueError('All shapes must have the same size except for the concatenation dimension')
+        if n == dim:
+            idx.append(slice(None))  # keep all elements
+            broadcasted_shape.append(-1)
+        elif all(t.stride(n) == 0 for t in tensors):
+            broadcasted_shape.append(tensors[0].size(n))
+            idx.append(slice(1))  # reduce to singleton
+        else:
+            broadcasted_shape.append(tensors[0].size(n))
+            idx.append(slice(None))
+
+    tensors = [t[tuple(idx)] for t in tensors]
+    result = torch.cat(tensors, dim=dim)
+
+    if not reduce_views:  # dimensions are already reduced, we would undo this here.
+        result = result.expand(broadcasted_shape)
+    return result
