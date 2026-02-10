@@ -184,7 +184,7 @@ class SpatialTransformerBlock(CondMixin, Module):
                 attention_neighborhood=attention_neighborhood,
             )
             self.transformer_blocks.append(PermutedBlock(group, block, features_last=True))
-        self.proj_out = Linear(hidden_dim, channels)
+        self.proj_out = zero_init(Linear(hidden_dim, channels))
 
     def forward(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the spatial transformer block."""
