@@ -103,6 +103,49 @@ class PatchOp(LinearOperator):
         patches = patches.flatten(start_dim=0, end_dim=len(self.dim) - 1)
         return (patches,)
 
+    def _adjoint_fast(self, patches: torch.Tensor) -> torch.Tensor:
+        """Adjoint via reshape/permute for non-overlapping patches."""
+        assert self.domain_size is not None  # mypy  # noqa: S101
+        grid = tuple(s // p for s, p in zip(self.domain_size, self.patch_size, strict=True))
+        permutation: list[int] = []
+        reshape: list[int] = []
+        dim = [d % (patches.ndim - 1) for d in self.dim]
+        for i, size in enumerate(patches.shape[1:]):
+            if i in dim:
+                j = dim.index(i)
+                permutation.extend([j, len(self.dim) + i])
+                reshape.append(grid[j] * self.patch_size[j])
+            else:
+                permutation.append(len(self.dim) + i)
+                reshape.append(size)
+        return patches.unflatten(0, grid).permute(*permutation).reshape(reshape)
+
+    def _adjoint_scatter(self, patches: torch.Tensor) -> torch.Tensor:
+        """Adjoint via scatter for overlapping patches."""
+        assert self.domain_size is not None  # mypy  # noqa: S101
+        output_shape_ = list(patches.shape[1:])
+        for dim, size in zip(self.dim, self.domain_size, strict=True):
+            output_shape_[dim] = size
+        output_shape = torch.Size(output_shape_)
+        indices = torch.arange(output_shape.numel(), device=patches.device).reshape(output_shape_)
+        windowed_indices = sliding_window(
+            x=indices,
+            window_shape=self.patch_size,
+            dim=self.dim,
+            stride=self.stride,
+            dilation=self.dilation,
+        ).flatten(start_dim=0, end_dim=len(self.dim) - 1)
+        if windowed_indices.shape[0] != patches.shape[0]:
+            raise ValueError(
+                f'Number of patches {patches.shape[0]} does not match the number of '
+                f'expected patches {windowed_indices.shape[0]}'
+            )
+
+        assembled = patches.new_zeros(output_shape.numel())
+        assembled.scatter_add_(dim=0, index=windowed_indices.flatten(), src=patches.flatten())
+        assembled = assembled.reshape(output_shape)
+        return assembled
+
     def adjoint(
         self,
         patches: torch.Tensor,
@@ -127,26 +170,11 @@ class PatchOp(LinearOperator):
         """
         if self.domain_size is None:
             raise ValueError('Domain size is not set. Please call forward first or set it at initialization.')
-
-        output_shape_ = list(patches.shape[1:])
-        for dim, size in zip(self.dim, self.domain_size, strict=True):
-            output_shape_[dim] = size
-        output_shape = torch.Size(output_shape_)
-        indices = torch.arange(output_shape.numel(), device=patches.device).reshape(output_shape_)
-        windowed_indices = sliding_window(
-            x=indices,
-            window_shape=self.patch_size,
-            dim=self.dim,
-            stride=self.stride,
-            dilation=self.dilation,
-        ).flatten(start_dim=0, end_dim=len(self.dim) - 1)
-        if windowed_indices.shape[0] != patches.shape[0]:
-            raise ValueError(
-                f'Number of patches {patches.shape[0]} does not match the number of '
-                f'expected patches {windowed_indices.shape[0]}'
-            )
-
-        assembled = patches.new_zeros(output_shape.numel())
-        assembled.scatter_add_(dim=0, index=windowed_indices.flatten(), src=patches.flatten())
-        assembled = assembled.reshape(output_shape)
-        return (assembled,)
+        if (
+            self.stride == self.patch_size  # no overlap
+            and all(d == 1 for d in self.dilation)  # no dilation
+            and all(s % p == 0 for s, p in zip(self.domain_size, self.patch_size, strict=True))  # divisible
+        ):
+            return (self._adjoint_fast(patches),)
+        else:
+            return (self._adjoint_scatter(patches),)
