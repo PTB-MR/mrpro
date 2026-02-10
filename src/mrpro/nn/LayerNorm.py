@@ -61,10 +61,12 @@ class LayerNorm(CondMixin, Module):
 
     def forward(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply layer normalization to the input tensor."""
-        dims = tuple(range(1, x.ndim))
-        mean = x.mean(dim=dims, keepdim=True)
-        std = x.std(dim=dims, keepdim=True, unbiased=False)
-        x = (x - mean) / (std + 1e-5)
+        dim = -1 if self.features_last else 1
+        dtype = x.dtype
+        x = x.float()
+        var, mean = torch.var_mean(x, dim=dim, unbiased=False, keepdim=True)
+        x = (x - mean) * (var + 1e-5).rsqrt()
+        x = x.to(dtype)
 
         if self.weight is not None and self.bias is not None:
             if self.features_last:
