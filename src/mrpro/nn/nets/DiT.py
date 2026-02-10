@@ -170,6 +170,8 @@ class DiT(Module):
 
         if any(s % p != 0 for s, p in zip(self.input_size, self.patch_size, strict=True)):
             raise ValueError(f'Input size {self.input_size} must be divisible by patch size {self.patch_size}.')
+        if hidden_dim % (2 * n_dim) != 0:
+            raise ValueError(f'Hidden dimension {hidden_dim} must be divisible by 2 * {n_dim=}.')
 
         self.grid_size = tuple(s // p for s, p in zip(self.input_size, self.patch_size, strict=True))
         self.n_patches = prod(self.grid_size)
@@ -189,7 +191,7 @@ class DiT(Module):
 
         patch_volume = prod(self.patch_size)
         self.in_proj = Linear(n_channels_in * patch_volume, hidden_dim)
-        self.pos_embed = Parameter(torch.zeros(1, self.n_patches, hidden_dim))
+        self.pos_embed = Parameter(torch.zeros(self.n_patches, hidden_dim), requires_grad=False)
 
         self.blocks = Sequential(
             *(
@@ -222,8 +224,6 @@ class DiT(Module):
 
         self.apply(_basic_init)
 
-        torch.nn.init.trunc_normal_(self.pos_embed, std=0.02)
-
         w = self.in_proj.weight.data
         torch.nn.init.xavier_uniform_(w.reshape(w.shape[0], -1))
         if self.in_proj.bias is not None:
@@ -235,6 +235,12 @@ class DiT(Module):
                 if isinstance(gate_linear, Linear):
                     torch.nn.init.zeros_(gate_linear.weight)
                     torch.nn.init.zeros_(gate_linear.bias)
+
+        w = 1.0 / (10000 ** torch.linspace(0, 1, self.hidden_dim // (2 * len(self.grid_size))))
+        x = torch.stack(torch.meshgrid(*[torch.arange(s).float() for s in self.grid_size], indexing='ij'), dim=-1)
+        wx = w * x.unsqueeze(-1)
+        pos_embed = torch.cat([torch.sin(wx), torch.cos(wx)], dim=-1).reshape(-1, self.hidden_dim)
+        self.pos_embed.data.copy_(pos_embed.to(self.pos_embed.data))
 
     def forward(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply DiT.
@@ -250,10 +256,11 @@ class DiT(Module):
         -------
             Output tensor with shape `batch, out_channels, *spatial_dims`.
         """
-        x = self.patch_op(x)[0].movedim(1, 0).flatten(2)
+        x = self.patch_op(x)[0].swapaxes(0, 1).flatten(2)
+        x = self.in_proj(x)
         x = x + self.pos_embed
         x = self.blocks(x, cond=cond)
         x = self.final_layer(x, cond=cond)
-        x = x.unflatten(-1, (self.n_channels_out, *self.patch_size)).movedim(0, 1)
+        x = x.unflatten(-1, (self.n_channels_out, *self.patch_size)).swapaxes(0, 1)
         (x,) = self.patch_op.adjoint(x)
         return x

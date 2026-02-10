@@ -55,48 +55,34 @@ def test_ditblock_backward() -> None:
         pytest.param('cuda', marks=pytest.mark.cuda, id='cuda'),
     ],
 )
-def test_dit_forward(torch_compile: bool, device: str) -> None:
+@pytest.mark.parametrize('input_size', [(16, 32), (4, 8, 16)], ids=['2d', '3d'])
+def test_dit_forward(torch_compile: bool, device: str, input_size: tuple[int, ...]) -> None:
     """Test the forward pass of DiT."""
+    n_channels_in = 3
+    n_channels_out = 2
+    n_batch = 1
+    hidden_dim = 12
+    cond_dim = 32
     dit = DiT(
-        n_dim=2,
-        n_channels_in=1,
-        cond_dim=32,
-        input_size=16,
+        n_dim=len(input_size),
+        n_channels_in=n_channels_in,
+        cond_dim=cond_dim,
+        input_size=input_size,
         patch_size=2,
-        n_channels_out=1,
-        hidden_dim=32,
+        n_channels_out=n_channels_out,
+        hidden_dim=hidden_dim,
         depth=2,
         n_heads=4,
         mlp_ratio=2.0,
     )
 
-    x = torch.zeros(1, 1, 16, 16, device=device)
-    cond = torch.zeros(1, 32, device=device)
+    x = torch.zeros(n_batch, n_channels_in, *input_size, device=device)
+    cond = torch.zeros(n_batch, cond_dim, device=device)
     dit = dit.to(device)
     if torch_compile:
         dit = cast(DiT, torch.compile(dit))
     y = dit(x, cond=cond)
-    assert y.shape == (1, 1, 16, 16)
-
-
-def test_dit_forward_3d() -> None:
-    """Test DiT with 3D input."""
-    dit = DiT(
-        n_dim=3,
-        n_channels_in=1,
-        cond_dim=16,
-        input_size=(8, 8, 8),
-        patch_size=2,
-        n_channels_out=1,
-        hidden_dim=32,
-        depth=1,
-        n_heads=4,
-        mlp_ratio=2.0,
-    )
-    x = torch.zeros(1, 1, 8, 8, 8)
-    cond = torch.zeros(1, 16)
-    y = dit(x, cond=cond)
-    assert y.shape == (1, 1, 8, 8, 8)
+    assert y.shape == (n_batch, n_channels_out, *input_size)
 
 
 def test_dit_backward() -> None:
@@ -123,5 +109,7 @@ def test_dit_backward() -> None:
     assert cond.grad is not None, 'cond.grad is None'
     assert not cond.grad.isnan().any(), 'cond.grad is NaN'
     for name, parameter in dit.named_parameters():
+        if name == 'pos_embed':
+            continue  # embedding is fixed
         assert parameter.grad is not None, f'{name}.grad is None'
         assert not parameter.grad.isnan().any(), f'{name}.grad is NaN'
