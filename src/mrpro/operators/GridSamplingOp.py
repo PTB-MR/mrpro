@@ -293,11 +293,14 @@ class GridSamplingOp(LinearOperator):
                     f'Got shapes {displacement_z.shape}, {displacement_y.shape}, {displacement_x.shape}.'
                 ) from None
             grid_z, grid_y, grid_x = torch.meshgrid(
-                torch.linspace(-1, 1, n_z), torch.linspace(-1, 1, n_y), torch.linspace(-1, 1, n_x), indexing='ij'
+                torch.linspace(-1, 1, n_z),
+                torch.linspace(-1, 1, n_y),
+                torch.linspace(-1, 1, n_x),
+                indexing='ij',
             )
-            grid_z = grid_z + displacement_z * 2 / (n_z - 1)
-            grid_y = grid_y + displacement_y * 2 / (n_y - 1)
-            grid_x = grid_x + displacement_x * 2 / (n_x - 1)
+            grid_z = grid_z.to(displacement_z) + displacement_z * 2 / (n_z - 1)
+            grid_y = grid_y.to(displacement_y) + displacement_y * 2 / (n_y - 1)
+            grid_x = grid_x.to(displacement_x) + displacement_x * 2 / (n_x - 1)
         else:  # 2D
             if displacement_x.ndim < 3 or displacement_y.ndim < 3:
                 raise ValueError(
@@ -312,8 +315,8 @@ class GridSamplingOp(LinearOperator):
                     f'Got shapes {displacement_y.shape}, {displacement_x.shape}.'
                 ) from None
             grid_y, grid_x = torch.meshgrid(torch.linspace(-1, 1, n_y), torch.linspace(-1, 1, n_x), indexing='ij')
-            grid_y = grid_y + displacement_y * 2 / (n_y - 1)
-            grid_x = grid_x + displacement_x * 2 / (n_x - 1)
+            grid_y = grid_y.to(displacement_y) + displacement_y * 2 / (n_y - 1)
+            grid_x = grid_x.to(displacement_x) + displacement_x * 2 / (n_x - 1)
             grid_z = None
         return cls(grid_z, grid_y, grid_x, None, interpolation_mode, padding_mode, align_corners=True)
 
