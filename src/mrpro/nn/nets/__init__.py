@@ -13,6 +13,6 @@ __all__ = [
     "MLP",
     "Restormer",
     "SwinIR",
-    "Uformer",
     "UNet",
+    "Uformer"
 ]
