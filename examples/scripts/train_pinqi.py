@@ -84,7 +84,7 @@ class Dataset(torch.utils.data.Dataset):
             seed=seed,
             acceleration=self.acceleration,
             fwhm_ratio=1.5,
-            n_center=10,
+            n_center=12,
             n_other=(self._n_images,),
         )
         header = mrpro.data.KHeader(
@@ -575,7 +575,9 @@ class Baseline(torch.nn.Module):
 
     def forward(self, kdata: mrpro.data.KData, csm: mrpro.data.CsmData) -> tuple[torch.Tensor, ...]:
         """Compute the baseline solution."""
-        sense = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction(kdata, csm=csm)
+        sense = mrpro.algorithms.reconstruction.RegularizedIterativeSENSEReconstruction(
+            kdata, csm=csm, regularization_weight=0.01, n_iterations=3
+        )
         images = sense(kdata).rearrange('batch time ...-> time batch ...')
 
         objective = mrpro.operators.functionals.L2NormSquared(images.data) @ self.signalmodel @ self.constraints_op
@@ -617,26 +619,20 @@ class LogLambdasCallback(pl.Callback):
 
 
 if __name__ == '__main__':
-    import os
-
-    os.environ['NEPTUNE_API_TOKEN'] = (
-        'eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiIyOTdlYTM3NS0wMWU1LTRlMzMtYWU1Ny01MzMzN2ExNTcwMDcifQ=='
-    )
-    os.environ['NEPTUNE_PROJECT'] = 'ptb/pinqi'
     torch.multiprocessing.set_sharing_strategy('file_system')
     torch.set_float32_matmul_precision('high')
     torch._inductor.config.compile_threads = 4
     torch._inductor.config.worker_start_method = 'fork'
     torch._dynamo.config.capture_scalar_outputs = True
     torch._dynamo.config.cache_size_limit = 256
-    torch._functorch.config.activation_memory_budget = 0.8
+    torch._functorch.config.activation_memory_budget = 0.5
 
     data_folder = Path(' /echo/zimmer08/brainweb')
     if not data_folder.exists():
         data_folder.mkdir(parents=True, exist_ok=True)
         mrpro.phantoms.brainweb.download_brainweb(output_directory=data_folder, workers=2, progress=True)
 
-    signalmodel = mrpro.operators.models.SaturationRecovery((0.5, 1.0, 1.5, 2.0, 8.0))
+    signalmodel = mrpro.operators.models.SaturationRecovery((0.2, 0.8, 4.0))
     constraints_op = mrpro.operators.ConstraintsOp(
         bounds=(
             (-2, 2),  # M0 in [-2, 2]
@@ -650,10 +646,10 @@ if __name__ == '__main__':
         folder=data_folder,
         signalmodel=signalmodel,
         n_images=n_images,
-        batch_size=4,
-        num_workers=4,
+        batch_size=8,
+        num_workers=8,
         size=192,
-        acceleration=8,
+        acceleration=6,
         n_coils=1,
         max_noise=0.3,
     )
@@ -697,6 +693,6 @@ if __name__ == '__main__':
         gradient_clip_val=5.0,
     )
 
-    trainer.fit(model, datamodule=dm)
+    # trainer.fit(model, datamodule=dm)
 
 # %%
