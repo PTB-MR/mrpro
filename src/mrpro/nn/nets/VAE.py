@@ -99,16 +99,12 @@ class VAE(VAEBase):
         n_res_blocks
             Number of residual blocks per resolution level.
         """
-        encoder = Sequential(
-            convND(n_dim)(n_channels_in, n_features[0], kernel_size=3, padding=1)
-        )
+        encoder = Sequential(convND(n_dim)(n_channels_in, n_features[0], kernel_size=3, padding=1))
 
         for n_feat, n_feat_next in pairwise(n_features):
             for _ in range(n_res_blocks):
                 encoder.append(ResBlock(n_dim, n_feat, n_feat, cond_dim=0))
-            encoder.append(
-                convND(n_dim)(n_feat, n_feat_next, kernel_size=3, stride=2, padding=1)
-            )
+            encoder.append(convND(n_dim)(n_feat, n_feat_next, kernel_size=3, stride=2, padding=1))
 
         for _ in range(n_res_blocks):
             encoder.append(ResBlock(n_dim, n_features[-1], n_features[-1], cond_dim=0))
@@ -117,22 +113,18 @@ class VAE(VAEBase):
             [
                 GroupNorm(n_features[-1]),
                 SiLU(),
-                convND(n_dim)(
-                    n_features[-1], 2 * latent_channels, kernel_size=3, padding=1
-                ),
+                convND(n_dim)(n_features[-1], 2 * latent_channels, kernel_size=3, padding=1),
             ]
         )
 
-        decoder = Sequential(
-            convND(n_dim)(latent_channels, n_features[-1], kernel_size=3, padding=1)
-        )
+        decoder = Sequential(convND(n_dim)(latent_channels, n_features[-1], kernel_size=3, padding=1))
         for _ in range(n_res_blocks):
             decoder.append(ResBlock(n_dim, n_features[-1], n_features[-1], cond_dim=0))
 
         for n_feat, n_feat_next in pairwise(reversed(n_features)):
             decoder.append(
                 Sequential(
-                    Upsample(dim=range(-n_dim, 0), scale_factor=2, mode="linear"),
+                    Upsample(dim=range(-n_dim, 0), scale_factor=2, mode='linear'),
                     convND(n_dim)(n_feat, n_feat_next, kernel_size=3, padding=1),
                 )
             )

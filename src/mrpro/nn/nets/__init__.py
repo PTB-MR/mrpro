@@ -18,5 +18,5 @@ __all__ = [
     "SwinIR",
     "UNet",
     "Uformer",
-    "VAE",
+    "VAE"
 ]

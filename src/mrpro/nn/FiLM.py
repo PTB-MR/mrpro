@@ -21,9 +21,7 @@ class FiLM(CondMixin, Module):
 
     features_last: bool
 
-    def __init__(
-        self, channels: int, cond_dim: int, features_last: bool = False
-    ) -> None:
+    def __init__(self, channels: int, cond_dim: int, features_last: bool = False) -> None:
         """Initialize FiLM.
 
         Parameters
@@ -40,9 +38,7 @@ class FiLM(CondMixin, Module):
         self.project = Linear(cond_dim, 2 * channels) if cond_dim > 0 else None
         self.features_last = features_last
 
-    def __call__(
-        self, x: torch.Tensor, *, cond: torch.Tensor | None = None
-    ) -> torch.Tensor:
+    def __call__(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply FiLM.
 
         Parameters
@@ -54,9 +50,7 @@ class FiLM(CondMixin, Module):
         """
         return super().__call__(x, cond=cond)
 
-    def forward(
-        self, x: torch.Tensor, *, cond: torch.Tensor | None = None
-    ) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply FiLM."""
         if cond is None or self.project is None:
             return x

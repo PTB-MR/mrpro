@@ -45,9 +45,7 @@ class MultiHeadAttention(Module):
             Fraction of channels to embed with RoPE.
         """
         super().__init__()
-        n_channels_kv = (
-            n_channels_cross if n_channels_cross is not None else n_channels_in
-        )
+        n_channels_kv = n_channels_cross if n_channels_cross is not None else n_channels_in
         channels_per_head_q = n_channels_in // n_heads
         channels_per_head_kv = n_channels_kv // n_heads
         self.to_q = Linear(n_channels_in, channels_per_head_q * n_heads)
@@ -58,9 +56,7 @@ class MultiHeadAttention(Module):
         self.n_heads = n_heads
         self.rope = AxialRoPE(rope_embed_fraction)
 
-    def __call__(
-        self, x: torch.Tensor, cross_attention: torch.Tensor | None = None
-    ) -> torch.Tensor:
+    def __call__(self, x: torch.Tensor, cross_attention: torch.Tensor | None = None) -> torch.Tensor:
         """Apply multi-head attention.
 
         Parameters
@@ -81,9 +77,7 @@ class MultiHeadAttention(Module):
             x = x.moveaxis(1, -1)
         return x.flatten(1, -2)
 
-    def forward(
-        self, x: torch.Tensor, cross_attention: torch.Tensor | None = None
-    ) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, cross_attention: torch.Tensor | None = None) -> torch.Tensor:
         """Apply multi-head attention."""
         if cross_attention is None:
             cross_attention = x
@@ -91,27 +85,19 @@ class MultiHeadAttention(Module):
             x = x.moveaxis(1, -1)
             cross_attention = cross_attention.moveaxis(1, -1)
 
-        query = rearrange(
-            self.to_q(x),
-            "batch ... (heads channels) -> batch heads ... channels ",
-            heads=self.n_heads,
-        )
+        query = rearrange(self.to_q(x), 'batch ... (heads channels) -> batch heads ... channels ', heads=self.n_heads)
         key, value = rearrange(
             self.to_kv(cross_attention),
-            "batch ... (kv heads channels) -> kv batch heads ... channels ",
+            'batch ... (kv heads channels) -> kv batch heads ... channels ',
             heads=self.n_heads,
             kv=2,
         )
         query, key = self.rope(query, key)  # NO-OP if rope_embed_fraction is 0.0
-        query, key, value = (
-            query.flatten(2, -2),
-            key.flatten(2, -2),
-            value.flatten(2, -2),
-        )
+        query, key, value = query.flatten(2, -2), key.flatten(2, -2), value.flatten(2, -2)
         y = torch.nn.functional.scaled_dot_product_attention(
             query, key, value, dropout_p=self.p_dropout, is_causal=False
         )
-        y = rearrange(y, "... heads L channels -> ... L (heads channels)")
+        y = rearrange(y, '... heads L channels -> ... L (heads channels)')
         out = self.to_out(y).reshape(x.shape)
 
         if not self.features_last:

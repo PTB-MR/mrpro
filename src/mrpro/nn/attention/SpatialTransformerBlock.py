@@ -19,9 +19,9 @@ from mrpro.nn.Sequential import Sequential
 
 def zero_init(m: Module) -> Module:
     """Initialize module weights and bias to zero."""
-    if hasattr(m, "weight") and isinstance(m.weight, torch.Tensor):
+    if hasattr(m, 'weight') and isinstance(m.weight, torch.Tensor):
         torch.nn.init.zeros_(m.weight)
-    if hasattr(m, "bias") and m.bias is not None and isinstance(m.bias, torch.Tensor):
+    if hasattr(m, 'bias') and m.bias is not None and isinstance(m.bias, torch.Tensor):
         torch.nn.init.zeros_(m.bias)
     return m
 
@@ -76,9 +76,7 @@ class BasicTransformerBlock(CondMixin, Module):
             )
         else:
             if p_dropout > 0:
-                raise ValueError(
-                    "p_dropout > 0 is not supported for neighborhood self attention"
-                )
+                raise ValueError('p_dropout > 0 is not supported for neighborhood self attention')
             attention = NeighborhoodSelfAttention(
                 n_channels_in=channels,
                 n_channels_out=channels,
@@ -88,9 +86,7 @@ class BasicTransformerBlock(CondMixin, Module):
                 circular=True,
                 rope_embed_fraction=rope_embed_fraction,
             )
-        self.selfattention = Sequential(
-            LayerNorm(channels, features_last=True), attention
-        )
+        self.selfattention = Sequential(LayerNorm(channels, features_last=True), attention)
         hidden_dim = int(channels * mlp_ratio)
         self.ff = Sequential(
             LayerNorm(channels, features_last=True, cond_dim=cond_dim),
@@ -99,9 +95,7 @@ class BasicTransformerBlock(CondMixin, Module):
             Linear(hidden_dim, channels),
         )
 
-    def __call__(
-        self, x: torch.Tensor, *, cond: torch.Tensor | None = None
-    ) -> torch.Tensor:
+    def __call__(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the basic transformer block.
 
         Parameters
@@ -113,9 +107,7 @@ class BasicTransformerBlock(CondMixin, Module):
         """
         return super().__call__(x, cond=cond)
 
-    def forward(
-        self, x: torch.Tensor, *, cond: torch.Tensor | None = None
-    ) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the basic transformer block."""
         if not self.features_last:
             x = x.moveaxis(1, -1).contiguous()
@@ -140,7 +132,7 @@ class SpatialTransformerBlock(CondMixin, Module):
         rope_embed_fraction: float = 0.0,
         attention_neighborhood: int | None = None,
         features_last: bool = False,
-        norm: Literal["group", "rms"] = "group",
+        norm: Literal['group', 'rms'] = 'group',
     ):
         """Initialize the spatial transformer block.
 
@@ -170,12 +162,12 @@ class SpatialTransformerBlock(CondMixin, Module):
         super().__init__()
         hidden_dim = n_heads * (channels // n_heads)
         match norm:
-            case "group":
+            case 'group':
                 self.norm: Module = GroupNorm(channels, features_last=features_last)
-            case "rms":
+            case 'rms':
                 self.norm = RMSNorm(channels, features_last=features_last)
             case _:
-                raise ValueError(f"Invalid norm: {norm}")
+                raise ValueError(f'Invalid norm: {norm}')
         self.features_last = features_last
         self.proj_in = Linear(channels, hidden_dim)
         self.transformer_blocks = Sequential()
@@ -191,14 +183,10 @@ class SpatialTransformerBlock(CondMixin, Module):
                 rope_embed_fraction=rope_embed_fraction,
                 attention_neighborhood=attention_neighborhood,
             )
-            self.transformer_blocks.append(
-                PermutedBlock(group, block, features_last=True)
-            )
+            self.transformer_blocks.append(PermutedBlock(group, block, features_last=True))
         self.proj_out = zero_init(Linear(hidden_dim, channels))
 
-    def forward(
-        self, x: torch.Tensor, *, cond: torch.Tensor | None = None
-    ) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the spatial transformer block."""
         skip = x
         h = self.norm(x)
@@ -211,9 +199,7 @@ class SpatialTransformerBlock(CondMixin, Module):
             h = h.movedim(-1, 1)
         return skip + h
 
-    def __call__(
-        self, x: torch.Tensor, *, cond: torch.Tensor | None = None
-    ) -> torch.Tensor:
+    def __call__(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the spatial transformer block.
 
         Parameters
