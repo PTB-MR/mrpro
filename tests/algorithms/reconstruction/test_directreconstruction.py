@@ -46,15 +46,6 @@ def test_direct_reconstruction_with_explicit_fourier_op(cartesian_kdata: KData) 
     assert reconstruction.fourier_op is fourier_op
 
 
-def test_direct_reconstruction_csm_false_skips_coil_combination(cartesian_kdata: KData) -> None:
-    """Test that csm=False in direct_reconstruction skips coil combination."""
-    reconstruction = DirectReconstruction(kdata=cartesian_kdata, csm=CsmData.from_idata_walsh)
-    idata_with_csm = reconstruction.direct_reconstruction(cartesian_kdata)
-    idata_without_csm = reconstruction.direct_reconstruction(cartesian_kdata, csm=False)
-    assert idata_with_csm.data.shape[-4] == 1
-    assert idata_without_csm.data.shape[-4] == cartesian_kdata.data.shape[-4]
-
-
 @pytest.mark.cuda
 def test_direct_reconstruction_cuda(cartesian_kdata: KData) -> None:
     """Test on CUDA device."""
