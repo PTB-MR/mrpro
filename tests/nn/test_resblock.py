@@ -49,7 +49,7 @@ def test_resblock(
     assert x.grad is not None, 'No gradient computed for input'
     assert not output.isnan().any(), 'NaN values in output'
     assert not x.grad.isnan().any(), 'NaN values in input gradients'
-    assert block.block[2].weight.grad is not None, 'No gradient computed for first Conv'
+    assert block.block[-1].weight.grad is not None, 'No gradient computed for first Conv'
     if cond is not None:
         assert cond.grad is not None, 'No gradient computed for conditioning'
         assert not cond.isnan().any(), 'NaN values in conditioning'
