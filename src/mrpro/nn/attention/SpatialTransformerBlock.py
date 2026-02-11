@@ -86,7 +86,7 @@ class BasicTransformerBlock(CondMixin, Module):
                 circular=True,
                 rope_embed_fraction=rope_embed_fraction,
             )
-        self.selfattention = Sequential(LayerNorm(channels, features_last=True), attention)
+        self.selfattention = Sequential(LayerNorm(channels, features_last=True, cond_dim=cond_dim), attention)
         hidden_dim = int(channels * mlp_ratio)
         self.ff = Sequential(
             LayerNorm(channels, features_last=True, cond_dim=cond_dim),
@@ -111,7 +111,7 @@ class BasicTransformerBlock(CondMixin, Module):
         """Apply the basic transformer block."""
         if not self.features_last:
             x = x.moveaxis(1, -1).contiguous()
-        x = self.selfattention(x) + x
+        x = self.selfattention(x, cond=cond) + x
         x = self.ff(x, cond=cond) + x
         if not self.features_last:
             x = x.moveaxis(-1, 1).contiguous()
