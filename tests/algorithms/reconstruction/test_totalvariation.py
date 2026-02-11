@@ -1,8 +1,11 @@
 """Tests for TotalVariationRegularizedReconstruction."""
 
+from collections.abc import Callable
+
 import pytest
 from mrpro.algorithms.reconstruction import TotalVariationRegularizedReconstruction
-from mrpro.data import CsmData, KData
+from mrpro.data import CsmData, DcfData, KData
+from mrpro.operators import FourierOp
 
 
 def test_total_variation_automatic(cartesian_kdata: KData) -> None:
@@ -14,8 +17,7 @@ def test_total_variation_automatic(cartesian_kdata: KData) -> None:
         max_iterations=2,
     )
     idata = reconstruction(cartesian_kdata)
-    recon = cartesian_kdata.header.recon_matrix
-    assert idata.data.shape[-3:] == (recon.z, recon.y, recon.x)
+    assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
     assert reconstruction.csm is not None
     assert reconstruction.dcf is not None
 
@@ -30,8 +32,7 @@ def test_total_variation_with_callable_csm(cartesian_kdata: KData) -> None:
         max_iterations=2,
     )
     idata = reconstruction(cartesian_kdata)
-    recon = cartesian_kdata.header.recon_matrix
-    assert idata.data.shape[-3:] == (recon.z, recon.y, recon.x)
+    assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
     assert reconstruction.csm is not None
 
 
@@ -53,8 +54,7 @@ def test_total_variation_with_explicit_csm(cartesian_kdata: KData) -> None:
         max_iterations=2,
     )
     idata = reconstruction(cartesian_kdata)
-    recon = cartesian_kdata.header.recon_matrix
-    assert idata.data.shape[-3:] == (recon.z, recon.y, recon.x)
+    assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
     assert reconstruction.csm is csm
 
 
@@ -74,14 +74,13 @@ def test_total_variation_with_explicit_dcf(cartesian_kdata: KData) -> None:
         max_iterations=2,
     )
     idata = reconstruction(cartesian_kdata)
-    recon = cartesian_kdata.header.recon_matrix
-    assert idata.data.shape[-3:] == (recon.z, recon.y, recon.x)
+    assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
     assert reconstruction.dcf is dcf
 
 
 @pytest.mark.cuda
-def test_total_variation_cuda(cartesian_kdata: KData) -> None:
-    """Test on CUDA device."""
+def test_total_variation_cuda_from_kdata(cartesian_kdata: KData) -> None:
+    """Test CUDA device transfers for reconstruction created from kdata."""
     reconstruction = TotalVariationRegularizedReconstruction(
         kdata=cartesian_kdata,
         regularization_dim=(-1, -2),
@@ -89,6 +88,71 @@ def test_total_variation_cuda(cartesian_kdata: KData) -> None:
         max_iterations=2,
     ).cuda()
     idata = reconstruction(cartesian_kdata.cuda())
-    recon = cartesian_kdata.header.recon_matrix
-    assert idata.data.shape[-3:] == (recon.z, recon.y, recon.x)
+    assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
     assert idata.is_cuda
+
+    reconstruction = TotalVariationRegularizedReconstruction(
+        kdata=cartesian_kdata.cuda(),
+        regularization_dim=(-1, -2),
+        regularization_weight=0.01,
+        max_iterations=2,
+    )
+    idata = reconstruction(cartesian_kdata.cuda())
+    assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
+    assert idata.is_cuda
+
+    reconstruction = TotalVariationRegularizedReconstruction(
+        kdata=cartesian_kdata.cuda(),
+        regularization_dim=(-1, -2),
+        regularization_weight=0.01,
+        max_iterations=2,
+    ).cpu()
+    idata = reconstruction(cartesian_kdata)
+    assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
+    assert idata.is_cpu
+
+
+@pytest.mark.cuda
+def test_total_variation_cuda_explicit_components(
+    cartesian_kdata: KData,
+    explicit_components: Callable[[KData], tuple[FourierOp, CsmData, DcfData]],
+) -> None:
+    """Test CUDA device transfers with explicit FourierOp, CSM, and DCF."""
+    fourier_op, csm, dcf = explicit_components(cartesian_kdata)
+    reconstruction = TotalVariationRegularizedReconstruction(
+        fourier_op=fourier_op,
+        csm=csm,
+        dcf=dcf,
+        regularization_dim=(-1, -2),
+        regularization_weight=0.01,
+        max_iterations=2,
+    ).cuda()
+    idata = reconstruction(cartesian_kdata.cuda())
+    assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
+    assert idata.is_cuda
+
+    fourier_op, csm, dcf = explicit_components(cartesian_kdata.cuda())
+    reconstruction = TotalVariationRegularizedReconstruction(
+        fourier_op=fourier_op,
+        csm=csm,
+        dcf=dcf,
+        regularization_dim=(-1, -2),
+        regularization_weight=0.01,
+        max_iterations=2,
+    )
+    idata = reconstruction(cartesian_kdata.cuda())
+    assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
+    assert idata.is_cuda
+
+    fourier_op, csm, dcf = explicit_components(cartesian_kdata.cuda())
+    reconstruction = TotalVariationRegularizedReconstruction(
+        fourier_op=fourier_op,
+        csm=csm,
+        dcf=dcf,
+        regularization_dim=(-1, -2),
+        regularization_weight=0.01,
+        max_iterations=2,
+    ).cpu()
+    idata = reconstruction(cartesian_kdata)
+    assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
+    assert idata.is_cpu
