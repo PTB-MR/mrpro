@@ -54,7 +54,7 @@ class VAEBase(Module):
             tuple of the reconstructed image and
             the KL divergence between the latent space and the standard normal distribution.
         """
-        return self.forward(x)
+        return super().__call__(x)
 
     def mode(self, x: torch.Tensor) -> torch.Tensor:
         """Mode of the VAE."""

@@ -40,7 +40,8 @@ class ResBlock(CondMixin, Module):
             convND(n_dim)(n_channels_out, n_channels_out, kernel_size=3, padding=1),
         )
         if cond_dim > 0:
-            self.block.insert(-3, FiLM(n_channels_out, cond_dim))
+            self.block.insert(1, FiLM(n_channels_in, cond_dim))
+            self.block.insert(-2, FiLM(n_channels_out, cond_dim))
 
         if n_channels_out == n_channels_in:
             self.skip_connection: Module = Identity()
