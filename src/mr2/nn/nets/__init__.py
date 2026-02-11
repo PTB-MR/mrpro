@@ -1,4 +1,5 @@
 from mr2.nn.nets.BasicCNN import BasicCNN
+from mr2.nn.nets.DiT import DiT
 from mr2.nn.nets.HourglassTransformer import HourglassTransformer
 from mr2.nn.nets.MLP import MLP
 from mr2.nn.nets.Restormer import Restormer
@@ -10,6 +11,7 @@ from mr2.nn.nets.VAE import VAE
 __all__ = [
     "AttentionGatedUNet",
     "BasicCNN",
+    "DiT",
     "HourglassTransformer",
     "MLP",
     "Restormer",
