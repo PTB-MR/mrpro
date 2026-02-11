@@ -227,6 +227,22 @@ def trim_indices(mask: torch.Tensor) -> tuple[slice, slice]:
     return slice(row_min, row_max), slice(col_min, col_max)
 
 
+VALUES_ULF_RANDOMIZED: Mapping[TClassNames, BrainwebTissue] = MappingProxyType(
+    {
+        'skl': BrainwebTissue((0.100, 0.400), (0.005, 0.015), (0.00, 0.05), (-0.2, 0.2)),
+        'gry': BrainwebTissue((0.350, 0.430), (0.090, 0.115), (0.70, 1.00), (-0.2, 0.2)),
+        'wht': BrainwebTissue((0.240, 0.280), (0.075, 0.085), (0.50, 0.90), (-0.2, 0.2)),
+        'csf': BrainwebTissue((1.500, 2.500), (1.000, 1.600), (0.95, 1.00), (-0.2, 0.2)),
+        'mrw': BrainwebTissue((0.150, 0.250), (0.060, 0.100), (0.70, 1.00), (-0.2, 0.2)),
+        'dura': BrainwebTissue((0.300, 0.600), (0.100, 0.200), (0.90, 1.00), (-0.2, 0.2)),
+        'fat': BrainwebTissue((0.120, 0.160), (0.080, 0.130), (0.90, 1.00), (-0.2, 0.2)),
+        'fat2': BrainwebTissue((0.140, 0.180), (0.080, 0.130), (0.60, 0.90), (-0.2, 0.2)),
+        'mus': BrainwebTissue((0.160, 0.200), (0.035, 0.045), (0.90, 1.00), (-0.2, 0.2)),
+        'm-s': BrainwebTissue((0.200, 0.400), (0.100, 0.250), (0.90, 1.00), (-0.2, 0.2)),
+        'ves': BrainwebTissue((0.300, 0.500), (0.150, 0.300), (0.80, 1.00), (-0.2, 0.2)),
+    }
+)
+
 VALUES_3T_RANDOMIZED: Mapping[TClassNames, BrainwebTissue] = MappingProxyType(
     {
         'skl': BrainwebTissue((0.000, 2.000), (0.000, 0.010), (0.00, 0.05), (-0.2, 0.2)),
