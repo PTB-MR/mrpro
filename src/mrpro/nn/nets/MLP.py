@@ -113,7 +113,7 @@ class MLP(Sequential):
         tensor = x[0]
         if not self.features_last:
             tensor = tensor.moveaxis(1, -1)
-        out = super().forward(tensor, cond=cond)
+        out = super().__call__(tensor, cond=cond)
         if not self.features_last:
             out = out.moveaxis(-1, 1)
         return out

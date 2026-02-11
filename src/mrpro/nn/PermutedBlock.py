@@ -47,7 +47,7 @@ class PermutedBlock(CondMixin, nn.Module):
         -------
             Output tensor.
         """
-        return self.forward(x, cond=cond)
+        return super().__call__(x, cond=cond)
 
     def forward(self, x: torch.Tensor, *, cond: torch.Tensor | None = None) -> torch.Tensor:
         """Apply the module along the selected dimensions."""
