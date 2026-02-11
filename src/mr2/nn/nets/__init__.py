@@ -5,6 +5,7 @@ from mr2.nn.nets.Restormer import Restormer
 from mr2.nn.nets.SwinIR import SwinIR
 from mr2.nn.nets.Uformer import Uformer
 from mr2.nn.nets.UNet import AttentionGatedUNet, UNet
+from mr2.nn.nets.VAE import VAE
 
 __all__ = [
     "AttentionGatedUNet",
@@ -14,5 +15,6 @@ __all__ = [
     "Restormer",
     "SwinIR",
     "UNet",
-    "Uformer"
+    "Uformer",
+    "VAE",
 ]
