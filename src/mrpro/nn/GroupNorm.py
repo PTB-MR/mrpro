@@ -65,7 +65,7 @@ class GroupNorm(torch.nn.GroupNorm):
         """Apply GroupNorm."""
         if self.features_last:
             x = x.moveaxis(-1, 1)
-        result = super().forward(x.float()).type(x.dtype)
+        result = super().__call__(x.float()).type(x.dtype)
         if self.features_last:
             result = result.moveaxis(1, -1)
         return result
