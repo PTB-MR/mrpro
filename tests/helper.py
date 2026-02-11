@@ -163,13 +163,13 @@ def autodiff_test(
     """
     # Forward-mode autodiff using jvp
     with torch.autograd.detect_anomaly():
-        v_range, jvp = torch.func.jvp(operator.forward, u, u)
+        v_range, jvp = torch.func.jvp(operator, u, u)
     assert all(x.isfinite().all() for x in v_range), 'result is not finite'
     assert all(x.isfinite().all() for x in jvp), 'JVP is not finite'
 
     # Reverse-mode autodiff using vjp
     with torch.autograd.detect_anomaly():
-        (output, vjpfunc) = torch.func.vjp(operator.forward, *u)
+        (output, vjpfunc) = torch.func.vjp(operator, *u)
         vjp = vjpfunc(v_range)
     assert all(x.isfinite().all() for x in output), 'result is not finite'
     assert all(x.isfinite().all() for x in vjp), 'VJP is not finite'
@@ -205,12 +205,12 @@ def gradient_of_linear_operator_test(
         if the gradient is not the adjoint
     """
     # Gradient of the forward via vjp
-    (_, vjpfunc) = torch.func.vjp(operator.forward, u)
+    (_, vjpfunc) = torch.func.vjp(operator, u)
     assert torch.allclose(vjpfunc((v,))[0], operator.adjoint(v)[0], rtol=relative_tolerance, atol=absolute_tolerance)
 
     # Gradient of the adjoint via vjp
     (_, vjpfunc) = torch.func.vjp(operator.adjoint, v)
-    assert torch.allclose(vjpfunc((u,))[0], operator.forward(u)[0], rtol=relative_tolerance, atol=absolute_tolerance)
+    assert torch.allclose(vjpfunc((u,))[0], operator(u)[0], rtol=relative_tolerance, atol=absolute_tolerance)
 
 
 def forward_mode_autodiff_of_linear_operator_test(
@@ -245,8 +245,8 @@ def forward_mode_autodiff_of_linear_operator_test(
     """
     # jvp of the forward
     assert torch.allclose(
-        torch.func.jvp(operator.forward, (u,), (u,))[0][0],
-        operator.forward(u)[0],
+        torch.func.jvp(operator, (u,), (u,))[0][0],
+        operator(u)[0],
         rtol=relative_tolerance,
         atol=absolute_tolerance,
     )
