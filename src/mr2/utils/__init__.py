@@ -15,8 +15,11 @@ from mr2.utils.reshape import broadcast_right, broadcasted_rearrange, unsqueeze_
 from mr2.utils.TensorAttributeMixin import TensorAttributeMixin
 from mr2.utils.interpolate import interpolate, apply_lowres
 from mr2.utils.RandomGenerator import RandomGenerator
+from mr2.utils.to_tuple import to_tuple
+from mr2.utils.ema import EMADict
 
 __all__ = [
+    "EMADict",
     "Indexer",
     "RandomGenerator",
     "TensorAttributeMixin",
@@ -39,6 +42,7 @@ __all__ = [
     "split_idx",
     "summarize_object",
     "summarize_values",
+    "to_tuple",
     "typing",
     "unit_conversion",
     "unsqueeze_at",

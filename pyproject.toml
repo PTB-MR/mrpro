@@ -91,6 +91,7 @@ docs = [
     "sphinx-autodoc-typehints>=3, <3.1",
     "sphinx-copybutton>=0.5, <0.6",
     "sphinx-last-updated-by-git>=0.3, <0.4",
+    "snowballstemmer>=2.2, <3.0",
 ]
 notebooks = [
     "zenodo_get>=2.0",
@@ -111,10 +112,12 @@ testpaths = ["tests"]
 filterwarnings = [
     "error",
     "ignore:'write_like_original':DeprecationWarning:pydicom:",
-    "ignore:Anomaly Detection has been enabled:UserWarning",                                                  # torch.autograd
-    "ignore:allow_ops_in_compiled_graph failed to import torch:ImportWarning",                                # einops and dynamo<2.5
+    "ignore:Anomaly Detection has been enabled:UserWarning", # torch.autograd
+    "ignore:allow_ops_in_compiled_graph failed to import torch:ImportWarning", # einops and dynamo<2.5
+    "ignore:TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled:UserWarning", # torch cuda
     "ignore:.*In the future, this object will be coerced as if it was first converted using.*:FutureWarning", # numpy 1.2
-    "ignore:`torch.jit.script` is deprecated:DeprecationWarning",                                             # torch 2.10
+    "ignore:.*load_module.*:DeprecationWarning", # torch compile in torch<2.6
+    "ignore:`torch.jit.script` is deprecated:DeprecationWarning", # torch 2.10
 ]
 addopts = "-n auto --dist loadfile --maxprocesses=8"
 markers = ["cuda : Tests only to be run when cuda device is available"]
@@ -223,6 +226,7 @@ iy = "iy"
 arange = "arange" # torch.arange
 Ba = "Ba"
 wht = "wht"       # Brainweb tissue class
+ND = "ND"         # Short for N-dimensional
 
 [tool.typos.files]
 extend-exclude = [
