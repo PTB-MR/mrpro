@@ -12,10 +12,16 @@ from mr2.data import AcqIdx, AcqInfo, KData, KHeader, KTrajectory, SpatialDimens
 from mr2.data.enums import AcqFlags
 from mr2.utils import RandomGenerator
 from mr2.utils.reshape import unsqueeze_tensors_left
+from packaging.version import parse as parse_version
 from xsdata.models.datatype import XmlDate, XmlTime
 
 from tests.data import IsmrmrdRawTestData
 from tests.phantoms import EllipsePhantomTestData
+
+minimal_torch_26 = pytest.mark.xfail(
+    parse_version(torch.__version__) < parse_version('2.6'),
+    reason='Requires PyTorch >= 2.6',
+)
 
 
 def generate_random_encodingcounter_properties(rng: RandomGenerator) -> dict[str, Any]:

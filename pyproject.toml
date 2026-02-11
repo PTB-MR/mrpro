@@ -117,7 +117,9 @@ filterwarnings = [
     "ignore:TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled:UserWarning", # torch cuda
     "ignore:.*In the future, this object will be coerced as if it was first converted using.*:FutureWarning", # numpy 1.2
     "ignore:.*load_module.*:DeprecationWarning", # torch compile in torch<2.6
+    "ignore:The \\.grad attribute of a Tensor that is not a leaf Tensor is being accessed:UserWarning", # torch dynamo bug in flex attention
     "ignore:`torch.jit.script` is deprecated:DeprecationWarning", # torch 2.10
+    "ignore:`torch.jit.script_method` is deprecated", # torch 2.10
 ]
 addopts = "-n auto --dist loadfile --maxprocesses=8"
 markers = ["cuda : Tests only to be run when cuda device is available"]
