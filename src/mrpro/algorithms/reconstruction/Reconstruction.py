@@ -63,6 +63,9 @@ class Reconstruction(torch.nn.Module, ABC):
     ) -> Self:
         """Update (in place) the CSM from KData.
 
+        Performs a direct reconstruction without coil combination
+        and estimates coil sensitivity maps from the result.
+
         Parameters
         ----------
         kdata
@@ -74,42 +77,52 @@ class Reconstruction(torch.nn.Module, ABC):
         noise
             Noise measurement for prewhitening.
             If `None`, `self.noise` (if previously set) is used.
-            If `False`, no prewithening is performed even if `self.noise` is set.
+            If `False`, no prewhitening is performed even if `self.noise` is set.
             Use this if the `kdata` is already prewhitened.
         """
-        if noise is False:
-            noise = None
-        elif noise is None:
-            noise = self.noise
-        recon = type(self)(fourier_op=self.fourier_op, dcf=self.dcf, noise=noise, csm=None)
-        image = recon.direct_reconstruction(kdata)
+        image = self.direct_reconstruction(kdata, csm=False, noise=noise)
         self.csm = csm_calculation(image)
         return self
 
-    def direct_reconstruction(self, kdata: KData) -> IData:
+    def direct_reconstruction(
+        self,
+        kdata: KData,
+        *,
+        csm: CsmData | None | Literal[False] = None,
+        noise: KNoise | None | Literal[False] = None,
+    ) -> IData:
         """Direct reconstruction of the MR acquisition.
 
         Here we use :math:`S^H F^H W` to calculate the image data using
         the coil sensitivity operator :math:`S`,
         the Fourier operator :math:`F`,
         and the density compensation operator :math:`W`.
-        :math:`S` and :math:`W` are optional: If they have not been set in this instance,
-        no coil combination or density compensation, respectively, will be performed.
 
         Parameters
         ----------
         kdata
             k-space data
+        csm
+            Coil sensitivity maps used for coil combination.
+            If `None`, ``self.csm`` is used.
+            If `False`, no coil combination is performed.
+        noise
+            Noise measurement for prewhitening.
+            If `None`, ``self.noise`` is used.
+            If `False`, no prewhitening is performed.
 
         Returns
         -------
             image data
         """
-        if self.noise is not None:
-            kdata = prewhiten_kspace(kdata, self.noise)
+        noise_data = self.noise if noise is None else (None if noise is False else noise)
+        csm_data = self.csm if csm is None else (None if csm is False else csm)
+
+        if noise_data is not None:
+            kdata = prewhiten_kspace(kdata, noise_data)
         operator = self.fourier_op
-        if self.csm is not None:
-            operator = operator @ self.csm.as_operator()
+        if csm_data is not None:
+            operator = operator @ csm_data.as_operator()
         if self.dcf is not None:
             operator = self.dcf.as_operator() @ operator
         (img_tensor,) = operator.H(kdata.data)
