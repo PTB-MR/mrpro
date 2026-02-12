@@ -128,12 +128,11 @@ class Reconstruction(torch.nn.Module, ABC):
 
         operator = self.fourier_op
 
-        if csm is not False:
-            if csm is None:
-                csm_op = self.csm_op
-            else:
-                csm_op = csm.as_operator()
-            operator = operator @ csm_op
+        if csm is None:
+            if self.csm_op is not None:
+                operator = operator @ self.csm_op
+        elif csm:
+            operator = operator @ csm.as_operator()
 
         if self.dcf_op is not None:
             operator = self.dcf_op @ operator
