@@ -9,15 +9,16 @@ ARG PYTHON="python3.10"
 COPY docker/install_system.sh .
 RUN bash install_system.sh && rm install_system.sh
 
-# install mrpro dependencies
+# install mr2 dependencies
 # forces rebuild if either the version or the pyproject.toml changes
-COPY docker/install_dependencies.sh pyproject.toml src/mrpro/VERSION ./
+COPY docker/install_dependencies.sh pyproject.toml src/mr2/VERSION ./
 RUN bash install_dependencies.sh && rm install_dependencies.sh pyproject.toml VERSION
 
-# install mrpro
-# forces rebuild on any change in the mrpro directory
-COPY . /mrpro/
-RUN python -m pip install  "/mrpro[notebooks]" --no-cache-dir --upgrade --upgrade-strategy "eager" && rm -rf /mrpro
+# install mr2
+# forces rebuild on any change in the mr2 directory
+COPY . /mr2/
+RUN python -m pip install  "/mr2[notebooks]" --no-cache-dir --upgrade --upgrade-strategy "eager" && rm -rf /mr2
 
 # set user
 USER runner
+ENV PATH="/github/home/.local/bin:/home/runner/.local/bin:${PATH}"

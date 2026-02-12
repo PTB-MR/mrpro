@@ -44,9 +44,9 @@ import einops
 import numpy as np
 import pytest
 import torch
-from mrpro.data import Rotation, SpatialDimension
-from mrpro.data.Rotation import AXIS_ORDER
-from mrpro.utils import RandomGenerator
+from mr2.data import Rotation, SpatialDimension
+from mr2.data.Rotation import AXIS_ORDER
+from mr2.utils import RandomGenerator
 from scipy.stats import special_ortho_group
 
 

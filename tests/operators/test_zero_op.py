@@ -1,8 +1,8 @@
 import pytest
 import torch
-from mrpro.operators import IdentityOp, LinearOperator, MagnitudeOp, Operator, ZeroOp
-from mrpro.operators.LinearOperator import LinearOperatorSum
-from mrpro.utils import RandomGenerator
+from mr2.operators import IdentityOp, LinearOperator, MagnitudeOp, Operator, ZeroOp
+from mr2.operators.LinearOperator import LinearOperatorSum
+from mr2.utils import RandomGenerator
 from typing_extensions import assert_type
 
 from tests import (

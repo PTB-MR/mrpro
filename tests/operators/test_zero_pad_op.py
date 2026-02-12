@@ -2,8 +2,8 @@
 
 import pytest
 import torch
-from mrpro.operators import ZeroPadOp
-from mrpro.utils import RandomGenerator
+from mr2.operators import ZeroPadOp
+from mr2.utils import RandomGenerator
 from typing_extensions import Unpack
 
 from tests import (

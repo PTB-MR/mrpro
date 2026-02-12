@@ -3,9 +3,9 @@
 import h5py
 import pytest
 import torch
-from mrpro.data import KData
-from mrpro.phantoms import FastMRIImageDataset, FastMRIKDataDataset
-from mrpro.utils import RandomGenerator
+from mr2.data import KData
+from mr2.phantoms import FastMRIImageDataset, FastMRIKDataDataset
+from mr2.utils import RandomGenerator
 
 N_COILS_BRAIN = 16
 N_COILS_KNEE = 15

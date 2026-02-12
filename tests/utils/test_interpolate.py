@@ -2,7 +2,7 @@
 
 import pytest
 import torch
-from mrpro.utils.interpolate import apply_lowres, interpolate
+from mr2.utils.interpolate import apply_lowres, interpolate
 
 
 @pytest.fixture

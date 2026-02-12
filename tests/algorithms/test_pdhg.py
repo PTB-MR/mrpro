@@ -2,10 +2,10 @@
 
 import pytest
 import torch
-from mrpro.algorithms.optimizers import pdhg
-from mrpro.operators import FastFourierOp, IdentityOp, LinearOperatorMatrix, ProximableFunctionalSeparableSum, WaveletOp
-from mrpro.operators.functionals import L1Norm, L1NormViewAsReal, L2NormSquared, ZeroFunctional
-from mrpro.utils import RandomGenerator
+from mr2.algorithms.optimizers import pdhg
+from mr2.operators import FastFourierOp, IdentityOp, LinearOperatorMatrix, ProximableFunctionalSeparableSum, WaveletOp
+from mr2.operators.functionals import L1Norm, L1NormViewAsReal, L2NormSquared, ZeroFunctional
+from mr2.utils import RandomGenerator
 
 
 def test_l2_l1_identification1() -> None:

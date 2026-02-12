@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 import torch
-from mrpro.utils import (
+from mr2.utils import (
     RandomGenerator,
     broadcast_right,
     broadcasted_rearrange,

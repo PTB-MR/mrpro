@@ -20,10 +20,10 @@ jobs:
       pull-requests: write
     steps:
       # use the results of python 3.12, consider this as target platform
-      - name: Download PyTest report artifact for mrpro_py312
+      - name: Download PyTest report artifact for mr2_py312
         uses: actions/download-artifact@v7
         with:
-          name: pytest-report-mrpro_py312
+          name: pytest-report-mr2_py312
           run-id: ${{ github.event.workflow_run.id }}
           # needs to be explicitly set
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -89,7 +89,7 @@ jobs:
         with:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          name: pytest-report-mrpro_py312
+          name: pytest-report-mr2_py312
 
       - name: Post PyTest Coverage Comment on push main
         id: coverage_comment

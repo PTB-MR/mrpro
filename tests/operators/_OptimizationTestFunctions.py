@@ -1,7 +1,7 @@
 """Test functions for non-linear optimization."""
 
 import torch
-from mrpro.operators import Operator
+from mr2.operators import Operator
 
 
 # TODO: Consider introducing the concept of a "Functional" for scalar-valued operators

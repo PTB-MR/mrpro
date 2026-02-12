@@ -7,9 +7,9 @@ import ismrmrd
 import ismrmrd.xsd
 import torch
 from einops import repeat
-from mrpro.data import SpatialDimension
-from mrpro.phantoms import EllipsePhantom
-from mrpro.utils import RandomGenerator
+from mr2.data import SpatialDimension
+from mr2.phantoms import EllipsePhantom
+from mr2.utils import RandomGenerator
 
 ISMRMRD_TRAJECTORY_TYPE = (
     'cartesian',

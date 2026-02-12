@@ -2,7 +2,7 @@
 
 import pytest
 import torch
-from mrpro.utils import fill_range_
+from mr2.utils import fill_range_
 
 
 @pytest.mark.parametrize('dtype', [torch.float32, torch.int64], ids=['float32', 'int64'])

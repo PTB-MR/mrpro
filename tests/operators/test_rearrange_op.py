@@ -4,8 +4,8 @@ from collections.abc import Sequence
 
 import pytest
 import torch
-from mrpro.operators.RearrangeOp import RearrangeOp
-from mrpro.utils import RandomGenerator
+from mr2.operators.RearrangeOp import RearrangeOp
+from mr2.utils import RandomGenerator
 
 from tests import (
     dotproduct_adjointness_test,

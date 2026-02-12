@@ -4,8 +4,8 @@ from collections.abc import Sequence
 
 import pytest
 import torch
-from mrpro.operators.EinsumOp import EinsumOp
-from mrpro.utils import RandomGenerator
+from mr2.operators.EinsumOp import EinsumOp
+from mr2.utils import RandomGenerator
 
 from tests import (
     dotproduct_adjointness_test,

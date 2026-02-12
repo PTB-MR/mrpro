@@ -2,9 +2,9 @@
 
 import pytest
 import torch
-from mrpro.data import DcfData
-from mrpro.operators import DensityCompensationOp
-from mrpro.utils import RandomGenerator
+from mr2.data import DcfData
+from mr2.operators import DensityCompensationOp
+from mr2.utils import RandomGenerator
 
 from tests import (
     dotproduct_adjointness_test,

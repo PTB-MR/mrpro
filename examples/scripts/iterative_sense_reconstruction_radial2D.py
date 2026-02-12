@@ -3,7 +3,7 @@
 # Here we use an iterative reconstruction method to reconstruct images from ISMRMRD 2D radial data.
 
 # %% [markdown]
-# We use the `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction` class to solve
+# We use the `~mr2.algorithms.reconstruction.IterativeSENSEReconstruction` class to solve
 # the following reconstruction problem:
 #
 # Let's assume we have obtained the k-space data $y$ from an image $x$ with an acquisition model (Fourier transforms,
@@ -29,8 +29,8 @@
 # ```
 
 # %% [markdown]
-# ## Using `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction`
-# First, we demonstrate the use of `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction`, before we
+# ## Using `~mr2.algorithms.reconstruction.IterativeSENSEReconstruction`
+# First, we demonstrate the use of `~mr2.algorithms.reconstruction.IterativeSENSEReconstruction`, before we
 # peek behind the scenes and implement the reconstruction manually.
 #
 # ## Read-in the raw data
@@ -58,40 +58,40 @@ zenodo_get.download(
 )
 
 # %%
-import mrpro
+import mr2
 
-trajectory_calculator = mrpro.data.traj_calculators.KTrajectoryIsmrmrd()
-kdata = mrpro.data.KData.from_file(data_folder / 'radial2D_402spokes_golden_angle_with_traj.h5', trajectory_calculator)
+trajectory_calculator = mr2.data.traj_calculators.KTrajectoryIsmrmrd()
+kdata = mr2.data.KData.from_file(data_folder / 'radial2D_402spokes_golden_angle_with_traj.h5', trajectory_calculator)
 
 # %% [markdown]
 # ## Direct reconstruction for comparison
 # For comparison, we first can carry out a direct reconstruction using the
-# `~mrpro.algorithms.reconstruction.DirectReconstruction` class.
+# `~mr2.algorithms.reconstruction.DirectReconstruction` class.
 # See also <project:direct_reconstruction.ipynb>.
 
 # %%
-direct_reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction(kdata)
+direct_reconstruction = mr2.algorithms.reconstruction.DirectReconstruction(kdata)
 img_direct = direct_reconstruction(kdata)
 
 # %% [markdown]
 # ### Setting up the iterative SENSE reconstruction
-# Now let's use the `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction` class to reconstruct the image
+# Now let's use the `~mr2.algorithms.reconstruction.IterativeSENSEReconstruction` class to reconstruct the image
 # using the iterative SENSE algorithm.
 #
 # We first set up the reconstruction. Here, we reuse the the Fourier operator, the DCFs and the coil sensitivity maps
 # from ``direct_reconstruction``. We use *early stopping* after 4 iterations by setting `n_iterations`.
 #
 # ```{note}
-# When setting up the reconstruction we can also provide the `~mrpro.data.KData` and let
-#  `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction` figure
+# When setting up the reconstruction we can also provide the `~mr2.data.KData` and let
+#  `~mr2.algorithms.reconstruction.IterativeSENSEReconstruction` figure
 # out the Fourier operator, estimate the coil sensitivity maps, and choose a density weighting.\
-# We can also provide `~mrpro.data.KData` and some information, such as the sensitivity maps.
+# We can also provide `~mr2.data.KData` and some information, such as the sensitivity maps.
 # In that case, the reconstruction will automatically determine the missing information based
-# on the `~mrpro.data.KData` object.
+# on the `~mr2.data.KData` object.
 # ```
 
 # %%
-iterative_sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction(
+iterative_sense_reconstruction = mr2.algorithms.reconstruction.IterativeSENSEReconstruction(
     fourier_op=direct_reconstruction.fourier_op,
     csm=direct_reconstruction.csm,
     dcf=direct_reconstruction.dcf,
@@ -101,7 +101,7 @@ iterative_sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSER
 # %% [markdown]
 # ### Run the reconstruction
 # We now run the reconstruction using ``iterative_sense_reconstruction`` object. We just need to pass the k-space data
-# and obtain the reconstructed image as `~mrpro.data.IData` object.
+# and obtain the reconstructed image as `~mr2.data.IData` object.
 # %%
 
 img = iterative_sense_reconstruction(kdata)
@@ -109,18 +109,18 @@ img = iterative_sense_reconstruction(kdata)
 # %% [markdown]
 # ## Behind the scenes
 # We now peek behind the scenes to see how the iterative SENSE reconstruction is implemented. We perform all steps
-# `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction` does when initialized with only an `~mrpro.data.KData`
+# `~mr2.algorithms.reconstruction.IterativeSENSEReconstruction` does when initialized with only an `~mr2.data.KData`
 # object, i.e., we need to set up a Fourier operator, estimate coil sensitivity maps, and the density weighting.
 # without reusing anything from ``direct_reconstruction```.
 
 
 # %% [markdown]
 # ### Set up the acquisition model $A$
-# We need `~mrpro.operators.FourierOp` and `~mrpro.operators.SensitivityOp` operators to set up the acquisition model
+# We need `~mr2.operators.FourierOp` and `~mr2.operators.SensitivityOp` operators to set up the acquisition model
 # $A$. The Fourier operator is created from the trajectory and header information in ``kdata``:
 
 # %%
-fourier_operator = mrpro.operators.FourierOp(
+fourier_operator = mr2.operators.FourierOp(
     traj=kdata.traj,
     recon_matrix=kdata.header.recon_matrix,
     encoding_matrix=kdata.header.encoding_matrix,
@@ -132,9 +132,9 @@ fourier_operator = mrpro.operators.FourierOp(
 # We use the Voronoi tessellation to calculate the density compensation.
 
 # %%
-dcf_operator = mrpro.data.DcfData.from_traj_voronoi(kdata.traj).as_operator()
-img_coilwise = mrpro.data.IData.from_tensor_and_kheader(*fourier_operator.H(*dcf_operator(kdata.data)), kdata.header)
-csm_data = mrpro.data.CsmData.from_idata_walsh(img_coilwise)
+dcf_operator = mr2.data.DcfData.from_traj_voronoi(kdata.traj).as_operator()
+img_coilwise = mr2.data.IData.from_tensor_and_kheader(*fourier_operator.H(*dcf_operator(kdata.data)), kdata.header)
+csm_data = mr2.data.CsmData.from_idata_walsh(img_coilwise)
 csm_operator = csm_data.as_operator()
 
 # %% [markdown]
@@ -153,7 +153,7 @@ acquisition_operator = fourier_operator @ csm_operator
 
 # %% [markdown]
 # ### Set-up the linear self-adjoint operator $H$
-# We setup $H = A^H A$ using the `~mrpro.operators.LinearOperator.gram` property.
+# We setup $H = A^H A$ using the `~mr2.operators.LinearOperator.gram` property.
 
 # %%
 operator = acquisition_operator.gram
@@ -182,14 +182,14 @@ initial_value = u * scale
 # to stop the iterations when the residual is below a certain threshold.
 
 # %%
-(img_manual,) = mrpro.algorithms.optimizers.cg(
+(img_manual,) = mr2.algorithms.optimizers.cg(
     operator, right_hand_side, initial_value=initial_value, max_iterations=4, tolerance=0.0
 )
 
 # %% [markdown]
 # ## Display the results
 # We can now compare the results of the iterative SENSE reconstruction with the direct reconstruction.
-# Both versions, the one using the `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction` class
+# Both versions, the one using the `~mr2.algorithms.reconstruction.IterativeSENSEReconstruction` class
 # and the manual implementation should result in identical images.
 
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show plotting details"}

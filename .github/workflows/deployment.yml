@@ -3,7 +3,7 @@ name: Build and Deploy Package
 on:
   push:
     paths:
-      - src/mrpro/VERSION
+      - src/mr2/VERSION
 
 jobs:
   build-testpypi-package:
@@ -29,14 +29,14 @@ jobs:
           base: main
           filters: |
             version_changed:
-              - 'src/mrpro/VERSION'
+              - 'src/mr2/VERSION'
 
       - name: Set Version Suffix
         id: set_suffix
         run: |
-          VERSION=$(cat src/mrpro/VERSION)
+          VERSION=$(cat src/mr2/VERSION)
           SUFFIX=rc$(date +%s)
-          echo "MRPROVERSIONSUFFIX=$SUFFIX" >> $GITHUB_ENV
+          echo "MR2VERSIONSUFFIX=$SUFFIX" >> $GITHUB_ENV
           echo "suffix=$SUFFIX" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
@@ -60,7 +60,7 @@ jobs:
 
     environment:
       name: testpypi
-      url: https://test.pypi.org/p/mrpro
+      url: https://test.pypi.org/p/mrtwo
 
     permissions:
       id-token: write
@@ -90,12 +90,12 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Install MRpro from TestPyPI
+      - name: Install mrtwo from TestPyPI
         run: |
           VERSION=${{ needs.build-testpypi-package.outputs.version }}
           SUFFIX=${{ needs.build-testpypi-package.outputs.suffix }}
           for i in {1..3}; do
-            if python -m pip install mrpro==$VERSION$SUFFIX --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/; then
+            if python -m pip install mrtwo==$VERSION$SUFFIX --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/; then
               echo "Package installed successfully."
               break
             else
@@ -150,7 +150,7 @@ jobs:
 
     environment:
       name: pypi
-      url: https://pypi.org/project/mrpro
+      url: https://pypi.org/project/mrtwo
 
     permissions:
       contents: write

@@ -5,8 +5,8 @@ from dataclasses import field
 import einops
 import pytest
 import torch
-from mrpro.data import Dataclass, Rotation, SpatialDimension
-from mrpro.utils import RandomGenerator
+from mr2.data import Dataclass, Rotation, SpatialDimension
+from mr2.utils import RandomGenerator
 from typing_extensions import Any
 
 

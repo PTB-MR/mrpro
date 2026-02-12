@@ -3,9 +3,9 @@
 import pytest
 import torch
 from einops import rearrange
-from mrpro.data import KTrajectory
-from mrpro.data.enums import TrajType
-from mrpro.data.KData import has_n_coils
+from mr2.data import KTrajectory
+from mr2.data.enums import TrajType
+from mr2.data.KData import has_n_coils
 
 from tests.conftest import COMMON_MR_TRAJECTORIES, create_traj
 

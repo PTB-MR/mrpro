@@ -1,7 +1,7 @@
 """PyTest fixtures for the csm tests."""
 
-from mrpro.data import IData, SpatialDimension
-from mrpro.phantoms.coils import birdcage_2d
+from mr2.data import IData, SpatialDimension
+from mr2.phantoms.coils import birdcage_2d
 
 
 def multi_coil_image(n_coils, ph_ellipse, random_kheader):

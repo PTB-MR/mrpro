@@ -2,9 +2,9 @@
 
 import pytest
 import torch
-from mrpro.operators import DictionaryMatchOp
-from mrpro.operators.models import InversionRecovery
-from mrpro.utils import RandomGenerator
+from mr2.operators import DictionaryMatchOp
+from mr2.operators.models import InversionRecovery
+from mr2.utils import RandomGenerator
 
 
 @pytest.mark.parametrize('dtype', [torch.float32, torch.complex64], ids=['float32', 'complex64'])

@@ -1,6 +1,6 @@
 # %% [markdown]
 # # Regularized iterative SENSE reconstruction of 2D golden angle radial data
-# Here we use the `~mrpro.algorithms.reconstruction.RegularizedIterativeSENSEReconstruction` class to reconstruct
+# Here we use the `~mr2.algorithms.reconstruction.RegularizedIterativeSENSEReconstruction` class to reconstruct
 # undersampled images from 2D radial data.
 
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show download details"}
@@ -19,7 +19,7 @@ zenodo_get.download(
 
 # %% [markdown]
 # ### Image reconstruction
-# We use the `~mrpro.algorithms.reconstruction.RegularizedIterativeSENSEReconstruction` class to reconstruct images
+# We use the `~mr2.algorithms.reconstruction.RegularizedIterativeSENSEReconstruction` class to reconstruct images
 # from 2D radial data. It solves the following reconstruction problem:
 #
 # Let's assume we have obtained the k-space data $y$ from an image $x$ with an acquisition model (Fourier transforms,
@@ -67,15 +67,15 @@ zenodo_get.download(
 
 # %%
 # Read the raw data and the trajectory from ISMRMRD file
-import mrpro
+import mr2
 
-kdata_fullysampled = mrpro.data.KData.from_file(
+kdata_fullysampled = mr2.data.KData.from_file(
     data_folder / 'radial2D_402spokes_golden_angle_with_traj.h5',
-    mrpro.data.traj_calculators.KTrajectoryIsmrmrd(),
+    mr2.data.traj_calculators.KTrajectoryIsmrmrd(),
 )
-kdata_undersampled = mrpro.data.KData.from_file(
+kdata_undersampled = mr2.data.KData.from_file(
     data_folder / 'radial2D_24spokes_golden_angle_with_traj.h5',
-    mrpro.data.traj_calculators.KTrajectoryIsmrmrd(),
+    mr2.data.traj_calculators.KTrajectoryIsmrmrd(),
 )
 
 # %% [markdown]
@@ -88,12 +88,12 @@ kdata_undersampled = mrpro.data.KData.from_file(
 # Estimate coil maps. Here we use the fully sampled data to estimate the coil sensitivity maps.
 # In a real-world scenario, we would either a calibration scan (e.g. a separate fully sampled scan) to estimate the coil
 # sensitivity maps or use ESPIRiT or similar methods to estimate the coil sensitivity maps from the undersampled data.
-direct_reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction(kdata_fullysampled)
+direct_reconstruction = mr2.algorithms.reconstruction.DirectReconstruction(kdata_fullysampled)
 csm = direct_reconstruction.csm
 assert csm is not None
 
 # unregularized iterative SENSE reconstruction of the fully sampled data
-iterative_sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction(
+iterative_sense_reconstruction = mr2.algorithms.reconstruction.IterativeSENSEReconstruction(
     kdata_fullysampled, csm=csm, n_iterations=3
 )
 img_iterative_sense = iterative_sense_reconstruction(kdata_fullysampled)
@@ -105,7 +105,7 @@ img_iterative_sense = iterative_sense_reconstruction(kdata_fullysampled)
 
 # %%
 # Unregularized iterative SENSE reconstruction of the undersampled data
-iterative_sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction(
+iterative_sense_reconstruction = mr2.algorithms.reconstruction.IterativeSENSEReconstruction(
     kdata_undersampled, csm=csm, n_iterations=6
 )
 img_us_iterative_sense = iterative_sense_reconstruction(kdata_undersampled)
@@ -113,7 +113,7 @@ img_us_iterative_sense = iterative_sense_reconstruction(kdata_undersampled)
 # %%
 # Regularized iterative SENSE reconstruction of the undersampled data
 
-regularized_iterative_sense_reconstruction = mrpro.algorithms.reconstruction.RegularizedIterativeSENSEReconstruction(
+regularized_iterative_sense_reconstruction = mr2.algorithms.reconstruction.RegularizedIterativeSENSEReconstruction(
     kdata_undersampled,
     csm=csm,
     n_iterations=6,
@@ -155,7 +155,7 @@ show_images(
 # %% [markdown]
 # ### Behind the scenes
 # We now investigate the steps that are done in the regularized iterative SENSE reconstruction and
-# perform them manually. This also demonstrates how to use the `mrpro` operators and algorithms
+# perform them manually. This also demonstrates how to use the `mr2` operators and algorithms
 # to build your own reconstruction pipeline.
 
 # %% [markdown]
@@ -165,7 +165,7 @@ show_images(
 # For more details, please refer to that notebook.
 
 # %%
-fourier_operator = mrpro.operators.FourierOp.from_kdata(kdata_undersampled)
+fourier_operator = mr2.operators.FourierOp.from_kdata(kdata_undersampled)
 csm_operator = csm.as_operator()
 acquisition_operator = fourier_operator @ csm_operator
 
@@ -176,7 +176,7 @@ acquisition_operator = fourier_operator @ csm_operator
 # %%
 regularization_weight = 1.0
 regularization_image = img_iterative_sense.data
-regularization_operator = mrpro.operators.IdentityOp()
+regularization_operator = mr2.operators.IdentityOp()
 
 (regularization,) = (regularization_weight * regularization_operator.H)(regularization_image)
 (right_hand_side,) = (acquisition_operator.H)(kdata_undersampled.data)
@@ -184,13 +184,13 @@ right_hand_side = right_hand_side + regularization
 
 # %% [markdown]
 # ##### Set-up the linear self-adjoint operator $H$
-# We define $H = A^H A + \lambda B^HB$. We can use `~mrpro.operators.LinearOperator.gram` to get an efficient
-# implementation of $A^H A$. We use the `~mrpro.operators.IdentityOp` and make
+# We define $H = A^H A + \lambda B^HB$. We can use `~mr2.operators.LinearOperator.gram` to get an efficient
+# implementation of $A^H A$. We use the `~mr2.operators.IdentityOp` and make
 # use of operator addition using ``+`` and multiplication using ``*``.
-# The resulting operator is a `~mrpro.operators.LinearOperator` object.
+# The resulting operator is a `~mr2.operators.LinearOperator` object.
 
 # %%
-operator = acquisition_operator.gram + mrpro.operators.IdentityOp() * regularization_weight
+operator = acquisition_operator.gram + mr2.operators.IdentityOp() * regularization_weight
 
 # %% [markdown]
 # ##### Run conjugate gradient
@@ -200,14 +200,14 @@ operator = acquisition_operator.gram + mrpro.operators.IdentityOp() * regulariza
 # We use a tolerance of $1e-7$ for the residual as a stopping criterion.
 
 # %%
-dcf_operator = mrpro.data.DcfData.from_traj_voronoi(kdata_undersampled.traj).as_operator()
+dcf_operator = mr2.data.DcfData.from_traj_voronoi(kdata_undersampled.traj).as_operator()
 (initial_value,) = (acquisition_operator.H @ dcf_operator)(kdata_undersampled.data)
-(img_manual,) = mrpro.algorithms.optimizers.cg(operator, right_hand_side, initial_value=initial_value, tolerance=1e-7)
+(img_manual,) = mr2.algorithms.optimizers.cg(operator, right_hand_side, initial_value=initial_value, tolerance=1e-7)
 
 # %% [markdown]
 # #####  Display the reconstructed image
 # We can now compare our 'manual' reconstruction with the regularized iterative SENSE reconstruction
-# obtained using `~mrpro.algorithms.reconstruction.RegularizedIterativeSENSEReconstruction`.
+# obtained using `~mr2.algorithms.reconstruction.RegularizedIterativeSENSEReconstruction`.
 
 # %%
 show_images(

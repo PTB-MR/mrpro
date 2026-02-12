@@ -3,9 +3,9 @@ from typing import Literal
 
 import pytest
 import torch
-from mrpro.operators.Functional import ElementaryFunctional, ElementaryProximableFunctional
-from mrpro.operators.functionals import MSE, L1Norm, L1NormViewAsReal, L2NormSquared, ZeroFunctional
-from mrpro.utils import RandomGenerator
+from mr2.operators.Functional import ElementaryFunctional, ElementaryProximableFunctional
+from mr2.operators.functionals import MSE, L1Norm, L1NormViewAsReal, L2NormSquared, ZeroFunctional
+from mr2.utils import RandomGenerator
 from typing_extensions import TypedDict
 
 from tests.operators.functionals.conftest import (

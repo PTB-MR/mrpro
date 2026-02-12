@@ -5,9 +5,9 @@ from typing import Literal
 
 import pytest
 import torch
-from mrpro.operators import functionals
-from mrpro.operators.Functional import ElementaryFunctional, ElementaryProximableFunctional
-from mrpro.utils import RandomGenerator
+from mr2.operators import functionals
+from mr2.operators.Functional import ElementaryFunctional, ElementaryProximableFunctional
+from mr2.utils import RandomGenerator
 
 
 @dataclass

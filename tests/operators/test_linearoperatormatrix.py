@@ -2,9 +2,9 @@ from typing import Any
 
 import pytest
 import torch
-from mrpro.operators import EinsumOp, LinearOperator, MagnitudeOp
-from mrpro.operators.LinearOperatorMatrix import LinearOperatorMatrix
-from mrpro.utils import RandomGenerator
+from mr2.operators import EinsumOp, LinearOperator, MagnitudeOp
+from mr2.operators.LinearOperatorMatrix import LinearOperatorMatrix
+from mr2.utils import RandomGenerator
 
 from tests import dotproduct_adjointness_test
 

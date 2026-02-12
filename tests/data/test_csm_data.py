@@ -4,9 +4,9 @@ from collections.abc import Callable
 
 import pytest
 import torch
-from mrpro.data import CsmData, KData, KHeader, SpatialDimension
-from mrpro.data.traj_calculators.KTrajectoryCartesian import KTrajectoryCartesian
-from mrpro.operators import FourierOp
+from mr2.data import CsmData, KData, KHeader, SpatialDimension
+from mr2.data.traj_calculators.KTrajectoryCartesian import KTrajectoryCartesian
+from mr2.operators import FourierOp
 
 from tests import relative_image_difference
 from tests.algorithms.csm.test_walsh import multi_coil_image

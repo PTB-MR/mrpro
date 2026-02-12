@@ -1,8 +1,8 @@
 """Tests for KHeader class."""
 
 import torch
-from mrpro.data import KHeader
-from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
+from mr2.data import KHeader
+from mr2.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 
 
 def test_kheader_overwrite_missing_parameter(random_mandatory_ismrmrd_header, random_acq_info) -> None:

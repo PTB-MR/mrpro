@@ -3,7 +3,7 @@
 import pytest
 import torch
 from einops import repeat
-from mrpro.utils.filters import filter_separable, gaussian_filter, uniform_filter
+from mr2.utils.filters import filter_separable, gaussian_filter, uniform_filter
 
 
 @pytest.fixture

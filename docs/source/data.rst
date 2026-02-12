@@ -1,13 +1,13 @@
 Data Structures, Dimensions, and Indexing
 =================================================
 
-In MRpro, we use `torch.Tensors` and "Dataclasses" to store and manage data. Dataclasses serve as containers for different tensors, metadata, and other dataclasses, ensuring a consistent and structured approach to data handling.
+In mrtwo, we use `torch.Tensors` and "Dataclasses" to store and manage data. Dataclasses serve as containers for different tensors, metadata, and other dataclasses, ensuring a consistent and structured approach to data handling.
 
-For example `mrpro.data.KData` contains complex raw data, trajectory information, and headers.
+For example `mr2.data.KData` contains complex raw data, trajectory information, and headers.
 
 Dimensions and Broadcasting Rules
 ---------------------------------
-MRpro follows a consistent convention of using at least 5-dimensional tensors for data representation:
+mrtwo follows a consistent convention of using at least 5-dimensional tensors for data representation:
 
 - K-space data: `(*other, coils, k2, k1, k0)`
 - Real space (image) data: `(*other, coils, z, y, x)`
@@ -45,34 +45,34 @@ trajectories always have coils=1. The behavior is as if the trajectory is broadc
 
 SpatialDimension
 ----------------
-The `mrpro.data.SpatialDimension` class represents spatial positions as a named tuple of z, y, and x values. It supports basic math operations and indexing when the values are tensors. This class is used, for example, to store position information in headers.
+The `mr2.data.SpatialDimension` class represents spatial positions as a named tuple of z, y, and x values. It supports basic math operations and indexing when the values are tensors. This class is used, for example, to store position information in headers.
 
 Rotation
 --------
-The `mrpro.data.Rotation` class handles orientations and rotations. It supports conversion between different representations (e.g., Euler angles, quaternions, rotation matrices) and can be applied to tensors and `SpatialDimension` objects.
+The `mr2.data.Rotation` class handles orientations and rotations. It supports conversion between different representations (e.g., Euler angles, quaternions, rotation matrices) and can be applied to tensors and `SpatialDimension` objects.
 
 Units
 -----
-All values in MRpro are in SI units. For example, spatial dimensions are in meters, time is in seconds, and angles are in radians.
+All values in mrtwo are in SI units. For example, spatial dimensions are in meters, time is in seconds, and angles are in radians.
 This ensures consistency but might require conversion when interfacing with other software or hardware that uses different units,
 such as milliseconds for echo times or degrees for flip angles.
 
 Operators
 ---------
-The operators in `mrpro.operators` can be applied to one or multiple `torch.Tensor` and return tuples of `torch.Tensor` (even if only a single tensor is returned).
+The operators in `mr2.operators` can be applied to one or multiple `torch.Tensor` and return tuples of `torch.Tensor` (even if only a single tensor is returned).
 The convention regarding dimensions is the same as for dataclasses: if a new dimension is added, it is added in front (example: time points in signal models) and the dimensions are
 in the order `(*other, coils, k2, k1, k0)` for k-space data and `(*other, coil, z, y, x)` for real space data. The operators are always batched, so they can be applied to multiple data points at once.
 
 Examples
 --------
-Below are practical examples demonstrating the use of dataclasses, indexing, and rotations in MRpro:
+Below are practical examples demonstrating the use of dataclasses, indexing, and rotations in mrtwo:
 
 .. code-block:: python
 
-    import mrpro
+    import mr2
 
     # Example: Indexing a broadcasted tensor
-    kdata = mrpro.data.KData.from_file('example.mrd')
+    kdata = mr2.data.KData.from_file('example.mrd')
     print(kdata.shape)  # Example shape: (4, 8, 64, 64, 128)
     print(kdata.header.acq_info.idx.k1.shape)  # Example shape: (4, 1, 64, 64, 1)
 
@@ -81,6 +81,6 @@ Below are practical examples demonstrating the use of dataclasses, indexing, and
     print(kdata.header.acq_info.idx.k1.shape)  # Example shape: (4, 1, 32, 32, 1)
 
     # Example: Creating and using SpatialDimension and Rotation
-    position = mrpro.data.SpatialDimension(z=3, y=2, x=1)
-    rotation = mrpro.data.Rotation.from_euler("xyz", (0,0,torch.pi))
+    position = mr2.data.SpatialDimension(z=3, y=2, x=1)
+    rotation = mr2.data.Rotation.from_euler("xyz", (0,0,torch.pi))
     rotated = rotation(position)

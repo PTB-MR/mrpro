@@ -1,8 +1,8 @@
 """Tests the iterative Walsh algorithm."""
 
 import torch
-from mrpro.algorithms.csm import walsh
-from mrpro.data import SpatialDimension
+from mr2.algorithms.csm import walsh
+from mr2.data import SpatialDimension
 from tests import relative_image_difference
 from tests.algorithms.csm.conftest import multi_coil_image
 

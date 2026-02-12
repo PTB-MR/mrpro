@@ -5,9 +5,9 @@ from collections.abc import Sequence
 import numpy as np
 import pytest
 import torch
-from mrpro.data import SpatialDimension
-from mrpro.operators import FastFourierOp
-from mrpro.utils import RandomGenerator
+from mr2.data import SpatialDimension
+from mr2.operators import FastFourierOp
+from mr2.utils import RandomGenerator
 
 from tests import (
     dotproduct_adjointness_test,

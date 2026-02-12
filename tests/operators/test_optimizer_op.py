@@ -1,8 +1,8 @@
 import torch
-from mrpro.operators import ConstraintsOp, FunctionalType, OptimizerOp
-from mrpro.operators.functionals import L2NormSquared
-from mrpro.operators.models import InversionRecovery
-from mrpro.utils import RandomGenerator
+from mr2.operators import ConstraintsOp, FunctionalType, OptimizerOp
+from mr2.operators.functionals import L2NormSquared
+from mr2.operators.models import InversionRecovery
+from mr2.utils import RandomGenerator
 
 
 def test_optimizer_op_gradcheck() -> None:

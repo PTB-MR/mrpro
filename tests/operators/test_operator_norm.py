@@ -4,8 +4,8 @@ from math import prod, sqrt
 
 import pytest
 import torch
-from mrpro.operators import EinsumOp, FastFourierOp, FiniteDifferenceOp
-from mrpro.utils import RandomGenerator
+from mr2.operators import EinsumOp, FastFourierOp, FiniteDifferenceOp
+from mr2.utils import RandomGenerator
 
 
 def test_power_iteration_uses_stopping_criterion():

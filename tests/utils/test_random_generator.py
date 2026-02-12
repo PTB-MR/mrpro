@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 
 import torch
-from mrpro.utils import RandomGenerator
+from mr2.utils import RandomGenerator
 
 
 def test_bool() -> None:

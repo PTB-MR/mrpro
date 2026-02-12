@@ -5,8 +5,8 @@ from collections.abc import Callable
 import pytest
 import torch
 from ismrmrd import xsd
-from mrpro.data import Rotation, SpatialDimension
-from mrpro.utils import RandomGenerator, unsqueeze_left
+from mr2.data import Rotation, SpatialDimension
+from mr2.utils import RandomGenerator, unsqueeze_left
 
 from tests.data import DicomTestImage, IsmrmrdRawTestData
 
@@ -76,7 +76,7 @@ def random_test_data(request):
 @pytest.fixture(scope='session')
 def dcm_cardiac_2d(ellipse_phantom, tmp_path_factory):
     """Stack of 2D dicom images for different cardiac phases."""
-    dcm_filename = tmp_path_factory.mktemp('mrpro_cardiac_2d') / 'dicom.dcm'
+    dcm_filename = tmp_path_factory.mktemp('mr2_cardiac_2d') / 'dicom.dcm'
     dcm_test = DicomTestImage(
         filename=dcm_filename,
         phantom=ellipse_phantom.phantom,
@@ -89,14 +89,14 @@ def dcm_cardiac_2d(ellipse_phantom, tmp_path_factory):
 @pytest.fixture(scope='session')
 def dcm_2d(ellipse_phantom, tmp_path_factory):
     """Single 2D dicom image."""
-    dcm_filename = tmp_path_factory.mktemp('mrpro_2d') / 'dicom.dcm'
+    dcm_filename = tmp_path_factory.mktemp('mr2_2d') / 'dicom.dcm'
     return (DicomTestImage(filename=dcm_filename, phantom=ellipse_phantom.phantom),)
 
 
 @pytest.fixture(scope='session')
 def dcm_2d_rescale(ellipse_phantom, tmp_path_factory):
     """Single 2D dicom image with rescaling."""
-    dcm_filename = tmp_path_factory.mktemp('mrpro_2d_rescale') / 'dicom.dcm'
+    dcm_filename = tmp_path_factory.mktemp('mr2_2d_rescale') / 'dicom.dcm'
     return (
         DicomTestImage(
             filename=dcm_filename, phantom=ellipse_phantom.phantom, rescale_slope=10.0, rescale_intercept=-100
@@ -107,14 +107,14 @@ def dcm_2d_rescale(ellipse_phantom, tmp_path_factory):
 @pytest.fixture(scope='session')
 def dcm_2d_with_empty_field(ellipse_phantom, tmp_path_factory):
     """Single 2D dicom image with an empty dicom field."""
-    dcm_filename = tmp_path_factory.mktemp('mrpro_2d_empty_field') / 'dicom.dcm'
+    dcm_filename = tmp_path_factory.mktemp('mr2_2d_empty_field') / 'dicom.dcm'
     return (DicomTestImage(filename=dcm_filename, phantom=ellipse_phantom.phantom, te=None),)
 
 
 @pytest.fixture(scope='session')
 def dcm_2d_multi_echo_times(ellipse_phantoms, tmp_path_factory):
     """Multiple 2D dicom images with different echo times."""
-    path = tmp_path_factory.mktemp('mrpro_2d_multi_echo')
+    path = tmp_path_factory.mktemp('mr2_2d_multi_echo')
     te = 0.02
     dcm_image_data = []
     series_instance_uid = None
@@ -135,7 +135,7 @@ def dcm_2d_multi_echo_times_multi_folders(ellipse_phantoms, tmp_path_factory):
     """Multiple 2D dicom images with different echo times each saved in a different folder."""
     dcm_image_data = []
     for idx, phantom in enumerate(ellipse_phantoms):
-        path = tmp_path_factory.mktemp(f'mrpro_2d_multi_echo_{idx}')
+        path = tmp_path_factory.mktemp(f'mr2_2d_multi_echo_{idx}')
         dcm_filename = path / 'dicom.dcm'
         dcm_image_data.append(DicomTestImage(filename=dcm_filename, phantom=phantom.phantom, te=idx * 0.02))
     return dcm_image_data
@@ -144,7 +144,7 @@ def dcm_2d_multi_echo_times_multi_folders(ellipse_phantoms, tmp_path_factory):
 @pytest.fixture(scope='session')
 def dcm_m2d_multi_orientation(ellipse_phantom, tmp_path_factory):
     """Multiple 2D dicom images with different orientation."""
-    path = tmp_path_factory.mktemp('mrpro_m2d_multi_ori')
+    path = tmp_path_factory.mktemp('mr2_m2d_multi_ori')
     vec_z = SpatialDimension(1.0, 0, 0)
     vec_y = SpatialDimension(0, 1.0, 0)
     vec_x = SpatialDimension(0, 0, 1.0)
@@ -161,7 +161,7 @@ def dcm_m2d_multi_orientation(ellipse_phantom, tmp_path_factory):
 @pytest.fixture(scope='session')
 def dcm_3d(ellipse_phantom, tmp_path_factory):
     """3D dicom image in a single dicom file."""
-    path = tmp_path_factory.mktemp('mrpro_3d')
+    path = tmp_path_factory.mktemp('mr2_3d')
     dcm_filename = path / 'dicom.dcm'
     return (DicomTestImage(filename=dcm_filename, phantom=ellipse_phantom.phantom, slice_offset=[-2.0, 0.0, 2.0, 4.0]),)
 
@@ -169,7 +169,7 @@ def dcm_3d(ellipse_phantom, tmp_path_factory):
 @pytest.fixture(scope='session')
 def dcm_3d_rescale(ellipse_phantom, tmp_path_factory):
     """3D dicom image in a single dicom file."""
-    path = tmp_path_factory.mktemp('mrpro_3d_rescale')
+    path = tmp_path_factory.mktemp('mr2_3d_rescale')
     dcm_filename = path / 'dicom.dcm'
     return (
         DicomTestImage(
@@ -185,7 +185,7 @@ def dcm_3d_rescale(ellipse_phantom, tmp_path_factory):
 @pytest.fixture(scope='session')
 def dcm_3d_multi_echo(ellipse_phantoms, tmp_path_factory):
     """3D dicom images with different echo times, each in a single dicom file."""
-    path = tmp_path_factory.mktemp('mrpro_3d_multi_echo')
+    path = tmp_path_factory.mktemp('mr2_3d_multi_echo')
     dcm_image_data = []
     series_instance_uid = None
     for idx, phantom in enumerate(ellipse_phantoms):
@@ -207,7 +207,7 @@ def dcm_3d_multi_echo(ellipse_phantoms, tmp_path_factory):
 def dcm_3d_multi_echo_multi_cardiac_phases(ellipse_phantoms, tmp_path_factory):
     """3D dicom images with different echo times, each in a single dicom file."""
 
-    path = tmp_path_factory.mktemp('mrpro_3d_multi_echo_multi_cardiac_phases')
+    path = tmp_path_factory.mktemp('mr2_3d_multi_echo_multi_cardiac_phases')
     dcm_image_data = []
     idx = 0
     series_instance_uid = None
@@ -230,7 +230,7 @@ def dcm_3d_multi_echo_multi_cardiac_phases(ellipse_phantoms, tmp_path_factory):
 @pytest.fixture(scope='session')
 def dcm_3d_multi_orientation(ellipse_phantoms, tmp_path_factory):
     """Multiple 3D dicom images with different orientation."""
-    path = tmp_path_factory.mktemp('mrpro_3d_multi_ori')
+    path = tmp_path_factory.mktemp('mr2_3d_multi_ori')
     vec_z = SpatialDimension(1.0, 0, 0)
     vec_y = SpatialDimension(0, 1.0, 0)
     vec_x = SpatialDimension(0, 0, 1.0)
@@ -252,7 +252,7 @@ def dcm_3d_multi_orientation(ellipse_phantoms, tmp_path_factory):
 @pytest.fixture(scope='session')
 def ismrmrd_cart_bodycoil_and_surface_coil(ellipse_phantom, tmp_path_factory):
     """Fully sampled cartesian data set with bodycoil and surface coil data."""
-    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_filename = tmp_path_factory.mktemp('mr2') / 'ismrmrd_cart.h5'
     ismrmrd_kdata = IsmrmrdRawTestData(
         filename=ismrmrd_filename,
         noise_level=0.0,
@@ -266,7 +266,7 @@ def ismrmrd_cart_bodycoil_and_surface_coil(ellipse_phantom, tmp_path_factory):
 @pytest.fixture(scope='session')
 def ismrmrd_cart_with_calibration_lines(ellipse_phantom, tmp_path_factory):
     """Undersampled Cartesian data set with calibration lines."""
-    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_filename = tmp_path_factory.mktemp('mr2') / 'ismrmrd_cart.h5'
     ismrmrd_kdata = IsmrmrdRawTestData(
         filename=ismrmrd_filename,
         noise_level=0.0,
@@ -281,7 +281,7 @@ def ismrmrd_cart_with_calibration_lines(ellipse_phantom, tmp_path_factory):
 @pytest.fixture(scope='session')
 def ismrmrd_cart_invalid_reps(tmp_path_factory):
     """Fully sampled cartesian data set."""
-    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_filename = tmp_path_factory.mktemp('mr2') / 'ismrmrd_cart.h5'
     ismrmrd_kdata = IsmrmrdRawTestData(
         filename=ismrmrd_filename,
         noise_level=0.0,
@@ -294,7 +294,7 @@ def ismrmrd_cart_invalid_reps(tmp_path_factory):
 @pytest.fixture(scope='session')
 def ismrmrd_cart_random_us(ellipse_phantom, tmp_path_factory):
     """Randomly undersampled cartesian data set with repetitions."""
-    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_filename = tmp_path_factory.mktemp('mr2') / 'ismrmrd_cart.h5'
     ismrmrd_kdata = IsmrmrdRawTestData(
         filename=ismrmrd_filename,
         noise_level=1e-5,
@@ -309,7 +309,7 @@ def ismrmrd_cart_random_us(ellipse_phantom, tmp_path_factory):
 @pytest.fixture(scope='session')
 def ismrmrd_rad(ellipse_phantom, tmp_path_factory):
     """Data set with uniform radial k-space sampling."""
-    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_rad.h5'
+    ismrmrd_filename = tmp_path_factory.mktemp('mr2') / 'ismrmrd_rad.h5'
     ismrmrd_data = IsmrmrdRawTestData(
         filename=ismrmrd_filename,
         noise_level=0.0,
@@ -324,7 +324,7 @@ def ismrmrd_rad(ellipse_phantom, tmp_path_factory):
 @pytest.fixture(scope='session')
 def ismrmrd_cart_single_rep(ellipse_phantom, tmp_path_factory):
     """Fully sampled cartesian data set."""
-    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_filename = tmp_path_factory.mktemp('mr2') / 'ismrmrd_cart.h5'
     ismrmrd_kdata = IsmrmrdRawTestData(
         filename=ismrmrd_filename,
         noise_level=0.0,

@@ -4,8 +4,8 @@ from collections.abc import Sequence
 
 import pytest
 import torch
-from mrpro.operators.PatchOp import PatchOp
-from mrpro.utils import RandomGenerator
+from mr2.operators.PatchOp import PatchOp
+from mr2.utils import RandomGenerator
 
 from tests import autodiff_test, dotproduct_adjointness_test
 

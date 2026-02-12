@@ -30,13 +30,13 @@ with zipfile.ZipFile(data_folder / Path('T1 IR.zip'), 'r') as zip_ref:
 
 # %% [markdown]
 # ### Create image data (IData) object with different inversion times
-# We read in the DICOM files and combine them in an `~mrpro.data.IData` object.
-# The inversion times are stored in the DICOM files are available in the header of the `~mrpro.data.IData` object.
+# We read in the DICOM files and combine them in an `~mr2.data.IData` object.
+# The inversion times are stored in the DICOM files are available in the header of the `~mr2.data.IData` object.
 # %%
-import mrpro
+import mr2
 
 ti_dicom_files = data_folder.glob('**/*.dcm')
-idata_multi_ti = mrpro.data.IData.from_dicom_files(ti_dicom_files)
+idata_multi_ti = mr2.data.IData.from_dicom_files(ti_dicom_files)
 
 if idata_multi_ti.header.ti is None:
     raise ValueError('Inversion times need to be defined in the DICOM files.')
@@ -76,14 +76,14 @@ show_images(
 # images only contain the magnitude of the signal. Therefore, we need $|q(TI)|$:
 
 # %%
-model = mrpro.operators.MagnitudeOp() @ mrpro.operators.models.InversionRecovery(ti=idata_multi_ti.header.ti)
+model = mr2.operators.MagnitudeOp() @ mr2.operators.models.InversionRecovery(ti=idata_multi_ti.header.ti)
 
 # %% [markdown]
 # As a loss function for the optimizer, we calculate the mean-squared error between the image data $x$ and our signal
 # model $q$.
 
 # %%
-mse = mrpro.operators.functionals.MSE(idata_multi_ti.data.abs())
+mse = mr2.operators.functionals.MSE(idata_multi_ti.data.abs())
 
 # %% [markdown]
 # Now we can simply combine the two into a functional to solve
@@ -111,7 +111,7 @@ functional = mse @ model
 # - use the $T_1$ value with the best fit as a starting value for the fit. Use the scaling factor of the best fit for
 # the $M_0$ value.
 #
-# This is implemented in the `~mrpro.operators.DictionaryMatchOp` operator.
+# This is implemented in the `~mr2.operators.DictionaryMatchOp` operator.
 
 # %%
 
@@ -119,7 +119,7 @@ functional = mse @ model
 # Define 100 T1 values between 0.1 and 3.0 s
 t1_values = torch.linspace(0.1, 3.0, 100)
 # Create the dictionary. We set M0 to constant 1, as the scaling is handled by the dictionary matching operator.
-dictionary = mrpro.operators.DictionaryMatchOp(model, 0).append(torch.ones(1), t1_values)
+dictionary = mr2.operators.DictionaryMatchOp(model, 0).append(torch.ones(1), t1_values)
 # Select the closest values in the dictionary for each voxel based on cosine similarity
 m0_start, t1_start = dictionary(idata_multi_ti.data.real)
 
@@ -144,7 +144,7 @@ plt.show()
 
 # %% [markdown]
 # ### Carry out fit
-# We are now ready to carry out the fit. We are going to use the `~mrpro.algorithms.optimizers.adam` optimizer.
+# We are now ready to carry out the fit. We are going to use the `~mr2.algorithms.optimizers.adam` optimizer.
 # If there is a GPU available, we can use it by moving both the data and the model to the GPU.
 
 # %%
@@ -160,7 +160,7 @@ max_iterations = 2000
 learning_rate = 1e-1
 
 # Run optimization
-result = mrpro.algorithms.optimizers.adam(
+result = mr2.algorithms.optimizers.adam(
     functional, [m0_start, t1_start], max_iterations=max_iterations, learning_rate=learning_rate
 )
 m0, t1 = (p.detach().cpu() for p in result)
@@ -211,7 +211,7 @@ plt.show()
 # the data on zenodo in [record 10868361](https://zenodo.org/record/10868361) as ``T2star.zip``
 # You can download and unpack it using the same method as above.
 #
-# As a signal model $q$ you can use `~mrpro.operators.models.MonoExponentialDecay` describing the signal decay
+# As a signal model $q$ you can use `~mr2.operators.models.MonoExponentialDecay` describing the signal decay
 # as $q(TE) = M_0 e^{-TE/T_2^*}$ with the equilibrium magnetization $M_0$, the echo time $TE$, and $T_2^*$.\
 # Give it a try and see if you can obtain good $T_2^*$ maps!
 # ```{note}

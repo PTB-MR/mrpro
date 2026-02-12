@@ -3,8 +3,8 @@
 import pytest
 import torch
 from einops import rearrange
-from mrpro.data import KData, SpatialDimension
-from mrpro.data.traj_calculators import (
+from mr2.data import KData, SpatialDimension
+from mr2.data.traj_calculators import (
     KTrajectoryCartesian,
     KTrajectoryIsmrmrd,
     KTrajectoryPulseq,
@@ -178,7 +178,7 @@ def test_KTrajectoryIsmrmrdRadial(ismrmrd_rad) -> None:
 
 @pytest.fixture(scope='session')
 def pulseq_example_rad_seq(tmp_path_factory):
-    seq_filename = tmp_path_factory.mktemp('mrpro') / 'radial.seq'
+    seq_filename = tmp_path_factory.mktemp('mr2') / 'radial.seq'
     seq = PulseqRadialTestSeq(seq_filename, n_k0=256, n_spokes=10)
     return seq
 

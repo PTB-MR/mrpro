@@ -2,8 +2,8 @@
 
 import pytest
 import torch
-from mrpro.operators import AveragingOp
-from mrpro.utils import RandomGenerator
+from mr2.operators import AveragingOp
+from mr2.utils import RandomGenerator
 
 from tests.helper import dotproduct_adjointness_test
 

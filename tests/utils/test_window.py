@@ -2,8 +2,8 @@
 
 import pytest
 import torch
-from mrpro.utils import RandomGenerator
-from mrpro.utils.sliding_window import sliding_window
+from mr2.utils import RandomGenerator
+from mr2.utils.sliding_window import sliding_window
 
 
 def alternative_implementation(data, window_shape, axis, stride):

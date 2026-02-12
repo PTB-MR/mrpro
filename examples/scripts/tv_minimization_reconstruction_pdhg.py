@@ -38,7 +38,7 @@
 #
 # The first step is to recast problem (1) into the general form of (2) and then to apply the steps above
 # in an iterative fashion. In the following, we use this approach to reconstruct a 2D radial image using
-# `~mrpro.algorithms.optimizers.pdhg`.
+# `~mr2.algorithms.optimizers.pdhg`.
 
 # %% [markdown]
 # ### Load data
@@ -66,25 +66,25 @@ zenodo_get.download(
 )
 
 # %%
-import mrpro
+import mr2
 
 # We have embedded the trajectory information in the ISMRMRD files.
-kdata_402spokes = mrpro.data.KData.from_file(
-    data_folder / 'radial2D_402spokes_golden_angle_with_traj.h5', mrpro.data.traj_calculators.KTrajectoryIsmrmrd()
+kdata_402spokes = mr2.data.KData.from_file(
+    data_folder / 'radial2D_402spokes_golden_angle_with_traj.h5', mr2.data.traj_calculators.KTrajectoryIsmrmrd()
 )
-kdata_24spokes = mrpro.data.KData.from_file(
-    data_folder / 'radial2D_24spokes_golden_angle_with_traj.h5', mrpro.data.traj_calculators.KTrajectoryIsmrmrd()
+kdata_24spokes = mr2.data.KData.from_file(
+    data_folder / 'radial2D_24spokes_golden_angle_with_traj.h5', mr2.data.traj_calculators.KTrajectoryIsmrmrd()
 )
 
 # %% [markdown]
 # ### Comparison reconstructions
 # Before running the TV-minimization reconstruction, we first run a direct (adjoint) reconstruction
-# using `~mrpro.algorithms.reconstruction.DirectReconstruction` (see <project:direct_reconstruction.ipynb>)
+# using `~mr2.algorithms.reconstruction.DirectReconstruction` (see <project:direct_reconstruction.ipynb>)
 # of both the 24 spokes and 402 spokes data to have a reference for comparison.
 
 # %%
-direct_reconstruction_402 = mrpro.algorithms.reconstruction.DirectReconstruction(kdata_402spokes)
-direct_reconstruction_24 = mrpro.algorithms.reconstruction.DirectReconstruction(kdata_24spokes)
+direct_reconstruction_402 = mr2.algorithms.reconstruction.DirectReconstruction(kdata_402spokes)
+direct_reconstruction_24 = mr2.algorithms.reconstruction.DirectReconstruction(kdata_24spokes)
 img_direct_402 = direct_reconstruction_402(kdata_402spokes)
 img_direct_24 = direct_reconstruction_24(kdata_24spokes)
 
@@ -94,7 +94,7 @@ img_direct_24 = direct_reconstruction_24(kdata_24spokes)
 # reconstruction.
 
 # %%
-sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction(
+sense_reconstruction = mr2.algorithms.reconstruction.IterativeSENSEReconstruction(
     kdata_24spokes,
     n_iterations=8,
     csm=direct_reconstruction_24.csm,
@@ -105,11 +105,11 @@ img_sense_24 = sense_reconstruction(kdata_24spokes)
 # %% [markdown]
 # ### Set up the operator $A$
 # Now, to set up the problem, we need to define the acquisition operator $A$, consisting of a
-# `~mrpro.operators.FourierOp` and a `~mrpro.operators.SensitivityOp`, which applies the coil sensitivity maps
+# `~mr2.operators.FourierOp` and a `~mr2.operators.SensitivityOp`, which applies the coil sensitivity maps
 # (CSM) to the image. We reuse the CSMs estimated in the direct reconstruction.
 
 # %%
-fourier_operator = mrpro.operators.FourierOp.from_kdata(kdata_24spokes)
+fourier_operator = mr2.operators.FourierOp.from_kdata(kdata_24spokes)
 
 assert direct_reconstruction_24.csm is not None
 csm_operator = direct_reconstruction_24.csm.as_operator()
@@ -127,28 +127,28 @@ acquisition_operator = fourier_operator @ csm_operator
 
 # %%
 regularization_lambda = 1e-5
-f_1 = mrpro.operators.functionals.L2NormSquared(target=kdata_24spokes.data)
-f_2 = regularization_lambda * mrpro.operators.functionals.L1NormViewAsReal()
-f = mrpro.operators.ProximableFunctionalSeparableSum(f_1, f_2)
+f_1 = mr2.operators.functionals.L2NormSquared(target=kdata_24spokes.data)
+f_2 = regularization_lambda * mr2.operators.functionals.L1NormViewAsReal()
+f = mr2.operators.ProximableFunctionalSeparableSum(f_1, f_2)
 
 # %% [markdown]
 # #### $K(x) = [A, \nabla]^T$
 #
 #   where $\nabla$ is the finite difference operator that computes the directional derivatives along the last two
-#   dimensions (y,x), implemented as `~mrpro.operators.FiniteDifferenceOp`, and
-#  `~mrpro.operators.LinearOperatorMatrix` can be used to stack the operators.
+#   dimensions (y,x), implemented as `~mr2.operators.FiniteDifferenceOp`, and
+#  `~mr2.operators.LinearOperatorMatrix` can be used to stack the operators.
 
 # %%
-nabla = mrpro.operators.FiniteDifferenceOp(dim=(-2, -1), mode='forward')
-K = mrpro.operators.LinearOperatorMatrix(((acquisition_operator,), (nabla,)))
+nabla = mr2.operators.FiniteDifferenceOp(dim=(-2, -1), mode='forward')
+K = mr2.operators.LinearOperatorMatrix(((acquisition_operator,), (nabla,)))
 
 # %% [markdown]
 # #### $g(x) = 0,$
 #
-# implemented as `~mrpro.operators.functionals.ZeroFunctional`
+# implemented as `~mr2.operators.functionals.ZeroFunctional`
 
 # %%
-g = mrpro.operators.functionals.ZeroFunctional()
+g = mr2.operators.functionals.ZeroFunctional()
 # %% [markdown]
 # ```{note}
 # An obvious identification would have been
@@ -166,7 +166,7 @@ g = mrpro.operators.functionals.ZeroFunctional()
 # Now we can run the PDHG algorithm to solve the minimization problem. We use
 # the iterative SENSE image as an initial value to speed up the convergence.
 # ```{note}
-# We can use the `callback` parameter of `~mrpro.algorithms.optimizers` to get some information
+# We can use the `callback` parameter of `~mr2.algorithms.optimizers` to get some information
 # about the progress. In the collapsed cell, we implement a simple callback function that print the status
 # message
 # ```
@@ -175,7 +175,7 @@ g = mrpro.operators.functionals.ZeroFunctional()
 # This is a "callback" function that will be called after each iteration of the PDHG algorithm.
 # We use it here to print progress information.
 
-from mrpro.algorithms.optimizers.pdhg import PDHGStatus
+from mr2.algorithms.optimizers.pdhg import PDHGStatus
 
 
 def callback(optimizer_status: PDHGStatus) -> None:
@@ -187,7 +187,7 @@ def callback(optimizer_status: PDHGStatus) -> None:
 
 
 # %%
-(img_pdhg_24,) = mrpro.algorithms.optimizers.pdhg(
+(img_pdhg_24,) = mr2.algorithms.optimizers.pdhg(
     f=f,
     g=g,
     operator=K,
@@ -231,11 +231,11 @@ show_images(
 # %% [markdown]
 # ### Ready-made reconstruction algorithm
 # To make our life easier and to avoid the manual setup of the PDHG algorithm with total variation, we can use the
-# `~mrpro.algorithms.reconstruction.TotalVariationRegularizedReconstruction` class. This class
+# `~mr2.algorithms.reconstruction.TotalVariationRegularizedReconstruction` class. This class
 # takes care of setting up the PDHG algorithm and provides a simple interface to run the reconstruction.
 
 # %%
-tv_reconstruction = mrpro.algorithms.reconstruction.TotalVariationRegularizedReconstruction(
+tv_reconstruction = mr2.algorithms.reconstruction.TotalVariationRegularizedReconstruction(
     kdata_24spokes,
     csm=direct_reconstruction_24.csm,
     max_iterations=257,

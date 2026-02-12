@@ -1,4 +1,4 @@
-"""PyTest fixtures for the mrpro package."""
+"""PyTest fixtures for the mr2 package."""
 
 import tempfile
 from collections.abc import Sequence
@@ -8,10 +8,10 @@ import ismrmrd
 import pytest
 import torch
 from ismrmrd import xsd
-from mrpro.data import AcqIdx, AcqInfo, KData, KHeader, KTrajectory, SpatialDimension
-from mrpro.data.enums import AcqFlags
-from mrpro.utils import RandomGenerator
-from mrpro.utils.reshape import unsqueeze_tensors_left
+from mr2.data import AcqIdx, AcqInfo, KData, KHeader, KTrajectory, SpatialDimension
+from mr2.data.enums import AcqFlags
+from mr2.utils import RandomGenerator
+from mr2.utils.reshape import unsqueeze_tensors_left
 from xsdata.models.datatype import XmlDate, XmlTime
 
 from tests.data import IsmrmrdRawTestData
@@ -244,7 +244,7 @@ def create_traj(
 @pytest.fixture(scope='session')
 def ismrmrd_cart(ellipse_phantom, tmp_path_factory):
     """Fully sampled cartesian data set."""
-    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_filename = tmp_path_factory.mktemp('mr2') / 'ismrmrd_cart.h5'
     ismrmrd_kdata = IsmrmrdRawTestData(
         filename=ismrmrd_filename,
         noise_level=1e-4,
@@ -259,7 +259,7 @@ def ismrmrd_cart(ellipse_phantom, tmp_path_factory):
 @pytest.fixture(scope='session')
 def ismrmrd_cart_high_res(ellipse_phantom, tmp_path_factory):
     """Fully sampled cartesian data set."""
-    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart_high_res.h5'
+    ismrmrd_filename = tmp_path_factory.mktemp('mr2') / 'ismrmrd_cart_high_res.h5'
     ismrmrd_kdata = IsmrmrdRawTestData(
         filename=ismrmrd_filename,
         matrix_size=256,

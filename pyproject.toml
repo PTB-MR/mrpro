@@ -5,20 +5,20 @@ build-backend = "setuptools.build_meta:__legacy__"
 [tool.setuptools-git-versioning]
 count_commits_from_version_file = true
 enabled = true
-version_file = "src/mrpro/VERSION"
-template = "{tag}{env:MRPROVERSIONSUFFIX:''}"
-dev_template = "{tag}{env:MRPROVERSIONSUFFIX:''}"
+version_file = "src/mr2/VERSION"
+template = "{tag}{env:MR2VERSIONSUFFIX:''}"
+dev_template = "{tag}{env:MR2VERSIONSUFFIX:''}"
 dirty_template = "{tag}+dirty{sha}"
 
 [tool.setuptools]
 include-package-data = true
 
 [tool.setuptools.package-data]
-"mrpro" = ["VERSION"]
+"mr2" = ["VERSION"]
 
 [project]
-name = "mrpro"
-description = "MR image reconstruction and processing package specifically developed for PyTorch."
+name = "mrtwo"
+description = "MR data handling and image reconstruction."
 readme = "README.md"
 requires-python = ">=3.10,<3.14"
 dynamic = ["version"]
@@ -38,17 +38,10 @@ keywords = [
     "PyTorch",
 ]
 authors = [
-    { name = "MRpro Team", email = "info@emerpro.de" },
+    { name = "Felix Zimmermann", email = "fzimmermann89@gmail.de" },
     { name = "Christoph Kolbitsch", email = "christoph.kolbitsch@ptb.de" },
     { name = "Patrick Schuenke", email = "patrick.schuenke@ptb.de" },
-    { name = "Felix Zimmermann", email = "felix.zimmermann@ptb.de" },
-    { name = "David Schote", email = "david.schote@ptb.de" },
-    { name = "Sherine Brahma", email = "sherine.brahma@ptb.de" },
-    { name = "Mara Guastini", email = "mara.guastini@ptb.de" },
-    { name = "Johannes Hammacher", email = "johannnes.hammacher@ptb.de" },
-    { name = "Stefan Martin", email = "stefan.martin@ptb.de" },
     { name = "Andreas Kofler", email = "andreas.kofler@ptb.de" },
-    { name = "Catarina Redshaw Kranich", email = "catarina.redshaw-kranich@ptb.de" },
 ]
 classifiers = [
     "License :: OSI Approved :: Apache Software License",
@@ -88,7 +81,7 @@ tests = [
     "pytest-xdist",
 ]
 docs = [
-    "mrpro[notebooks]",
+    "mrtwo[notebooks]",
     "sphinx>=8.1, <8.2",
     "sphinx_rtd_theme>=3.0, <3.1",
     "sphinx-pyproject>=0.3, <0.4",
@@ -107,10 +100,10 @@ notebooks = [
     "matplotlib",
     "cmap",
 ]
-dev = ["mrpro[tests, docs]"]
+dev = ["mrtwo[tests, docs]"]
 
 [project.urls]
-"Documentation" = "https://ptb-mr.github.io/mrpro/"
+"Documentation" = "https://fzimmermann89.github.io/mr2/"
 
 # PyTest section
 [tool.pytest.ini_options]

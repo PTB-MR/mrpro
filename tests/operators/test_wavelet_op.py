@@ -5,9 +5,9 @@ from collections.abc import Sequence
 import numpy as np
 import pytest
 import torch
-from mrpro.operators import WaveletOp
-from mrpro.operators.WaveletOp import WaveletType
-from mrpro.utils import RandomGenerator
+from mr2.operators import WaveletOp
+from mr2.operators.WaveletOp import WaveletType
+from mr2.utils import RandomGenerator
 from ptwt.conv_transform import wavedec
 from ptwt.conv_transform_2 import wavedec2
 from ptwt.conv_transform_3 import wavedec3
@@ -57,14 +57,14 @@ def create_wavelet_op_and_domain_range(
 def test_wavelet_op_coefficient_transform(
     img_shape: Sequence[int], domain_shape: Sequence[int], dim: tuple[int] | tuple[int, int] | tuple[int, int, int]
 ) -> None:
-    """Test transform between ptwt and mrpro coefficient format."""
+    """Test transform between ptwt and mr2 coefficient format."""
     rng = RandomGenerator(seed=0)
     img = rng.float32_tensor(size=img_shape)
     wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim)
     if len(dim) == 1:
         coeff_ptwt = wavedec(img, 'haar', level=2, mode='reflect')
-        coeff_mrpro = wavelet_op._format_coeffs_1d(coeff_ptwt)
-        coeff_ptwt_transformed_1d = wavelet_op._undo_format_coeffs_1d(coeff_mrpro)
+        coeff_mr2 = wavelet_op._format_coeffs_1d(coeff_ptwt)
+        coeff_ptwt_transformed_1d = wavelet_op._undo_format_coeffs_1d(coeff_mr2)
 
         # all entries are single tensors
         for i in range(len(coeff_ptwt_transformed_1d)):
@@ -72,8 +72,8 @@ def test_wavelet_op_coefficient_transform(
 
     elif len(dim) == 2:
         coeff_ptwt = wavedec2(img, 'haar', level=2, mode='reflect')
-        coeff_mrpro = wavelet_op._format_coeffs_2d(coeff_ptwt)
-        coeff_ptwt_transformed_2d = wavelet_op._undo_format_coeffs_2d(coeff_mrpro)
+        coeff_mr2 = wavelet_op._format_coeffs_2d(coeff_ptwt)
+        coeff_ptwt_transformed_2d = wavelet_op._undo_format_coeffs_2d(coeff_mr2)
 
         # first entry is tensor, the rest is list of tensors
         assert torch.allclose(coeff_ptwt[0], coeff_ptwt_transformed_2d[0])  # type: ignore[arg-type]
@@ -84,8 +84,8 @@ def test_wavelet_op_coefficient_transform(
 
     elif len(dim) == 3:
         coeff_ptwt = wavedec3(img, 'haar', level=2, mode='reflect')
-        coeff_mrpro = wavelet_op._format_coeffs_3d(coeff_ptwt)
-        coeff_ptwt_transformed_3d = wavelet_op._undo_format_coeffs_3d(coeff_mrpro)
+        coeff_mr2 = wavelet_op._format_coeffs_3d(coeff_ptwt)
+        coeff_ptwt_transformed_3d = wavelet_op._undo_format_coeffs_3d(coeff_mr2)
 
         # first entry is tensor, the rest is dict
         assert torch.allclose(coeff_ptwt[0], coeff_ptwt_transformed_3d[0])  # type: ignore[arg-type]

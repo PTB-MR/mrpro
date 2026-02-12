@@ -2,8 +2,8 @@
 
 import pytest
 import torch
-from mrpro.operators import ConstraintsOp
-from mrpro.utils import RandomGenerator
+from mr2.operators import ConstraintsOp
+from mr2.utils import RandomGenerator
 
 from tests import autodiff_test
 

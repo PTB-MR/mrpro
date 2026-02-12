@@ -2,7 +2,7 @@
 
 import pytest
 import torch
-from mrpro.data import IHeader, QData
+from mr2.data import IHeader, QData
 
 
 def test_QData_from_kheader_and_tensor(random_kheader, random_test_data):

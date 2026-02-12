@@ -17,7 +17,7 @@ This repository uses a *pyproject.toml* file to specify all the requirements.
     Files to create this documentation.
 
 **examples**
-    Python scripts showcasing how MRpro can be used. Any data needed has to be available from
+    Python scripts showcasing how mrtwo can be used. Any data needed has to be available from
     an online repository (e.g. zenodo) such that it can be automatically downloaded.
     Individual cells should be indicated with ``# %%``. For markdown cells use ``# %% [markdown]``.
     The translation from Python script to Jupyter notebook is done in pre-commit (locally and on GitHub)
@@ -30,24 +30,24 @@ This repository uses a *pyproject.toml* file to specify all the requirements.
 
 **tests**
     Tests which are automatically run by pytest.
-    The subfolder structure should follow the same structure as in *mrpro/src*.
+    The subfolder structure should follow the same structure as in *mr2/src*.
 
-**src/mrpro/algorithms**
+**src/mr2/algorithms**
     Everything which does something with the data, e.g. prewhiten k-space or remove oversampling.
 
-**src/mrpro/data**
+**src/mr2/data**
     All the data classes such as ``KData``, ``ImageData`` or ``CsmData``.
     As the names suggest these should mainly contain data and meta information.
     Any functionality beyond what is absolutely required for the classes should be put as separate functions.
 
-**src/mrpro/operators**
+**src/mr2/operators**
     Linear and non-linear algorithms describing e.g. the transformation from image to k-space (``FourierOp``), the
     effect of receiver coils (``SensitivityOp``) or MR signal models.
 
-**src/mrpro/phantoms**
+**src/mr2/phantoms**
     Numerical phantoms useful to evaluate reconstruction algorithms.
 
-**src/mrpro/utils**
+**src/mr2/utils**
     Utilities such as spatial filters and also more basic functionality such as applying functions serially along the
     batch dimension (``smap``).
 
@@ -60,7 +60,7 @@ which we have also added to the list of extensions that VSCode should recommend 
 We also run `mypy <https://pypi.org/project/mypy/>`_ as a type checker.
 
 In CI, our linting is driven by `pre-commit <https://pre-commit.com/>`_.
-If you install MRpro via ``pip install -e .[dev]``, pre-commit will be installed in your Python environment.
+If you install mrtwo via ``pip install -e .[dev]``, pre-commit will be installed in your Python environment.
 You can either add pre-commit to your git pre-commit hooks, requiring it to pass before each commit (``pre-commit install``),
 or run it manually using ``pre-commit run --all-files`` after making your changes, before requesting a PR review.
 
@@ -79,7 +79,7 @@ for images.
 
 Testing
 =======
-We use pytest for testing. All required packages will be installed if you install MRpro via ``pip install -e .[dev]`` or ``pip install -e .[tests]``.
+We use pytest for testing. All required packages will be installed if you install mrtwo via ``pip install -e .[dev]`` or ``pip install -e .[tests]``.
 You can use VSCode's test panel to discover and run tests. All tests must pass before a PR can be merged. By default, we skip running CUDA tests.  You can use ``pytest -m cuda`` to run the CUDA tests if your development machine has a GPU available.
 
 Building the Documentation
@@ -90,14 +90,14 @@ Please check how your new additions render in the documentation before requestin
 
 Adding new Examples
 ===================
-New exciting applications of MRpro can be added in ``examples`` as only ``.py`` files with code-cells. These can, for example, be used in VSCode with the Python extension, or in JupyterLab with the `jupytext <https://jupytext.readthedocs.io/en/latest/>`_ extension.
+New exciting applications of mrtwo can be added in ``examples`` as only ``.py`` files with code-cells. These can, for example, be used in VSCode with the Python extension, or in JupyterLab with the `jupytext <https://jupytext.readthedocs.io/en/latest/>`_ extension.
 A pre-commit action will convert the scripts to notebooks. Our documetantion build will pick up these notebooks, run them, and include them with outputs in the documentation.
 The data to run the examples should be publicly available and hosted externally, for example at zenodo.
 Please be careful not to add any binary files to your commits.
 
 Release Strategy
 ================
-We are still in pre-release mode and do not guarantee a stable API / strict semantic versioning compatibility. We currently use ``0.YYMMDD`` as versioning and release in regular intervals to `pypi  <https://pypi.org/project/mrpro/>`_.
+We are still in pre-release mode and do not guarantee a stable API / strict semantic versioning compatibility. We currently use ``0.YYMMDD`` as versioning and release in regular intervals to `pypi  <https://pypi.org/project/mrtwo/>`_.
 
 Compatibility
 =============

@@ -2,8 +2,8 @@
 
 import pytest
 import torch
-from mrpro.algorithms.optimizers import OptimizerStatus, adam, lbfgs
-from mrpro.operators import ConstraintsOp
+from mr2.algorithms.optimizers import OptimizerStatus, adam, lbfgs
+from mr2.operators import ConstraintsOp
 from tests.operators import Rosenbrock
 
 

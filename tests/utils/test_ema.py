@@ -4,8 +4,8 @@ from typing import Any
 
 import pytest
 import torch
-from mrpro.utils import RandomGenerator
-from mrpro.utils.ema import EMADict
+from mr2.utils import RandomGenerator
+from mr2.utils.ema import EMADict
 
 
 @pytest.mark.parametrize(

@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  packages: read
 
 defaults:
   run:
@@ -18,7 +19,7 @@ jobs:
     name: Get list of notebooks
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout mrpro repo
+      - name: Checkout mr2 repo
         uses: actions/checkout@v6
 
       - id: set-matrix
@@ -39,8 +40,9 @@ jobs:
     permissions:
       pull-requests: write
       contents: write
+      packages: read
     container:
-      image: ghcr.io/ptb-mr/mrpro_py311:latest
+      image: ghcr.io/fzimmermann89/mr2_py311:latest
       options: --user root
     strategy:
       fail-fast: false
@@ -50,7 +52,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v6
 
-      - name: Install mrpro and dependencies
+      - name: Install mr2 and dependencies
         run: pip install --index-url=https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple/ --upgrade --upgrade-strategy "eager" -e .[notebooks]
 
       - name: Notebook name
@@ -103,7 +105,7 @@ jobs:
     needs: run_notebook
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/ptb-mr/mrpro_py311:latest
+      image: ghcr.io/fzimmermann89/mr2_py311:latest
       options: --user runner
     steps:
       - name: Checkout
@@ -112,7 +114,7 @@ jobs:
           fetch-depth: 0 # fetch history for github links
           fetch-tags: true
 
-      - name: Install mrpro and dependencies
+      - name: Install mr2 and dependencies
         run: pip install --index-url=https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple/ --upgrade --upgrade-strategy "eager" -e .[docs]
 
       - name: Download executed notebook ipynb files
@@ -124,7 +126,7 @@ jobs:
 
       - name: Build docs
         run: |
-          sphinx-build -b html ./docs/source ./docs/build/html
+          python -m sphinx -b html ./docs/source ./docs/build/html
           rm -rf ./docs/build/html/.doctrees
 
       - name: Upload documentation artifact

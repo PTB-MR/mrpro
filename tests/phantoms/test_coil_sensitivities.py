@@ -1,7 +1,7 @@
 """Tests for simulation of coil sensitivities."""
 
-from mrpro.data import SpatialDimension
-from mrpro.phantoms.coils import birdcage_2d
+from mr2.data import SpatialDimension
+from mr2.phantoms.coils import birdcage_2d
 
 
 def test_birdcage_sensitivities_shape():

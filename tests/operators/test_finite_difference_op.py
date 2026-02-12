@@ -6,8 +6,8 @@ from typing import Literal
 import pytest
 import torch
 from einops import repeat
-from mrpro.operators import FiniteDifferenceOp
-from mrpro.utils import RandomGenerator
+from mr2.operators import FiniteDifferenceOp
+from mr2.utils import RandomGenerator
 
 from tests import (
     dotproduct_adjointness_test,

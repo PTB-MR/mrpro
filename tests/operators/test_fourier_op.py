@@ -4,11 +4,11 @@ from typing import TypeAlias, cast
 
 import pytest
 import torch
-from mrpro.data import KData, KTrajectory, SpatialDimension
-from mrpro.data.enums import TrajType
-from mrpro.data.traj_calculators import KTrajectoryCartesian
-from mrpro.operators import FourierOp
-from mrpro.utils import RandomGenerator
+from mr2.data import KData, KTrajectory, SpatialDimension
+from mr2.data.enums import TrajType
+from mr2.data.traj_calculators import KTrajectoryCartesian
+from mr2.operators import FourierOp
+from mr2.utils import RandomGenerator
 from typing_extensions import Unpack
 
 from tests import (

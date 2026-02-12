@@ -4,8 +4,8 @@ from collections.abc import Sequence
 
 import pytest
 import torch
-from mrpro.operators.functionals.SSIM import SSIM
-from mrpro.utils import RandomGenerator
+from mr2.operators.functionals.SSIM import SSIM
+from mr2.utils import RandomGenerator
 
 
 def test_ssim() -> None:

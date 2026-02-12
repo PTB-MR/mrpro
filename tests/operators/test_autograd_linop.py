@@ -2,8 +2,8 @@
 
 import pytest
 import torch
-from mrpro.operators import LinearOperator
-from mrpro.utils import RandomGenerator
+from mr2.operators import LinearOperator
+from mr2.utils import RandomGenerator
 from torch.autograd.gradcheck import GradcheckError
 
 from tests import dotproduct_adjointness_test

@@ -4,10 +4,10 @@ import pytest
 import scipy.linalg
 import scipy.sparse
 import torch
-from mrpro.algorithms.optimizers import cg
-from mrpro.algorithms.optimizers.cg import CGStatus
-from mrpro.operators import EinsumOp, LinearOperatorMatrix
-from mrpro.utils import RandomGenerator
+from mr2.algorithms.optimizers import cg
+from mr2.algorithms.optimizers.cg import CGStatus
+from mr2.operators import EinsumOp, LinearOperatorMatrix
+from mr2.utils import RandomGenerator
 
 
 @pytest.fixture(

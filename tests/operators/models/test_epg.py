@@ -5,7 +5,7 @@ from typing import Literal
 
 import pytest
 import torch
-from mrpro.operators.models.EPG import (
+from mr2.operators.models.EPG import (
     AcquisitionBlock,
     DelayBlock,
     EPGSequence,
@@ -19,8 +19,8 @@ from mrpro.operators.models.EPG import (
     TseBlock,
     initial_state,
 )
-from mrpro.operators.SignalModel import SignalModel
-from mrpro.utils import RandomGenerator
+from mr2.operators.SignalModel import SignalModel
+from mr2.utils import RandomGenerator
 from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
 
 

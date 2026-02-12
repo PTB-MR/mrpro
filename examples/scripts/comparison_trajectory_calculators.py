@@ -13,7 +13,7 @@ import os
 import tempfile
 from pathlib import Path
 
-import mrpro
+import mr2
 import torch
 import zenodo_get
 
@@ -25,8 +25,8 @@ zenodo_get.download(
 
 # %% [markdown]
 # ### Using KTrajectoryIsmrmrd - Trajectory saved in ISMRMRD file
-# Passing an instance of `~mrpro.data.traj_calculators.KTrajectoryIsmrmrd` to
-# when loading the data tells the `~mrpro.data.KData` object to use the trajectory
+# Passing an instance of `~mr2.data.traj_calculators.KTrajectoryIsmrmrd` to
+# when loading the data tells the `~mr2.data.KData` object to use the trajectory
 # that is stored in the ISMRMRD file.
 # ```{note}
 # Often the trajectory information has not been stored in the ISMRMRD file,
@@ -35,13 +35,13 @@ zenodo_get.download(
 
 # %%
 # Read the raw data and the trajectory from ISMRMRD file
-kdata = mrpro.data.KData.from_file(
+kdata = mr2.data.KData.from_file(
     data_folder / 'radial2D_402spokes_golden_angle_with_traj.h5',
-    mrpro.data.traj_calculators.KTrajectoryIsmrmrd(),
+    mr2.data.traj_calculators.KTrajectoryIsmrmrd(),
 )
 
 # Reconstruct image
-reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction(kdata)
+reconstruction = mr2.algorithms.reconstruction.DirectReconstruction(kdata)
 img_using_ismrmrd_traj = reconstruction(kdata)
 
 # %% [markdown]
@@ -53,19 +53,19 @@ img_using_ismrmrd_traj = reconstruction(kdata)
 # This will calculate the trajectory using the radial 2D trajectory calculator.
 # ```{note}
 # You can also implement your own trajectory calculator by subclassing
-# `~mrpro.data.traj_calculators.KTrajectoryCalculator`.
+# `~mr2.data.traj_calculators.KTrajectoryCalculator`.
 # ```
 
 # %%
 # Read raw data and calculate trajectory using KTrajectoryRadial2D
 golden_angle = torch.pi * 0.618034
-kdata = mrpro.data.KData.from_file(
+kdata = mr2.data.KData.from_file(
     data_folder / 'radial2D_402spokes_golden_angle_with_traj.h5',
-    mrpro.data.traj_calculators.KTrajectoryRadial2D(golden_angle),
+    mr2.data.traj_calculators.KTrajectoryRadial2D(golden_angle),
 )
 
 # Reconstruct image
-reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction(kdata)
+reconstruction = mr2.algorithms.reconstruction.DirectReconstruction(kdata)
 img_using_rad2d_traj = reconstruction(kdata)
 
 # %% [markdown]
@@ -78,13 +78,13 @@ img_using_rad2d_traj = reconstruction(kdata)
 # %%
 # Read raw data and calculate trajectory using KTrajectoryPulseq
 seq_path = data_folder / 'radial2D_402spokes_golden_angle.seq'
-kdata = mrpro.data.KData.from_file(
+kdata = mr2.data.KData.from_file(
     data_folder / 'radial2D_402spokes_golden_angle_with_traj.h5',
-    mrpro.data.traj_calculators.KTrajectoryPulseq(seq_path),
+    mr2.data.traj_calculators.KTrajectoryPulseq(seq_path),
 )
 
 # Reconstruct image
-reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction(kdata)
+reconstruction = mr2.algorithms.reconstruction.DirectReconstruction(kdata)
 img_using_pulseq_traj = reconstruction(kdata)
 
 # %% [markdown]

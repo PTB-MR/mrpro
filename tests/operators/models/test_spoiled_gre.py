@@ -4,8 +4,8 @@ from collections.abc import Sequence
 
 import pytest
 import torch
-from mrpro.operators.models import SpoiledGRE
-from mrpro.utils import RandomGenerator
+from mr2.operators.models import SpoiledGRE
+from mr2.utils import RandomGenerator
 from tests import autodiff_test
 from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
 

@@ -95,26 +95,26 @@ zenodo_get.download(
 
 # %%
 # Load in the data from the ISMRMRD file
-import mrpro
+import mr2
 
 # We have embedded the trajectory information in the ISMRMRD files.
-kdata_402spokes = mrpro.data.KData.from_file(
-    data_folder / 'radial2D_402spokes_golden_angle_with_traj.h5', mrpro.data.traj_calculators.KTrajectoryIsmrmrd()
+kdata_402spokes = mr2.data.KData.from_file(
+    data_folder / 'radial2D_402spokes_golden_angle_with_traj.h5', mr2.data.traj_calculators.KTrajectoryIsmrmrd()
 )
-kdata_24spokes = mrpro.data.KData.from_file(
-    data_folder / 'radial2D_24spokes_golden_angle_with_traj.h5', mrpro.data.traj_calculators.KTrajectoryIsmrmrd()
+kdata_24spokes = mr2.data.KData.from_file(
+    data_folder / 'radial2D_24spokes_golden_angle_with_traj.h5', mr2.data.traj_calculators.KTrajectoryIsmrmrd()
 )
 
 
 # %% [markdown]
 # ### Comparison reconstructions
 # Before running the wavelets-based reconstruction, we first run a direct (adjoint) reconstruction
-# using `~mrpro.algorithms.reconstruction.DirectReconstruction` (see <project:direct_reconstruction.ipynb>)
+# using `~mr2.algorithms.reconstruction.DirectReconstruction` (see <project:direct_reconstruction.ipynb>)
 # of both the 24 spokes and 402 spokes data to have a reference for comparison.
 
 # %%
-direct_reconstruction_402 = mrpro.algorithms.reconstruction.DirectReconstruction(kdata_402spokes)
-direct_reconstruction_24 = mrpro.algorithms.reconstruction.DirectReconstruction(kdata_24spokes)
+direct_reconstruction_402 = mr2.algorithms.reconstruction.DirectReconstruction(kdata_402spokes)
+direct_reconstruction_24 = mr2.algorithms.reconstruction.DirectReconstruction(kdata_24spokes)
 img_direct_402 = direct_reconstruction_402(kdata_402spokes)
 img_direct_24 = direct_reconstruction_24(kdata_24spokes)
 
@@ -123,7 +123,7 @@ img_direct_24 = direct_reconstruction_24(kdata_24spokes)
 # stopping of the 24 spokes data. We use it as a comparison and as an initial guess for FISTA.
 
 # %%
-sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction(
+sense_reconstruction = mr2.algorithms.reconstruction.IterativeSENSEReconstruction(
     kdata_24spokes,
     n_iterations=8,
     csm=direct_reconstruction_24.csm,
@@ -144,7 +144,7 @@ assert direct_reconstruction_24.csm is not None
 csm_operator = direct_reconstruction_24.csm.as_operator()
 
 # Define the wavelet operator
-wavelet_operator = mrpro.operators.WaveletOp(
+wavelet_operator = mr2.operators.WaveletOp(
     domain_shape=img_direct_24.data.shape[-2:], dim=(-2, -1), wavelet_name='db4', level=None
 )
 
@@ -175,8 +175,8 @@ acquisition_operator = fourier_operator @ csm_operator @ wavelet_operator.H
 regularization_parameter = 1e-5
 
 # Set up the problem by using the previously described identification
-l2 = 0.5 * mrpro.operators.functionals.L2NormSquared(target=kdata_24spokes.data, divide_by_n=False)
-l1 = mrpro.operators.functionals.L1NormViewAsReal(divide_by_n=False)
+l2 = 0.5 * mr2.operators.functionals.L2NormSquared(target=kdata_24spokes.data, divide_by_n=False)
+l1 = mr2.operators.functionals.L1NormViewAsReal(divide_by_n=False)
 
 f = l2 @ acquisition_operator
 g = regularization_parameter * l1
@@ -184,7 +184,7 @@ g = regularization_parameter * l1
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show callback details"}
 # This is a "callback" function to track the value of the objective functional f(x) + g(x)
 # and stepsize update
-from mrpro.algorithms.optimizers.pgd import PGDStatus
+from mr2.algorithms.optimizers.pgd import PGDStatus
 
 
 def callback(optimizer_status: PGDStatus) -> None:
@@ -218,7 +218,7 @@ op_norm = acquisition_operator.operator_norm(
 # the Lipschitz constant of the functional $f$
 stepsize = 0.9 * (1 / op_norm**2)
 
-(img_wave_pgd_24,) = mrpro.algorithms.optimizers.pgd(
+(img_wave_pgd_24,) = mr2.algorithms.optimizers.pgd(
     f=f,
     g=g,
     initial_value=initial_values,

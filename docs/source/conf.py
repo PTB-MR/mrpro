@@ -15,7 +15,7 @@ from sphinx.ext.autodoc import AttributeDocumenter, ClassDocumenter, MethodDocum
 from sphinx.util.inspect import isclassmethod, isstaticmethod, signature, stringify_signature
 from sphinx_pyproject import SphinxConfig
 
-from mrpro import __version__ as project_version
+from mr2 import __version__ as project_version
 
 sys.path.insert(0, os.path.abspath('../../src'))  # Source code dir relative to this file
 
@@ -101,8 +101,8 @@ html_theme_options = {
 }
 html_context = {
     'display_github': False,
-    'github_user': 'PTB-MR',
-    'github_repo': 'mrpro',
+    'github_user': 'fzimmermann89',
+    'github_repo': 'mr2',
     'github_version': 'main',
 }
 linkcode_blob = html_context['github_version']

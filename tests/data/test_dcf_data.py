@@ -3,8 +3,8 @@
 import pytest
 import torch
 from einops import repeat
-from mrpro.data import DcfData, KTrajectory
-from mrpro.utils import RandomGenerator
+from mr2.data import DcfData, KTrajectory
+from mr2.utils import RandomGenerator
 
 
 def example_traj_rpe(n_ka: int, n_kr: int, n_k0: int, broadcast: bool = True):

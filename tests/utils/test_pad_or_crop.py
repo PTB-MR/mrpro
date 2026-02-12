@@ -4,8 +4,8 @@ from typing import Literal
 
 import pytest
 import torch
-from mrpro.utils import RandomGenerator
-from mrpro.utils.pad_or_crop import pad_or_crop
+from mr2.utils import RandomGenerator
+from mr2.utils.pad_or_crop import pad_or_crop
 
 
 @pytest.mark.parametrize('mode', ['constant', 'reflect', 'replicate', 'circular'])

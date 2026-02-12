@@ -1,0 +1,79 @@
+"""Iterative SENSE Reconstruction."""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+
+from mr2.algorithms.reconstruction.RegularizedIterativeSENSEReconstruction import (
+    RegularizedIterativeSENSEReconstruction,
+)
+from mr2.data.CsmData import CsmData
+from mr2.data.DcfData import DcfData
+from mr2.data.KData import KData
+from mr2.data.KNoise import KNoise
+from mr2.operators.LinearOperator import LinearOperator
+
+
+class IterativeSENSEReconstruction(RegularizedIterativeSENSEReconstruction):
+    r"""Iterative SENSE reconstruction.
+
+    This algorithm solves the problem :math:`\min_{x} ||Ax - y||_2^2`
+    by using a conjugate gradient algorithm to solve
+    :math:`H x = b` with :math:`H = A^H A` and :math:`b = A^H y` where :math:`A` is the acquisition model
+    (coil sensitivity maps, Fourier operator, k-space sampling), :math:`y` is the acquired k-space data [PRU2001]_ .
+
+    Note: In [PRU2001]_ , a k-space weighting of the loss is used and a k-space filter is applied as a final step to
+    null all k-space values outside the k-space coverage. This is not done here.
+
+    .. [PRU2001] Pruessmann K, Weiger M, Boernert P, and Boesiger P (2001), Advances in sensitivity encoding with
+       arbitrary k-space trajectories. MRI 46, 638-651. https://doi.org/10.1002/mrm.1241
+
+    """
+
+    n_iterations: int
+    """Number of CG iterations."""
+
+    def __init__(
+        self,
+        kdata: KData | None = None,
+        fourier_op: LinearOperator | None = None,
+        csm: Callable | CsmData | None = CsmData.from_idata_walsh,
+        noise: KNoise | None = None,
+        dcf: DcfData | None = None,
+        *,
+        n_iterations: int = 5,
+    ) -> None:
+        """Initialize IterativeSENSEReconstruction.
+
+        For a regularized version of the iterative SENSE algorithm
+        please see `~mr2.algorithms.reconstruction.RegularizedIterativeSENSEReconstruction`.
+
+        Parameters
+        ----------
+        kdata
+            If `kdata` is provided and `fourier_op` or `dcf` are `None`, then `fourier_op` and `dcf` are estimated
+            based on `kdata`. Otherwise `fourier_op` and `dcf` are used as provided.
+        fourier_op
+            Instance of the `~mr2.operators.FourierOp` used for reconstruction.
+            If `None`, set up based on `kdata`.
+        csm
+            Sensitivity maps for coil combination. If `None`, no coil combination is carried out, i.e. images for each
+            coil are returned. If a `Callable` is provided, coil images are reconstructed using the adjoint of the
+            `~mr2.operators.FourierOp` (including density compensation) and then sensitivity maps are calculated
+            using the `Callable`. For this, `kdata` needs also to be provided.
+            For examples have a look at the `mr2.data.CsmData` class e.g. `~mr2.data.CsmData.from_idata_walsh`
+            or `~mr2.data.CsmData.from_idata_inati`.
+        noise
+            Noise used for prewhitening. If `None`, no prewhitening is performed
+        dcf
+            K-space sampling density compensation. Only used to obtain a good starting point for the CG algorithm as
+            by using the scaled density compensated direct reconstruction [FESSLER2010]_.
+        n_iterations
+            Number of CG iterations
+
+        Raises
+        ------
+        `ValueError`
+            If the `kdata` and `fourier_op` are `None` or if `csm` is a `Callable` but `kdata` is None.
+        """
+        super().__init__(kdata, fourier_op, csm, noise, dcf, n_iterations=n_iterations, regularization_weight=0)

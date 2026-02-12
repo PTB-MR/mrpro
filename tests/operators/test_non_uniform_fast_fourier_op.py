@@ -2,11 +2,11 @@
 
 import pytest
 import torch
-from mrpro.data import KData, KTrajectory
-from mrpro.data.SpatialDimension import SpatialDimension
-from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
-from mrpro.operators import FastFourierOp, NonUniformFastFourierOp
-from mrpro.utils import RandomGenerator
+from mr2.data import KData, KTrajectory
+from mr2.data.SpatialDimension import SpatialDimension
+from mr2.data.traj_calculators import KTrajectoryIsmrmrd
+from mr2.operators import FastFourierOp, NonUniformFastFourierOp
+from mr2.utils import RandomGenerator
 
 from tests.conftest import COMMON_MR_TRAJECTORIES, create_traj
 from tests.helper import dotproduct_adjointness_test, relative_image_difference

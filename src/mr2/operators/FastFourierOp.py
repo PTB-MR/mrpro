@@ -1,0 +1,166 @@
+"""Class for Fast Fourier Operator."""
+
+from collections.abc import Sequence
+from dataclasses import astuple
+
+import torch
+
+from mr2.data.SpatialDimension import SpatialDimension
+from mr2.operators.LinearOperator import LinearOperator
+from mr2.operators.ZeroPadOp import ZeroPadOp
+
+
+class FastFourierOp(LinearOperator):
+    """Fast Fourier operator class.
+
+    Applies a Fast Fourier Transformation along selected dimensions with cropping/zero-padding
+    along these selected dimensions
+
+    The transformation is done with ``'ortho'`` normalization, i.e. the normalization constant is split between
+    forward and adjoint [FFT]_.
+
+    .. note::
+        The input to both `~FastFourierOp.forward` and `~FastFourierOp.adjoint`
+        are assumed to have the zero-frequency in the center of the data. `torch.fft.fftn`
+        and `torch.fft.ifftn` expect the zero-frequency to be the first entry in the tensor.
+        Therefore in `~FastFourierOp.forward` and `~FastFourierOp.adjoint`,
+        first `torch.fft.ifftshift`, then `torch.fft.fftn` or `torch.fft.ifftn`,
+        finally `torch.fft.fftshift` are applied.
+
+    .. note::
+       See also `~mr2.operators.FourierOp` for a Fourier operator that handles
+       automatic sorting of the k-space data based on a trajectory.
+
+
+    References
+    ----------
+    .. [FFT] https://numpy.org/doc/stable/reference/routines.fft.html
+
+    """
+
+    def __init__(
+        self,
+        dim: Sequence[int] = (-3, -2, -1),
+        recon_matrix: SpatialDimension[int] | Sequence[int] | None = None,
+        encoding_matrix: SpatialDimension[int] | Sequence[int] | None = None,
+    ) -> None:
+        """Initialize a Fast Fourier Operator.
+
+        If both `recon_matrix` and `encoding_matrix` are set, the operator will perform padding/cropping before and
+        after the transforms to match the shape in image space (`recon_matrix`) and k-shape (`encoding_matrix`).
+        If both are set to `None`, no padding or cropping will be performed.
+        If these are `~mr2.data.SpatialDimension`, the transform dimensions must be within the last three dimensions,
+        typically corresponding to the `(k2, k1, k0)` and `(z, y, x)` axes of `~mr2.data.KData`
+        and `~mr2.data.IData`, respectively.
+
+
+        Parameters
+        ----------
+        dim
+            dim along which FFT and IFFT are applied, by default last three dimensions,
+            as these correspond to `k2`, `k1`, and `k0` of k-space data.
+        encoding_matrix
+            shape of encoded k-data along the axes in `dim`. Must be set if `recon_matrix` is set.
+            If `encoding_matrix` and `recon_matrix` are `None`, no padding or cropping will be performed.
+            If all values in dim are -3, -2 or -1, this can also be a `~mr2.data.SpatialDimension` describing the
+            k-space shape in all 3 dimensions `(k2, k1, k0)`, but only values in the dimensions in `dim` will be used.
+            Otherwise, it should be a `Sequence` of the same length as `dim`.
+        recon_matrix
+            shape of reconstructed image data. Must be set if `encoding_matrix` is set.
+            If `encoding_matrix` and `recon_matrix` are `None`, no padding or cropping will be performed.
+            If all values in `dim` are -3, -2 or -1, this can also be a `~mr2.data.SpatialDimension` describing the
+            image-space shape in all 3 dimensions `(z, y, x)`, but only values in the dimensions in `dim` will be used.
+            Otherwise, it should be a `Sequence` of the same length as `dim`.
+        """
+        super().__init__()
+        self._dim = tuple(dim)
+        self._pad_op: ZeroPadOp
+
+        if isinstance(recon_matrix, SpatialDimension):
+            if not all(d in (-1, -2, -3) for d in dim):
+                raise NotImplementedError(
+                    f'recon_matrix can only be a SpatialDimension if each value in dim is in (-3,-2,-1),'
+                    f'got {dim=}\nInstead, you can also supply a list of values of same length as dim'
+                )
+            original_shape: Sequence[int] | None = [int(astuple(recon_matrix)[d]) for d in dim]
+
+        else:
+            original_shape = recon_matrix
+
+        if isinstance(encoding_matrix, SpatialDimension):
+            if not all(d in (-1, -2, -3) for d in dim):
+                raise NotImplementedError(
+                    f'encoding_matrix can only be a SpatialDimension if each value in dim is in (-3,-2,-1),'
+                    f'got {dim=}\nInstead, you can also supply a list of values of same length as dim'
+                )
+            padded_shape: Sequence[int] | None = [int(astuple(encoding_matrix)[d]) for d in dim]
+
+        else:
+            padded_shape = encoding_matrix
+
+        if original_shape is not None and padded_shape is not None:
+            # perform padding / cropping
+            self._pad_op = ZeroPadOp(dim=dim, original_shape=original_shape, padded_shape=padded_shape)
+        elif encoding_matrix is None and recon_matrix is None:
+            # No padding no padding / cropping
+            self._pad_op = ZeroPadOp(dim=(), original_shape=(), padded_shape=())
+        else:
+            raise ValueError(
+                'Either encoding_matrix and recon_matrix must both be set to None or both to a value, got'
+                f'{encoding_matrix=} and {recon_matrix=}'
+            )
+
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply Fast Fourier Transform (FFT) from image space to k-space.
+
+        Parameters
+        ----------
+        x
+            (image-space) data on a Cartesian grid.
+
+        Returns
+        -------
+            FFT of `x`
+        """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply forward of FastFourierOp.
+
+        .. note::
+            Prefer calling the instance of the FastFourierOp operator as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
+        """
+        y = torch.fft.fftshift(
+            torch.fft.fftn(torch.fft.ifftshift(*self._pad_op(x), dim=self._dim), dim=self._dim, norm='ortho'),
+            dim=self._dim,
+        )
+        return (y,)
+
+    def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply Inverse Fast Fourier Transform (IFFT) from k-space to image space.
+
+        Parameters
+        ----------
+        y
+            (k-space) data on a Cartesian grid.
+
+        Returns
+        -------
+            IFFT of `y`
+        """
+        # FFT
+        return self._pad_op.adjoint(
+            torch.fft.fftshift(
+                torch.fft.ifftn(torch.fft.ifftshift(y, dim=self._dim), dim=self._dim, norm='ortho'),
+                dim=self._dim,
+            ),
+        )
+
+    def __repr__(self) -> str:
+        """Representation method for FastFourierOperator."""
+        k2k1k0 = ['k2', 'k1', 'k0']
+        dimension_210 = tuple(k2k1k0[i] for i in self._dim if i in range(-3, 0))
+        dimension_210_str = ', '.join(dimension_210)
+        out = f'Dimension(s) along which FFT is applied: ({dimension_210_str})'
+        return out

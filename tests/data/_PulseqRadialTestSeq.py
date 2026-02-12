@@ -3,7 +3,7 @@
 import pypulseq
 import torch
 from einops import repeat
-from mrpro.data import KTrajectory, SpatialDimension
+from mr2.data import KTrajectory, SpatialDimension
 
 
 class PulseqRadialTestSeq:

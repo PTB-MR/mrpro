@@ -2,7 +2,7 @@
 
 import pytest
 import torch
-from mrpro.utils.indexing import Indexer
+from mr2.utils.indexing import Indexer
 
 
 @pytest.mark.parametrize(

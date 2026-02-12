@@ -2,9 +2,9 @@ from typing import Literal, cast
 
 import pytest
 import torch
-from mrpro.operators import ElementaryFunctional, ElementaryProximableFunctional, ProximableFunctional
-from mrpro.operators.Functional import ScaledProximableFunctional
-from mrpro.utils import RandomGenerator
+from mr2.operators import ElementaryFunctional, ElementaryProximableFunctional, ProximableFunctional
+from mr2.operators.Functional import ScaledProximableFunctional
+from mr2.utils import RandomGenerator
 
 from tests.operators.functionals.conftest import (
     FUNCTIONALS,

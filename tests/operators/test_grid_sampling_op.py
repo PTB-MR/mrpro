@@ -5,9 +5,9 @@ from typing import Any, Literal
 
 import pytest
 import torch
-from mrpro.data import SpatialDimension
-from mrpro.operators import GridSamplingOp
-from mrpro.utils import RandomGenerator
+from mr2.data import SpatialDimension
+from mr2.operators import GridSamplingOp
+from mr2.utils import RandomGenerator
 from torch.autograd.gradcheck import gradcheck
 
 from tests import dotproduct_adjointness_test
@@ -342,7 +342,7 @@ def test_grid_sampling_op_batchdims(
         assert result.shape == (*expected_output, 7, 8, 9)
 
 
-# MRpro uses (z,y,x)-convention for grid sampling
+# mrtwo uses (z,y,x)-convention for grid sampling
 # PyTorch uses (x,y,z)-convention for grid sampling
 @pytest.mark.parametrize(('dim', 'grid_sample_dim'), [(-1, -3), (-2, -2), (-3, -1)])
 def test_grid_sampling_op_orientation(dim: int, grid_sample_dim: int) -> None:

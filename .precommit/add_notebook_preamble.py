@@ -9,14 +9,14 @@ file = Path(sys.argv[1])
 basename = file.stem.rpartition('-')[0]
 
 badge_svg = 'https://colab.research.google.com/assets/colab-badge.svg'
-ipynb_link = f'https://colab.research.google.com/github/PTB-MR/mrpro/blob/main/examples/notebooks/{basename}.ipynb'
+ipynb_link = f'https://colab.research.google.com/github/fzimmermann89/mr2/blob/main/examples/notebooks/{basename}.ipynb'
 badge_markdown = f'[![Open In Colab]({badge_svg})]({ipynb_link})'
 badge_pyprocent = f'# %% [markdown]\n# {badge_markdown}\n'
 import_python = """# %% tags=["remove-cell"]
 import importlib
 
-if not importlib.util.find_spec('mrpro'):
-    %pip install mrpro[notebooks]
+if not importlib.util.find_spec('mr2'):
+    %pip install mrtwo[notebooks]
 """
 
 # the temp files of jupytext have the header which looks like:

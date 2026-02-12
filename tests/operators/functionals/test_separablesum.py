@@ -1,7 +1,7 @@
 import pytest
 import torch
-from mrpro.operators import ProximableFunctional, ProximableFunctionalSeparableSum
-from mrpro.utils import RandomGenerator
+from mr2.operators import ProximableFunctional, ProximableFunctionalSeparableSum
+from mr2.utils import RandomGenerator
 
 
 class Dummy(ProximableFunctional):

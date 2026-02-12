@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 import torch
-from mrpro.data import IData
+from mr2.data import IData
 
 
 @pytest.mark.parametrize(

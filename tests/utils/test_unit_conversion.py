@@ -2,8 +2,8 @@
 
 import numpy as np
 import torch
-from mrpro.utils import RandomGenerator
-from mrpro.utils.unit_conversion import (
+from mr2.utils import RandomGenerator
+from mr2.utils.unit_conversion import (
     deg_to_rad,
     lamor_frequency_to_magnetic_field,
     m_to_micrometer,

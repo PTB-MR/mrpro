@@ -5,8 +5,8 @@ import math
 import pytest
 import torch
 from einops import repeat
-from mrpro.algorithms.dcf import dcf_1d, dcf_2d3d_voronoi
-from mrpro.data import KTrajectory
+from mr2.algorithms.dcf import dcf_1d, dcf_2d3d_voronoi
+from mr2.data import KTrajectory
 
 
 def example_traj_rad_2d(n_kr, n_ka, phi0=0.0, broadcast=True):

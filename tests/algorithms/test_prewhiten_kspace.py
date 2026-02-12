@@ -3,9 +3,9 @@
 import pytest
 import torch
 from einops import rearrange
-from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
-from mrpro.data import KData, KNoise, KTrajectory
-from mrpro.utils import RandomGenerator
+from mr2.algorithms.prewhiten_kspace import prewhiten_kspace
+from mr2.data import KData, KNoise, KTrajectory
+from mr2.utils import RandomGenerator
 
 
 def _calc_coil_cov(data):

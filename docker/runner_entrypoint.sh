@@ -8,7 +8,7 @@
 #        Also referenced in .github/slurm_cronjob.py.
 #
 #   $2 - GitHub organization name.
-#        Example: PTB-MR
+#        Example: fzimmermann89
 #
 #   $3 - (Optional) If provided, enables ephemeral mode: the runner will handle only one job.
 #        The runner name is constructed uniquely, following the logic in .github/slurm_cronjob.py.

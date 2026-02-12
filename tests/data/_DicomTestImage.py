@@ -9,10 +9,10 @@ import numpy as np
 import pydicom
 import torch
 from einops import repeat
-from mrpro.data import Rotation, SpatialDimension
-from mrpro.phantoms import EllipsePhantom
-from mrpro.utils import RandomGenerator
-from mrpro.utils.unit_conversion import s_to_ms
+from mr2.data import Rotation, SpatialDimension
+from mr2.phantoms import EllipsePhantom
+from mr2.utils import RandomGenerator
+from mr2.utils.unit_conversion import s_to_ms
 from pydicom.dataset import set_pixel_data
 
 
@@ -119,7 +119,7 @@ class DicomTestImage:
         dataset.PatientID = 'Ellipse001'
         dataset.PatientSex = 'O'
         dataset.Modality = 'MR'
-        dataset.StudyDescription = 'MRpro'
+        dataset.StudyDescription = 'mrtwo'
         dataset.SeriesDate = dt.strftime('%Y%m%d')
         dataset.SeriesTime = dt.strftime('%H%M%S.%f')
         dataset.SeriesDescription = series_description

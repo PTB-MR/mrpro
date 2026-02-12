@@ -10,14 +10,14 @@ import requests as r
 This script is intended to run periodically by the cron.
 
 Add the following line into the list of cron jobs:
-*/5 * * * * . /path/to/mrpro.rc; /path/to/python /path/to/slurm_cronjob.py >> /path/to/err.log 2>&1
+*/5 * * * * . /path/to/mr2.rc; /path/to/python /path/to/slurm_cronjob.py >> /path/to/err.log 2>&1
 
-Example of the mrpro.rc file content with the required environmental variables:
+Example of the mr2.rc file content with the required environmental variables:
 
 # name of the organization
-export GITHUB_OWNER="PTB-MR"
+export GITHUB_OWNER="fzimmermann89"
 # name of the repository
-export GITHUB_REPOSITORY="mrpro"
+export GITHUB_REPOSITORY="mr2"
 # name of the system user
 export USER_NAME="XXX"
 # id of the GitHub workflow to be periodically checked
@@ -54,7 +54,7 @@ if UNSET_VARS:
     raise ValueError(error_message)
 
 SBATCH_SUBMIT_COMMAND = """#!/bin/bash
-#SBATCH --job-name=mrpro-runner-{RUN_ID} # name of the job
+#SBATCH --job-name=mr2-runner-{RUN_ID} # name of the job
 #SBATCH --ntasks=6  # number of "tasks" (default: allocates 1 core per task)
 #SBATCH --mem=64G
 #SBATCH -t 0-00:60:00   # time in d-hh:mm:ss
@@ -66,7 +66,7 @@ SBATCH_SUBMIT_COMMAND = """#!/bin/bash
 #SBATCH -p equipment_typeG # Request GPU
 
 # display the config file
-singularity exec --nv --pwd /actions-runner --writable-tmpfs --contain docker://hpcharbor.berlin.ptb.de/abt81/mrpro_runner:latest\
+singularity exec --nv --pwd /actions-runner --writable-tmpfs --contain docker://hpcharbor.berlin.ptb.de/abt81/mr2_runner:latest\
     /actions-runner/entrypoint.sh {RUNNER_TOKEN} {GITHUB_OWNER} {RUN_ID} {RUNNER_GROUP}
 sleep 15"""
 
@@ -123,7 +123,7 @@ def dispatch_run(runner_token: str, run_id: int) -> None:
         text=True,
         capture_output=True,
     )
-    logger.info(f'[run_id={run_id}]: dispatched, job name: mrpro-runner-{run_id}, stdout: {process.stdout.strip()}')
+    logger.info(f'[run_id={run_id}]: dispatched, job name: mr2-runner-{run_id}, stdout: {process.stdout.strip()}')
 
 
 API_HEADERS = {
@@ -168,7 +168,7 @@ def main() -> None:
             for workflow_run in payload.get('workflow_runs'):
                 run_id = workflow_run.get('id')
                 # check if there is a job for such run_id in slurm
-                if f'mrpro-runner-{run_id}' in running_job_names:
+                if f'mr2-runner-{run_id}' in running_job_names:
                     logger.info(f'[run_id={run_id}]: already queued')
                     continue
                 # this means there is no runner dispatched for the run

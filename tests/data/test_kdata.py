@@ -8,13 +8,13 @@ from typing import Literal
 import pytest
 import torch
 from einops import repeat
-from mrpro.data import KData, KHeader, KTrajectory, SpatialDimension
-from mrpro.data.acq_filters import has_n_coils, is_coil_calibration_acquisition, is_image_acquisition
-from mrpro.data.Dataclass import InconsistentDeviceError
-from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
-from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
-from mrpro.operators import FastFourierOp
-from mrpro.utils import RandomGenerator
+from mr2.data import KData, KHeader, KTrajectory, SpatialDimension
+from mr2.data.acq_filters import has_n_coils, is_coil_calibration_acquisition, is_image_acquisition
+from mr2.data.Dataclass import InconsistentDeviceError
+from mr2.data.traj_calculators import KTrajectoryIsmrmrd
+from mr2.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
+from mr2.operators import FastFourierOp
+from mr2.utils import RandomGenerator
 
 from tests import relative_image_difference
 from tests.phantoms import EllipsePhantomTestData
@@ -429,7 +429,7 @@ def test_KData_to_file(ismrmrd_cart, tmp_path_factory):
     traj = random_generator.float32_tensor(size=(3, kdata.data.shape[0], 1, *kdata.data.shape[2:]))
     kdata = KData(header=kdata.header, data=kdata.data, traj=KTrajectory.from_tensor(traj))
 
-    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_saved_from_mrpro.h5'
+    ismrmrd_filename = tmp_path_factory.mktemp('mr2') / 'ismrmrd_saved_from_mr2.h5'
     kdata.to_file(ismrmrd_filename)
     kdata_reload = KData.from_file(ismrmrd_filename, KTrajectoryIsmrmrd())
 

@@ -2,12 +2,12 @@
 
 import pytest
 import torch
-from mrpro.algorithms.optimizers import pgd
-from mrpro.data.SpatialDimension import SpatialDimension
-from mrpro.operators import FastFourierOp, LinearOperatorMatrix, WaveletOp
-from mrpro.operators.functionals import L1NormViewAsReal, L2NormSquared
-from mrpro.phantoms import EllipsePhantom
-from mrpro.utils import RandomGenerator
+from mr2.algorithms.optimizers import pgd
+from mr2.data.SpatialDimension import SpatialDimension
+from mr2.operators import FastFourierOp, LinearOperatorMatrix, WaveletOp
+from mr2.operators.functionals import L1NormViewAsReal, L2NormSquared
+from mr2.phantoms import EllipsePhantom
+from mr2.utils import RandomGenerator
 
 
 @pytest.mark.parametrize(('stepsize', 'backtrack_factor'), [(1.0, 1.0), (1e5, 0.8)])

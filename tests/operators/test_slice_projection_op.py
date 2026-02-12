@@ -6,10 +6,10 @@ from typing import Literal
 import numpy as np
 import pytest
 import torch
-from mrpro.data import Rotation, SpatialDimension
-from mrpro.operators import SliceProjectionOp
-from mrpro.utils import RandomGenerator
-from mrpro.utils.slice_profiles import SliceGaussian, SliceInterpolate, SliceSmoothedRectangular
+from mr2.data import Rotation, SpatialDimension
+from mr2.operators import SliceProjectionOp
+from mr2.utils import RandomGenerator
+from mr2.utils.slice_profiles import SliceGaussian, SliceInterpolate, SliceSmoothedRectangular
 
 from tests import (
     dotproduct_adjointness_test,

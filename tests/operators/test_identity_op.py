@@ -2,9 +2,9 @@
 
 import pytest
 import torch
-from mrpro.operators import IdentityOp, MagnitudeOp, MultiIdentityOp
-from mrpro.operators.LinearOperator import LinearOperator
-from mrpro.utils import RandomGenerator
+from mr2.operators import IdentityOp, MagnitudeOp, MultiIdentityOp
+from mr2.operators.LinearOperator import LinearOperator
+from mr2.utils import RandomGenerator
 from typing_extensions import assert_type
 
 

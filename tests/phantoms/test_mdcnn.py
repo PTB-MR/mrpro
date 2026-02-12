@@ -8,9 +8,9 @@ import numpy as np
 import pytest
 import scipy.io
 import torch
-from mrpro.data import KData
-from mrpro.phantoms.mdcnn import MDCNNDataset, download_mdcnn
-from mrpro.utils import RandomGenerator
+from mr2.data import KData
+from mr2.phantoms.mdcnn import MDCNNDataset, download_mdcnn
+from mr2.utils import RandomGenerator
 
 N_PHASES = 2
 N_COILS = 3

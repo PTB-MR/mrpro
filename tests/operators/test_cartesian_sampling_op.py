@@ -5,9 +5,9 @@ from typing import TypeAlias
 import pytest
 import torch
 from einops import rearrange
-from mrpro.data import KTrajectory, SpatialDimension
-from mrpro.operators import CartesianMaskingOp, CartesianSamplingOp
-from mrpro.utils import RandomGenerator
+from mr2.data import KTrajectory, SpatialDimension
+from mr2.operators import CartesianMaskingOp, CartesianSamplingOp
+from mr2.utils import RandomGenerator
 from typing_extensions import Unpack
 
 from tests import (

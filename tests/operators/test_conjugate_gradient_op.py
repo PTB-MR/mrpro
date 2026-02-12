@@ -1,8 +1,8 @@
 """Tests the conjugate gradient operator."""
 
 import torch
-from mrpro.operators import ConjugateGradientOp, EinsumOp, LinearOperatorMatrix
-from mrpro.utils import RandomGenerator
+from mr2.operators import ConjugateGradientOp, EinsumOp, LinearOperatorMatrix
+from mr2.utils import RandomGenerator
 
 
 def random_linearop(size: tuple[int, int], rng: RandomGenerator):

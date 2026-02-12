@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 import requests
 import torch
-from mrpro.phantoms.brainweb import (
+from mr2.phantoms.brainweb import (
     ALL_CLASSES,
     OVERVIEW_URL,
     VERSION,
@@ -19,7 +19,7 @@ from mrpro.phantoms.brainweb import (
     resize,
     trim_indices,
 )
-from mrpro.utils import RandomGenerator
+from mr2.utils import RandomGenerator
 
 BRAINWEBTESTSHAPE = (362 // 2, 434 // 2, 362 // 2)  # reduce the size of the brainweb data for faster testing
 
@@ -27,7 +27,7 @@ BRAINWEBTESTSHAPE = (362 // 2, 434 // 2, 362 // 2)  # reduce the size of the bra
 @pytest.fixture(autouse=True)
 def modify_shape(monkeypatch):
     """Modify the shape of the brainweb data for faster testing."""
-    monkeypatch.setattr('mrpro.phantoms.brainweb.BRAINWEBSHAPE', BRAINWEBTESTSHAPE)
+    monkeypatch.setattr('mr2.phantoms.brainweb.BRAINWEBSHAPE', BRAINWEBTESTSHAPE)
 
 
 @pytest.fixture

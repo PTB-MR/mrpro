@@ -71,7 +71,7 @@ zenodo_get.download(
 # We will use the following libraries:
 # %%
 import matplotlib.pyplot as plt
-import mrpro
+import mr2
 import torch
 
 # %% [markdown]
@@ -80,10 +80,10 @@ import torch
 
 # %%
 # Read raw data and trajectory
-kdata = mrpro.data.KData.from_file(data_folder / '2D_GRad_map_t1.h5', mrpro.data.traj_calculators.KTrajectoryIsmrmrd())
+kdata = mr2.data.KData.from_file(data_folder / '2D_GRad_map_t1.h5', mr2.data.traj_calculators.KTrajectoryIsmrmrd())
 
 # Perform the reconstruction
-reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction(kdata)
+reconstruction = mr2.algorithms.reconstruction.DirectReconstruction(kdata)
 img_average = reconstruction(kdata)
 
 # Visualize average image
@@ -107,7 +107,7 @@ kdata_dynamic = kdata[..., split_idx, :]
 # %%
 # Perform the reconstruction
 # Here we use the same coil sensitivity map for all dynamics
-reconstruction_dynamic = mrpro.algorithms.reconstruction.DirectReconstruction(kdata_dynamic, csm=reconstruction.csm)
+reconstruction_dynamic = mr2.algorithms.reconstruction.DirectReconstruction(kdata_dynamic, csm=reconstruction.csm)
 img_dynamic = reconstruction_dynamic(kdata_dynamic)
 # Get absolute value of complex image and normalize the images
 img_rss_dynamic = img_dynamic.rss()
@@ -132,7 +132,7 @@ plt.show()
 # This can be calculated from the `acquisition_time_stamp`. If we average the `acquisition_time_stamp`-values for each
 # dynamic image and subtract the first `acquisition_time_stamp`, we get the mean time since the inversion pulse for each
 # dynamic. Note: The time taken by the spoiler gradient is taken into consideration in the
-# `~mrpro.operators.models.TransientSteadyStateWithPreparation`-model and does not have to be added here.
+# `~mr2.operators.models.TransientSteadyStateWithPreparation`-model and does not have to be added here.
 # ```{note}
 # The acquisition_time_stamp is not given in time units but in vendor-specific time stamp units. For the Siemens
 # data used here, one time stamp corresponds to 2.5 ms.
@@ -148,7 +148,7 @@ sampling_time = (sampling_time - sampling_time[0, 0]).mean(-1)
 # the time "between the beginning of a pulse sequence and the beginning of the succeeding (essentially identical) pulse
 # sequence" (see [DICOM Standard Browser](https://dicom.innolitics.com/ciods/mr-image/mr-image/00180080)). We have one
 # inversion pulse at the beginning, which is never repeated and hence ``tr`` is the duration of the entire scan.
-# Therefore, we have to use the parameter `~mrpro.data.KHeader.echo_spacing`, which describes the time between
+# Therefore, we have to use the parameter `~mr2.data.KHeader.echo_spacing`, which describes the time between
 # two gradient echoes.
 
 # %%
@@ -162,17 +162,17 @@ else:
 # the acquired data, but we have to know the value and set it by hand to 20 ms. Now we can define the signal model.
 
 # %%
-model_op = mrpro.operators.models.TransientSteadyStateWithPreparation(
+model_op = mr2.operators.models.TransientSteadyStateWithPreparation(
     sampling_time, repetition_time, m0_scaling_preparation=-1, delay_after_preparation=0.02
 )
 
 # %% [markdown]
 # The reconstructed image data is complex-valued. We could fit a complex $M_0$ to the data, but in this case it is more
 # robust to fit $|q(M_0, T_1, \alpha)|$ to the magnitude of the image data. We therefore combine our model with a
-# `~mrpro.operators.MagnitudeOp`.
+# `~mr2.operators.MagnitudeOp`.
 
 # %%
-magnitude_model_op = mrpro.operators.MagnitudeOp() @ model_op
+magnitude_model_op = mr2.operators.MagnitudeOp() @ model_op
 
 # %% [markdown]
 # ### Constraints
@@ -180,7 +180,7 @@ magnitude_model_op = mrpro.operators.MagnitudeOp() @ model_op
 # and 3 s. Further, we can constrain $\alpha$. Although the effective flip angle can vary, it can only vary by a
 # certain percentage relative to the nominal flip angle. Here, we chose a maximum deviation from the nominal flip angle
 # of 50%.
-# We use a `~mrpro.operators.ConstraintsOp` to define these constraints. It maps unconstrained parameters to constrained
+# We use a `~mr2.operators.ConstraintsOp` to define these constraints. It maps unconstrained parameters to constrained
 # parameters, such that the optimizer can work with unconstrained parameters
 # %%
 if kdata_dynamic.header.fa is None:
@@ -188,7 +188,7 @@ if kdata_dynamic.header.fa is None:
 
 nominal_flip_angle = float(kdata_dynamic.header.fa[0])
 
-constraints_op = mrpro.operators.ConstraintsOp(
+constraints_op = mr2.operators.ConstraintsOp(
     bounds=(
         (None, None),  # M0 is not constrained
         (0.05, 3.0),  # T1 is constrained between 50 ms and 3 s
@@ -201,7 +201,7 @@ constraints_op = mrpro.operators.ConstraintsOp(
 # As a loss function for the optimizer, we calculate the mean squared error between the image data $x$ and our signal
 # model $q$.
 # %%
-mse_loss = mrpro.operators.functionals.MSE(img_rss_dynamic)
+mse_loss = mr2.operators.functionals.MSE(img_rss_dynamic)
 
 # %% [markdown]
 # Now we can simply combine the loss function, the signal model and the constraints to solve
@@ -223,14 +223,14 @@ m0_start = img_rss_dynamic[0]
 t1_start = torch.ones_like(m0_start)
 flip_angle_start = torch.ones_like(m0_start) * torch.as_tensor(kdata_dynamic.header.fa)
 # %% [markdown]
-# If we use a `~mrpro.operators.ConstraintsOp`, the start values must be transformed to the
+# If we use a `~mr2.operators.ConstraintsOp`, the start values must be transformed to the
 # unconstrained space before the optimization and back to the original space after the optimization.
 # %%
 initial_parameters = constraints_op.inverse(m0_start, t1_start, flip_angle_start)
 # %% [markdown]
 # Now we can run the optimizer in the unconstrained space.
 # %%
-result = mrpro.algorithms.optimizers.lbfgs(functional, initial_parameters=initial_parameters)
+result = mr2.algorithms.optimizers.lbfgs(functional, initial_parameters=initial_parameters)
 # %% [markdown]
 # Transforming the parameters back to the original space, we get the final $M_0$, $T_1$, and flip angle:
 # %%
@@ -266,6 +266,6 @@ plt.show()
 # ### Next steps
 # The quality of the final $T_1$ maps depends on the quality of the individual dynamic images. Using more advanced image
 # reconstruction methods, we can improve the image quality and hence the quality of the maps.
-# Try to exchange `~mrpro.algorithms.reconstruction.DirectReconstruction` above with
-# `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction`
-# or try a different optimizer such as `~mrpro.algorithms.optimizers.adam`.
+# Try to exchange `~mr2.algorithms.reconstruction.DirectReconstruction` above with
+# `~mr2.algorithms.reconstruction.IterativeSENSEReconstruction`
+# or try a different optimizer such as `~mr2.algorithms.optimizers.adam`.

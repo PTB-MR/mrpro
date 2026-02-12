@@ -9,13 +9,14 @@ ARG PYTHON="python3.10"
 COPY docker/install_system.sh .
 RUN bash install_system.sh && rm install_system.sh
 
-# install mrpro dependencies
+# install mr2 dependencies
 # forces rebuild if either the version or the pyproject.toml changes
 COPY docker/minimal_requirements.txt ./
 RUN python -m pip install --no-cache-dir -r minimal_requirements.txt && rm -rf /root/.cache
 
-COPY . /mrpro/
-RUN python -m pip install "/mrpro[tests]" --no-cache-dir
+COPY . /mr2/
+RUN python -m pip install "/mr2[tests]" --no-cache-dir
 
 # set user
 USER runner
+ENV PATH="/github/home/.local/bin:/home/runner/.local/bin:${PATH}"

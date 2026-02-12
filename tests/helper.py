@@ -1,7 +1,7 @@
 """Helper/Utilities for test functions."""
 
 import torch
-from mrpro.operators import LinearOperator, Operator
+from mr2.operators import LinearOperator, Operator
 from typing_extensions import TypeVarTuple, Unpack
 
 

@@ -1,7 +1,7 @@
 """Ellipse phantom for testing."""
 
 import torch
-from mrpro.phantoms import EllipseParameters, EllipsePhantom
+from mr2.phantoms import EllipseParameters, EllipsePhantom
 
 
 class EllipsePhantomTestData:

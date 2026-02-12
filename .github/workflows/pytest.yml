@@ -11,6 +11,7 @@ jobs:
     name: Get List of Dockerfiles for Containers
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       packages: read
     outputs:
       imagenames: ${{ steps.set-matrix.outputs.imagenames }}
@@ -21,8 +22,8 @@ jobs:
       - name: Retrieve Docker Image Names
         id: set-matrix
         run: |
-          # search for Dockerfile* in the docker directory, replace "Dockerfile" prefix with "mrpro" and to imagenames
-          imagenames=$(find docker -type f -name 'Dockerfile_py*' -exec basename {} \; | sed 's/^Dockerfile/mrpro/')
+          # search for Dockerfile* in the docker directory, replace "Dockerfile" prefix with "mr2" and to imagenames
+          imagenames=$(find docker -type f -name 'Dockerfile_py*' -exec basename {} \; | sed 's/^Dockerfile/mr2/')
           echo "image names: $imagenames"
 
           # if imagenames is empty - fail the workflow
@@ -35,7 +36,7 @@ jobs:
           for image in $imagenames
           do
             echo "checking $image ..."
-            if docker manifest inspect "ghcr.io/ptb-mr/"$image":latest" >/dev/null; then
+            if docker manifest inspect "ghcr.io/fzimmermann89/"$image":latest" >/dev/null; then
               echo "... $image added"
               imagenames_latest+=$image":"
             fi
@@ -58,17 +59,17 @@ jobs:
       matrix:
         imagename: ${{ fromJson(needs.get_dockerfiles.outputs.imagenames) }}
     container:
-      image: ghcr.io/ptb-mr/${{ matrix.imagename }}:latest
+      image: ghcr.io/fzimmermann89/${{ matrix.imagename }}:latest
       options: --user runner
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
 
-      - name: Install MRpro and Dependencies
+      - name: Install mrtwo and Dependencies
         # use cpu version of torch
         run: |
           # for the test of minimal requirements we do not want to update dependencies
-          if [ "${{ matrix.imagename }}" = "mrpro_py310_minimal" ]; then
+          if [ "${{ matrix.imagename }}" = "mr2_py310_minimal" ]; then
             pip install .[tests]
           else
             pip install --index-url=https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple/ --upgrade --upgrade-strategy eager .[tests]
@@ -83,11 +84,11 @@ jobs:
         # shell bash sets the -o pipefail
         run: |
           # for the test of minimal requirements we do not want to update dependencies
-          if [ "${{ matrix.imagename }}" = "mrpro_py310_minimal" ]; then
-            pytest -n 4 -m "not cuda"
+          if [ "${{ matrix.imagename }}" = "mr2_py310_minimal" ]; then
+            python -m pytest -n 4 -m "not cuda"
           else
-            pytest -n 4 -m "not cuda" --junitxml=pytest.xml \
-            --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt
+            python -m pytest -n 4 -m "not cuda" --junitxml=pytest.xml \
+            --cov-report=term-missing:skip-covered --cov=mr2 | tee pytest-coverage.txt
           fi
         shell: bash
 

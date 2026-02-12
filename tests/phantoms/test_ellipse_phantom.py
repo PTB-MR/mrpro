@@ -2,9 +2,9 @@
 
 import pytest
 import torch
-from mrpro.data import SpatialDimension
-from mrpro.data.traj_calculators import KTrajectoryCartesian
-from mrpro.operators import FastFourierOp, FourierOp
+from mr2.data import SpatialDimension
+from mr2.data.traj_calculators import KTrajectoryCartesian
+from mr2.operators import FastFourierOp, FourierOp
 
 from tests import relative_image_difference
 from tests.phantoms import EllipsePhantomTestData

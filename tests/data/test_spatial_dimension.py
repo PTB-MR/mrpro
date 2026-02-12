@@ -2,8 +2,8 @@
 
 import pytest
 import torch
-from mrpro.data import SpatialDimension
-from mrpro.utils import RandomGenerator
+from mr2.data import SpatialDimension
+from mr2.utils import RandomGenerator
 from typing_extensions import Any, assert_type
 
 

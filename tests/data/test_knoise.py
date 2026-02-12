@@ -2,7 +2,7 @@
 
 import pytest
 import torch
-from mrpro.data import KNoise
+from mr2.data import KNoise
 
 
 def test_knoise_to_complex128(random_test_data) -> None:

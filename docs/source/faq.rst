@@ -27,8 +27,8 @@ More information on this can also be found `here <https://ismrmrd.readthedocs.io
 
 Some parameters in my MRD-file are wrong. What shall I do?
 ==========================================================
-MRpro is designed to handle valid raw data files. Therefore, it is not a good idea to try to compensate for errors in
-the MRD file in MRpro. The best solution of course is to fix the source of the error. Nevertheless, if you have already
+mrtwo is designed to handle valid raw data files. Therefore, it is not a good idea to try to compensate for errors in
+the MRD file in mrtwo. The best solution of course is to fix the source of the error. Nevertheless, if you have already
 acquired data then of course it is often not easy to reacquire everything. The next best thing is to use MRD-tools to
 fix the MRD-file. One option is to use the PyPi package of `MRD <https://pypi.org/project/ismrmrd/>`_. With a simple
 script such as e.g.:

@@ -2,9 +2,9 @@
 
 import h5py
 import pytest
-from mrpro.data import KData
-from mrpro.phantoms.m4raw import M4RawDataset
-from mrpro.utils import RandomGenerator
+from mr2.data import KData
+from mr2.phantoms.m4raw import M4RawDataset
+from mr2.utils import RandomGenerator
 
 N_COILS = 2
 N_K0 = 256
