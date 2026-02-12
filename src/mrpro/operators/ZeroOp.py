@@ -22,15 +22,19 @@ class ZeroOp(LinearOperator):
         Parameters
         ----------
         keep_shape
-            If True, the shape of the input is kept.
-            If False, the output is, regardless of the input shape, an integer scalar 0,
+            If `True`, the shape of the input is kept.
+            If `False`, the output is, regardless of the input shape, an integer scalar 0,
             which can broadcast to the input shape and dtype.
         """
         self.keep_shape = keep_shape
         super().__init__()
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply the operator to the input.
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply the zero operator to the input tensor.
+
+        This operator returns a tensor of zeros. Depending on the `keep_shape`
+        attribute set during initialization, the output will either be a
+        tensor of zeros with the same shape as the input `x`, or a scalar zero.
 
         Parameters
         ----------
@@ -39,7 +43,21 @@ class ZeroOp(LinearOperator):
 
         Returns
         -------
-        zeros_like(x) or scalar 0
+            A tensor of zeros. This will be `torch.zeros_like(x)`
+            if `keep_shape` is `True`, or `torch.tensor(0)` if `keep_shape` is `False`.
+
+        .. note::
+            Prefer calling the instance of the ZeroOp operator as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
+        """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply forward of ZeroOp.
+
+        .. note::
+            Prefer calling the instance of the ZeroOp operator as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         if self.keep_shape:
             return (torch.zeros_like(x),)
@@ -47,7 +65,12 @@ class ZeroOp(LinearOperator):
             return (torch.tensor(0),)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply the adjoint of the operator to the input.
+        """Apply the adjoint of the zero operator.
+
+        Since the zero operator is self-adjoint (mapping everything to zero),
+        this method behaves identically to the forward operation. It returns
+        a tensor of zeros, either with the same shape as input `x` or as a
+        scalar zero, depending on `keep_shape`.
 
         Parameters
         ----------
@@ -56,9 +79,16 @@ class ZeroOp(LinearOperator):
 
         Returns
         -------
-        zeros_like(x)
+            A tensor of zeros. This will be `torch.zeros_like(x)`
+            if `keep_shape` is `True`, or `torch.tensor(0)` if `keep_shape` is `False`.
+
         """
         if self.keep_shape:
             return (torch.zeros_like(x),)
         else:
             return (torch.tensor(0),)
+
+    @property
+    def H(self) -> LinearOperator:  # noqa: N802
+        """Adjoint of the Zero Operator."""
+        return self

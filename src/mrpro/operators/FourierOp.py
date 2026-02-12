@@ -1,6 +1,7 @@
 """Fourier Operator."""
 
 from collections.abc import Sequence
+from functools import cached_property
 
 import torch
 from typing_extensions import Self
@@ -120,17 +121,30 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
             traj=kdata.traj,
         )
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Forward operator mapping the coil-images to the coil k-space data.
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply forward Fourier operation (image to k-space).
+
+        This operator maps coil image data to coil k-space data.
+        Depending on the trajectory and dimensions, it may involve NUFFT, FFT,
+        and Cartesian sampling operations.
 
         Parameters
         ----------
         x
-            coil image data with shape: `(... coils z y x)`
+            Coil image data, typically with shape `(... coils z y x)`.
 
         Returns
         -------
-            coil k-space data with shape: `(... coils k2 k1 k0)`
+            Coil k-space data, typically with shape `(... coils k2 k1 k0)`.
+        """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply forward of FourierOp.
+
+        .. note::
+            Prefer calling the instance of the FourierOp operator as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         # NUFFT Type 2 followed by FFT
         if self._non_uniform_fast_fourier_op:
@@ -141,16 +155,20 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
         return (x,)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Adjoint operator mapping the coil k-space data to the coil images.
+        """Apply adjoint Fourier operation (k-space to image).
+
+        This operator maps coil k-space data to coil image data.
+        It is the adjoint of the forward operation and involves corresponding
+        adjoint NUFFT, FFT, and Cartesian sampling operations.
 
         Parameters
         ----------
         x
-            coil k-space data with shape: `(... coils k2 k1 k0)`
+            Coil k-space data, typically with shape `(... coils k2 k1 k0)`.
 
         Returns
         -------
-            coil image data with shape: `(... coils z y x)`
+            Coil image data, typically with shape `(... coils z y x)`.
         """
         # FFT followed by NUFFT Type 1
         if self._fast_fourier_op and self._cart_sampling_op:
@@ -160,10 +178,13 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
             (x,) = self._non_uniform_fast_fourier_op.adjoint(x)
         return (x,)
 
-    @property
+    @cached_property
     def gram(self) -> LinearOperator:
         """Return the gram operator."""
-        return FourierGramOp(self)
+        try:
+            return FourierGramOp(self)
+        except NotImplementedError:
+            return self.H @ self
 
     def __repr__(self) -> str:
         """Representation method for Fourier Operator."""
@@ -219,25 +240,53 @@ class FourierGramOp(LinearOperator):
 
         """
         super().__init__()
-        if fourier_op._non_uniform_fast_fourier_op:
-            self.nufft_gram: None | LinearOperator = fourier_op._non_uniform_fast_fourier_op.gram
-        else:
-            self.nufft_gram = None
 
         if fourier_op._fast_fourier_op and fourier_op._cart_sampling_op:
+            sampling_gram = fourier_op._cart_sampling_op.gram
+            if (
+                fourier_op._non_uniform_fast_fourier_op
+                and sampling_gram.mask is not None
+                and any(sampling_gram.mask.shape[d] != 1 for d in fourier_op._nufft_dims)
+            ):
+                raise NotImplementedError(
+                    'FourierGramOp does not support non-uniform FFTs combined with Cartesian sampling '
+                    'that differs along the NUFFT dimensions.'
+                )
             self.fast_fourier_gram: None | LinearOperator = (
                 fourier_op._fast_fourier_op.H @ fourier_op._cart_sampling_op.gram @ fourier_op._fast_fourier_op
             )
         else:
             self.fast_fourier_gram = None
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply the operator to the input tensor.
+        if fourier_op._non_uniform_fast_fourier_op:
+            self.nufft_gram: None | LinearOperator = fourier_op._non_uniform_fast_fourier_op.gram
+        else:
+            self.nufft_gram = None
+
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply the Gram operator of the FourierOp (F.H @ F).
+
+        This operation applies the composition of the adjoint Fourier operator
+        and the forward Fourier operator. It may involve Gram operators
+        of NUFFT and/or FFT components.
 
         Parameters
         ----------
         x
-            input tensor, shape: `(..., coils, z, y, x)`
+            Input tensor, typically image-space data with shape `(..., coils, z, y, x)`.
+
+        Returns
+        -------
+            Output tensor, typically image-space data after F.H @ F has been applied.
+        """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply forward of FourierGramOp.
+
+        .. note::
+            Prefer calling the instance of the FourierGramOp operator as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         if self.nufft_gram:
             (x,) = self.nufft_gram(x)
@@ -247,12 +296,21 @@ class FourierGramOp(LinearOperator):
         return (x,)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply the adjoint operator to the input tensor.
+        """Apply the adjoint of the Gram operator.
+
+        Since the Gram operator (F.H @ F) is self-adjoint, this method
+        calls the forward operation.
 
         Parameters
         ----------
         x
-            input tensor, shape: `(..., coils, k2, k1, k0)`
+            Input tensor, typically image-space data with shape `(..., coils, z, y, x)`.
+            Note: The original docstring mentioned k-space shape, but for a self-adjoint
+            image-to-image Gram operator, the input to adjoint should match input to forward.
+
+        Returns
+        -------
+            Output tensor, same as the forward operation.
         """
         return self.forward(x)
 

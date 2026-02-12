@@ -747,6 +747,16 @@ def test_approx_equal_single_rotation() -> None:
     assert not p.approx_equal(q[3], atol=1e-8, degrees=True)
 
 
+def test_equal() -> None:
+    """Test __eq__ method of the Rotation class."""
+    a = Rotation.random(10, random_state=0)
+    assert a == a  # same instance
+    b = Rotation.random(10, random_state=0)
+    assert b == a  # same random state
+    c = Rotation.random(10, random_state=1)
+    assert c != a  # different random state
+
+
 def test_apply_single_spatialdim() -> None:
     vec = SpatialDimension(1.0, 2.0, 3.0)
     mat = torch.tensor([[0, -1, 0], [1, 0, 0], [0, 0, 1]]).float()
@@ -939,7 +949,7 @@ def test_align_vectors_rssd_sensitivity() -> None:
     sens_expected = torch.tensor([[0.2, 0.0, 0.0], [0.0, 1.5, 1.0], [0.0, 1.0, 1.0]])
     a = [[0, 1, 0], [0, 1, 1], [0, 1, 1]]
     b = [[1.0, 0.0, 0.0], [1.0, 1.1, 0.0], [1.0, 0.9, 0.0]]
-    rot, rssd, sens = Rotation.align_vectors(a, b, return_sensitivity=True)
+    _, rssd, sens = Rotation.align_vectors(a, b, return_sensitivity=True)
     assert math.isclose(rssd, rssd_expected, abs_tol=1e-6, rel_tol=1e-4)
     assert torch.allclose(sens, sens_expected, atol=1e-6, rtol=1e-4)
 
@@ -1233,13 +1243,23 @@ def test_as_euler_contiguous() -> None:
     assert e2.is_contiguous()
 
 
-def test_concatenate() -> None:
-    """Test Rotation"""
+def test_concatenate_classmethod() -> None:
+    """Test concatenation of Rotation objects as a classmethod"""
     rotation = Rotation.random(10, random_state=0)
     sizes = [1, 2, 3, 1, 3]
     starts = [0, *np.cumsum(sizes)]
     split = [rotation[i : i + n] for i, n in zip(starts, sizes, strict=False)]
     result = Rotation.concatenate(split)
+    assert (rotation.as_quat() == result.as_quat()).all()
+
+
+def test_concatenate_instance() -> None:
+    """Test concatenation of Rotation objects as an instance method"""
+    rotation = Rotation.random(10, random_state=0)
+    sizes = [1, 2, 3, 1, 3]
+    starts = [0, *np.cumsum(sizes)]
+    split = [rotation[i : i + n] for i, n in zip(starts, sizes, strict=False)]
+    result = split[0].concatenate(*split[1:])
     assert (rotation.as_quat() == result.as_quat()).all()
 
 
@@ -1260,7 +1280,7 @@ def test_len_and_bool() -> None:
     assert len(rotation_multi_empty) == 0
     assert len(rotation_multi_one) == 1
     assert len(rotation_multi) == 2
-    with pytest.raises(TypeError, match='Single rotation has no len().'):
+    with pytest.raises(TypeError, match=r'Single rotation has no len\(\)\.'):
         len(rotation_single)
 
     # Rotation should always be truthy. See scigh-16663
@@ -1276,6 +1296,15 @@ def test_mean(theta: float) -> None:
     axes = torch.cat((-torch.eye(3), torch.eye(3)))
     r = Rotation.from_rotvec(theta * axes)
     assert math.isclose(r.mean().magnitude(), 0.0, abs_tol=1e-7)
+
+
+def test_mean_single() -> None:
+    """Test mean with a single rotation"""
+    r = Rotation.from_rotvec([0, 0, 0])
+    mean = r.mean()
+    assert r.mean() == mean
+    assert r is not mean
+    assert mean.single
 
 
 @pytest.mark.parametrize('theta', [0.0, np.pi / 8, np.pi / 4, np.pi / 3, np.pi / 2])
@@ -1351,10 +1380,10 @@ def test_quaternion_properties_single() -> None:
     assert r.quaternion_y == quat[AXIS_ORDER.index('y')]
     assert r.quaternion_z == quat[AXIS_ORDER.index('z')]
     assert r.quaternion_w == quat[-1]
-    r.quaternion_x = 1.0  # type: ignore[assignment]
+    r.quaternion_x = 1.0
     r.quaternion_y = torch.tensor(2.0)
-    r.quaternion_z = 3  # type: ignore[assignment]
-    r.quaternion_w = 4.0  # type: ignore[assignment]
+    r.quaternion_z = 3
+    r.quaternion_w = 4.0
     torch.testing.assert_close(r.quaternion_x, torch.tensor(1.0))
     torch.testing.assert_close(r.quaternion_y, torch.tensor(2.0))
     torch.testing.assert_close(r.quaternion_z, torch.tensor(3.0))
@@ -1387,17 +1416,20 @@ def test_axis_order_zyx() -> None:
 
 def test_from_to_directions() -> None:
     """Test that from_directions and as_directions are inverse operations"""
-    one = torch.ones(1, 2, 3, 4)
-
     # must be a rotation
-    b1 = SpatialDimension(one * (0.8146), one * (0.4707), one * (-0.3388))
-    b2 = SpatialDimension(one * (-0.4432), one * (0.8820), one * (0.1599))
-    b3 = SpatialDimension(one * (-0.3741), one * (-0.0199), one * (-0.9272))
+    b1 = SpatialDimension(*(torch.as_tensor(v) for v in ([-0.1235, -0.1230], [-0.1411, -0.1639], [0.9823, 0.9788])))
+    b2 = SpatialDimension(*(torch.as_tensor(v) for v in ([-0.0186, -0.0186], [0.99, 0.9865], [0.1399, 0.1629])))
+    b3 = SpatialDimension(*(torch.as_tensor(v) for v in ([0.9922, 0.9922], [0.0010, -0.0018], [0.1249, 0.1245])))
 
     r = Rotation.from_directions(b1, b2, b3)
     torch.testing.assert_close(b1.zyx, r.as_directions()[0].zyx, atol=1e-4, rtol=0)
-    torch.testing.assert_close(b2.zyx, r.as_directions()[1].zyx, atol=1e-4, rtol=0)
-    torch.testing.assert_close(b3.zyx, r.as_directions()[2].zyx, atol=1e-4, rtol=0)
+    # b2 and b3 need broadcasting because of dim=1 along z
+    torch.testing.assert_close(torch.broadcast_to(b2.z, (2,)), r.as_directions()[1].z, atol=1e-4, rtol=0)
+    torch.testing.assert_close(b2.y, r.as_directions()[1].y, atol=1e-4, rtol=0)
+    torch.testing.assert_close(b2.x, r.as_directions()[1].x, atol=1e-4, rtol=0)
+    torch.testing.assert_close(torch.broadcast_to(b3.z, (2,)), r.as_directions()[2].z, atol=1e-4, rtol=0)
+    torch.testing.assert_close(b3.y, r.as_directions()[2].y, atol=1e-4, rtol=0)
+    torch.testing.assert_close(b3.x, r.as_directions()[2].x, atol=1e-4, rtol=0)
 
 
 def test_as_directions() -> None:

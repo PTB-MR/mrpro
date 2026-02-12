@@ -2,10 +2,11 @@
 
 from mrpro.operators.Operator import Operator
 from mrpro.operators.LinearOperator import LinearOperator
-from mrpro.operators.Functional import Functional, ProximableFunctional, ElementaryFunctional, ElementaryProximableFunctional, ScaledFunctional, ScaledProximableFunctional
+from mrpro.operators.Functional import FunctionalType, ProximableFunctional, ElementaryFunctional, ElementaryProximableFunctional, ScaledProximableFunctional
 from mrpro.operators import functionals, models
 from mrpro.operators.AveragingOp import AveragingOp
-from mrpro.operators.CartesianSamplingOp import CartesianSamplingOp
+from mrpro.operators.CartesianSamplingOp import CartesianSamplingOp, CartesianMaskingOp
+from mrpro.operators.ConjugateGradientOp import ConjugateGradientOp
 from mrpro.operators.ConstraintsOp import ConstraintsOp
 from mrpro.operators.DensityCompensationOp import DensityCompensationOp
 from mrpro.operators.DictionaryMatchOp import DictionaryMatchOp
@@ -20,6 +21,7 @@ from mrpro.operators.LinearOperatorMatrix import LinearOperatorMatrix
 from mrpro.operators.MagnitudeOp import MagnitudeOp
 from mrpro.operators.MultiIdentityOp import MultiIdentityOp
 from mrpro.operators.NonUniformFastFourierOp import NonUniformFastFourierOp
+from mrpro.operators.OptimizerOp import OptimizerOp
 from mrpro.operators.PatchOp import PatchOp
 from mrpro.operators.PCACompressionOp import PCACompressionOp
 from mrpro.operators.PhaseOp import PhaseOp
@@ -35,7 +37,9 @@ from mrpro.operators.ZeroOp import ZeroOp
 
 __all__ = [
     "AveragingOp",
+    "CartesianMaskingOp",
     "CartesianSamplingOp",
+    "ConjugateGradientOp",
     "ConstraintsOp",
     "DensityCompensationOp",
     "DictionaryMatchOp",
@@ -45,7 +49,7 @@ __all__ = [
     "FastFourierOp",
     "FiniteDifferenceOp",
     "FourierOp",
-    "Functional",
+    "FunctionalType",
     "GridSamplingOp",
     "IdentityOp",
     "Jacobian",
@@ -55,13 +59,13 @@ __all__ = [
     "MultiIdentityOp",
     "NonUniformFastFourierOp",
     "Operator",
+    "OptimizerOp",
     "PCACompressionOp",
     "PatchOp",
     "PhaseOp",
     "ProximableFunctional",
     "ProximableFunctionalSeparableSum",
     "RearrangeOp",
-    "ScaledFunctional",
     "ScaledProximableFunctional",
     "SensitivityOp",
     "SignalModel",

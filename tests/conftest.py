@@ -246,6 +246,8 @@ def ismrmrd_cart(ellipse_phantom, tmp_path_factory):
         noise_level=1e-4,
         repetitions=3,
         phantom=ellipse_phantom.phantom,
+        discard_pre=10,
+        discard_post=20,
     )
     return ismrmrd_kdata
 

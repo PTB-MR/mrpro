@@ -58,7 +58,7 @@ def test_l2_l1_identification2() -> None:
     l2 = 0.5 * L2NormSquared(target=data, divide_by_n=False)
     l1 = regularization_parameter * L1Norm(divide_by_n=False)
 
-    f = ProximableFunctionalSeparableSum(l2, l1)
+    f = l2 | l1
     g = None  # corresponds to ZeroFunctional()
     operator = LinearOperatorMatrix(((IdentityOp(),), (IdentityOp(),)))
 
@@ -91,7 +91,7 @@ def test_fourier_l2_l1_() -> None:
     l2 = 0.5 * L2NormSquared(target=data, divide_by_n=False)
     l1 = regularization_parameter * L1NormViewAsReal(divide_by_n=False)
 
-    f = ProximableFunctionalSeparableSum(l2, l1)
+    f = l2 | l1
     g = ZeroFunctional()
     operator = LinearOperatorMatrix(((fourier_op,), (IdentityOp(),)))
 
@@ -129,7 +129,7 @@ def test_fourier_l2_wavelet_l1_() -> None:
     l2 = 0.5 * L2NormSquared(target=data, divide_by_n=False)
     l1 = regularization_parameter * L1NormViewAsReal(divide_by_n=False)
 
-    f = ProximableFunctionalSeparableSum(l2, l1)
+    f = l2 | l1
     g = ZeroFunctional()
     operator = LinearOperatorMatrix(((fourier_op,), (wavelet_op,)))
 
@@ -228,7 +228,7 @@ def test_stepsizes() -> None:
     l2 = 0.5 * L2NormSquared(target=data, divide_by_n=False)
     l1 = regularization_parameter * L1Norm(divide_by_n=False)
 
-    f = ProximableFunctionalSeparableSum(l2, l1)
+    f = l2 | l1
     g = None  # corresponds to ZeroFunctional()
     operator = LinearOperatorMatrix(((IdentityOp(),), (IdentityOp(),)))
 
@@ -285,7 +285,7 @@ def test_value_errors() -> None:
     with pytest.raises(ValueError, match='same'):
         # len(f) and len(g) are not equal
         pdhg(
-            f=ProximableFunctionalSeparableSum(ZeroFunctional(), ZeroFunctional()),
+            f=(ZeroFunctional() | ZeroFunctional()),
             g=None,
             operator=None,
             initial_values=initial_values,
@@ -306,7 +306,7 @@ def test_value_errors() -> None:
         # Number of columns in operator does not match number of functionals in f
         pdhg(
             f=None,
-            g=ProximableFunctionalSeparableSum(ZeroFunctional(), ZeroFunctional()),
+            g=(ZeroFunctional() | ZeroFunctional()),
             operator=IdentityOp(),
             initial_values=initial_values,
             max_iterations=1,

@@ -1,6 +1,7 @@
 """Tests for grid sampling operator."""
 
 import contextlib
+from typing import Any, Literal
 
 import pytest
 import torch
@@ -13,7 +14,7 @@ from tests import dotproduct_adjointness_test
 
 
 @pytest.mark.parametrize('dtype', ['float32', 'float64', 'complex64'])
-def test_grid_sampling_op_dtype(dtype):
+def test_grid_sampling_op_dtype(dtype: str) -> None:
     """Test for different data types."""
     _test_grid_sampling_op_adjoint(dtype=dtype)
 
@@ -22,33 +23,33 @@ def test_grid_sampling_op_dtype(dtype):
 @pytest.mark.parametrize('batched', ['batched', 'non_batched'])
 @pytest.mark.parametrize('channel', ['multi_channel', 'single_channel'])
 @pytest.mark.parametrize('dtype', ['float32', 'complex64'])
-def test_grid_sampling_op_dim_batch_channel(dim_str, batched, channel, dtype):
+def test_grid_sampling_op_dim_batch_channel(dim_str: str, batched: str, channel: str, dtype: str) -> None:
     """Test for different dimensions."""
     _test_grid_sampling_op_adjoint(dim=int(dim_str[0]), batched=batched, channel=channel, dtype=dtype)
 
 
 @pytest.mark.parametrize('interpolation_mode', ['bilinear', 'nearest', 'bicubic'])
-def test_grid_sampling_op_interpolation_mode(interpolation_mode):
+def test_grid_sampling_op_interpolation_mode(interpolation_mode: str) -> None:
     """Test for different interpolation_modes."""
     # bicubic only supports 2D
     _test_grid_sampling_op_adjoint(dim=2, interpolation_mode=interpolation_mode)
 
 
 @pytest.mark.parametrize('padding_mode', ['zeros', 'border', 'reflection'])
-def test_grid_sampling_op_padding_mode(padding_mode):
+def test_grid_sampling_op_padding_mode(padding_mode: str) -> None:
     """Test for different padding_modes."""
     _test_grid_sampling_op_adjoint(padding_mode=padding_mode)
 
 
 @pytest.mark.parametrize('align_corners', ['no_align', 'align'])
-def test_grid_sampling_op_align_mode(align_corners):
+def test_grid_sampling_op_align_mode(align_corners: str) -> None:
     """Test for different align modes ."""
     _test_grid_sampling_op_adjoint(align_corners=align_corners)
 
 
 def _test_grid_sampling_op_adjoint(
     dtype='float32',
-    dim=2,
+    dim: int = 2,
     interpolation_mode='bilinear',
     padding_mode='zeros',
     align_corners='no_align',
@@ -62,10 +63,12 @@ def _test_grid_sampling_op_adjoint(
     align_corners_bool = align_corners == 'align'
     zyx_v = (7, 8, 9)[-dim:]
     zyx_u = (11, 12, 13)[-dim:]
-    grid = RandomGenerator(42).float64_tensor((*batch, *zyx_v, dim), -1, 1)
+    grid = RandomGenerator(42).float64_tensor((*batch, *zyx_v, 3), -1, 1)
     input_shape = SpatialDimension(z=(99 if dim == 2 else zyx_u[-3]), y=zyx_u[-2], x=zyx_u[-1])
     operator = GridSamplingOp(
-        grid,
+        grid_z=grid[..., 0] if dim == 3 else None,
+        grid_y=grid[..., 1],
+        grid_x=grid[..., 2],
         input_shape=input_shape,
         interpolation_mode=interpolation_mode,
         padding_mode=padding_mode,
@@ -78,7 +81,9 @@ def _test_grid_sampling_op_adjoint(
 
 
 @pytest.mark.parametrize('interpolation_mode', ['bilinear', 'nearest', 'bicubic'])
-def test_grid_sampling_op_interpolation_mode_backward_is_adjoint(interpolation_mode):
+def test_grid_sampling_op_interpolation_mode_backward_is_adjoint(
+    interpolation_mode: Literal['bilinear', 'nearest', 'bicubic'],
+) -> None:
     """Test for different interpolation_modes."""
     # bicubic only supports 2D
     dim = 2 if interpolation_mode == 'bicubic' else 3
@@ -86,28 +91,37 @@ def test_grid_sampling_op_interpolation_mode_backward_is_adjoint(interpolation_m
 
 
 @pytest.mark.parametrize('padding_mode', ['zeros', 'border', 'reflection'])
-def test_grid_sampling_op_padding_mode_backward_is_adjoint(padding_mode):
+def test_grid_sampling_op_padding_mode_backward_is_adjoint(
+    padding_mode: Literal['zeros', 'border', 'reflection'],
+) -> None:
     """Test for different padding_modes."""
     _test_grid_sampling_op_x_backward(padding_mode=padding_mode)
 
 
 @pytest.mark.parametrize('align_corners', ['no_align', 'align'])
-def test_grid_sampling_op_align_mode_backward_is_adjoint(align_corners):
+def test_grid_sampling_op_align_mode_backward_is_adjoint(align_corners: Literal['no_align', 'align']) -> None:
     """Test for different align modes ."""
     _test_grid_sampling_op_x_backward(align_corners=align_corners == 'align')
 
 
-def _test_grid_sampling_op_x_backward(dim=3, interpolation_mode='bilinear', padding_mode='zeros', align_corners=False):
+def _test_grid_sampling_op_x_backward(
+    dim: int = 3,
+    interpolation_mode: Literal['bilinear', 'nearest', 'bicubic'] = 'bilinear',
+    padding_mode: Literal['zeros', 'border', 'reflection'] = 'zeros',
+    align_corners: bool = False,
+) -> None:
     """Used in the tests above."""
     rng = RandomGenerator(0).float32_tensor
     batch = (2, 3)
     channel = (5, 7)
     zyx_v = (7, 10, 20)[-dim:]
     zyx_u = (9, 22, 30)[-dim:]
-    grid = rng((*batch, *zyx_v, dim), -1, 1.0)
+    grid = rng((*batch, *zyx_v, 3), -1, 1.0)
     input_shape = SpatialDimension(z=99 if dim == 2 else zyx_u[-3], y=zyx_u[-2], x=zyx_u[-1])
     operator = GridSamplingOp(
-        grid,
+        grid_z=grid[..., 0] if dim == 3 else None,
+        grid_y=grid[..., 1],
+        grid_x=grid[..., 2],
         input_shape=input_shape,
         interpolation_mode=interpolation_mode,
         padding_mode=padding_mode,
@@ -123,86 +137,121 @@ def _test_grid_sampling_op_x_backward(dim=3, interpolation_mode='bilinear', padd
     torch.testing.assert_close(v.grad, forward_u)
 
 
-def test_grid_sampling_op_gradcheck_x_forward():
+def test_grid_sampling_op_gradcheck_x_forward() -> None:
     """Gradient check for forward wrt x."""
     rng = RandomGenerator(0).float64_tensor
     grid = rng((2, 1, 2, 2), -0.8, 0.8)
     u = rng((1, 1, 3, 5)).requires_grad_(True)
-    gradcheck(lambda grid, u: GridSamplingOp(grid, input_shape=SpatialDimension(1, 3, 5))(u), (grid, u), fast_mode=True)
+    gradcheck(
+        lambda grid, u: GridSamplingOp(
+            grid_z=None, grid_y=grid[..., 0], grid_x=grid[..., 1], input_shape=SpatialDimension(1, 3, 5)
+        )(u),
+        (grid, u),
+        fast_mode=True,
+    )
 
 
-def test_grid_sampling_op_gradcheck_grid_forward():
+def test_grid_sampling_op_gradcheck_grid_forward() -> None:
     """Gradient check for forward wrt grid."""
     rng = RandomGenerator(0).float64_tensor
     grid = rng((2, 1, 2, 2), -0.8, 0.8).requires_grad_(True)
     u = rng((1, 1, 3, 5))
-    gradcheck(lambda grid, u: GridSamplingOp(grid, input_shape=SpatialDimension(1, 3, 5))(u), (grid, u), fast_mode=True)
+    gradcheck(
+        lambda grid, u: GridSamplingOp(
+            grid_z=None, grid_y=grid[..., 0], grid_x=grid[..., 1], input_shape=SpatialDimension(1, 3, 5)
+        )(u),
+        (grid, u),
+        fast_mode=True,
+    )
 
 
-def test_grid_sampling_op_gradcheck_x_adjoint():
+def test_grid_sampling_op_gradcheck_x_adjoint() -> None:
     """Gradient check for adjoint wrt x."""
     rng = RandomGenerator(0).float64_tensor
     grid = rng((2, 1, 2, 2), -0.8, 0.8)
     v = rng((2, 1, 1, 2)).requires_grad_(True)
     gradcheck(
-        lambda grid, v: GridSamplingOp(grid, input_shape=SpatialDimension(1, 2, 3)).adjoint(v),
+        lambda grid, v: GridSamplingOp(
+            grid_z=None, grid_y=grid[..., 0], grid_x=grid[..., 1], input_shape=SpatialDimension(1, 2, 3)
+        ).adjoint(v),
         (grid, v),
         fast_mode=True,
     )
 
 
-def test_grid_sampling_op_gradcheck_grid_adjoint():
+def test_grid_sampling_op_gradcheck_grid_adjoint() -> None:
     """Gradient check for adjoint wrt grid."""
     rng = RandomGenerator(0).float64_tensor
     grid = rng((2, 1, 2, 2), -0.8, 0.8).requires_grad_(True)
     v = rng((2, 1, 1, 2))
     gradcheck(
-        lambda grid, v: GridSamplingOp(grid, input_shape=SpatialDimension(1, 2, 3)).adjoint(v),
+        lambda grid, v: GridSamplingOp(
+            grid_z=None, grid_y=grid[..., 0], grid_x=grid[..., 1], input_shape=SpatialDimension(1, 2, 3)
+        ).adjoint(v),
         (grid, v),
         fast_mode=True,
     )
 
 
-def test_grid_sampling_op_errormsg_gridlastdim():
-    """Test if error message on wrong last dim is raised."""
-    grid = torch.ones(1, 2, 3, 4)
-    with pytest.raises(ValueError, match='last dimension'):
-        _ = GridSamplingOp(grid, SpatialDimension(1, 1, 1))
+def test_grid_sampling_op_errormsg_gridshape_3d() -> None:
+    """Test if error message on mismatch of grid shape is raised."""
+    with pytest.raises(ValueError, match='should have the same shape'):
+        _ = GridSamplingOp(
+            grid_z=torch.ones(1, 2, 1, 1),
+            grid_y=torch.ones(1, 1, 1, 1),
+            grid_x=torch.ones(1, 1, 1, 1),
+        )
 
 
-def test_grid_sampling_op_errormsg_gridndims_3d():
+def test_grid_sampling_op_errormsg_gridshape_2d() -> None:
+    """Test if error message on mismatch of grid shape is raised."""
+    with pytest.raises(ValueError, match='should have the same shape'):
+        _ = GridSamplingOp(grid_z=None, grid_y=torch.ones(1, 3, 1), grid_x=torch.ones(1, 1, 1))
+
+
+def test_grid_sampling_op_errormsg_gridndims_3d() -> None:
     """Test if error message on missing batch dim is raised."""
-    grid = torch.ones(1, 1, 1, 3)
-    with pytest.raises(ValueError, match='batch z y x 3'):
-        _ = GridSamplingOp(grid, SpatialDimension(1, 1, 1))
+    with pytest.raises(ValueError, match='batch z y x'):
+        _ = GridSamplingOp(
+            grid_z=torch.ones(1, 1, 1),
+            grid_y=torch.ones(1, 1, 1),
+            grid_x=torch.ones(1, 1, 1),
+        )
 
 
-def test_grid_sampling_op_errormsg_gridndims_2d():
+def test_grid_sampling_op_errormsg_gridndims_2d() -> None:
     """Test if error message on missing batch dim is raised."""
-    grid = torch.ones(1, 1, 2)
-    with pytest.raises(ValueError, match='batch y x 2'):
-        _ = GridSamplingOp(grid, SpatialDimension(1, 1, 1))
+    with pytest.raises(ValueError, match='batch y x'):
+        _ = GridSamplingOp(grid_z=None, grid_y=torch.ones(1, 1), grid_x=torch.ones(1, 1))
 
 
-def test_grid_sampling_op_errormsg_cubic3d():
+def test_grid_sampling_op_errormsg_cubic3d() -> None:
     """Test if error for 3D cubic is raised."""
     grid = torch.ones(1, 1, 1, 1, 3)  # 3d
     with pytest.raises(NotImplementedError, match='cubic'):
-        _ = GridSamplingOp(grid, SpatialDimension(1, 1, 1), interpolation_mode='bicubic')
+        _ = GridSamplingOp(
+            grid_z=grid[..., 0],
+            grid_y=grid[..., 1],
+            grid_x=grid[..., 2],
+            input_shape=SpatialDimension(1, 1, 1),
+            interpolation_mode='bicubic',
+        )
 
 
-def test_grid_sampling_op_errormsg_complexgrid():
+def test_grid_sampling_op_errormsg_complexgrid() -> None:
     """Test if error for complex grid is raised."""
     grid = torch.ones(1, 1, 1, 1, 3) + 0j
     with pytest.raises(ValueError, match='real'):
-        _ = GridSamplingOp(grid, SpatialDimension(1, 1, 1))
+        _ = GridSamplingOp(
+            grid_z=grid[..., 0], grid_y=grid[..., 1], grid_x=grid[..., 2], input_shape=SpatialDimension(1, 1, 1)
+        )
 
 
 @pytest.mark.parametrize(
     ('value', 'error_message'),
     [(1.0001, 'values outside range'), (-1.0001, 'values outside range'), (1.0, None), (-1.0, None)],
 )
-def test_grid_sampling_op_warning_gridrange(value, error_message):
+def test_grid_sampling_op_warning_gridrange(value: float, error_message: str | None) -> None:
     """Test if warning for grid values outside [-1,1] is raised"""
     grid = torch.zeros(1, 1, 1, 1, 3)
     grid[..., 1] = value
@@ -210,54 +259,56 @@ def test_grid_sampling_op_warning_gridrange(value, error_message):
         pytest.warns(UserWarning, match=error_message) if error_message else contextlib.nullcontext()
     )
     with conditional_warn:
-        _ = GridSamplingOp(grid, SpatialDimension(1, 1, 1))
+        _ = GridSamplingOp(
+            grid_z=grid[..., 0], grid_y=grid[..., 1], grid_x=grid[..., 2], input_shape=SpatialDimension(1, 1, 1)
+        )
 
 
-def test_grid_sampling_op_errormsg_inputdim_3d():
+def test_grid_sampling_op_errormsg_inputdim_3d() -> None:
     """Test if error for wrong input dimensions is raised."""
     grid = torch.ones(1, 1, 1, 1, 3)
     input_shape = SpatialDimension(2, 3, 4)
-    operator = GridSamplingOp(grid, input_shape)
+    operator = GridSamplingOp(grid_z=grid[..., 0], grid_y=grid[..., 1], grid_x=grid[..., 2], input_shape=input_shape)
     u = torch.zeros(1, 2, 3, 4)
     with pytest.raises(ValueError, match='5 dimensions: batch channel z y x'):
         _ = operator(u)
 
 
-def test_grid_sampling_op_warningmsg_inputshape_3d():
+def test_grid_sampling_op_warningmsg_inputshape_3d() -> None:
     """Test if warning for wrong input_shape is raised in forward"""
     grid = torch.ones(1, 1, 1, 1, 3)
     input_shape = SpatialDimension(2, 3, 4)
-    operator = GridSamplingOp(grid, input_shape)
+    operator = GridSamplingOp(grid_z=grid[..., 0], grid_y=grid[..., 1], grid_x=grid[..., 2], input_shape=input_shape)
     u = torch.zeros(1, 1, 3, 3, 4)
     with pytest.warns(UserWarning, match='Mismatch'):
         _ = operator(u)
 
 
-def test_grid_sampling_op_errormsg_inputdim_2d():
+def test_grid_sampling_op_errormsg_inputdim_2d() -> None:
     """Test if error for wrong input dimensions is raised."""
     grid = torch.ones(1, 1, 1, 2)
     input_shape = SpatialDimension(2, 3, 4)
-    operator = GridSamplingOp(grid, input_shape)
+    operator = GridSamplingOp(grid_z=None, grid_y=grid[..., 0], grid_x=grid[..., 1], input_shape=input_shape)
     u = torch.zeros(1, 3, 4)
     with pytest.raises(ValueError, match='4 dimensions: batch channel y x'):
         _ = operator(u)
 
 
-def test_grid_sampling_op_warningmsg_inputshape_2d():
+def test_grid_sampling_op_warningmsg_inputshape_2d() -> None:
     """Test if warning for wrong input_shape is raised in forward"""
     grid = torch.ones(1, 1, 1, 2)
     input_shape = SpatialDimension(2, 3, 4)
-    operator = GridSamplingOp(grid, input_shape)
+    operator = GridSamplingOp(grid_z=None, grid_y=grid[..., 0], grid_x=grid[..., 1], input_shape=input_shape)
     u = torch.zeros(1, 2, 3, 5)
     with pytest.warns(UserWarning, match='Mismatch'):
         _ = operator(u)
 
 
-def test_grid_sampling_op_errormsg_inputdim_z_2d():
+def test_grid_sampling_op_errormsg_inputdim_z_2d() -> None:
     """Test if no error for wrong input dimensions is raised if only z is wrong for 2d."""
     grid = torch.ones(1, 1, 1, 2)
     input_shape = SpatialDimension(2, 3, 4)
-    operator = GridSamplingOp(grid, input_shape)
+    operator = GridSamplingOp(grid_z=None, grid_y=grid[..., 0], grid_x=grid[..., 1], input_shape=input_shape)
     u = torch.zeros(1, 17, 3, 4)
     _ = operator(u)  # works, as z is ignored.
 
@@ -272,12 +323,17 @@ def test_grid_sampling_op_errormsg_inputdim_z_2d():
         ((7, 1, 2), (2,), (4,), 'not broadcastable'),
     ],
 )
-def test_grid_sampling_op_batchdims(grid_batch, u_batch, channel, expected_output):
+def test_grid_sampling_op_batchdims(
+    grid_batch: tuple[int, ...],
+    u_batch: tuple[int, ...],
+    channel: tuple[int, ...],
+    expected_output: tuple[int, ...] | str,
+) -> None:
     """Test if error for wrong input dimensions is raised."""
     grid = torch.ones(*grid_batch, 7, 8, 9, 3)  # 3d
     input_shape = SpatialDimension(2, 3, 4)
     u = torch.zeros(*u_batch, *channel, *input_shape.zyx)
-    operator = GridSamplingOp(grid, input_shape)
+    operator = GridSamplingOp(grid_z=grid[..., 0], grid_y=grid[..., 1], grid_x=grid[..., 2], input_shape=input_shape)
     if isinstance(expected_output, str):
         with pytest.raises(ValueError, match=expected_output):
             _ = operator(u)
@@ -286,65 +342,108 @@ def test_grid_sampling_op_batchdims(grid_batch, u_batch, channel, expected_outpu
         assert result.shape == (*expected_output, 7, 8, 9)
 
 
+# MRpro uses (z,y,x)-convention for grid sampling
+# PyTorch uses (x,y,z)-convention for grid sampling
+@pytest.mark.parametrize(('dim', 'grid_sample_dim'), [(-1, -3), (-2, -2), (-3, -1)])
+def test_grid_sampling_op_orientation(dim: int, grid_sample_dim: int) -> None:
+    """Test orientation of transformation."""
+    phantom = torch.zeros(1, 1, 20, 30, 40)
+    phantom[..., 5:15, 10:20, 10:30] = 1
+
+    # shift phantom along dim
+    shift = 5
+    phantom_shifted = torch.roll(phantom, shifts=shift, dims=dim)
+
+    # create grid
+    unity_matrix = torch.cat((torch.eye(3), torch.zeros(3, 1)), dim=1).unsqueeze(0)
+    grid = torch.nn.functional.affine_grid(unity_matrix, list(phantom.shape), align_corners=False)
+    grid[..., grid_sample_dim] -= shift / phantom.shape[dim] * 2
+    grid[grid > 1] = 1
+    grid[grid < -1] = -1
+    operator = GridSamplingOp(
+        grid_z=grid[..., 2], grid_y=grid[..., 1], grid_x=grid[..., 0], interpolation_mode='nearest'
+    )
+
+    torch.testing.assert_close(phantom_shifted, operator(phantom)[0])
+
+
+def test_grid_sampling_op_from_displacement_3d() -> None:
+    """Test transformation created from displacement."""
+    phantom = torch.zeros(3, 4, 20, 30, 40)
+    phantom[..., 6:10, 10:20, 10:30] = 1
+
+    # shift phantom along dim
+    shift = (2, 3, 4)
+    phantom_shifted = torch.roll(phantom, shifts=shift, dims=(-3, -2, -1))
+
+    # Create displacement with border to avoid shifts outside of the image
+    displacement = torch.zeros(3, 20, 30, 40, 3)
+    displacement[:, 5:-5, 5:-5, 5:-5, 0] = -shift[0]
+    displacement[:, 5:-5, 5:-5, 5:-5, 1] = -shift[1]
+    displacement[:, 5:-5, 5:-5, 5:-5, 2] = -shift[2]
+
+    operator = GridSamplingOp.from_displacement(
+        displacement_z=displacement[..., 0],
+        displacement_y=displacement[..., 1],
+        displacement_x=displacement[..., 2],
+        interpolation_mode='nearest',
+    )
+
+    torch.testing.assert_close(phantom_shifted, operator(phantom)[0])
+
+
+def test_grid_sampling_op_from_displacement_2d() -> None:
+    """Test transformation created from displacement."""
+    phantom = torch.zeros(3, 4, 20, 30, 40)
+    phantom[..., 6:10, 10:20, 10:30] = 1
+
+    # shift phantom along dim
+    shift = (3, 4)
+    phantom_shifted = torch.roll(phantom, shifts=shift, dims=(-2, -1))
+
+    # Create displacement with border to avoid shifts outside of the image
+    displacement = torch.zeros(3, 30, 40, 2)
+    displacement[:, 5:-5, 5:-5, 0] = -shift[0]
+    displacement[:, 5:-5, 5:-5, 1] = -shift[1]
+
+    operator = GridSamplingOp.from_displacement(
+        displacement_z=None,
+        displacement_y=displacement[..., 0],
+        displacement_x=displacement[..., 1],
+        interpolation_mode='nearest',
+    )
+
+    torch.testing.assert_close(phantom_shifted, operator(phantom)[0])
+
+
 @pytest.mark.cuda
-def test_grid_sampling_op_cuda() -> None:
-    """Test grid sampling operator works on CUDA devices."""
-    rng = RandomGenerator(0).float32_tensor
-    dim = 3
-    batch = (2, 3)
-    channel = (5, 7)
-    zyx_v = (7, 10, 20)[-dim:]
-    zyx_u = (9, 22, 30)[-dim:]
-    grid = rng((*batch, *zyx_v, dim), -1, 1.0)
-    input_shape = SpatialDimension(z=zyx_u[-3], y=zyx_u[-2], x=zyx_u[-1])
-    u = rng((*batch, *channel, *zyx_u))
+@pytest.mark.parametrize('dim', [3, 2])
+def test_grid_sampling_op_from_displacement_cuda(dim: int) -> None:
+    """Test operator grid on cuda if the input displacement on cuda."""
+    batch, coil = (2, 3), 3
+    if dim == 3:
+        zyx = (2, 4, 8)
+        displacement_cuda: Any = torch.zeros(dim, *batch, *zyx, device='cuda').unbind(0)
+        displacement_cpu: Any = torch.zeros(dim, *batch, *zyx, device='cpu').unbind(0)
+    elif dim == 2:
+        zyx = (1, 4, 8)
+        displacement_cuda = (None, *torch.zeros(dim, *batch, *zyx, device='cuda').unbind(0))
+        displacement_cpu = (None, *torch.zeros(dim, *batch, *zyx, device='cpu').unbind(0))
 
-    # Create on CPU, transfer to GPU, run on GPU
-    gridsampling_op = GridSamplingOp(
-        grid,
-        input_shape=input_shape,
-        interpolation_mode='bilinear',
-        padding_mode='zeros',
-        align_corners=False,
-    )
-    operator = gridsampling_op.H @ gridsampling_op
-    operator.cuda()
-    (result,) = operator(u.cuda())
+    image = torch.ones(*batch, coil, *zyx)
+
+    operator_cuda = GridSamplingOp.from_displacement(*displacement_cuda)
+    (result,) = operator_cuda(image.cuda())
     assert result.is_cuda
 
-    # Create on CPU, run on CPU
-    gridsampling_op = GridSamplingOp(
-        grid,
-        input_shape=input_shape,
-        interpolation_mode='bilinear',
-        padding_mode='zeros',
-        align_corners=False,
-    )
-    operator = gridsampling_op.H @ gridsampling_op
-    (result,) = operator(u)
+    operator_cpu = operator_cuda.cpu()
+    (result,) = operator_cpu(image)
     assert result.is_cpu
 
-    # Create on GPU, run on GPU
-    gridsampling_op = GridSamplingOp(
-        grid.cuda(),
-        input_shape=input_shape.cuda(),
-        interpolation_mode='bilinear',
-        padding_mode='zeros',
-        align_corners=False,
-    )
-    operator = gridsampling_op.H @ gridsampling_op
-    (result,) = operator(u.cuda())
+    operator_cpu = GridSamplingOp.from_displacement(*displacement_cpu)
+    (result,) = operator_cpu(image)
+    assert result.is_cpu
+
+    operator_cuda = operator_cpu.cuda()
+    (result,) = operator_cuda(image.cuda())
     assert result.is_cuda
-
-    # Create on GPU, transfer to CPU, run on CPU
-    gridsampling_op = GridSamplingOp(
-        grid.cuda(),
-        input_shape=input_shape.cuda(),
-        interpolation_mode='bilinear',
-        padding_mode='zeros',
-        align_corners=False,
-    )
-    operator = gridsampling_op.H @ gridsampling_op
-    operator.cpu()
-    (result,) = operator(u)
-    assert result.is_cpu

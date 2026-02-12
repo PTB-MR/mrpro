@@ -58,11 +58,14 @@ def create_fourier_op_and_range_domain(
         int(trajectory.ky.max() - trajectory.ky.min() + 1),
         int(trajectory.kx.max() - trajectory.kx.min() + 1),
     )
+    # ensure grid_sampling is also tested by simulating partial echo for standard Cartesian readout
+    if type_kx == 'uniform' and nky[-1] == 1 and nkz[-1] == 1:
+        trajectory.kx = trajectory.kx[..., nkx[-1] // 4 :]
     fourier_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
 
     rng = RandomGenerator(seed=0)
     u = rng.complex64_tensor(size=img_shape)
-    v = rng.complex64_tensor(size=k_shape)
+    v = rng.complex64_tensor(size=(*k_shape[:-1], trajectory.kx.shape[-1]))  # type: ignore[misc]
     return fourier_op, u, v
 
 
@@ -219,7 +222,7 @@ def test_fourier_op_not_supported_traj(
     """Test trajectory not supported by Fourier operator."""
 
     # generate random images and k-space trajectories
-    img, trajectory = create_data(img_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    _, trajectory = create_data(img_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
 
     # create operator
     recon_matrix = SpatialDimension(img_shape[-3], img_shape[-2], img_shape[-1])
