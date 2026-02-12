@@ -84,7 +84,7 @@ kdata_split = kdata[..., split_indices, :]
 
 # %%
 avg_recon = mr2.algorithms.reconstruction.DirectReconstruction(kdata)
-recon = mr2.algorithms.reconstruction.DirectReconstruction(kdata_split, csm=avg_recon.csm)
+recon = mr2.algorithms.reconstruction.DirectReconstruction(kdata_split, csm=avg_recon.csm_op)
 img = recon(kdata_split)
 
 # %% [markdown]

@@ -13,18 +13,20 @@ from mr2.data.DcfData import DcfData
 from mr2.data.IData import IData
 from mr2.data.KData import KData
 from mr2.data.KNoise import KNoise
+from mr2.operators.DensityCompensationOp import DensityCompensationOp
 from mr2.operators.FourierOp import FourierOp
 from mr2.operators.LinearOperator import LinearOperator
+from mr2.operators.SensitivityOp import SensitivityOp
 
 
 class Reconstruction(torch.nn.Module, ABC):
     """A Reconstruction."""
 
-    dcf: DcfData | None
-    """Density Compensation Data."""
+    dcf_op: DensityCompensationOp | None
+    """Density Compensation Operator."""
 
-    csm: CsmData | None
-    """Coil Sensitivity Data."""
+    csm_op: SensitivityOp | None
+    """Coil Sensitivity Operator."""
 
     noise: KNoise | None
     """Noise Data used for prewhitening."""
@@ -52,7 +54,7 @@ class Reconstruction(torch.nn.Module, ABC):
             k-space data to determine trajectory and recon/encoding matrix from.
         """
         self.fourier_op = FourierOp.from_kdata(kdata)
-        self.dcf = DcfData.from_traj_voronoi(kdata.traj)
+        self.dcf_op = DcfData.from_traj_voronoi(kdata.traj).as_operator()
         return self
 
     def recalculate_csm(
@@ -81,7 +83,7 @@ class Reconstruction(torch.nn.Module, ABC):
             Use this if the `kdata` is already prewhitened.
         """
         image = self.direct_reconstruction(kdata, csm=False, noise=noise)
-        self.csm = csm_calculation(image)
+        self.csm_op = csm_calculation(image).as_operator()
         return self
 
     def direct_reconstruction(
@@ -104,7 +106,7 @@ class Reconstruction(torch.nn.Module, ABC):
             k-space data
         csm
             Coil sensitivity maps used for coil combination.
-            If `None`, ``self.csm`` is used.
+            If `None`, ``self.csm_op`` is used.
             If `False`, no coil combination is performed.
         noise
             Noise measurement for prewhitening.
@@ -115,16 +117,28 @@ class Reconstruction(torch.nn.Module, ABC):
         -------
             image data
         """
-        noise_data = self.noise if noise is None else (None if noise is False else noise)
-        csm_data = self.csm if csm is None else (None if csm is False else csm)
-
+        if noise is None:
+            noise_data = self.noise
+        elif noise is False:
+            noise_data = None
+        else:
+            noise_data = noise
         if noise_data is not None:
             kdata = prewhiten_kspace(kdata, noise_data)
+
         operator = self.fourier_op
-        if csm_data is not None:
-            operator = operator @ csm_data.as_operator()
-        if self.dcf is not None:
-            operator = self.dcf.as_operator() @ operator
+
+        if csm is not False:
+            if csm is None:
+                csm_op = self.csm_op
+            else:
+                csm_op = csm.as_operator()
+            if csm_op is not None:
+                operator = operator @ csm_op
+
+        if self.dcf_op is not None:
+            operator = self.dcf_op @ operator
+
         (img_tensor,) = operator.H(kdata.data)
         img = IData.from_tensor_and_kheader(img_tensor, kdata.header)
         return img

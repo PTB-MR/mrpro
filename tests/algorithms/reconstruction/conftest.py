@@ -24,7 +24,7 @@ def explicit_components() -> Callable[[KData], tuple[FourierOp, CsmData, DcfData
     def _explicit_components(kdata: KData) -> tuple[FourierOp, CsmData, DcfData]:
         direct_reconstruction = DirectReconstruction(kdata=kdata, csm=None)
         csm = CsmData.from_idata_walsh(direct_reconstruction(kdata))
-        assert direct_reconstruction.dcf is not None
-        return FourierOp.from_kdata(kdata), csm, direct_reconstruction.dcf
+        dcf = DcfData.from_traj_voronoi(kdata.traj)
+        return FourierOp.from_kdata(kdata), csm, dcf
 
     return _explicit_components

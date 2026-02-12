@@ -93,8 +93,8 @@ img_direct = direct_reconstruction(kdata)
 # %%
 iterative_sense_reconstruction = mr2.algorithms.reconstruction.IterativeSENSEReconstruction(
     fourier_op=direct_reconstruction.fourier_op,
-    csm=direct_reconstruction.csm,
-    dcf=direct_reconstruction.dcf,
+    csm=direct_reconstruction.csm_op,
+    dcf=direct_reconstruction.dcf_op,
     n_iterations=4,
 )
 

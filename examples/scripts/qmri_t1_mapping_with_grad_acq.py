@@ -107,7 +107,7 @@ kdata_dynamic = kdata[..., split_idx, :]
 # %%
 # Perform the reconstruction
 # Here we use the same coil sensitivity map for all dynamics
-reconstruction_dynamic = mr2.algorithms.reconstruction.DirectReconstruction(kdata_dynamic, csm=reconstruction.csm)
+reconstruction_dynamic = mr2.algorithms.reconstruction.DirectReconstruction(kdata_dynamic, csm=reconstruction.csm_op)
 img_dynamic = reconstruction_dynamic(kdata_dynamic)
 # Get absolute value of complex image and normalize the images
 img_rss_dynamic = img_dynamic.rss()

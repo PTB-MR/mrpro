@@ -126,8 +126,8 @@ img_direct_24 = direct_reconstruction_24(kdata_24spokes)
 sense_reconstruction = mr2.algorithms.reconstruction.IterativeSENSEReconstruction(
     kdata_24spokes,
     n_iterations=8,
-    csm=direct_reconstruction_24.csm,
-    dcf=direct_reconstruction_24.dcf,
+    csm=direct_reconstruction_24.csm_op,
+    dcf=direct_reconstruction_24.dcf_op,
 )
 img_sense_24 = sense_reconstruction(kdata_24spokes)
 
@@ -140,8 +140,8 @@ img_sense_24 = sense_reconstruction(kdata_24spokes)
 # %%
 fourier_operator = direct_reconstruction_24.fourier_op
 
-assert direct_reconstruction_24.csm is not None
-csm_operator = direct_reconstruction_24.csm.as_operator()
+csm_operator = direct_reconstruction_24.csm_op
+assert csm_operator is not None
 
 # Define the wavelet operator
 wavelet_operator = mr2.operators.WaveletOp(

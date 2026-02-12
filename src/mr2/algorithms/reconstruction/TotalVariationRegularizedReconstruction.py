@@ -15,9 +15,11 @@ from mr2.data.IData import IData
 from mr2.data.KData import KData
 from mr2.data.KNoise import KNoise
 from mr2.operators import LinearOperatorMatrix, ProximableFunctionalSeparableSum
+from mr2.operators.DensityCompensationOp import DensityCompensationOp
 from mr2.operators.FiniteDifferenceOp import FiniteDifferenceOp
 from mr2.operators.functionals import L1NormViewAsReal, L2NormSquared
 from mr2.operators.LinearOperator import LinearOperator
+from mr2.operators.SensitivityOp import SensitivityOp
 from mr2.utils import normalize_index, unsqueeze_right
 
 
@@ -47,9 +49,9 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
         self,
         kdata: KData | None = None,
         fourier_op: LinearOperator | None = None,
-        csm: Callable | CsmData | None = CsmData.from_idata_walsh,
+        csm: Callable | CsmData | SensitivityOp | None = CsmData.from_idata_walsh,
         noise: KNoise | None = None,
-        dcf: DcfData | None = None,
+        dcf: DcfData | DensityCompensationOp | None = None,
         *,
         max_iterations: int = 100,
         tolerance: float = 0,
@@ -129,7 +131,7 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
         if self.noise is not None:
             kdata = prewhiten_kspace(kdata, self.noise)
 
-        acquisition_operator = self.fourier_op @ self.csm.as_operator() if self.csm is not None else self.fourier_op
+        acquisition_operator = self.fourier_op @ self.csm_op if self.csm_op is not None else self.fourier_op
         l2_norm_squared = L2NormSquared(target=kdata.data)
 
         # TV regularization
@@ -137,9 +139,7 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
         l1_norm = L1NormViewAsReal(weight=unsqueeze_right(self.regularization_weight, kdata.data.ndim))
         operator = LinearOperatorMatrix(((acquisition_operator,), (nabla_operator,)))
 
-        initial_value = acquisition_operator.H(
-            self.dcf.as_operator()(kdata.data)[0] if self.dcf is not None else kdata.data
-        )[0]
+        initial_value = acquisition_operator.H(self.dcf_op(kdata.data)[0] if self.dcf_op is not None else kdata.data)[0]
 
         (img_tensor,) = pdhg(
             f=ProximableFunctionalSeparableSum(l2_norm_squared, l1_norm),

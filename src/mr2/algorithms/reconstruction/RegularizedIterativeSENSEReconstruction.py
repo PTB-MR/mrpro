@@ -14,8 +14,10 @@ from mr2.data.DcfData import DcfData
 from mr2.data.IData import IData
 from mr2.data.KData import KData
 from mr2.data.KNoise import KNoise
+from mr2.operators.DensityCompensationOp import DensityCompensationOp
 from mr2.operators.IdentityOp import IdentityOp
 from mr2.operators.LinearOperator import LinearOperator
+from mr2.operators.SensitivityOp import SensitivityOp
 from mr2.utils import unsqueeze_right
 
 
@@ -46,9 +48,9 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
         self,
         kdata: KData | None = None,
         fourier_op: LinearOperator | None = None,
-        csm: Callable | CsmData | None = CsmData.from_idata_walsh,
+        csm: Callable | CsmData | SensitivityOp | None = CsmData.from_idata_walsh,
         noise: KNoise | None = None,
-        dcf: DcfData | None = None,
+        dcf: DcfData | DensityCompensationOp | None = None,
         *,
         n_iterations: int = 5,
         regularization_data: float | torch.Tensor = 0.0,
@@ -123,8 +125,8 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
             kdata = prewhiten_kspace(kdata, self.noise)
 
         acquisition_model = self.fourier_op
-        if self.csm is not None:
-            acquisition_model = acquisition_model @ self.csm.as_operator()
+        if self.csm_op is not None:
+            acquisition_model = acquisition_model @ self.csm_op
 
         operator = acquisition_model.gram
         (right_hand_side,) = acquisition_model.H(kdata.data)
@@ -135,13 +137,12 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
                 right_hand_side + self.regularization_weight * self.regularization_op.H(self.regularization_data)[0]
             )
 
-        if self.dcf is not None:
+        if self.dcf_op is not None:
             # The DCF is used to obtain a good starting point for the CG algorithm.
             # This is equivalten to running the CG algorithm with H = A^H DCF A and b = A^H DCF y
             # for a single iteration.
-            dcf_op = self.dcf.as_operator()
-            (u,) = (acquisition_model.H @ dcf_op)(kdata.data)
-            (v,) = (acquisition_model.H @ dcf_op @ acquisition_model)(u)
+            (u,) = (acquisition_model.H @ self.dcf_op)(kdata.data)
+            (v,) = (acquisition_model.H @ self.dcf_op @ acquisition_model)(u)
             u_flat = u.flatten(start_dim=-3)
             v_flat = v.flatten(start_dim=-3)
             initial_value = (

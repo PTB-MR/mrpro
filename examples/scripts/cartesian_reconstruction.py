@@ -1,6 +1,6 @@
 # %% [markdown]
-# # Basics of mrtwo and Cartesian reconstructions
-# Here, we are going to have a look at a few basics of mrtwo and reconstruct data acquired with a Cartesian sampling
+# # Basics of MRpro and Cartesian reconstructions
+# Here, we are going to have a look at a few basics of MRpro and reconstruct data acquired with a Cartesian sampling
 # pattern.
 
 # %% [markdown]
@@ -42,7 +42,7 @@ zenodo_get.download(
 # ## Read in raw data and explore header
 #
 # To read in an ISMRMRD file, we can simply pass on the file name to a `~mr2.data.KData` object.
-# Additionally, we need to provide information about the trajectory. In mrtwo, this is done using trajectory
+# Additionally, we need to provide information about the trajectory. In MRpro, this is done using trajectory
 # calculators. These are functions that calculate the trajectory based on the acquisition information and additional
 # parameters provided to the calculators (e.g. the angular step for a radial acquisition).
 #
@@ -87,8 +87,8 @@ print('Lamor Frequency:', kdata.header.lamor_frequency_proton)
 # ```
 #
 # Let's create an FFT-operator `~mr2.operators.FastFourierOp` and apply it to our `~mr2.data.KData` object.
-# Please note that all mrtwo operator work on PyTorch tensors and not on the mrtwo objects directly. Therefore, we have
-# to call the operator on kdata.data. One other important property of mrtwo operators is that they always return a
+# Please note that all MRpro operator work on PyTorch tensors and not on the MRpro objects directly. Therefore, we have
+# to call the operator on kdata.data. One other important property of MRpro operators is that they always return a
 # tuple of PyTorch tensors, even if the output is only a single tensor. This is why we use the ``(img,)`` syntax below.
 
 # %%
@@ -122,7 +122,7 @@ print('Shape:', img.shape)
 
 # %% [markdown]
 # Now, we have an image which is 256 x 256 voxel as we would expect. Let's combine the data from the different receiver
-# coils using root-sum-of-squares and then display the image. Note that we usually index from behind in mrtwo
+# coils using root-sum-of-squares and then display the image. Note that we usually index from behind in MRpro
 # (i.e. -1 for the last, -4 for the fourth last (coil) dimension) to allow for more than one 'other' dimension.
 
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show plotting details"}
@@ -186,7 +186,7 @@ print(kdata.traj)
 # %% [markdown]
 # We see that the trajectory has ``kz``, ``ky``, and ``kx`` components. ``kx`` and ``ky`` only vary along one dimension.
 # ```{note}
-# This is because mrtwo saves meta data such as trajectories in an efficient way, where dimensions in which the data
+# This is because MRpro saves meta data such as trajectories in an efficient way, where dimensions in which the data
 # does not change are often collapsed. The original shape can be obtained by
 # [broadcasting](https://numpy.org/doc/stable/user/basics.broadcasting.html).
 # ```
@@ -212,7 +212,7 @@ plt.show()
 # between encoding and recon matrix needs to be zero-padded symmetrically.
 #
 # To take the asymmetric acquisition into account and sort the data correctly into a matrix where we can apply the
-# FFT-operator to, we have got the `~mr2.operators.CartesianSamplingOp` in mrtwo. This operator performs
+# FFT-operator to, we have got the `~mr2.operators.CartesianSamplingOp` in MRpro. This operator performs
 # sorting based on the k-space trajectory and the dimensions of the encoding k-space.
 #
 # Let's try it out!
@@ -237,7 +237,7 @@ show_images(magnitude_fully_sampled, magnitude_pe_pf, titles=['fully sampled', '
 # %% [markdown]
 # ## More about operators
 # ### The Fourier Operator
-# In mrtwo, we have a smart `~mr2.operators.FourierOp` operator, that automatically does the resorting and can
+# In MRpro, we have a smart `~mr2.operators.FourierOp` operator, that automatically does the resorting and can
 # handle non-cartesian data as well. For cartesian data, it internally does exactly the two steps we just did manually.
 # The operator can be also be created from an existing `~mr2.data.KData` object
 # This is the recommended way to transform k-space data.
@@ -255,7 +255,7 @@ show_images(magnitude_fully_sampled, magnitude_pe_pf, titles=['fully sampled', '
 # But wait a second — what about all these nice receiver elements of our coil?
 #
 # Here we used a simple root-sum-of-squares approach, which is not the ideal method.
-# Typically, coil sensitivity maps are calculated to combine the data from different coils. In mrtwo, you can do this
+# Typically, coil sensitivity maps are calculated to combine the data from different coils. In MRpro, you can do this
 # by calculating coil sensitivity data and then creating a `~mr2.operators.SensitivityOp` to combine the data after
 # image reconstruction.
 
@@ -283,7 +283,7 @@ show_images(magnitude_pe_pf, magnitude_walsh_combined, titles=['RSS', 'Adaptive 
 # Tada! Now we have taken everything into consideration 🎉.
 #
 # When we reconstructed the image, we called the adjoint method of several different operators one after the other. That
-# was a bit cumbersome. To make our life easier, mrtwo allows to combine the operators first, get the adjoint
+# was a bit cumbersome. To make our life easier, MRpro allows to combine the operators first, get the adjoint
 # of the composite operator and then later call this adjoint composite operator.
 
 # %%
@@ -298,11 +298,11 @@ show_images(magnitude_pe_pf, titles=['PF & PE'])
 # Although we now have got a nice looking image, it was still a bit cumbersome to create it. We had to define several
 # different operators and chain them together. Wouldn't it be nice if this could be done automatically?
 #
-# That is why we also included some top-level reconstruction algorithms in mrtwo. For this whole steps from above,
+# That is why we also included some top-level reconstruction algorithms in MRpro. For this whole steps from above,
 # we can simply use a `~mr2.algorithms.reconstruction.DirectReconstruction`.
 # Reconstruction algorithms can be instantiated from only the information in the `~mr2.data.KData` object.
 #
-# In contrast to operators, top-level reconstruction algorithms operate on the data objects of mrtwo, i.e. the input is
+# In contrast to operators, top-level reconstruction algorithms operate on the data objects of MRpro, i.e. the input is
 # a `~mr2.data.KData` object and the output is an `~mr2.data.IData` object containing
 # the reconstructed image data. To get its magnitude, we can call the `~mr2.data.IData.rss` method.
 
@@ -367,10 +367,11 @@ show_images(idat_calib_lines.rss().squeeze(), titles=['Calibration Image'])
 
 # %%
 # The coil sensitivity maps
-assert direct_recon_calib_lines.csm is not None
+csm_op_calib = direct_recon_calib_lines.csm_op
+assert csm_op_calib is not None
 show_images(
-    *direct_recon_calib_lines.csm.data[0].abs().squeeze(),
-    titles=[f'|CSM {i}|' for i in range(direct_recon_calib_lines.csm.data.size(-4))],
+    *csm_op_calib.csm_tensor[0].abs().squeeze(),
+    titles=[f'|CSM {i}|' for i in range(csm_op_calib.csm_tensor.size(-4))],
 )
 
 # %% [markdown]
@@ -384,28 +385,28 @@ show_images(
 # We can now use these CSMs in a new `~mr2.algorithms.reconstruction.DirectReconstruction`:
 
 # %%
-direct_recon_us_csm = mr2.algorithms.reconstruction.DirectReconstruction(kdata_us, csm=direct_recon_calib_lines.csm)
+direct_recon_us_csm = mr2.algorithms.reconstruction.DirectReconstruction(kdata_us, csm=direct_recon_calib_lines.csm_op)
 idat_us_csm = direct_recon_us_csm(kdata_us)
 show_images(idat_us.rss().squeeze(), idat_us_csm.rss().squeeze(), titles=['Autocalibration', 'Calibration Lines'])
 
 # %% [markdown]
 # As expected, we still see undersampling artifacts in the image. In order to get rid of them,
 # we try can a more sophisticated reconstruction method, such as the *iterative SENSE algorithm*.
-# As you might have guessed, these are also included in mrtwo:
+# As you might have guessed, these are also included in MRpro:
 # Instead of the `~mr2.algorithms.reconstruction.DirectReconstruction`,
 # we can use `~mr2.algorithms.reconstruction.IterativeSENSEReconstruction`:
 
 # %%
 sense_recon_us = mr2.algorithms.reconstruction.IterativeSENSEReconstruction(
     kdata_us,
-    csm=direct_recon_calib_lines.csm,
+    csm=direct_recon_calib_lines.csm_op,
     n_iterations=8,
 )
 idat_us_sense = sense_recon_us(kdata_us)
 show_images(idat_us_sense.rss().squeeze(), titles=['Iterative SENSE'])
 
 # %% [markdown]
-# This looks better! More information about the iterative SENSE reconstruction and its implementation in mrtwo
+# This looks better! More information about the iterative SENSE reconstruction and its implementation in MRpro
 # can be found in the examples <project:iterative_sense_reconstruction_radial2D.ipynb> and
 # <project:iterative_sense_reconstruction_with_regularization.ipynb>.
 # ```{note}
@@ -430,9 +431,9 @@ zenodo_get.download(
 )
 
 idat_dcm = mr2.data.IData.from_dicom_files(data_folder / 'cart_t1_msense_integrated.dcm')
-show_images(idat_us_sense.rss().squeeze(), torch.fliplr(idat_dcm.rss().squeeze()), titles=['mrtwo', 'Scanner'])
+show_images(idat_us_sense.rss().squeeze(), torch.fliplr(idat_dcm.rss().squeeze()), titles=['MRpro', 'Scanner'])
 
 # %% [markdown]
-# The mrtwo reconstruction shows some residual intensity variations due to the multi-coil acquisition. For the vendor
+# The MRpro reconstruction shows some residual intensity variations due to the multi-coil acquisition. For the vendor
 # reconstruction this has been compensated for by using an additional scan with the body coil. This is not yet available
-# in mrtwo but all the building blocks are there to implement it. We look forward to your contribution!
+# in MRpro but all the building blocks are there to implement it. We look forward to your contribution!

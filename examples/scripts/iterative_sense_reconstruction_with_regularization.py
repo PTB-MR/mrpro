@@ -89,12 +89,12 @@ kdata_undersampled = mr2.data.KData.from_file(
 # In a real-world scenario, we would either a calibration scan (e.g. a separate fully sampled scan) to estimate the coil
 # sensitivity maps or use ESPIRiT or similar methods to estimate the coil sensitivity maps from the undersampled data.
 direct_reconstruction = mr2.algorithms.reconstruction.DirectReconstruction(kdata_fullysampled)
-csm = direct_reconstruction.csm
-assert csm is not None
+csm_op = direct_reconstruction.csm_op
+assert csm_op is not None
 
 # unregularized iterative SENSE reconstruction of the fully sampled data
 iterative_sense_reconstruction = mr2.algorithms.reconstruction.IterativeSENSEReconstruction(
-    kdata_fullysampled, csm=csm, n_iterations=3
+    kdata_fullysampled, csm=csm_op, n_iterations=3
 )
 img_iterative_sense = iterative_sense_reconstruction(kdata_fullysampled)
 
@@ -106,7 +106,7 @@ img_iterative_sense = iterative_sense_reconstruction(kdata_fullysampled)
 # %%
 # Unregularized iterative SENSE reconstruction of the undersampled data
 iterative_sense_reconstruction = mr2.algorithms.reconstruction.IterativeSENSEReconstruction(
-    kdata_undersampled, csm=csm, n_iterations=6
+    kdata_undersampled, csm=csm_op, n_iterations=6
 )
 img_us_iterative_sense = iterative_sense_reconstruction(kdata_undersampled)
 
@@ -115,7 +115,7 @@ img_us_iterative_sense = iterative_sense_reconstruction(kdata_undersampled)
 
 regularized_iterative_sense_reconstruction = mr2.algorithms.reconstruction.RegularizedIterativeSENSEReconstruction(
     kdata_undersampled,
-    csm=csm,
+    csm=csm_op,
     n_iterations=6,
     regularization_data=img_iterative_sense.data,
     regularization_weight=1.0,
@@ -166,7 +166,7 @@ show_images(
 
 # %%
 fourier_operator = mr2.operators.FourierOp.from_kdata(kdata_undersampled)
-csm_operator = csm.as_operator()
+csm_operator = csm_op
 acquisition_operator = fourier_operator @ csm_operator
 
 # %% [markdown]
