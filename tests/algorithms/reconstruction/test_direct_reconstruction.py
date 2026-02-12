@@ -3,7 +3,7 @@
 import pytest
 from mrpro.algorithms.reconstruction import DirectReconstruction
 from mrpro.data import CsmData, DcfData, KData
-from mrpro.operators import FourierOp
+from mrpro.operators import DensityCompensationOp, FourierOp, SensitivityOp
 
 
 def test_direct_reconstruction_automatic(cartesian_kdata: KData) -> None:
@@ -11,8 +11,8 @@ def test_direct_reconstruction_automatic(cartesian_kdata: KData) -> None:
     reconstruction = DirectReconstruction(kdata=cartesian_kdata)
     idata = reconstruction(cartesian_kdata)
     assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
-    assert reconstruction.csm is not None
-    assert reconstruction.dcf is not None
+    assert reconstruction.csm_op is not None
+    assert reconstruction.dcf_op is not None
 
 
 def test_direct_reconstruction_with_explicit_csm(cartesian_kdata: KData) -> None:
@@ -21,7 +21,17 @@ def test_direct_reconstruction_with_explicit_csm(cartesian_kdata: KData) -> None
     reconstruction = DirectReconstruction(kdata=cartesian_kdata, csm=csm)
     idata = reconstruction(cartesian_kdata)
     assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
-    assert reconstruction.csm is csm
+    assert isinstance(reconstruction.csm_op, SensitivityOp)
+
+
+def test_direct_reconstruction_with_explicit_csm_op(cartesian_kdata: KData) -> None:
+    """Test with pre-computed CSM operator."""
+    csm = CsmData.from_idata_walsh(DirectReconstruction(kdata=cartesian_kdata)(cartesian_kdata))
+    csm_op = csm.as_operator()
+    reconstruction = DirectReconstruction(kdata=cartesian_kdata, csm=csm_op)
+    idata = reconstruction(cartesian_kdata)
+    assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
+    assert reconstruction.csm_op is csm_op
 
 
 def test_direct_reconstruction_with_explicit_dcf(cartesian_kdata: KData) -> None:
@@ -30,7 +40,16 @@ def test_direct_reconstruction_with_explicit_dcf(cartesian_kdata: KData) -> None
     reconstruction = DirectReconstruction(kdata=cartesian_kdata, dcf=dcf)
     idata = reconstruction(cartesian_kdata)
     assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
-    assert reconstruction.dcf is dcf
+    assert isinstance(reconstruction.dcf_op, DensityCompensationOp)
+
+
+def test_direct_reconstruction_with_explicit_dcf_op(cartesian_kdata: KData) -> None:
+    """Test with pre-computed DCF operator."""
+    dcf_op = DcfData.from_traj_voronoi(cartesian_kdata.traj).as_operator()
+    reconstruction = DirectReconstruction(kdata=cartesian_kdata, dcf=dcf_op)
+    idata = reconstruction(cartesian_kdata)
+    assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
+    assert reconstruction.dcf_op is dcf_op
 
 
 def test_direct_reconstruction_with_explicit_fourier_op(cartesian_kdata: KData) -> None:
@@ -43,7 +62,6 @@ def test_direct_reconstruction_with_explicit_fourier_op(cartesian_kdata: KData) 
 
 
 @pytest.mark.cuda
-@pytest.mark.xfail(reason='Known CUDA reconstruction failure', strict=False)
 def test_direct_reconstruction_cuda_from_kdata(cartesian_kdata: KData) -> None:
     """Test CUDA device transfers for reconstruction created from kdata."""
     reconstruction = DirectReconstruction(kdata=cartesian_kdata).cuda()
@@ -63,7 +81,6 @@ def test_direct_reconstruction_cuda_from_kdata(cartesian_kdata: KData) -> None:
 
 
 @pytest.mark.cuda
-@pytest.mark.xfail(reason='Known CUDA reconstruction failure', strict=False)
 def test_direct_reconstruction_cuda_explicit_components(cartesian_kdata: KData) -> None:
     """Test CUDA device transfers with explicit FourierOp, CSM, and DCF."""
 

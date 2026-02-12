@@ -11,8 +11,8 @@ def test_iterative_sense_automatic(cartesian_kdata: KData) -> None:
     reconstruction = IterativeSENSEReconstruction(kdata=cartesian_kdata, n_iterations=2)
     idata = reconstruction(cartesian_kdata)
     assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
-    assert reconstruction.csm is not None
-    assert reconstruction.dcf is not None
+    assert reconstruction.csm_op is not None
+    assert reconstruction.dcf_op is not None
 
 
 def test_iterative_sense_with_callable_csm(cartesian_kdata: KData) -> None:
@@ -24,7 +24,7 @@ def test_iterative_sense_with_callable_csm(cartesian_kdata: KData) -> None:
     )
     idata = reconstruction(cartesian_kdata)
     assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
-    assert reconstruction.csm is not None
+    assert reconstruction.csm_op is not None
 
 
 def test_iterative_sense_with_explicit_csm(cartesian_kdata: KData) -> None:
@@ -33,7 +33,7 @@ def test_iterative_sense_with_explicit_csm(cartesian_kdata: KData) -> None:
     reconstruction = IterativeSENSEReconstruction(kdata=cartesian_kdata, csm=csm, n_iterations=2)
     idata = reconstruction(cartesian_kdata)
     assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
-    assert reconstruction.csm is csm
+    assert reconstruction.csm_op is not None
 
 
 def test_iterative_sense_with_explicit_dcf(cartesian_kdata: KData) -> None:
@@ -42,11 +42,10 @@ def test_iterative_sense_with_explicit_dcf(cartesian_kdata: KData) -> None:
     reconstruction = IterativeSENSEReconstruction(kdata=cartesian_kdata, dcf=dcf, n_iterations=2)
     idata = reconstruction(cartesian_kdata)
     assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
-    assert reconstruction.dcf is dcf
+    assert reconstruction.dcf_op is not None
 
 
 @pytest.mark.cuda
-@pytest.mark.xfail(reason='Known CUDA reconstruction failure', strict=False)
 def test_iterative_sense_cuda_from_kdata(cartesian_kdata: KData) -> None:
     """Test CUDA device transfers for reconstruction created from kdata."""
     reconstruction = IterativeSENSEReconstruction(kdata=cartesian_kdata, n_iterations=2).cuda()
@@ -66,7 +65,6 @@ def test_iterative_sense_cuda_from_kdata(cartesian_kdata: KData) -> None:
 
 
 @pytest.mark.cuda
-@pytest.mark.xfail(reason='Known CUDA reconstruction failure', strict=False)
 def test_iterative_sense_cuda_explicit_components(cartesian_kdata: KData) -> None:
     """Test CUDA device transfers with explicit FourierOp, CSM, and DCF."""
 
