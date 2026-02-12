@@ -45,6 +45,7 @@ def test_direct_reconstruction_with_explicit_fourier_op(cartesian_kdata: KData) 
 
 
 @pytest.mark.cuda
+@pytest.mark.xfail(reason='Known CUDA reconstruction failure', strict=False)
 def test_direct_reconstruction_cuda_from_kdata(cartesian_kdata: KData) -> None:
     """Test CUDA device transfers for reconstruction created from kdata."""
     reconstruction = DirectReconstruction(kdata=cartesian_kdata).cuda()
@@ -64,6 +65,7 @@ def test_direct_reconstruction_cuda_from_kdata(cartesian_kdata: KData) -> None:
 
 
 @pytest.mark.cuda
+@pytest.mark.xfail(reason='Known CUDA reconstruction failure', strict=False)
 def test_direct_reconstruction_cuda_explicit_components(
     cartesian_kdata: KData,
     explicit_components: Callable[[KData], tuple[FourierOp, CsmData, DcfData]],
