@@ -8,8 +8,10 @@ from mrpro.data.DcfData import DcfData
 from mrpro.data.IData import IData
 from mrpro.data.KData import KData
 from mrpro.data.KNoise import KNoise
+from mrpro.operators.DensityCompensationOp import DensityCompensationOp
 from mrpro.operators.FourierOp import FourierOp
 from mrpro.operators.LinearOperator import LinearOperator
+from mrpro.operators.SensitivityOp import SensitivityOp
 
 
 class DirectReconstruction(Reconstruction):
@@ -19,9 +21,9 @@ class DirectReconstruction(Reconstruction):
         self,
         kdata: KData | None = None,
         fourier_op: LinearOperator | None = None,
-        csm: Callable[[IData], CsmData] | CsmData | None = CsmData.from_idata_walsh,
+        csm: Callable[[IData], CsmData] | CsmData | SensitivityOp | None = CsmData.from_idata_walsh,
         noise: KNoise | None = None,
-        dcf: DcfData | None = None,
+        dcf: DcfData | DensityCompensationOp | None = None,
     ):
         """Initialize DirectReconstruction.
 
@@ -65,14 +67,14 @@ class DirectReconstruction(Reconstruction):
             self.fourier_op = fourier_op
 
         if kdata is not None and dcf is None:
-            self.dcf = DcfData.from_traj_voronoi(kdata.traj)
+            self.dcf_op = DcfData.from_traj_voronoi(kdata.traj).as_operator()
         else:
-            self.dcf = dcf
+            self.dcf_op = dcf.as_operator() if isinstance(dcf, DcfData) else dcf
 
         self.noise = noise
 
-        if csm is None or isinstance(csm, CsmData):
-            self.csm = csm
+        if csm is None or isinstance(csm, CsmData | SensitivityOp):
+            self.csm_op = csm.as_operator() if isinstance(csm, CsmData) else csm
         else:
             if kdata is None:
                 raise ValueError('kdata needs to be defined to calculate the sensitivity maps.')
