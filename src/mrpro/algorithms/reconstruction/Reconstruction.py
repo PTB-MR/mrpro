@@ -122,22 +122,22 @@ class Reconstruction(torch.nn.Module, ABC):
         elif noise is False:
             noise_data = None
         else:
-            noise_data=noise
+            noise_data = noise
         if noise_data is not None:
             kdata = prewhiten_kspace(kdata, noise_data)
 
         operator = self.fourier_op
-        
+
         if csm is not False:
             if csm is None:
                 csm_op = self.csm_op
             else:
                 csm_op = csm.as_operator()
             operator = operator @ csm_op
-        
+
         if self.dcf_op is not None:
             operator = self.dcf_op @ operator
-        
+
         (img_tensor,) = operator.H(kdata.data)
         img = IData.from_tensor_and_kheader(img_tensor, kdata.header)
         return img
