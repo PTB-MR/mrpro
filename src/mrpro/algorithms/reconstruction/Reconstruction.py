@@ -13,18 +13,20 @@ from mrpro.data.DcfData import DcfData
 from mrpro.data.IData import IData
 from mrpro.data.KData import KData
 from mrpro.data.KNoise import KNoise
+from mrpro.operators.DensityCompensationOp import DensityCompensationOp
 from mrpro.operators.FourierOp import FourierOp
 from mrpro.operators.LinearOperator import LinearOperator
+from mrpro.operators.SensitivityOp import SensitivityOp
 
 
 class Reconstruction(torch.nn.Module, ABC):
     """A Reconstruction."""
 
-    dcf: DcfData | None
-    """Density Compensation Data."""
+    dcf_op: DensityCompensationOp | None
+    """Density Compensation Operator."""
 
-    csm: CsmData | None
-    """Coil Sensitivity Data."""
+    csm_op: SensitivityOp | None
+    """Coil Sensitivity Operator."""
 
     noise: KNoise | None
     """Noise Data used for prewhitening."""
@@ -52,7 +54,7 @@ class Reconstruction(torch.nn.Module, ABC):
             k-space data to determine trajectory and recon/encoding matrix from.
         """
         self.fourier_op = FourierOp.from_kdata(kdata)
-        self.dcf = DcfData.from_traj_voronoi(kdata.traj)
+        self.dcf_op = DcfData.from_traj_voronoi(kdata.traj).as_operator()
         return self
 
     def recalculate_csm(
@@ -62,6 +64,9 @@ class Reconstruction(torch.nn.Module, ABC):
         noise: KNoise | None | Literal[False] = None,
     ) -> Self:
         """Update (in place) the CSM from KData.
+
+        Performs a direct reconstruction without coil combination
+        and estimates coil sensitivity maps from the result.
 
         Parameters
         ----------
@@ -74,44 +79,64 @@ class Reconstruction(torch.nn.Module, ABC):
         noise
             Noise measurement for prewhitening.
             If `None`, `self.noise` (if previously set) is used.
-            If `False`, no prewithening is performed even if `self.noise` is set.
+            If `False`, no prewhitening is performed even if `self.noise` is set.
             Use this if the `kdata` is already prewhitened.
         """
-        if noise is False:
-            noise = None
-        elif noise is None:
-            noise = self.noise
-        recon = type(self)(fourier_op=self.fourier_op, dcf=self.dcf, noise=noise, csm=None)
-        image = recon.direct_reconstruction(kdata)
-        self.csm = csm_calculation(image)
+        image = self.direct_reconstruction(kdata, csm=False, noise=noise)
+        self.csm_op = csm_calculation(image).as_operator()
         return self
 
-    def direct_reconstruction(self, kdata: KData) -> IData:
+    def direct_reconstruction(
+        self,
+        kdata: KData,
+        *,
+        csm: CsmData | None | Literal[False] = None,
+        noise: KNoise | None | Literal[False] = None,
+    ) -> IData:
         """Direct reconstruction of the MR acquisition.
 
         Here we use :math:`S^H F^H W` to calculate the image data using
         the coil sensitivity operator :math:`S`,
         the Fourier operator :math:`F`,
         and the density compensation operator :math:`W`.
-        :math:`S` and :math:`W` are optional: If they have not been set in this instance,
-        no coil combination or density compensation, respectively, will be performed.
 
         Parameters
         ----------
         kdata
             k-space data
+        csm
+            Coil sensitivity maps used for coil combination.
+            If `None`, ``self.csm_op`` is used.
+            If `False`, no coil combination is performed.
+        noise
+            Noise measurement for prewhitening.
+            If `None`, ``self.noise`` is used.
+            If `False`, no prewhitening is performed.
 
         Returns
         -------
             image data
         """
-        if self.noise is not None:
-            kdata = prewhiten_kspace(kdata, self.noise)
+        if noise is None:
+            noise_data = self.noise
+        elif noise is False:
+            noise_data = None
+        else:
+            noise_data = noise
+        if noise_data is not None:
+            kdata = prewhiten_kspace(kdata, noise_data)
+
         operator = self.fourier_op
-        if self.csm is not None:
-            operator = operator @ self.csm.as_operator()
-        if self.dcf is not None:
-            operator = self.dcf.as_operator() @ operator
+
+        if csm is None:
+            if self.csm_op is not None:
+                operator = operator @ self.csm_op
+        elif csm:
+            operator = operator @ csm.as_operator()
+
+        if self.dcf_op is not None:
+            operator = self.dcf_op @ operator
+
         (img_tensor,) = operator.H(kdata.data)
         img = IData.from_tensor_and_kheader(img_tensor, kdata.header)
         return img
