@@ -1,11 +1,12 @@
 """Tests the base Dataclass."""
 
 from dataclasses import field
+from pathlib import Path
 
 import einops
 import pytest
 import torch
-from mrpro.data import Dataclass, Rotation, SpatialDimension
+from mrpro.data import Dataclass, IData, KData, Rotation, SpatialDimension
 from mrpro.utils import RandomGenerator
 from typing_extensions import Any
 
@@ -479,3 +480,67 @@ def test_dataclass_detach() -> None:
     torch.testing.assert_close(b.child.floattensor, original * parameter1 * parameter2, msg='data is not shared.')
     assert parameter1.grad is None, 'detached after multiplication -> no gradient should be computed'
     assert parameter2.grad is not None, 'used after the detach -> gradient should be computed'
+
+
+def test_dataclass_save_as_mrp_roundtrip(tmp_path: Path) -> None:
+    """Test MRP roundtrip for a simple dataclass."""
+    dataclass = A()
+    filepath = tmp_path / 'dataclass_a.mrp'
+
+    dataclass.save_as_mrp(filepath)
+    reloaded = A.from_mrp(filepath)
+
+    torch.testing.assert_close(reloaded.floattensor, dataclass.floattensor)
+    torch.testing.assert_close(reloaded.floattensor2, dataclass.floattensor2)
+    torch.testing.assert_close(reloaded.complextensor, dataclass.complextensor)
+    torch.testing.assert_close(reloaded.inttensor, dataclass.inttensor)
+    torch.testing.assert_close(reloaded.booltensor, dataclass.booltensor)
+    assert reloaded.rotation.approx_equal(dataclass.rotation).all()
+
+
+def test_kdata_save_as_mrp_roundtrip(consistently_shaped_kdata: KData, tmp_path: Path) -> None:
+    """Test MRP roundtrip for KData."""
+    filepath = tmp_path / 'kdata.mrp'
+
+    consistently_shaped_kdata.save_as_mrp(filepath)
+    reloaded = KData.from_mrp(filepath)
+
+    torch.testing.assert_close(reloaded.data, consistently_shaped_kdata.data)
+    torch.testing.assert_close(reloaded.traj.as_tensor(), consistently_shaped_kdata.traj.as_tensor())
+    torch.testing.assert_close(
+        reloaded.header.acq_info.orientation.as_matrix(),
+        consistently_shaped_kdata.header.acq_info.orientation.as_matrix(),
+    )
+    torch.testing.assert_close(reloaded.header.acq_info.position.z, consistently_shaped_kdata.header.acq_info.position.z)
+    torch.testing.assert_close(reloaded.header.acq_info.position.y, consistently_shaped_kdata.header.acq_info.position.y)
+    torch.testing.assert_close(reloaded.header.acq_info.position.x, consistently_shaped_kdata.header.acq_info.position.x)
+    assert reloaded.header.recon_matrix == consistently_shaped_kdata.header.recon_matrix
+    assert reloaded.header.encoding_matrix == consistently_shaped_kdata.header.encoding_matrix
+    assert reloaded.header.recon_fov == consistently_shaped_kdata.header.recon_fov
+    assert reloaded.header.encoding_fov == consistently_shaped_kdata.header.encoding_fov
+
+
+def test_idata_save_as_mrp_roundtrip(random_kheader, random_test_data, tmp_path: Path) -> None:
+    """Test MRP roundtrip for IData."""
+    idata = IData.from_tensor_and_kheader(data=random_test_data, header=random_kheader)
+    filepath = tmp_path / 'idata.mrp'
+
+    idata.save_as_mrp(filepath)
+    reloaded = IData.from_mrp(filepath)
+
+    torch.testing.assert_close(reloaded.data, idata.data)
+    torch.testing.assert_close(reloaded.header.position.z, idata.header.position.z)
+    torch.testing.assert_close(reloaded.header.position.y, idata.header.position.y)
+    torch.testing.assert_close(reloaded.header.position.x, idata.header.position.x)
+    assert reloaded.header.orientation.approx_equal(idata.header.orientation).all()
+    assert reloaded.header.resolution == idata.header.resolution
+
+
+def test_dataclass_from_mrp_wrong_type_raises(tmp_path: Path) -> None:
+    """Test that loading an MRP file into the wrong class raises an error."""
+    dataclass = A()
+    filepath = tmp_path / 'dataclass_a.mrp'
+    dataclass.save_as_mrp(filepath)
+
+    with pytest.raises(ValueError, match='does not match requested type'):
+        B.from_mrp(filepath)

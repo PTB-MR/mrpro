@@ -48,6 +48,7 @@ import warnings
 from collections.abc import Callable, Iterable, Iterator, Sequence
 from typing import Literal, cast
 
+import h5py
 import numpy as np
 import torch
 import torch.nn.functional as F  # noqa: N812
@@ -2159,6 +2160,13 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         if self._quaternions.device != self._is_improper.device:
             raise RuntimeError('Quaternion and is_improper tensors are on different devices.')
         return self._quaternions.device
+
+    def _mrp_save_to_group(self, group: h5py.Group):
+        """Save the Rotation to an HDF5 group."""
+        group.attrs['py_module'] = __name__
+        group.attrs['class_name'] = self.__class__.__name__
+        group.create_dataset('quaternions', data=self._quaternions.numpy(force=True)).attrs['py_type'] = 'torch.Tensor'
+        group.create_dataset('inversion', data=self._is_improper.numpy(force=True)).attrs['py_type'] = 'torch.Tensor'
 
 
 class RotationBackend(AbstractBackend):
