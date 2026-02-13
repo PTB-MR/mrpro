@@ -20,10 +20,10 @@ class FastFourierOp(LinearOperator):
     forward and adjoint [FFT]_.
 
     .. note::
-        The input to both `~FastFourierOp.forward` and `~FastFourierOp.adjoint`
+        The input to both `~FastFourierOp` and `~FastFourierOp.H`
         are assumed to have the zero-frequency in the center of the data. `torch.fft.fftn`
         and `torch.fft.ifftn` expect the zero-frequency to be the first entry in the tensor.
-        Therefore in `~FastFourierOp.forward` and `~FastFourierOp.adjoint`,
+        Therefore in `~FastFourierOp` and `~FastFourierOp.H`,
         first `torch.fft.ifftshift`, then `torch.fft.fftn` or `torch.fft.ifftn`,
         finally `torch.fft.fftshift` are applied.
 

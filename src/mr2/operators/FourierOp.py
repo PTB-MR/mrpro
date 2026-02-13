@@ -312,7 +312,7 @@ class FourierGramOp(LinearOperator):
         -------
             Output tensor, same as the forward operation.
         """
-        return self.forward(x)
+        return super().__call__(x)
 
     @property
     def H(self) -> Self:  # noqa: N802
