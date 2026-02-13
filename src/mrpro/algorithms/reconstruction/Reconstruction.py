@@ -9,10 +9,10 @@ from typing_extensions import Self
 
 from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
 from mrpro.data.CsmData import CsmData
-from mrpro.data.DcfData import DcfData
 from mrpro.data.IData import IData
 from mrpro.data.KData import KData
 from mrpro.data.KNoise import KNoise
+from mrpro.operators.DensityCompensationOp import DensityCompensationOp
 from mrpro.operators.FourierOp import FourierOp
 from mrpro.operators.LinearOperator import LinearOperator
 
@@ -20,8 +20,8 @@ from mrpro.operators.LinearOperator import LinearOperator
 class Reconstruction(torch.nn.Module, ABC):
     """A Reconstruction."""
 
-    dcf: DcfData | None
-    """Density Compensation Data."""
+    dcf_op: DensityCompensationOp | None
+    """Density Compensation Operator."""
 
     csm: CsmData | None
     """Coil Sensitivity Data."""
@@ -52,7 +52,7 @@ class Reconstruction(torch.nn.Module, ABC):
             k-space data to determine trajectory and recon/encoding matrix from.
         """
         self.fourier_op = FourierOp.from_kdata(kdata)
-        self.dcf = DcfData.from_traj_voronoi(kdata.traj)
+        self.dcf_op = DensityCompensationOp.from_traj_voronoi(kdata.traj)
         return self
 
     def recalculate_csm(
@@ -81,7 +81,7 @@ class Reconstruction(torch.nn.Module, ABC):
             noise = None
         elif noise is None:
             noise = self.noise
-        recon = type(self)(fourier_op=self.fourier_op, dcf=self.dcf, noise=noise, csm=None)
+        recon = type(self)(fourier_op=self.fourier_op, dcf_op=self.dcf_op, noise=noise, csm=None)
         image = recon.direct_reconstruction(kdata)
         self.csm = csm_calculation(image)
         return self
@@ -110,8 +110,8 @@ class Reconstruction(torch.nn.Module, ABC):
         operator = self.fourier_op
         if self.csm is not None:
             operator = operator @ self.csm.as_operator()
-        if self.dcf is not None:
-            operator = self.dcf.as_operator() @ operator
+        if self.dcf_op is not None:
+            operator = self.dcf_op @ operator
         (img_tensor,) = operator.H(kdata.data)
         img = IData.from_tensor_and_kheader(img_tensor, kdata.header)
         return img

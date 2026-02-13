@@ -8,9 +8,9 @@ from mrpro.algorithms.reconstruction.RegularizedIterativeSENSEReconstruction imp
     RegularizedIterativeSENSEReconstruction,
 )
 from mrpro.data.CsmData import CsmData
-from mrpro.data.DcfData import DcfData
 from mrpro.data.KData import KData
 from mrpro.data.KNoise import KNoise
+from mrpro.operators.DensityCompensationOp import DensityCompensationOp
 from mrpro.operators.LinearOperator import LinearOperator
 
 
@@ -39,7 +39,7 @@ class IterativeSENSEReconstruction(RegularizedIterativeSENSEReconstruction):
         fourier_op: LinearOperator | None = None,
         csm: Callable | CsmData | None = CsmData.from_idata_walsh,
         noise: KNoise | None = None,
-        dcf: DcfData | None = None,
+        dcf_op: DensityCompensationOp | None = None,
         *,
         n_iterations: int = 5,
     ) -> None:
@@ -65,8 +65,9 @@ class IterativeSENSEReconstruction(RegularizedIterativeSENSEReconstruction):
             or `~mrpro.data.CsmData.from_idata_inati`.
         noise
             Noise used for prewhitening. If `None`, no prewhitening is performed
-        dcf
-            K-space sampling density compensation. Only used to obtain a good starting point for the CG algorithm as
+        dcf_op
+            Instance of the `~mrpro.operators.DensityCompensationOp` to compensate for the k-space sampling density.
+            If `None`, set up based on `kdata`. Only used to obtain a good starting point for the CG algorithm as
             by using the scaled density compensated direct reconstruction [FESSLER2010]_.
         n_iterations
             Number of CG iterations
@@ -76,4 +77,4 @@ class IterativeSENSEReconstruction(RegularizedIterativeSENSEReconstruction):
         `ValueError`
             If the `kdata` and `fourier_op` are `None` or if `csm` is a `Callable` but `kdata` is None.
         """
-        super().__init__(kdata, fourier_op, csm, noise, dcf, n_iterations=n_iterations, regularization_weight=0)
+        super().__init__(kdata, fourier_op, csm, noise, dcf_op, n_iterations=n_iterations, regularization_weight=0)
