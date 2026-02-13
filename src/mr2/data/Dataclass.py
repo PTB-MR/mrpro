@@ -1,12 +1,19 @@
 """Base class for all data classes."""
 
 import dataclasses
+import enum
+import importlib
 from collections.abc import Callable, Iterator, Sequence
 from copy import copy as shallowcopy
 from copy import deepcopy
+from datetime import datetime
+from pathlib import Path
 from typing import ClassVar, TypeAlias, cast
+from warnings import warn
 
 import einops
+import h5py
+import numpy as np
 import torch
 from typing_extensions import Any, Protocol, Self, TypeVar, dataclass_transform, overload, runtime_checkable
 
@@ -15,6 +22,11 @@ from mr2.utils.reduce_repeat import reduce_repeat
 from mr2.utils.reshape import broadcasted_concatenate, broadcasted_rearrange, normalize_index
 from mr2.utils.summarize import summarize_object
 from mr2.utils.typing import TorchIndexerType
+
+_MR2_ATTR_PY_TYPE = 'py_type'
+_MR2_ATTR_PY_MODULE = 'py_module'
+_MR2_ATTR_CLASS_NAME = 'class_name'
+_MR2_VERSION = 1
 
 
 @runtime_checkable
@@ -716,6 +728,175 @@ class Dataclass:
 
     # endregion Indexing
 
+    # region mr2 file
+    def _mr2_save_to_group(self, group: h5py.Group):
+        """Save the dataclass to an HDF5 group."""
+        group.attrs[_MR2_ATTR_PY_MODULE] = self.__class__.__module__
+        group.attrs[_MR2_ATTR_CLASS_NAME] = self.__class__.__name__
+
+        for field in dataclasses.fields(self):
+            value = getattr(self, field.name)
+            field_name = field.name
+
+            if field_name.startswith('_'):
+                continue
+
+            match value:
+                case None:
+                    continue
+
+                case _ if hasattr(value, '_mr2_save_to_group'):
+                    subgroup = group.create_group(field_name)
+                    value._mr2_save_to_group(subgroup)
+
+                case torch.Tensor():
+                    ds = group.create_dataset(field_name, data=value.numpy(force=True))
+                    ds.attrs[_MR2_ATTR_PY_TYPE] = 'torch.Tensor'
+
+                case list() | tuple():
+                    try:
+                        ds = group.create_dataset(field_name, data=np.array(value))
+                        ds.attrs[_MR2_ATTR_PY_TYPE] = type(value).__name__
+                    except ValueError as e:
+                        raise TypeError(
+                            f"Field '{field_name}': Could not convert list/tuple "
+                            f'to NumPy array. Ensure contents are uniform scalars. '
+                            f'Error: {e}'
+                        ) from e
+
+                case datetime():
+                    ds = group.create_dataset(field_name, data=np.array(value.timestamp()))
+                    ds.attrs[_MR2_ATTR_PY_TYPE] = 'timestamp'
+
+                case enum.Enum():
+                    ds = group.create_dataset(field_name, data=value.value)
+                    ds.attrs[_MR2_ATTR_PY_TYPE] = 'enum'
+                    ds.attrs[_MR2_ATTR_PY_MODULE] = value.__class__.__module__
+                    ds.attrs[_MR2_ATTR_CLASS_NAME] = value.__class__.__name__
+
+                case str() | int() | float() | bool():
+                    ds = group.create_dataset(field_name, data=value)
+                    ds.attrs[_MR2_ATTR_PY_TYPE] = type(value).__name__
+
+                case _:
+                    raise TypeError(
+                        f"Field '{field_name}': Unsupported type {type(value).__name__} for MR2 serialization."
+                    )
+
+    @staticmethod
+    def _mr2_load_from_group(group: h5py.Group) -> Any:  # noqa: ANN401
+        init_args: dict[str, Any] = {}
+
+        module_name = group.attrs.get(_MR2_ATTR_PY_MODULE, None)
+        class_name = group.attrs.get(_MR2_ATTR_CLASS_NAME, None)
+
+        if not isinstance(module_name, str) or not isinstance(class_name, str):
+            raise ValueError('Missing module or class name in HDF5 group')
+
+        try:
+            module = importlib.import_module(module_name)
+            target_cls = getattr(module, class_name)
+        except (ImportError, AttributeError) as e:
+            raise ImportError(f"Could not import class '{class_name}' from module '{module_name}'. Error: {e}") from e
+
+        for field_name, h5_item in group.items():
+            if isinstance(h5_item, h5py.Group):
+                init_args[field_name] = Dataclass._mr2_load_from_group(h5_item)
+
+            elif isinstance(h5_item, h5py.Dataset):
+                py_type_str = h5_item.attrs.get(_MR2_ATTR_PY_TYPE, None)
+                if py_type_str is None:
+                    raise ValueError(f"Dataset '{field_name}' missing '{_MR2_ATTR_PY_TYPE}' attribute.")
+
+                try:
+                    data = h5_item[()]  # Try scalar load
+                except (AttributeError, TypeError, ValueError):
+                    data = h5_item[:]  # Fallback to array load
+
+                # Reconstruct Python object based on stored type string
+                match py_type_str:
+                    case 'torch.Tensor':
+                        init_args[field_name] = torch.from_numpy(data)
+                    case 'list':
+                        init_args[field_name] = data.tolist()
+                    case 'tuple':
+                        init_args[field_name] = tuple(data.tolist())
+                    case 'enum':
+                        enum_module_name = h5_item.attrs.get(_MR2_ATTR_PY_MODULE, None)
+                        enum_class_name = h5_item.attrs.get(_MR2_ATTR_CLASS_NAME, None)
+                        if not isinstance(enum_module_name, str) or not isinstance(enum_class_name, str):
+                            raise ValueError('Missing module or class name for enum')
+                        try:
+                            enum_module = importlib.import_module(enum_module_name)
+                            enum_cls = getattr(enum_module, enum_class_name)
+                            init_args[field_name] = enum_cls(data.decode() if isinstance(data, bytes) else data)
+                        except Exception as e:
+                            raise RuntimeError(
+                                f"Could not load enum '{enum_class_name}' from '{enum_module_name}'. Error: {e}"
+                            ) from e
+                    case 'str':
+                        init_args[field_name] = str(data)
+                    case 'bool':
+                        init_args[field_name] = bool(data)
+                    case 'int':
+                        init_args[field_name] = int(data)
+                    case 'float':
+                        init_args[field_name] = float(data)
+                    case 'timestamp':
+                        init_args[field_name] = datetime.fromtimestamp(data)
+                    case _:
+                        raise RuntimeError(f"Unknown type '{py_type_str}' for dataset '{field_name}'")
+
+        return target_cls(**init_args)
+
+    def save_as_mr2(self, filepath: str | Path) -> None:
+        """Save the dataclass to an MR2 file.
+
+        ``MR2` is a mr2 specific file format based on HDF5. It is a simple serialization of dataclasses.
+
+        Parameters
+        ----------
+        filepath
+            The path to save the MR2 file to.
+        """
+        filepath = Path(filepath)
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+        with h5py.File(filepath, 'w') as f:
+            f.attrs['version'] = _MR2_VERSION
+            f.attrs[_MR2_ATTR_PY_MODULE] = self.__class__.__module__
+            f.attrs[_MR2_ATTR_CLASS_NAME] = self.__class__.__name__
+            self._mr2_save_to_group(f)
+
+    @classmethod
+    def from_mr2(cls, filepath: str | Path) -> Self:
+        """Load a dataclass from an MR2 file.
+
+        Parameters
+        ----------
+        filepath
+            The path to the MR2 file.
+        """
+        filepath = Path(filepath)
+        if not filepath.exists():
+            raise FileNotFoundError(f'HDF5 file not found: {filepath}')
+
+        with h5py.File(filepath, 'r') as f:
+            if (version := f.attrs.get('version', None)) != _MR2_VERSION:
+                warn(f'Unsupported MR2 version {version}. Only version {_MR2_VERSION} is supported.', stacklevel=2)
+
+            root_module = f.attrs.get(_MR2_ATTR_PY_MODULE, None)
+            root_class = f.attrs.get(_MR2_ATTR_CLASS_NAME, None)
+            if root_module != cls.__module__ or root_class != cls.__name__:
+                raise ValueError(f"Loaded class '{root_class}' does not match requested type {cls.__name__}")
+
+            instance = cls._mr2_load_from_group(f)
+
+            if not isinstance(instance, cls):
+                raise TypeError(f'Loaded object type {type(instance)} is not compatible with requested type {cls}')
+
+            return instance
+
+    # endregion mr2 file
     def rearrange(self, pattern: str, **axes_lengths: int) -> Self:
         """Rearrange the data according to the specified pattern.
 
