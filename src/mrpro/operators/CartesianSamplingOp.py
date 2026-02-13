@@ -342,7 +342,7 @@ class CartesianMaskingOp(LinearOperator):
                 *sampling_op._sorted_grid_shape.zyx,
                 device=sampling_op._fft_idx.device,
             )
-            (mask,) = sampling_op.adjoint(*sampling_op.forward(ones))
+            (mask,) = sampling_op.adjoint(*sampling_op(ones))
         else:
             mask = None
         return cls(mask)
@@ -374,7 +374,7 @@ class CartesianMaskingOp(LinearOperator):
         -------
             Masked k-space data.
         """
-        return self.forward(y)
+        return super().__call__(y)
 
     @property
     def H(self) -> Self:  # noqa: N802
