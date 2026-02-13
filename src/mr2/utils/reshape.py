@@ -10,6 +10,70 @@ import torch
 from mr2.utils.typing import endomorph
 
 
+def normalize_index(ndim: int, index: int) -> int:
+    """Normalize possibly negative indices.
+
+    Parameters
+    ----------
+    ndim
+        number of dimensions
+    index
+        index to normalize. negative indices count from the end.
+
+    Raises
+    ------
+    `IndexError`
+        if index is outside ``[-ndim,ndim)``
+    """
+    if 0 <= index < ndim:
+        return index
+    elif -ndim <= index < 0:
+        return ndim + index
+    else:
+        raise IndexError(f'Invalid index {index} for {ndim} data dimensions')
+
+
+def normalize_indices(
+    ndim: int,
+    indices: int | Sequence[int] | None,
+    *,
+    unique: bool = True,
+) -> tuple[int, ...]:
+    """Normalize each index in indices to the range [0, ndim).
+
+    Parameters
+    ----------
+    ndim
+        Number of dimensions.
+    indices
+        One or more axis indices; negative indices count from the end.
+        None means no indices -> empty tuple.
+    unique
+        If True (default), raise ValueError when normalized indices contain duplicates.
+
+    Returns
+    -------
+    Tuple of normalized indices in [0, ndim).
+
+    Raises
+    ------
+    IndexError
+        If any index is outside ``[-ndim, ndim)``.
+    ValueError
+        If unique is True and normalized indices are not unique.
+    """
+    if indices is None:
+        return ()
+
+    if isinstance(indices, int):
+        return (normalize_index(ndim, indices),)
+
+    normalized = tuple(normalize_index(ndim, i) for i in indices)
+    if unique and len(normalized) != len(set(normalized)):
+        raise IndexError(f'Axis indices must be unique after normalization; got {normalized}')
+    return normalized
+
+
 def unsqueeze_right(x: torch.Tensor, n: int) -> torch.Tensor:
     """Unsqueeze multiple times in the rightmost dimension.
 
@@ -205,10 +269,8 @@ def reduce_view(x: torch.Tensor, dim: int | Sequence[int] | None = None) -> torc
     """
     if dim is None:
         dim_: Sequence[int] = range(x.ndim)
-    elif isinstance(dim, Sequence):
-        dim_ = [d % x.ndim for d in dim]
     else:
-        dim_ = [dim % x.ndim]
+        dim_ = normalize_indices(x.ndim, dim, unique=False)
 
     stride = x.stride()
     newsize = [
@@ -441,9 +503,10 @@ def broadcasted_concatenate(tensors: Sequence[torch.Tensor], dim: int, reduce_vi
     n_dim = tensors[0].ndim
     if any(t.ndim != n_dim for t in tensors):
         raise ValueError('All tensors must have the same number of dimensions')
-    if not (-n_dim <= dim < n_dim):
-        raise ValueError(f'Dimension {dim} out of range for tensor of dimension {n_dim}')
-    dim = dim % n_dim
+    try:
+        dim = normalize_index(n_dim, dim)
+    except IndexError as e:
+        raise ValueError(f'Dimension {dim} out of range for tensor of dimension {n_dim}') from e
 
     broadcasted_shape = []
     idx = []

@@ -1,10 +1,9 @@
 """Zero functional."""
 
-from collections.abc import Sequence
-
 import torch
 
 from mr2.operators.Functional import ElementaryProximableFunctional, throw_if_negative_or_complex
+from mr2.utils.reshape import normalize_indices
 
 
 class ZeroFunctional(ElementaryProximableFunctional):
@@ -41,11 +40,9 @@ class ZeroFunctional(ElementaryProximableFunctional):
         dtype = torch.promote_types(torch.promote_types(x.dtype, self.weight.dtype), self.target.dtype).to_real()
 
         if self.dim is None:
-            normal_dim: Sequence[int] = range(x.ndim)
-        elif not all(-x.ndim <= d < x.ndim for d in self.dim):
-            raise IndexError('Invalid dimension index')
+            normal_dim = tuple(range(x.ndim))
         else:
-            normal_dim = [d % x.ndim for d in self.dim] if x.ndim > 0 else []
+            normal_dim = normalize_indices(x.ndim, self.dim, unique=True)
 
         if self.keepdim:
             new_shape = [1 if i in normal_dim else s for i, s in enumerate(x.shape)]

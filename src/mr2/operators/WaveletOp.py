@@ -11,6 +11,7 @@ from pywt import Wavelet
 from pywt._multilevel import _check_level
 
 from mr2.operators.LinearOperator import LinearOperator
+from mr2.utils.reshape import normalize_indices
 
 # Switch off formatter to avoid having only one wavelet type per line
 # fmt: off
@@ -162,10 +163,7 @@ class WaveletOp(LinearOperator):
             Prefer calling the instance of the WaveletOp operator as ``operator(x)`` over
             directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
-        # normalize axes to allow negative indexing in input
-        dim = tuple(d % x.ndim for d in self._dim)
-        if len(dim) != len(set(dim)):
-            raise ValueError(f'Axis must be unique. Normalized axis are {dim}')
+        dim = normalize_indices(x.ndim, self._dim)
 
         # move axes where wavelets are calculated to the end
         x = x.moveaxis(dim, list(range(-len(self._dim), 0)))
@@ -229,10 +227,8 @@ class WaveletOp(LinearOperator):
         if self._domain_shape is None:
             raise ValueError('Adjoint requires to define the domain_shape in init()')
 
-        # normalize axes to allow negative indexing in input
-        dim = tuple(d % (coefficients_stack.ndim + len(self._dim) - 1) for d in self._dim)
-        if len(dim) != len(set(dim)):
-            raise ValueError(f'Axis must be unique. Normalized axis are {dim}')
+        effective_ndim = coefficients_stack.ndim + len(self._dim) - 1
+        dim = normalize_indices(effective_ndim, self._dim)
 
         coefficients_stack = torch.moveaxis(coefficients_stack, min(dim), -1)
 
@@ -271,7 +267,7 @@ class WaveletOp(LinearOperator):
 
     @staticmethod
     def _format_coeffs_1d(coefficients: list[torch.Tensor]) -> list[torch.Tensor]:
-        """Format 1D wavelet coefficients to mrtwo format.
+        """Format 1D wavelet coefficients to MRpro format.
 
         At the moment, this function just returns the input coefficients as is:
         [a, d_n, ..., d_1]
@@ -280,7 +276,7 @@ class WaveletOp(LinearOperator):
 
     @staticmethod
     def _undo_format_coeffs_1d(coefficients: list[torch.Tensor]) -> list[torch.Tensor]:
-        """Undo format 1D wavelet coefficients to mrtwo format.
+        """Undo format 1D wavelet coefficients to MRpro format.
 
         At the moment, this function just returns the input coefficients as is:
         [a, d_n, ..., d_1]
@@ -291,21 +287,21 @@ class WaveletOp(LinearOperator):
     def _format_coeffs_2d(
         coefficients: list[torch.Tensor | tuple[torch.Tensor, torch.Tensor, torch.Tensor]],
     ) -> list[torch.Tensor]:
-        """Format 2D wavelet coefficients to mrtwo format.
+        """Format 2D wavelet coefficients to MRpro format.
 
         Converts from   [aa, (ad_n, da_n, dd_n), ..., (ad_1, da_1, dd_1)]
         to              [aa, ad_n, da_n, dd_n, ..., ad_1, da_1, dd_1]
         """
-        coeffs_mr2_format: list = [coefficients[0]]
+        coeffs_mrpro_format: list = [coefficients[0]]
         for c_tuple in coefficients[1:]:
-            coeffs_mr2_format.extend(c_tuple)
-        return coeffs_mr2_format
+            coeffs_mrpro_format.extend(c_tuple)
+        return coeffs_mrpro_format
 
     def _undo_format_coeffs_2d(
         self,
         coefficients: list[torch.Tensor],
     ) -> list[torch.Tensor | tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
-        """Undo format 2D wavelet coefficients to mrtwo format.
+        """Undo format 2D wavelet coefficients to MRpro format.
 
         Converts from   [aa, ad_n, da_n, dd_n, ..., ad_1, da_1, dd_1]
         to              [aa, (ad_n, da_n, dd_n), ..., (ad_1, da_1, dd_1)]
@@ -317,21 +313,21 @@ class WaveletOp(LinearOperator):
 
     @staticmethod
     def _format_coeffs_3d(coefficients: list[torch.Tensor | dict[str, torch.Tensor]]) -> list[torch.Tensor]:
-        """Format 3D wavelet coefficients to mrtwo format.
+        """Format 3D wavelet coefficients to MRpro format.
 
         Converts from   [aaa, {aad_n, ada_n, add_n, ...}, ..., {aad_1, ada_1, add_1, ...}]
         to              [aaa, aad_n, ada_n, add_n, ..., ..., aad_1, ada_1, add_1, ...]
         """
-        coeffs_mr2_format: list = [coefficients[0]]
+        coeffs_mrpro_format: list = [coefficients[0]]
         for c_dict in coefficients[1:]:
-            coeffs_mr2_format.extend(c_dict.values())
-        return coeffs_mr2_format
+            coeffs_mrpro_format.extend(c_dict.values())
+        return coeffs_mrpro_format
 
     def _undo_format_coeffs_3d(
         self,
         coefficients: list[torch.Tensor],
     ) -> list[torch.Tensor | dict[str, torch.Tensor]]:
-        """Undo format 3D wavelet coefficients to mrtwo format.
+        """Undo format 3D wavelet coefficients to MRpro format.
 
         Converts from   [aaa, aad_n, ada_n, add_n, ..., ..., aad_1, ada_1, add_1, ...]
         to              [aaa, {aad_n, ada_n, add_n, ...}, ..., {aad_1, ada_1, add_1, ...}]

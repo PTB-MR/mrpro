@@ -5,6 +5,8 @@ from typing import Literal
 
 import torch
 
+from mr2.utils.reshape import normalize_indices
+
 
 def interpolate(
     x: torch.Tensor, size: Sequence[int], dim: Sequence[int], mode: Literal['nearest', 'linear'] = 'linear'
@@ -30,10 +32,7 @@ def interpolate(
     if len(dim) != len(size):
         raise ValueError('Must provide matching length size and dim arguments.')
 
-    # normalize dim to allow negative indexing in input
-    dim = tuple([a % x.ndim for a in dim])
-    if len(dim) != len(set(dim)):
-        raise ValueError(f'Dim must be unique. Normalized dims are {dim}')
+    dim = normalize_indices(x.ndim, dim)
 
     # return input tensor if old and new size match
     if all(x.shape[d] == s for s, d in zip(size, dim, strict=True)):

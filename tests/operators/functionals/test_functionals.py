@@ -6,6 +6,7 @@ import torch
 from mr2.operators.Functional import ElementaryFunctional, ElementaryProximableFunctional
 from mr2.operators.functionals import MSE, L1Norm, L1NormViewAsReal, L2NormSquared, ZeroFunctional
 from mr2.utils import RandomGenerator
+from mr2.utils.reshape import normalize_indices
 from typing_extensions import TypedDict
 
 from tests.operators.functionals.conftest import (
@@ -42,11 +43,11 @@ def test_functional_shape(functional: type[ElementaryFunctional], shape: torch.S
         # make all dimensions singleton
         expected_shape = (1,) * len(shape)
     elif not keepdim:
-        # remove the dimensions in dim
-        expected_shape = tuple([s for i, s in enumerate(shape) if i not in torch.tensor(dim) % len(shape)])
+        normalized = normalize_indices(len(shape), dim)
+        expected_shape = tuple(s for i, s in enumerate(shape) if i not in normalized)
     elif keepdim:
-        # make the dimensions in dim singleton
-        expected_shape = tuple([s if i not in torch.tensor(dim) % len(shape) else 1 for i, s in enumerate(shape)])
+        normalized = normalize_indices(len(shape), dim)
+        expected_shape = tuple(s if i not in normalized else 1 for i, s in enumerate(shape))
     assert fx.shape == expected_shape
 
 

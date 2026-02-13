@@ -4,6 +4,8 @@ from collections.abc import Sequence
 
 import torch
 
+from mr2.utils.reshape import normalize_indices
+
 
 def sliding_window(
     x: torch.Tensor,
@@ -45,12 +47,8 @@ def sliding_window(
 
     if dim is None:
         dim = tuple(range(ndim))
-    elif isinstance(dim, int):
-        dim = (dim % ndim,)
     else:
-        dim = tuple(ax % ndim for ax in dim)
-        if len(set(dim)) != len(dim):
-            raise ValueError('Duplicate values in axis are not allowed')
+        dim = normalize_indices(ndim, dim)
 
     n_dim = len(dim)
     window_shape_ = (window_shape,) * n_dim if isinstance(window_shape, int) else tuple(window_shape)

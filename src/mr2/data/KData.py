@@ -33,6 +33,7 @@ from mr2.data.KTrajectory import KTrajectory
 from mr2.data.Rotation import Rotation
 from mr2.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 from mr2.data.traj_calculators.KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
+from mr2.utils.reshape import normalize_index, normalize_indices
 from mr2.utils.summarize import summarize_object
 from mr2.utils.typing import FileOrPath
 
@@ -466,7 +467,7 @@ class KData(Dataclass):
         """
         from mr2.operators import PCACompressionOp
 
-        coil_dim = -4 % self.data.ndim
+        coil_dim = normalize_index(self.data.ndim, -4)
 
         if n_compressed_coils > (n_current_coils := self.data.shape[coil_dim]):
             raise ValueError(
@@ -478,14 +479,14 @@ class KData(Dataclass):
             raise ValueError('Either batch_dims or joint_dims can be defined not both.')
 
         if joint_dims is not Ellipsis:
-            joint_dims_normalized = [i % self.data.ndim for i in joint_dims]
+            joint_dims_normalized = normalize_indices(self.data.ndim, joint_dims)
             if coil_dim in joint_dims_normalized:
                 raise ValueError('Coil dimension must not be in joint_dims')
-            batch_dims_normalized = [
-                d for d in range(self.data.ndim) if d not in joint_dims_normalized and d is not coil_dim
-            ]
+            batch_dims_normalized = tuple(
+                [d for d in range(self.data.ndim) if d not in joint_dims_normalized and d is not coil_dim]
+            )
         else:
-            batch_dims_normalized = [] if batch_dims is None else [i % self.data.ndim for i in batch_dims]
+            batch_dims_normalized = normalize_indices(self.data.ndim, batch_dims)
             if coil_dim in batch_dims_normalized:
                 raise ValueError('Coil dimension must not be in batch_dims')
 

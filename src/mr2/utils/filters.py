@@ -10,6 +10,8 @@ import numpy as np
 import torch
 from einops import repeat
 
+from mr2.utils.reshape import normalize_indices
+
 
 def filter_separable(
     x: torch.Tensor,
@@ -43,10 +45,7 @@ def filter_separable(
     if len(dim) != len(kernels):
         raise ValueError('Must provide matching length kernels and dim arguments.')
 
-    # normalize dim to allow negative indexing in input
-    dim = tuple([a % x.ndim for a in dim])
-    if len(dim) != len(set(dim)):
-        raise ValueError(f'Dim must be unique. Normalized dims are {dim}')
+    dim = normalize_indices(x.ndim, dim)
 
     if pad_mode == 'constant' and pad_value == 0:
         # padding is done inside the convolution

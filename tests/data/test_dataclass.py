@@ -370,11 +370,11 @@ def test_dataclass_split_invalid() -> None:
     a = A()
     with pytest.raises(ValueError):
         a.split(dim=0, size=2, dilation=0)
-    with pytest.raises(ValueError):
+    with pytest.raises(IndexError):
         a.split(dim=-3, size=2, overlap=-1)
-    with pytest.raises(ValueError):
+    with pytest.raises(IndexError):
         a.split(dim=3, size=2)
-    with pytest.raises(ValueError):
+    with pytest.raises(IndexError):
         a.split(dim=-4, size=2, overlap=3)
     with pytest.raises(ValueError):
         a.split(dim=0, size=-2)

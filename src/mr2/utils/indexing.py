@@ -11,29 +11,6 @@ from mr2.utils.reshape import reduce_view
 from mr2.utils.typing import TorchIndexerType
 
 
-def normalize_index(ndim: int, index: int) -> int:
-    """Normalize possibly negative indices.
-
-    Parameters
-    ----------
-    ndim
-        number of dimensions
-    index
-        index to normalize. negative indices count from the end.
-
-    Raises
-    ------
-    `IndexError`
-        if index is outside ``[-ndim,ndim)``
-    """
-    if 0 <= index < ndim:
-        return index
-    elif -ndim <= index < 0:
-        return ndim + index
-    else:
-        raise IndexError(f'Invalid index {index} for {ndim} data dimensions')
-
-
 @runtime_checkable
 class HasIndex(Protocol):
     """Objects that can be indexed with an `Indexer`."""

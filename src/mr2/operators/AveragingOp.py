@@ -6,6 +6,7 @@ from warnings import warn
 import torch
 
 from mr2.operators.LinearOperator import LinearOperator
+from mr2.utils.reshape import normalize_index
 
 
 class AveragingOp(LinearOperator):
@@ -104,8 +105,9 @@ class AveragingOp(LinearOperator):
             )
             self.domain_size = self._last_domain_size
 
-        adjoint = x.new_zeros(*x.shape[: self.dim], self.domain_size, *x.shape[self.dim + 1 :])
-        placeholder = (slice(None),) * (self.dim % x.ndim)
+        dim = normalize_index(x.ndim, self.dim)
+        adjoint = x.new_zeros(*x.shape[:dim], self.domain_size, *x.shape[dim + 1 :])
+        placeholder = (slice(None),) * dim
         for i, group in enumerate(self.idx):
             if isinstance(group, slice):
                 n = len(range(*group.indices(self.domain_size)))
@@ -115,7 +117,7 @@ class AveragingOp(LinearOperator):
                 n = len(group)
 
             adjoint[(*placeholder, group)] += (
-                x[(*placeholder, i, None)].expand(*x.shape[: self.dim], n, *x.shape[self.dim + 1 :]) / n
+                x[(*placeholder, i, None)].expand(*x.shape[:dim], n, *x.shape[dim + 1 :]) / n
             )
 
         return (adjoint,)
