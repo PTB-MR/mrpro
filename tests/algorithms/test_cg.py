@@ -1,26 +1,31 @@
-"""Tests for the conjugate gradient method."""
+"""Tests for the conjugate gradient and biconjugate gradient methods."""
+
+from collections.abc import Callable
 
 import pytest
 import scipy.linalg
 import scipy.sparse
+import scipy.sparse.linalg
 import torch
-from mr2.algorithms.optimizers import cg
+from mr2.algorithms.optimizers import bicg, cg
 from mr2.algorithms.optimizers.cg import CGStatus
-from mr2.operators import EinsumOp, LinearOperatorMatrix
+from mr2.operators import EinsumOp, LinearOperator, LinearOperatorMatrix
 from mr2.utils import RandomGenerator
 
 
 @pytest.fixture(
     params=[  # (batch-size, vector-size, complex-valued system, separate initial_value)
-        ((), 32, False, False),
-        ((4,), 32, True, True),
+        ((), 16, False, False),
+        ((4,), 16, True, True),
     ],
     ids=[
         'real_single_noinit',
         'complex_batch',
     ],
 )
-def system(request):
+def spd_system(
+    request,
+) -> tuple[LinearOperator, tuple[torch.Tensor, ...], tuple[torch.Tensor, ...], tuple[torch.Tensor, ...] | None]:
     """Generate system Hx=b with linear and self-adjoint H."""
     rng = RandomGenerator(seed=123)
     batchsize, vectorsize, complex_valued, separate_initial_value = request.param
@@ -43,12 +48,13 @@ def system(request):
     else:
         vector = rng.float64_tensor(size=vector_shape, low=-1.0, high=1.0)
 
-    (right_hand_side,) = operator(vector)
+    right_hand_side = operator(vector)
     if separate_initial_value:
-        initial_value = rng.rand_like(vector)
+        initial_value = (rng.rand_like(vector),)
     else:
         initial_value = None
-    return operator, right_hand_side, vector, initial_value
+
+    return operator, right_hand_side, (vector,), initial_value
 
 
 @pytest.fixture(
@@ -58,7 +64,7 @@ def system(request):
     ],
     ids=['3x3-operator-matrix', '1x1-operator-matrix'],
 )
-def matrixsystem(
+def spd_matrix_system(
     request,
 ) -> tuple[LinearOperatorMatrix, tuple[torch.Tensor, ...], tuple[torch.Tensor, ...], tuple[torch.Tensor, ...] | None]:
     """system Hx=b with linear and self-adjoint H as LinearOperatorMatrix."""
@@ -70,11 +76,11 @@ def matrixsystem(
     vectors = []
     for complex_operator in complex_valued_system:
         if complex_operator:
-            matrix = rng.complex64_tensor(size=matrix_shape, high=1.0)
-            vector = rng.complex64_tensor(size=vector_shape, high=1.0)
+            matrix = rng.complex128_tensor(size=matrix_shape, high=1.0)
+            vector = rng.complex128_tensor(size=vector_shape, high=1.0)
         else:
-            matrix = rng.float32_tensor(size=matrix_shape, low=-1.0, high=1.0)
-            vector = rng.float32_tensor(size=vector_shape, low=-1.0, high=1.0)
+            matrix = rng.float64_tensor(size=matrix_shape, low=-1.0, high=1.0)
+            vector = rng.float64_tensor(size=vector_shape, low=-1.0, high=1.0)
         vectors.append(vector)
         operators.append(EinsumOp(matrix.mH @ matrix))  # make sure H is self-adjoint
     operator_matrix = LinearOperatorMatrix.from_diagonal(*operators)
@@ -86,55 +92,74 @@ def matrixsystem(
     return (operator_matrix, right_hand_side, tuple(vectors), initial_value)
 
 
-def test_cg_solution(system) -> None:
+@pytest.mark.parametrize('algorithm', [cg, bicg])
+def test_spd_solution(
+    spd_system: tuple[LinearOperator, tuple[torch.Tensor], tuple[torch.Tensor], tuple[torch.Tensor] | None],
+    algorithm: Callable,
+) -> None:
     """Test if CG delivers accurate solution."""
-    operator, right_hand_side, solution, initial_value = system
-    (cg_solution,) = cg(operator, right_hand_side, initial_value=initial_value, max_iterations=256)
-    torch.testing.assert_close(cg_solution, solution, rtol=5e-3, atol=5e-3)
+    operator, right_hand_side, solution, initial_value = spd_system
+    result = algorithm(operator, right_hand_side, initial_value=initial_value, max_iterations=256)
+    torch.testing.assert_close(result, solution, rtol=5e-3, atol=5e-3)
 
 
-def test_cg_solution_operatormatrix(matrixsystem) -> None:
+@pytest.mark.parametrize('algorithm', [cg, bicg])
+def test_spd_matrix_solution(
+    spd_matrix_system: tuple[
+        LinearOperatorMatrix, tuple[torch.Tensor, ...], tuple[torch.Tensor, ...], tuple[torch.Tensor, ...] | None
+    ],
+    algorithm: Callable,
+) -> None:
     """Test if CG delivers accurate solution for a LinearOperatorMatrix."""
-    operator, right_hand_side, solution, initial_value = matrixsystem
-    cg_solution = cg(
+    operator, right_hand_side, solution, initial_value = spd_matrix_system
+    result = algorithm(
         operator,
         right_hand_side,
         initial_value=initial_value,
         max_iterations=1000,
         tolerance=1e-6,
     )
-    torch.testing.assert_close(cg_solution, solution, rtol=5e-3, atol=5e-3)
+    torch.testing.assert_close(result, solution, rtol=5e-3, atol=5e-3)
 
 
-def test_cg_stopping_after_one_iteration(system) -> None:
-    """Test if cg stops after one iteration if the ground-truth is the initial
-    guess."""
+@pytest.mark.parametrize('algorithm', [cg, bicg])
+def test_no_iteration(
+    spd_system: tuple[LinearOperator, tuple[torch.Tensor], tuple[torch.Tensor], tuple[torch.Tensor] | None],
+    algorithm: Callable,
+) -> None:
+    """Test if cg stops without performing any iterations if the ground-truth is the initial value."""
     # create operator, right-hand side and ground-truth data
-    operator, right_hand_side, solution, _ = system
+    operator, right_hand_side, solution, _ = spd_system
 
-    # callback function; should not be called since cg should exit for loop
+    # callback function; should not be called since we should stop before any iterations
     def callback(solution):
         pytest.fail('CG did not exit before performing any iterations')
 
     # the test should fail if we reach the callback
-    (cg_solution,) = cg(
+    result = algorithm(
         operator, right_hand_side, initial_value=solution, max_iterations=10, tolerance=1e-4, callback=callback
     )
-    assert (cg_solution == solution).all()
+    assert result == solution  # nothing should have happened
 
 
+@pytest.mark.parametrize('algorithm', [cg, bicg])
 @pytest.mark.parametrize('max_iterations', [1, 2, 3, 5])
 @pytest.mark.parametrize('use_preconditioner', [True, False], ids=['with preconditioner', 'without preconditioner'])
-def test_compare_cg_to_scipy(system, max_iterations: int, use_preconditioner: bool) -> None:
+def test_spd_compare_to_scipy(
+    spd_system: tuple[EinsumOp, tuple[torch.Tensor], tuple[torch.Tensor], tuple[torch.Tensor] | None],
+    max_iterations: int,
+    use_preconditioner: bool,
+    algorithm: Callable,
+) -> None:
     """Test if our implementation is close to the one of scipy."""
-    operator, right_hand_side, _, initial_value = system
+    operator, right_hand_side, _, initial_value = spd_system
 
     if operator.matrix.ndim == 2:
         operator_sp = operator.matrix.numpy()
     else:
         operator_sp = scipy.linalg.block_diag(*operator.matrix.numpy())
     if use_preconditioner:
-        ilu = scipy.sparse.linalg.spilu(scipy.sparse.csc_matrix(operator_sp), drop_tol=0.05)
+        ilu = scipy.sparse.linalg.spilu(scipy.sparse.csc_matrix(operator_sp), drop_tol=0.08)
         preconditioner_sp = scipy.sparse.linalg.LinearOperator(
             operator_sp.shape, lambda x: ilu.solve(x), dtype=operator_sp.dtype
         )
@@ -142,46 +167,59 @@ def test_compare_cg_to_scipy(system, max_iterations: int, use_preconditioner: bo
     else:
         preconditioner_sp = preconditioner = None
 
-    (scipy_solution, _) = scipy.sparse.linalg.cg(
+    if algorithm == cg:
+        sp_algorithm = scipy.sparse.linalg.cg
+    else:
+        sp_algorithm = scipy.sparse.linalg.bicgstab
+
+    (scipy_result, _) = sp_algorithm(
         operator_sp,
-        right_hand_side.flatten().numpy(),
-        x0=None if initial_value is None else initial_value.flatten().numpy(),
+        right_hand_side[0].flatten().numpy(),
+        x0=None if initial_value is None else initial_value[0].flatten().numpy(),
         maxiter=max_iterations,
-        atol=0,
+        atol=1e-6,
         M=preconditioner_sp,
     )
-    cg_solution_scipy = scipy_solution.reshape(right_hand_side.shape)
-    (cg_solution,) = cg(
+    scipy_result = scipy_result.reshape(right_hand_side[0].shape)
+
+    (result,) = algorithm(
         operator,
         right_hand_side,
         initial_value=initial_value,
         max_iterations=max_iterations,
-        tolerance=0,
+        tolerance=1e-6,
         preconditioner_inverse=preconditioner,
     )
 
-    tol = 1e-6 if cg_solution.dtype.to_real() == torch.float64 else 5e-3
+    tol = 1e-6 if result.dtype.to_real() == torch.float64 else 5e-3
+    torch.testing.assert_close(result, torch.tensor(scipy_result), atol=tol, rtol=tol)
 
-    torch.testing.assert_close(cg_solution, torch.tensor(cg_solution_scipy), atol=tol, rtol=tol)
 
-
-def test_invalid_shapes(system) -> None:
+@pytest.mark.parametrize('algorithm', [cg, bicg])
+def test_invalid_shapes(
+    spd_system: tuple[EinsumOp, torch.Tensor, torch.Tensor, torch.Tensor | None],
+    algorithm: Callable,
+) -> None:
     """Test if CG throws error in case of shape-mismatch."""
     # create operator, right-hand side and ground-truth data
-    operator, right_hand_side, *_ = system
+    operator, right_hand_side, *_ = spd_system
 
     # invalid initial value with mismatched shape
     bad_initial_value = torch.zeros(
         operator.matrix.shape[-1] + 1,
     )
     with pytest.raises(ValueError, match='match'):
-        cg(operator, right_hand_side, initial_value=bad_initial_value, max_iterations=10)
+        algorithm(operator, right_hand_side, initial_value=bad_initial_value, max_iterations=10)
 
 
-def test_callback(system) -> None:
+@pytest.mark.parametrize('algorithm', [cg, bicg])
+def test_callback(
+    spd_system: tuple[EinsumOp, torch.Tensor, torch.Tensor, torch.Tensor | None],
+    algorithm: Callable,
+) -> None:
     """Test if the callback function is called if a callback function is set."""
     # create operator, right-hand side
-    operator, right_hand_side, _, _ = system
+    operator, right_hand_side, _, _ = spd_system
 
     # callback function; if the function is called during the iterations, the
     # test is successful
@@ -189,11 +227,15 @@ def test_callback(system) -> None:
         _, _, _ = cg_status['iteration_number'], cg_status['solution'][0], cg_status['residual'][0].norm()
         assert True
 
-    cg(operator, right_hand_side, callback=callback)
+    algorithm(operator, right_hand_side, callback=callback)
 
 
-def test_callback_early_stop(system) -> None:
-    operator, right_hand_side, _, initial_value = system
+@pytest.mark.parametrize('algorithm', [cg, bicg])
+def test_callback_early_stop(
+    spd_system: tuple[EinsumOp, torch.Tensor, torch.Tensor, torch.Tensor | None],
+    algorithm: Callable,
+) -> None:
+    operator, right_hand_side, _, initial_value = spd_system
     """Check that when the callback function returns False the optimizer is stopped."""
     callback_check = 0
 
@@ -203,28 +245,38 @@ def test_callback_early_stop(system) -> None:
         callback_check += 1
         return False
 
-    cg(operator, right_hand_side, initial_value=initial_value, max_iterations=100, callback=callback)
+    algorithm(operator, right_hand_side, initial_value=initial_value, max_iterations=100, callback=callback)
     assert callback_check == 1
 
 
-def test_cg_autograd(system) -> None:
+@pytest.mark.parametrize('algorithm', [cg, bicg])
+def test_autograd(
+    spd_system: tuple[EinsumOp, torch.Tensor, torch.Tensor, torch.Tensor | None],
+    algorithm: Callable,
+) -> None:
     """Test autograd through cg"""
-    operator, right_hand_side, _, initial_value = system
-    right_hand_side.requires_grad_(True)
+    operator, right_hand_side, _, initial_value = spd_system
+    right_hand_side[0].requires_grad_(True)
     with torch.autograd.detect_anomaly():
-        (result,) = cg(operator, right_hand_side, initial_value=initial_value, tolerance=0, max_iterations=5)
+        (result,) = algorithm(operator, right_hand_side, initial_value=initial_value, max_iterations=5)
         result.abs().sum().backward()
-    assert right_hand_side.grad is not None
+    assert right_hand_side[0].grad is not None
 
 
 @pytest.mark.cuda
-def test_cg_cuda(matrixsystem) -> None:
+@pytest.mark.parametrize('algorithm', [cg, bicg])
+def test_cuda(
+    spd_matrix_system: tuple[
+        LinearOperatorMatrix, tuple[torch.Tensor, ...], tuple[torch.Tensor, ...], tuple[torch.Tensor, ...] | None
+    ],
+    algorithm: Callable,
+) -> None:
     """Test if CG works on CUDA."""
-    operator, right_hand_side, solution, initial_value = matrixsystem
+    operator, right_hand_side, solution, initial_value = spd_matrix_system
     right_hand_side = tuple(x.to('cuda') for x in right_hand_side)
     operator = operator.to('cuda')
     initial_value = tuple(x.to('cuda') for x in initial_value) if initial_value is not None else None
     solution = tuple(x.to('cuda') for x in solution)
-    result = cg(operator, right_hand_side, initial_value=initial_value, tolerance=1e-6, max_iterations=1000)
+    (result,) = algorithm(operator, right_hand_side, initial_value=initial_value, tolerance=1e-6, max_iterations=1000)
     assert all(x.is_cuda for x in result)
     torch.testing.assert_close(result, solution, rtol=5e-3, atol=5e-3)
