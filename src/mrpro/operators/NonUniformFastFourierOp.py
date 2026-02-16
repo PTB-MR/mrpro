@@ -464,7 +464,7 @@ class NonUniformFastFourierOpGramOp(LinearOperator):
         -------
             Output tensor, same shape as the input.
         """
-        return self.forward(x)
+        return super().__call__(x)
 
     @property
     def H(self) -> Self:  # noqa: N802
