@@ -511,9 +511,15 @@ def test_kdata_save_as_mrp_roundtrip(consistently_shaped_kdata: KData, tmp_path:
         reloaded.header.acq_info.orientation.as_matrix(),
         consistently_shaped_kdata.header.acq_info.orientation.as_matrix(),
     )
-    torch.testing.assert_close(reloaded.header.acq_info.position.z, consistently_shaped_kdata.header.acq_info.position.z)
-    torch.testing.assert_close(reloaded.header.acq_info.position.y, consistently_shaped_kdata.header.acq_info.position.y)
-    torch.testing.assert_close(reloaded.header.acq_info.position.x, consistently_shaped_kdata.header.acq_info.position.x)
+    torch.testing.assert_close(
+        reloaded.header.acq_info.position.z, consistently_shaped_kdata.header.acq_info.position.z
+    )
+    torch.testing.assert_close(
+        reloaded.header.acq_info.position.y, consistently_shaped_kdata.header.acq_info.position.y
+    )
+    torch.testing.assert_close(
+        reloaded.header.acq_info.position.x, consistently_shaped_kdata.header.acq_info.position.x
+    )
     assert reloaded.header.recon_matrix == consistently_shaped_kdata.header.recon_matrix
     assert reloaded.header.encoding_matrix == consistently_shaped_kdata.header.encoding_matrix
     assert reloaded.header.recon_fov == consistently_shaped_kdata.header.recon_fov
