@@ -219,7 +219,7 @@ def pdhg(
                 duals=duals,
                 solution=tuple(primals),
                 relaxed=primals_relaxed,
-                objective=lambda *x: f_sum.forward(*operator_matrix(*x))[0] + g_sum.forward(*x)[0],
+                objective=lambda *x: f_sum(*operator_matrix(*x))[0] + g_sum(*x)[0],
             )
             continue_iterations = callback(status)
             if continue_iterations is False:
