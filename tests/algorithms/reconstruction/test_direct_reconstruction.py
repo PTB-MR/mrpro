@@ -1,7 +1,5 @@
 """Tests for DirectReconstruction."""
 
-from collections.abc import Callable
-
 import pytest
 from mr2.algorithms.reconstruction import DirectReconstruction
 from mr2.data import CsmData, DcfData, KData
@@ -19,7 +17,7 @@ def test_direct_reconstruction_automatic(cartesian_kdata: KData) -> None:
 
 def test_direct_reconstruction_with_explicit_csm(cartesian_kdata: KData) -> None:
     """Test with pre-computed CSM."""
-    csm = CsmData.from_idata_walsh(DirectReconstruction(kdata=cartesian_kdata)(cartesian_kdata))
+    csm = CsmData.from_kdata_walsh(cartesian_kdata)
     reconstruction = DirectReconstruction(kdata=cartesian_kdata, csm=csm)
     idata = reconstruction(cartesian_kdata)
     assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
@@ -28,7 +26,7 @@ def test_direct_reconstruction_with_explicit_csm(cartesian_kdata: KData) -> None
 
 def test_direct_reconstruction_with_explicit_csm_op(cartesian_kdata: KData) -> None:
     """Test with pre-computed CSM operator."""
-    csm = CsmData.from_idata_walsh(DirectReconstruction(kdata=cartesian_kdata)(cartesian_kdata))
+    csm = CsmData.from_kdata_walsh(cartesian_kdata)
     csm_op = csm.as_operator()
     reconstruction = DirectReconstruction(kdata=cartesian_kdata, csm=csm_op)
     idata = reconstruction(cartesian_kdata)
@@ -83,11 +81,15 @@ def test_direct_reconstruction_cuda_from_kdata(cartesian_kdata: KData) -> None:
 
 
 @pytest.mark.cuda
-def test_direct_reconstruction_cuda_explicit_components(
-    cartesian_kdata: KData,
-    explicit_components: Callable[[KData], tuple[FourierOp, CsmData, DcfData]],
-) -> None:
+def test_direct_reconstruction_cuda_explicit_components(cartesian_kdata: KData) -> None:
     """Test CUDA device transfers with explicit FourierOp, CSM, and DCF."""
+
+    def explicit_components(kdata: KData) -> tuple[FourierOp, CsmData, DcfData]:
+        fourier_op = FourierOp.from_kdata(kdata)
+        csm = CsmData.from_kdata_walsh(kdata)
+        dcf = DcfData.from_traj_voronoi(kdata.traj)
+        return fourier_op, csm, dcf
+
     fourier_op, csm, dcf = explicit_components(cartesian_kdata)
     reconstruction = DirectReconstruction(fourier_op=fourier_op, csm=csm, dcf=dcf).cuda()
     idata = reconstruction(cartesian_kdata.cuda())

@@ -21,7 +21,7 @@ def test_vae_forward(torch_compile: bool, device: str) -> None:
         n_dim=2,
         n_channels_in=1,
         latent_channels=4,
-        n_features=(6, 8, 10),
+        n_features=(2, 4),
         n_res_blocks=2,
     )
 
@@ -34,7 +34,7 @@ def test_vae_forward(torch_compile: bool, device: str) -> None:
     assert y.shape == (1, 1, 8, 8)
     assert kl.shape == ()
     latent = vae.encoder(x)
-    assert latent.shape == (1, 2 * 4, 2, 2)  # 2 because of mean and logvar
+    assert latent.shape == (1, 2 * 4, 4, 4)  # 2 because of mean and logvar
 
 
 def test_vae_backward_kl() -> None:

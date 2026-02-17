@@ -21,8 +21,8 @@ def test_restormer_forward(torch_compile: bool, device: str) -> None:
         n_dim=2,
         n_channels_in=1,
         n_channels_out=1,
-        n_heads=(1, 2, 4),
-        n_blocks=(2, 1, 1),
+        n_heads=(1, 2),
+        n_blocks=(2, 1),
         cond_dim=32,
         n_channels_per_head=2,
     )

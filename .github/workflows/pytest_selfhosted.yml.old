@@ -55,7 +55,7 @@ jobs:
       - name: Run PyTest and Generate Coverage Report
         # shell bash sets the -o pipefail
         run: |
-          pytest -n 4 -m "cuda" --junitxml=pytest.xml \
+          pytest -m "cuda" --junitxml=pytest.xml \
           --cov-report=term-missing:skip-covered --cov=mr2 | tee pytest-coverage.txt
         shell: bash
 
@@ -84,7 +84,7 @@ jobs:
       - name: Run PyTest and Generate Coverage Report
         # shell bash sets the -o pipefail
         run: |
-          pytest -n 4 -m "cuda" --junitxml=pytest.xml \
+          pytest -m "cuda" --junitxml=pytest.xml \
           --cov-report=term-missing:skip-covered --cov=mr2 | tee pytest-coverage.txt
         shell: bash
 

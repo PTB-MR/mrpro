@@ -78,7 +78,6 @@ tests = [
     "pre-commit",
     "pytest",
     "pytest-cov",
-    "pytest-xdist",
 ]
 docs = [
     "mrtwo[notebooks]",
@@ -121,7 +120,6 @@ filterwarnings = [
     "ignore:`torch.jit.script` is deprecated:DeprecationWarning", # torch 2.10
     "ignore:`torch.jit.script_method` is deprecated", # torch 2.10
 ]
-addopts = "-n auto --dist loadfile --maxprocesses=8"
 markers = ["cuda : Tests only to be run when cuda device is available"]
 
 # MyPy section

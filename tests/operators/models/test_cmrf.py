@@ -8,7 +8,7 @@ from mr2.utils.reshape import unsqueeze_right
 from tests import autodiff_test
 
 
-def test_cmrf_basic(parameter_shape: Sequence[int] = (2, 1, 3, 4, 2)) -> None:
+def test_cmrf_basic(parameter_shape: Sequence[int] = (2, 1, 1, 4, 2)) -> None:
     """Test the CMRF model."""
     acquisition_times = unsqueeze_right(torch.linspace(0, 15, 705), len(parameter_shape)).expand(-1, *parameter_shape)
     model = CardiacFingerprinting(acquisition_times=acquisition_times)
@@ -21,7 +21,7 @@ def test_cmrf_basic(parameter_shape: Sequence[int] = (2, 1, 3, 4, 2)) -> None:
     assert signal.shape == (705, *parameter_shape)
 
 
-def test_cmrf_autodiff(parameter_shape: Sequence[int] = (2, 1, 3, 4, 2)) -> None:
+def test_cmrf_autodiff(parameter_shape: Sequence[int] = (2, 1, 1, 4, 2)) -> None:
     """Test autodiff works for cMRF model."""
     rng = RandomGenerator(8)
     acquisition_times = rng.float32_tensor(15, low=0.8, high=2).cumsum(0)

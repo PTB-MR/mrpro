@@ -11,7 +11,7 @@ from mr2.utils.typing import endomorph
 
 
 def normalize_index(ndim: int, index: int) -> int:
-    """Normalize possibly negative indices.
+    """Normalize possibly negative index.
 
     Parameters
     ----------
@@ -59,7 +59,7 @@ def normalize_indices(
     ------
     IndexError
         If any index is outside ``[-ndim, ndim)``.
-    ValueError
+    IndexError
         If unique is True and normalized indices are not unique.
     """
     if indices is None:

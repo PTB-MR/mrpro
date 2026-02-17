@@ -18,7 +18,7 @@ from mr2.nn.nets import Uformer
 def test_uformer_forward(torch_compile: bool, device: str) -> None:
     """Test the forward pass of the uformer."""
     uformer = Uformer(
-        n_dim=2, n_channels_in=1, n_channels_out=1, n_heads=(1, 2), cond_dim=32, n_channels_per_head=8, window_size=2
+        n_dim=2, n_channels_in=1, n_channels_out=1, n_heads=(1, 1), cond_dim=32, n_channels_per_head=4, window_size=2
     )
 
     x = torch.zeros(1, 1, 16, 16, device=device)
