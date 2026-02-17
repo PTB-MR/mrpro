@@ -3,7 +3,6 @@
 from collections.abc import Callable
 from typing import cast
 
-import einops
 import torch
 from typing_extensions import Self, TypeVarTuple, Unpack
 
@@ -28,12 +27,16 @@ class DictionaryMatchOp(Operator[torch.Tensor, tuple[Unpack[Tin]]]):
     This operator then calculates for each `x` value the signal returned by the model.
     To perform a match, use `__call__` and supply some `y` values. The operator will then perform the
     dot product matching and return the associated `x` values.
+
+    .. note::
+            This operator is not differentiable, the input signal to match to should not require gradients.
     """
 
     def __init__(
         self,
         generating_function: Callable[[Unpack[Tin]], tuple[torch.Tensor,]],
         index_of_scaling_parameter: int | None = None,
+        batch_size: int = 1024 * 1024,
     ):
         """Initialize DictionaryMatchOp.
 
@@ -52,6 +55,9 @@ class DictionaryMatchOp(Operator[torch.Tensor, tuple[Unpack[Tin]]]):
                 `index_of_scaling_parameter` should be set to 0. The operator will then return `t1` estimated
                 via dictionary matching and `m0` via a post-processing step.
                 If `index_of_scaling_parameter` is None, the value returned for `m0` will be meaningless.
+
+        batch_size
+            Size of the chunks to split the input signal into for batch processing. Reduce to save memory.
         """
         super().__init__()
         self._f = generating_function
@@ -59,6 +65,7 @@ class DictionaryMatchOp(Operator[torch.Tensor, tuple[Unpack[Tin]]]):
         self.y = torch.tensor([])
         self._index_of_scaling_parameter = index_of_scaling_parameter
         self.inverse_norm_y = None if index_of_scaling_parameter is None else torch.tensor([])
+        self.batch_size = batch_size
 
     def append(self, *x: Unpack[Tin]) -> Self:
         """Append `x` values to the dictionary.
@@ -136,21 +143,25 @@ class DictionaryMatchOp(Operator[torch.Tensor, tuple[Unpack[Tin]]]):
         if not self.x:
             raise KeyError('No keys in the dictionary. Please first add some x values using `append`.')
 
-        # This avoids unnecessary copies mixed domain cases
-        similarity = einops.einsum(input_signal.real, self.y.real, 'm ..., m idx  -> idx ...').square()
-        if self.y.is_complex():
-            similarity += einops.einsum(input_signal.real, self.y.imag, 'm ..., m idx  -> idx ...').square()
-        if input_signal.is_complex():
-            similarity += einops.einsum(input_signal.imag, self.y.real, 'm ..., m idx  -> idx ...').square()
-        if self.y.is_complex() and input_signal.is_complex():
-            similarity += einops.einsum(input_signal.imag, self.y.imag, 'm ..., m idx  -> idx ...').square()
+        if input_signal.requires_grad:
+            raise ValueError('DictionaryMatchOp is not differentiable. Acknowledge by detaching the input signal.')
 
-        idx = similarity.argmax(dim=0)
-        match = [x[idx] for x in self.x]
+        batch_shape = input_signal.shape[1:]
+        dtype = torch.result_type(input_signal, self.y)
 
-        if self._index_of_scaling_parameter is not None and self.inverse_norm_y is not None:
-            # replace the scaling argument with the correct scaling factor
-            scale = (self.y[:, idx].conj() * input_signal).sum(0) * self.inverse_norm_y[idx]
-            match.insert(self._index_of_scaling_parameter, scale)
-
-        return cast(tuple[Unpack[Tin]], tuple(match))
+        matches = []
+        for chunk in input_signal.flatten(1).mT.split(self.batch_size, dim=0):
+            similarity = chunk.to(dtype) @ self.y.conj().to(dtype)  # batch m, m idx  -> batch idx')
+            if similarity.is_complex():
+                similarity = similarity.real.square() + similarity.imag.square()
+            else:
+                similarity = similarity.square()
+            idx = similarity.argmax(dim=1)
+            match = [x[idx] for x in self.x]
+            if self._index_of_scaling_parameter is not None and self.inverse_norm_y is not None:
+                # replace the scaling argument with the correct scaling factor
+                scale = (chunk * self.y[:, idx].mH).sum(1) * self.inverse_norm_y[idx]
+                match.insert(self._index_of_scaling_parameter, scale)
+            matches.append(match)
+        result = tuple([torch.cat(m).reshape(*batch_shape) for m in zip(*matches, strict=True)])
+        return cast(tuple[Unpack[Tin]], result)
