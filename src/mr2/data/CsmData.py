@@ -12,6 +12,7 @@ from mr2.data.QData import QData
 from mr2.data.QHeader import QHeader
 from mr2.data.SpatialDimension import SpatialDimension
 from mr2.utils.interpolate import apply_lowres
+from mr2.utils.smap import smap
 
 if TYPE_CHECKING:
     from mr2.data.KData import KData
@@ -50,6 +51,55 @@ def get_downsampled_size(
 
 class CsmData(QData, init=False):
     """Coil sensitivity map class."""
+
+    @classmethod
+    def from_kdata_espirit(
+        cls,
+        acs: KData,
+        threshold: float = 0.02,
+        kernel_width: int = 6,
+        max_iterations: int = 10,
+        crop_threshold: float = 0.95,
+    ) -> CsmData:
+        """Espirit sensitivity Estimation.
+
+        Estimate the coil sensitivity maps from the auto-calibration data of a
+        cartesian acquisitions.
+
+        Parameters
+        ----------
+        acs
+            fully sampled auto-calibration data in the center of k-space
+        threshold
+            threshold for the singular value decomposition
+        kernel_width
+            width of the kernel for the espirit algorithm
+        max_iterations
+            maximum number of iterations for the espirit algorithm
+        crop_threshold
+            threshold for the crop of the espirit algorithm
+
+
+        """
+        from mr2.algorithms.csm.espirit import espirit
+
+        # TODO: check that the data is fully sampled and cartesian
+
+        img_shape = acs.header.recon_matrix.zyx
+
+        csm_data = smap(
+            lambda c: espirit(
+                c,
+                img_shape=img_shape,
+                threshold=threshold,
+                kernel_width=kernel_width,
+                max_iterations=max_iterations,
+                crop_threshold=crop_threshold,
+            ),
+            acs.data,
+            passed_dimensions=(-4, -3, -2, -1),
+        )
+        return cls(header=acs.header, data=csm_data)
 
     @classmethod
     def from_kdata_walsh(
