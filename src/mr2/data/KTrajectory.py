@@ -93,7 +93,7 @@ class KTrajectory(Dataclass):
         stack_dim
             The dimension in the tensor along which the directions are stacked.
         axes_order
-            The order of the axes in the tensor. The mrtwo convention is 'zyx'.
+            The order of the axes in the tensor. The MRtwo convention is 'zyx'.
         repeat_detection_tolerance
             Tolerance for detecting repeated dimensions (broadcasting).
             If trajectory points differ by less than this value, they are considered identical.

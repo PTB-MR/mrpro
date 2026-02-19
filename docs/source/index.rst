@@ -1,4 +1,4 @@
-.. mrtwo documentation
+.. MRtwo documentation
 
 .. |colab-badge| image:: https://colab.research.google.com/assets/colab-badge.svg
     :target: https://colab.research.google.com/github/fzimmermann89/mr2
@@ -16,16 +16,16 @@ MR image reconstruction and processing for PyTorch
 Main Features
 -------------
 - **Standard file formats**
-  mrtwo supports the ISMRMRD format for MR raw data and DICOM for image data
+  MRtwo supports the ISMRMRD format for MR raw data and DICOM for image data
 
 - **PyTorch integration**
   All data containers utilize PyTorch tensors to ensure easy integration with PyTorch-based network schemes.
 
 - **Cartesian and non-Cartesian trajectories**
-  mrtwo can reconstruct data obtained with Cartesian and non-Cartesian sampling schemes (e.g., radial, spiral). It automatically detects whether FFT or nuFFT is required to reconstruct the k-space data.
+  MRtwo can reconstruct data obtained with Cartesian and non-Cartesian sampling schemes (e.g., radial, spiral). It automatically detects whether FFT or nuFFT is required to reconstruct the k-space data.
 
 - **Pulseq support**
-  If the data acquisition was carried out using a pulseq-based sequence, the seq-file can be provided to mrtwo, which will automatically calculate the used trajectory.
+  If the data acquisition was carried out using a pulseq-based sequence, the seq-file can be provided to MRtwo, which will automatically calculate the used trajectory.
 
 - **Signal models**
   A range of MR signal models is implemented (e.g., T1 recovery, WASABI).

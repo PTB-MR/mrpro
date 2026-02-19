@@ -1,8 +1,8 @@
 API
 ===
 
-This is the mrtwo Application Programming Interface (API) documentation.
-It is designed to assist developers and researchers in understanding and utilizing the core functionalities of mrtwo effectively.
+This is the MRtwo Application Programming Interface (API) documentation.
+It is designed to assist developers and researchers in understanding and utilizing the core functionalities of MRtwo effectively.
 Each module includes detailed descriptions and function signatures to guide you through their usage.
 This documentation is generated from the docstrings, which are also available in your IDE.
 

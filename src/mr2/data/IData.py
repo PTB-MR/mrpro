@@ -279,7 +279,7 @@ class IData(Dataclass):
         dataset.PatientID = 'Unknown'
         dataset.PatientSex = 'O'
         dataset.Modality = 'MR'
-        dataset.StudyDescription = 'mrtwo'
+        dataset.StudyDescription = 'MRtwo'
 
         timestamp = self.header.datetime or datetime.datetime.now(datetime.timezone.utc)
         dataset.SeriesDate = timestamp.strftime('%Y%m%d')

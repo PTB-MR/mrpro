@@ -1,13 +1,13 @@
 Data Structures, Dimensions, and Indexing
 =================================================
 
-In mrtwo, we use `torch.Tensors` and "Dataclasses" to store and manage data. Dataclasses serve as containers for different tensors, metadata, and other dataclasses, ensuring a consistent and structured approach to data handling.
+In MRtwo, we use `torch.Tensors` and "Dataclasses" to store and manage data. Dataclasses serve as containers for different tensors, metadata, and other dataclasses, ensuring a consistent and structured approach to data handling.
 
 For example `mr2.data.KData` contains complex raw data, trajectory information, and headers.
 
 Dimensions and Broadcasting Rules
 ---------------------------------
-mrtwo follows a consistent convention of using at least 5-dimensional tensors for data representation:
+MRtwo follows a consistent convention of using at least 5-dimensional tensors for data representation:
 
 - K-space data: `(*other, coils, k2, k1, k0)`
 - Real space (image) data: `(*other, coils, z, y, x)`
@@ -53,7 +53,7 @@ The `mr2.data.Rotation` class handles orientations and rotations. It supports co
 
 Units
 -----
-All values in mrtwo are in SI units. For example, spatial dimensions are in meters, time is in seconds, and angles are in radians.
+All values in MRtwo are in SI units. For example, spatial dimensions are in meters, time is in seconds, and angles are in radians.
 This ensures consistency but might require conversion when interfacing with other software or hardware that uses different units,
 such as milliseconds for echo times or degrees for flip angles.
 
@@ -65,7 +65,7 @@ in the order `(*other, coils, k2, k1, k0)` for k-space data and `(*other, coil, 
 
 Examples
 --------
-Below are practical examples demonstrating the use of dataclasses, indexing, and rotations in mrtwo:
+Below are practical examples demonstrating the use of dataclasses, indexing, and rotations in MRtwo:
 
 .. code-block:: python
 

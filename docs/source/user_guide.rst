@@ -2,14 +2,14 @@
 User Guide
 ==========
 
-mrtwo is a MR image reconstruction and processing framework specifically developed to work well with pytorch.
+MRtwo is a MR image reconstruction and processing framework specifically developed to work well with pytorch.
 The data classes utilize `torch.Tensor` for storing data such as MR raw data or reconstructed image data.
 Operators are implemented as `torch.nn.Module` where possible batch parallelisation of pytorch is utilized to speed up image reconstruction.
 
 Installation
 ============
 
-mrtwo is available on `pypi <https://pypi.org/project/mrtwo/>`_ and can be installed with::
+MRtwo is available on `pypi <https://pypi.org/project/mrtwo/>`_ and can be installed with::
 
     pip install mrtwo
 
@@ -24,7 +24,7 @@ You can also install the latest development directly from github using::
 
 Usage
 =====
-mrtwo is designed to work directly from MR raw data using the `MRD <https://ismrmrd.readthedocs.io/en/latest/>`_ data format.
+MRtwo is designed to work directly from MR raw data using the `MRD <https://ismrmrd.readthedocs.io/en/latest/>`_ data format.
 
 A basic pipeline would contain the following steps:
 
@@ -45,13 +45,13 @@ Reading in raw data
 Reading in raw data from a MRD file works by creating a `mr2.data.KData` object and using the class method `~mr2.data.KData.from_file`.
 `~mr2.data.KData` contains the raw k-space data, the header information obtained from the MRD file and the k-space trajectory.
 To ensure the trajectory is calculated correctly, a `~mr2.data.traj_calculators.KTrajectoryCalculator` needs to be provided.
-The trajectory can either be calculated based on mrtwo functionality (e.g. for a 2D radial sampling scheme), read out
+The trajectory can either be calculated based on MRtwo functionality (e.g. for a 2D radial sampling scheme), read out
 from MRD or calculated from a `pulseq <http://pulseq.github.io/>`_ file. See `~mr2.data.traj_calculators`
 for available trajectory calculators and :doc:`_notebooks/comparison_trajectory_calculators` for an example.
 
 
 .. note::
-    In mrtwo, we use the convention ``(z, y, x)`` for spatial dimensions and ``(k2, k1, k0)`` for k-space dimensions.
+    In MRtwo, we use the convention ``(z, y, x)`` for spatial dimensions and ``(k2, k1, k0)`` for k-space dimensions.
     Here, `k0` is the readout direction, `k1` and `k2` are phase encoding directions.
     The full shape of a multi-slice 2D k-space data for example is ``(other, coils, 1, k1, k0)`` where `other` will be the different slices.
     In general, `other` can be any number of additional dimensions. All our data tensors will contain at least 5 dimensions, including
@@ -65,7 +65,7 @@ for available trajectory calculators and :doc:`_notebooks/comparison_trajectory_
 
 Preparation for reconstruction
 ------------------------------
-mrtwo provides a range of functionality to prepare the data for image reconstruction such as:
+MRtwo provides a range of functionality to prepare the data for image reconstruction such as:
 
 * Noise prewhiting
 * Removal of oversampling along readout direction
@@ -75,7 +75,7 @@ mrtwo provides a range of functionality to prepare the data for image reconstruc
 
 Data reconstruction
 -------------------
-mrtwo provides a flexible framework for MR image reconstruction. We provide some high level functions for commonly used
+MRtwo provides a flexible framework for MR image reconstruction. We provide some high level functions for commonly used
 reconstruction algorithms in `mr2.algorithms.reconstruction`, such as
 `~mr2.algorithms.reconstruction.RegularizedIterativeSENSEReconstruction`. We also provide all building blocks to
 create custom reconstruction algorithms and do manual reconstructions.
@@ -103,8 +103,8 @@ a non-linear optimizer: :doc:`_notebooks/qmri_sg_challenge_2024_t1`,
 
 Citation
 ========
-We are currently preparing a manuscript for mrtwo. In the meantime, please cite:
+We are currently preparing a manuscript for MRtwo. In the meantime, please cite:
 
 Zimmermann, F. F., Schuenke, P., Brahma, S., Guastini, M., Hammacher, J., Kofler, A., Redshaw Kranich, C., Lunin, L., Martin, S., Schote, D., & Kolbitsch, C. (2024).
-mrtwo - PyTorch-based MR image reconstruction and processing package
+MRtwo - PyTorch-based MR image reconstruction and processing package
 `10.5281/zenodo.14509598 <https://doi.org/10.5281/zenodo.14509598>`_

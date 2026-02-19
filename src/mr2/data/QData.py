@@ -24,14 +24,14 @@ class QData(Dataclass):
     """Header describing quantitative data."""
 
     def __init__(self, data: torch.Tensor, header: KHeader | IHeader | QHeader) -> None:
-        """Create QData object from a tensor and an arbitrary mrtwo header.
+        """Create QData object from a tensor and an arbitrary MRtwo header.
 
         Parameters
         ----------
         data
             quantitative image data tensor with dimensions `(*other, coils, z, y, x)`
         header
-            mrtwo header containing required meta data for the QHeader
+            MRtwo header containing required meta data for the QHeader
         """
         if isinstance(header, KHeader):
             qheader = QHeader.from_kheader(header)

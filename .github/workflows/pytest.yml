@@ -65,7 +65,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v6
 
-      - name: Install mrtwo and Dependencies
+      - name: Install MRtwo and Dependencies
         # use cpu version of torch
         run: |
           # for the test of minimal requirements we do not want to update dependencies

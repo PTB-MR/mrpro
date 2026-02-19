@@ -3,7 +3,7 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/fzimmermann89/mr2/refs/heads/main/docs/source/_static/logo_white.svg">
   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/fzimmermann89/mr2/refs/heads/main/docs/source/_static/logo.svg">
-  <img src="https://raw.githubusercontent.com/fzimmermann89/mr2/refs/heads/main/docs/source/_static/logo.svg" alt="mrtwo logo" width="50%">
+  <img src="https://raw.githubusercontent.com/fzimmermann89/mr2/refs/heads/main/docs/source/_static/logo.svg" alt="MRtwo logo" width="50%">
 </picture>
 
 </h1><br>
@@ -17,7 +17,7 @@
 MR data processing and image reconstruction.
 
 This project is a faster moving continuation/fork of [MRpro](https://github.com/PTB-MR/mrpro/).
-Some of the additional features of mrtwo will eventually get backported to MRpro, all new features of MRpro will be included in mrtwo.
+Some of the additional features of MRtwo will eventually get backported to MRpro, all new features of MRpro will be included in MRtwo.
 
 In most cases, you can replace `mrpro` by `mr2` in you code and everything works.
 
@@ -29,16 +29,16 @@ In most cases, you can replace `mrpro` by `mr2` in you code and everything works
 ## Main features
 - **Data handling** Custom dataclasses for fast data subsetting, sorting, rearranging
 - **Neural Network Block** Common blocks and networks used for ML based MRI reconstruction
-- **ISMRMRD support** mrtwo supports [ismrmrd-format](https://ismrmrd.readthedocs.io/en/latest/) for MR raw data.
+- **ISMRMRD support** MRtwo supports [ismrmrd-format](https://ismrmrd.readthedocs.io/en/latest/) for MR raw data.
 - **PyTorch** All data containers utilize PyTorch tensors to ensure easy integration in PyTorch-based network schemes.
-- **Cartesian and non-Cartesian trajectories** mrtwo can reconstruct data obtained with Cartesian and non-Cartesian (e.g. radial, spiral...) sapling schemes. mrtwo automatically detects if FFT or nuFFT is required to reconstruct the k-space data.
-- **Pulseq support** If the data acquisition was carried out using a [pulseq-based](http://pulseq.github.io/) sequence, the seq-file can be provided to mrtwo and the used trajectory is automatically calculated.
+- **Cartesian and non-Cartesian trajectories** MRtwo can reconstruct data obtained with Cartesian and non-Cartesian (e.g. radial, spiral...) sapling schemes. MRtwo automatically detects if FFT or nuFFT is required to reconstruct the k-space data.
+- **Pulseq support** If the data acquisition was carried out using a [pulseq-based](http://pulseq.github.io/) sequence, the seq-file can be provided to MRtwo and the used trajectory is automatically calculated.
 - **Signal models** A range of different MR signal models are implemented (e.g. T1 recovery, WASABI).
 - **Regularized image reconstruction** Regularized image reconstruction algorithms including Wavelet-based compressed sensing or total variation regularized image reconstruction are available.
 
 ## Examples
 
-In the following, we show some code snippets to highlight the use of mrtwo. Each code snippet only shows the main steps. A complete working notebook can be found in the provided link.
+In the following, we show some code snippets to highlight the use of MRtwo. Each code snippet only shows the main steps. A complete working notebook can be found in the provided link.
 
 ### Simple reconstruction
 

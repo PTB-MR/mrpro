@@ -17,7 +17,7 @@ This repository uses a *pyproject.toml* file to specify all the requirements.
     Files to create this documentation.
 
 **examples**
-    Python scripts showcasing how mrtwo can be used. Any data needed has to be available from
+    Python scripts showcasing how MRtwo can be used. Any data needed has to be available from
     an online repository (e.g. zenodo) such that it can be automatically downloaded.
     Individual cells should be indicated with ``# %%``. For markdown cells use ``# %% [markdown]``.
     The translation from Python script to Jupyter notebook is done in pre-commit (locally and on GitHub)
@@ -60,7 +60,7 @@ which we have also added to the list of extensions that VSCode should recommend 
 We also run `mypy <https://pypi.org/project/mypy/>`_ as a type checker.
 
 In CI, our linting is driven by `pre-commit <https://pre-commit.com/>`_.
-If you install mrtwo via ``pip install -e .[dev]``, pre-commit will be installed in your Python environment.
+If you install MRtwo via ``pip install -e .[dev]``, pre-commit will be installed in your Python environment.
 You can either add pre-commit to your git pre-commit hooks, requiring it to pass before each commit (``pre-commit install``),
 or run it manually using ``pre-commit run --all-files`` after making your changes, before requesting a PR review.
 
@@ -79,7 +79,7 @@ for images.
 
 Testing
 =======
-We use pytest for testing. All required packages will be installed if you install mrtwo via ``pip install -e .[dev]`` or ``pip install -e .[tests]``.
+We use pytest for testing. All required packages will be installed if you install MRtwo via ``pip install -e .[dev]`` or ``pip install -e .[tests]``.
 You can use VSCode's test panel to discover and run tests. All tests must pass before a PR can be merged. By default, we skip running CUDA tests.  You can use ``pytest -m cuda`` to run the CUDA tests if your development machine has a GPU available.
 
 Building the Documentation
@@ -90,7 +90,7 @@ Please check how your new additions render in the documentation before requestin
 
 Adding new Examples
 ===================
-New exciting applications of mrtwo can be added in ``examples`` as only ``.py`` files with code-cells. These can, for example, be used in VSCode with the Python extension, or in JupyterLab with the `jupytext <https://jupytext.readthedocs.io/en/latest/>`_ extension.
+New exciting applications of MRtwo can be added in ``examples`` as only ``.py`` files with code-cells. These can, for example, be used in VSCode with the Python extension, or in JupyterLab with the `jupytext <https://jupytext.readthedocs.io/en/latest/>`_ extension.
 A pre-commit action will convert the scripts to notebooks. Our documetantion build will pick up these notebooks, run them, and include them with outputs in the documentation.
 The data to run the examples should be publicly available and hosted externally, for example at zenodo.
 Please be careful not to add any binary files to your commits.

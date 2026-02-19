@@ -49,7 +49,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4 # Don't change without a reason. Self hosted runner update might be broken.
 
-      - name: Install mrtwo and Dependencies
+      - name: Install MRtwo and Dependencies
         run: pip install --upgrade --upgrade-strategy eager .[tests]
 
       - name: Run PyTest and Generate Coverage Report
@@ -78,7 +78,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4 # Don't change without a reason. Self hosted runner update might be broken.
 
-      - name: Install mrtwo and Dependencies
+      - name: Install MRtwo and Dependencies
         run: pip install --upgrade --upgrade-strategy eager .[tests]
 
       - name: Run PyTest and Generate Coverage Report
