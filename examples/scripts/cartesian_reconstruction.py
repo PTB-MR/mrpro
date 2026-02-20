@@ -367,10 +367,11 @@ show_images(idat_calib_lines.rss().squeeze(), titles=['Calibration Image'])
 
 # %%
 # The coil sensitivity maps
-assert direct_recon_calib_lines.csm is not None
+csm_op_calib = direct_recon_calib_lines.csm_op
+assert csm_op_calib is not None
 show_images(
-    *direct_recon_calib_lines.csm.data[0].abs().squeeze(),
-    titles=[f'|CSM {i}|' for i in range(direct_recon_calib_lines.csm.data.size(-4))],
+    *csm_op_calib.csm_tensor[0].abs().squeeze(),
+    titles=[f'|CSM {i}|' for i in range(csm_op_calib.csm_tensor.size(-4))],
 )
 
 # %% [markdown]
@@ -384,7 +385,9 @@ show_images(
 # We can now use these CSMs in a new `~mrpro.algorithms.reconstruction.DirectReconstruction`:
 
 # %%
-direct_recon_us_csm = mrpro.algorithms.reconstruction.DirectReconstruction(kdata_us, csm=direct_recon_calib_lines.csm)
+direct_recon_us_csm = mrpro.algorithms.reconstruction.DirectReconstruction(
+    kdata_us, csm=direct_recon_calib_lines.csm_op
+)
 idat_us_csm = direct_recon_us_csm(kdata_us)
 show_images(idat_us.rss().squeeze(), idat_us_csm.rss().squeeze(), titles=['Autocalibration', 'Calibration Lines'])
 
@@ -398,7 +401,7 @@ show_images(idat_us.rss().squeeze(), idat_us_csm.rss().squeeze(), titles=['Autoc
 # %%
 sense_recon_us = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction(
     kdata_us,
-    csm=direct_recon_calib_lines.csm,
+    csm=direct_recon_calib_lines.csm_op,
     n_iterations=8,
 )
 idat_us_sense = sense_recon_us(kdata_us)

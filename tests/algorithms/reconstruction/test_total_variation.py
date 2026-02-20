@@ -1,9 +1,10 @@
 """Tests for TotalVariationRegularizedReconstruction."""
 
 import pytest
+import torch
 from mrpro.algorithms.reconstruction import TotalVariationRegularizedReconstruction
 from mrpro.data import CsmData, DcfData, KData
-from mrpro.operators import FourierOp
+from mrpro.operators import DensityCompensationOp, FourierOp
 
 
 def test_total_variation_automatic(cartesian_kdata: KData) -> None:
@@ -16,8 +17,8 @@ def test_total_variation_automatic(cartesian_kdata: KData) -> None:
     )
     idata = reconstruction(cartesian_kdata)
     assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
-    assert reconstruction.csm is not None
-    assert reconstruction.dcf is not None
+    assert reconstruction.csm_op is not None
+    assert reconstruction.dcf_op is not None
 
 
 def test_total_variation_with_callable_csm(cartesian_kdata: KData) -> None:
@@ -31,7 +32,7 @@ def test_total_variation_with_callable_csm(cartesian_kdata: KData) -> None:
     )
     idata = reconstruction(cartesian_kdata)
     assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
-    assert reconstruction.csm is not None
+    assert reconstruction.csm_op is not None
 
 
 def test_total_variation_with_explicit_csm(cartesian_kdata: KData) -> None:
@@ -46,7 +47,7 @@ def test_total_variation_with_explicit_csm(cartesian_kdata: KData) -> None:
     )
     idata = reconstruction(cartesian_kdata)
     assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
-    assert reconstruction.csm is csm
+    torch.testing.assert_close(reconstruction.csm_op.csm_tensor, csm.data)
 
 
 def test_total_variation_with_explicit_dcf(cartesian_kdata: KData) -> None:
@@ -61,11 +62,10 @@ def test_total_variation_with_explicit_dcf(cartesian_kdata: KData) -> None:
     )
     idata = reconstruction(cartesian_kdata)
     assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
-    assert reconstruction.dcf is dcf
+    assert isinstance(reconstruction.dcf_op, DensityCompensationOp)
 
 
 @pytest.mark.cuda
-@pytest.mark.xfail(reason='Known CUDA reconstruction failure', strict=False)
 def test_total_variation_cuda_from_kdata(cartesian_kdata: KData) -> None:
     """Test CUDA device transfers for reconstruction created from kdata."""
     reconstruction = TotalVariationRegularizedReconstruction(
@@ -100,7 +100,6 @@ def test_total_variation_cuda_from_kdata(cartesian_kdata: KData) -> None:
 
 
 @pytest.mark.cuda
-@pytest.mark.xfail(reason='Known CUDA reconstruction failure', strict=False)
 def test_total_variation_cuda_explicit_components(cartesian_kdata: KData) -> None:
     """Test CUDA device transfers with explicit FourierOp, CSM, and DCF."""
 
