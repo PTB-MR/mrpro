@@ -1,6 +1,7 @@
 """Tests for RegularizedIterativeSENSEReconstruction."""
 
 import pytest
+import torch
 from mrpro.algorithms.reconstruction import RegularizedIterativeSENSEReconstruction
 from mrpro.data import CsmData, DcfData, KData
 from mrpro.operators import FourierOp

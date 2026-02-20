@@ -1,6 +1,7 @@
 """Tests for DirectReconstruction."""
 
 import pytest
+import torch
 from mrpro.algorithms.reconstruction import DirectReconstruction
 from mrpro.data import CsmData, DcfData, KData
 from mrpro.operators import FourierOp

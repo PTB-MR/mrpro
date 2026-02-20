@@ -1,6 +1,7 @@
 """Tests for TotalVariationRegularizedReconstruction."""
 
 import pytest
+import torch
 from mrpro.algorithms.reconstruction import TotalVariationRegularizedReconstruction
 from mrpro.data import CsmData, DcfData, KData
 from mrpro.operators import FourierOp

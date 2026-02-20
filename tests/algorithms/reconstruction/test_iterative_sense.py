@@ -1,6 +1,7 @@
 """Tests for IterativeSENSEReconstruction."""
 
 import pytest
+import torch
 from mrpro.algorithms.reconstruction import IterativeSENSEReconstruction
 from mrpro.data import CsmData, DcfData, KData
 from mrpro.operators import FourierOp
