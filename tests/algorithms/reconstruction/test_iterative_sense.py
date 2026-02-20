@@ -4,7 +4,7 @@ import pytest
 import torch
 from mrpro.algorithms.reconstruction import IterativeSENSEReconstruction
 from mrpro.data import CsmData, DcfData, KData
-from mrpro.operators import FourierOp
+from mrpro.operators import FourierOp, DensityCompensationOp
 
 
 def test_iterative_sense_automatic(cartesian_kdata: KData) -> None:
@@ -43,7 +43,7 @@ def test_iterative_sense_with_explicit_dcf(cartesian_kdata: KData) -> None:
     reconstruction = IterativeSENSEReconstruction(kdata=cartesian_kdata, dcf=dcf, n_iterations=2)
     idata = reconstruction(cartesian_kdata)
     assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
-    assert reconstruction.dcf_op is not None
+    assert isinstance(reconstruction.dcf_op, DensityCompensationOp)
 
 
 @pytest.mark.cuda

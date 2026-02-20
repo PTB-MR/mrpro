@@ -4,7 +4,7 @@ import pytest
 import torch
 from mrpro.algorithms.reconstruction import TotalVariationRegularizedReconstruction
 from mrpro.data import CsmData, DcfData, KData
-from mrpro.operators import FourierOp
+from mrpro.operators import FourierOp, DensityCompensationOp
 
 
 def test_total_variation_automatic(cartesian_kdata: KData) -> None:
@@ -62,7 +62,7 @@ def test_total_variation_with_explicit_dcf(cartesian_kdata: KData) -> None:
     )
     idata = reconstruction(cartesian_kdata)
     assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
-    assert reconstruction.dcf_op is not None
+    assert isinstance(reconstruction.dcf_op, DensityCompensationOp)
 
 
 @pytest.mark.cuda

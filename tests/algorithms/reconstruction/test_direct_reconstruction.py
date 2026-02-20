@@ -4,7 +4,7 @@ import pytest
 import torch
 from mrpro.algorithms.reconstruction import DirectReconstruction
 from mrpro.data import CsmData, DcfData, KData
-from mrpro.operators import FourierOp
+from mrpro.operators import FourierOp, DensityCompensationOp
 
 
 def test_direct_reconstruction_automatic(cartesian_kdata: KData) -> None:
@@ -31,9 +31,7 @@ def test_direct_reconstruction_with_explicit_dcf(cartesian_kdata: KData) -> None
     reconstruction = DirectReconstruction(kdata=cartesian_kdata, dcf=dcf)
     idata = reconstruction(cartesian_kdata)
     assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
-    assert isinstance(
-        reconstruction.dcf_op,
-    )
+    assert isinstance(reconstruction.dcf_op, DensityCompensationOp)
 
 
 def test_direct_reconstruction_with_explicit_dcf_op(cartesian_kdata: KData) -> None:
