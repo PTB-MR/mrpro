@@ -4,7 +4,7 @@ import pytest
 import torch
 from mrpro.algorithms.reconstruction import RegularizedIterativeSENSEReconstruction
 from mrpro.data import CsmData, DcfData, KData
-from mrpro.operators import FourierOp, DensityCompensationOp
+from mrpro.operators import DensityCompensationOp, FourierOp
 
 
 def test_regularized_iterative_sense_automatic(cartesian_kdata: KData) -> None:
