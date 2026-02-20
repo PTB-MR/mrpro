@@ -628,7 +628,7 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
             torch.stack(torch.broadcast_tensors(*(torch.as_tensor(getattr(v_, ax)) for ax in AXIS_ORDER)), dim=-1)
             for v_ in basis
         )
-        matrix = torch.stack((b1, b2, b3), -1)
+        matrix = torch.stack(torch.broadcast_tensors(b1, b2, b3), -1)
         det = torch.linalg.det(matrix)
         if not allow_improper and (det < 0).any():
             raise ValueError('The given basis vectors do not form a proper rotation matrix.')
