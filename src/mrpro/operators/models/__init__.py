@@ -10,6 +10,7 @@ from mrpro.operators.models.MonoExponentialDecay import MonoExponentialDecay
 from mrpro.operators.models.cMRF import CardiacFingerprinting
 from mrpro.operators.models.TransientSteadyStateWithPreparation import TransientSteadyStateWithPreparation
 from mrpro.operators.models import EPG
+from mrpro.operators.models.PEX import PEX
 
 __all__ = [
     "CardiacFingerprinting",
@@ -17,6 +18,7 @@ __all__ = [
     "InversionRecovery",
     "MOLLI",
     "MonoExponentialDecay",
+    "PEX",
     "SaturationRecovery",
     "SpoiledGRE",
     "TransientSteadyStateWithPreparation",
