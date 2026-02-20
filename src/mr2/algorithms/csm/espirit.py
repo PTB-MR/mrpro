@@ -2,16 +2,17 @@
 
 import torch
 from einops import rearrange
-from mrpro.data.SpatialDimension import SpatialDimension
+
+from mr2.data.SpatialDimension import SpatialDimension
 
 
 def espirit(
     coil_k_space: torch.Tensor,
     img_shape: SpatialDimension[int],
-    thresh: float = 0.02,
+    singular_value_threshold: float = 0.02,
     kernel_width: int = 6,
-    crop: float = 0.95,
-    max_iter: int = 10,
+    crop_threshold: float = 0.1,
+    n_iterations: int = 10,
 ) -> torch.Tensor:
     """Calculate a coil sensitivity map (csm) using the ESPIRIT method.
 
@@ -27,14 +28,14 @@ def espirit(
         k-space for each coil element
     img_shape
         shape of the image
-    thresh, optional
-        threshold for the values, by default 0.02
-    kernel_width, optional
-        edge size of the scanning window, by default 6
-    crop, optional
-        not implemented, by default 0.95
-    max_iter, optional
-        maxiumum amount of iteration, by default 10
+    singular_value_threshold
+        threshold for singular value decomposition
+    kernel_width
+        edge size of the scanning window
+    crop_threshold
+        threshold for cropping the csm, values below this threshold are set to 0
+    n_iterations
+        number of iterations in the power method
 
     Returns
     -------
@@ -43,13 +44,13 @@ def espirit(
     References
     ----------
     .. [UEC2013] Uecker M, Lai P, Murphy MJ, Virtue P, Elad M, Pauly JM, Vasanawala SS, Lustig M (2013) ESPIRiT
-    - an eigenvalue approach to autocalibrating parallel MRI: Where SENSE meets GRAPPA. MRM 71:990–1001​
+    - an eigenvalue approach to autocalibrating parallel MRI: Where SENSE meets GRAPPA. MRM
     """
     # expecting coil_k_space to be of shape (coils, z, y, x)
     # inspired by https://sigpy.readthedocs.io/en/latest/_modules/sigpy/mri/app.html#EspiritCalib
 
     # Get calibration matrix.
-    # Shape [n_coils] + n_blks + [kernel_width] * img_ndim
+    # Shape will be [n_coils] + n_blks + [kernel_width] * img_ndim
     mat = coil_k_space
     for ax in (1, 2, 3):
         mat = mat.unfold(dimension=ax, size=min(coil_k_space.shape[ax], kernel_width), step=1)
@@ -61,7 +62,7 @@ def espirit(
     _, s, vh = torch.linalg.svd(mat, full_matrices=False)
 
     # Get kernels
-    vh = torch.diag((s > thresh * s.max()).type(vh.type())) @ vh
+    vh = torch.diag((s > singular_value_threshold * s.max()).type(vh.type())) @ vh
     kernels = rearrange(vh, 'n (coils c b a) -> n coils c b a', coils=n_coils, c=c, b=b, a=a)
 
     # Get covariance matrix in image domain
@@ -75,7 +76,7 @@ def espirit(
     aha *= aha[0, 0].numel() / kernels.shape[-1]
 
     v = aha.sum(dim=0)
-    for _ in range(max_iter):
+    for _ in range(n_iterations):
         v /= v.norm(dim=0)
         v = torch.einsum('abzyx,bzyx->azyx', aha, v)
     max_eig = v.norm(dim=0)
@@ -84,7 +85,6 @@ def espirit(
     # Normalize phase with respect to first channel
     csm *= csm[0].conj() / csm[0].abs()
 
-    # Crop maps by thresholding eigenvalue
-    csm *= max_eig > crop
+    csm *= max_eig > crop_threshold
 
     return csm
