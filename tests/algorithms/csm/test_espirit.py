@@ -1,7 +1,7 @@
 """Tests the espirit algorithm."""
 
 import torch
-from mrpro.algorithms.csm import espirit
+from mr2.algorithms.csm import espirit
 from tests.algorithms.csm.conftest import multi_coil_image
 from tests.helper import relative_image_difference
 
