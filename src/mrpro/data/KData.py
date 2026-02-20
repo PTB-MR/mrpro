@@ -216,7 +216,6 @@ class KData(Dataclass):
             acq_info,
             defaults={
                 'datetime': modification_time,  # use the modification time of the dataset as fallback
-                'trajectory': trajectory,
             },
             overwrite=header_overwrites,
         )
