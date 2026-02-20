@@ -8,6 +8,7 @@ import torch
 from mrpro.operators import WaveletOp
 from mrpro.operators.WaveletOp import WaveletType
 from mrpro.utils import RandomGenerator
+from mrpro.utils.reshape import normalize_indices
 from ptwt.conv_transform import wavedec
 from ptwt.conv_transform_2 import wavedec2
 from ptwt.conv_transform_3 import wavedec3
@@ -36,7 +37,7 @@ def create_wavelet_op_and_domain_range(
     wavelet_stack_length = torch.sum(torch.as_tensor([(np.prod(shape)) for shape in wavelet_op.coefficients_shape]))
 
     # sorted and normed dimensions needed to correctly calculate range
-    dim_sorted = sorted([d % len(img_shape) for d in dim], reverse=True)
+    dim_sorted = sorted(normalize_indices(len(img_shape), dim), reverse=True)
     range_shape = list(img_shape)
     range_shape[dim_sorted[-1]] = int(wavelet_stack_length)
     [range_shape.pop(d) for d in dim_sorted[:-1]]

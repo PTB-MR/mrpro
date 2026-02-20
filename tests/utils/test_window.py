@@ -36,9 +36,9 @@ def test_window_contents(shape, window_shape, axis, stride):
 def test_repeated_axes() -> None:
     """Test that repeated axes raise an error."""
     data = torch.zeros(2, 3, 4)
-    with pytest.raises(ValueError, match='Duplicate values'):
+    with pytest.raises(IndexError, match='unique'):
         _ = sliding_window(data, window_shape=(2, 2), dim=(0, 0))
-    with pytest.raises(ValueError, match='Duplicate values'):
+    with pytest.raises(IndexError, match='unique'):
         _ = sliding_window(data, window_shape=(2, 2), dim=(0, -3))
 
 
