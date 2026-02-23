@@ -11,6 +11,7 @@ from pywt import Wavelet
 from pywt._multilevel import _check_level
 
 from mrpro.operators.LinearOperator import LinearOperator
+from mrpro.utils.reshape import normalize_indices
 
 # Switch off formatter to avoid having only one wavelet type per line
 # fmt: off
@@ -162,10 +163,7 @@ class WaveletOp(LinearOperator):
             Prefer calling the instance of the WaveletOp operator as ``operator(x)`` over
             directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
-        # normalize axes to allow negative indexing in input
-        dim = tuple(d % x.ndim for d in self._dim)
-        if len(dim) != len(set(dim)):
-            raise ValueError(f'Axis must be unique. Normalized axis are {dim}')
+        dim = normalize_indices(x.ndim, self._dim)
 
         # move axes where wavelets are calculated to the end
         x = x.moveaxis(dim, list(range(-len(self._dim), 0)))
@@ -229,10 +227,8 @@ class WaveletOp(LinearOperator):
         if self._domain_shape is None:
             raise ValueError('Adjoint requires to define the domain_shape in init()')
 
-        # normalize axes to allow negative indexing in input
-        dim = tuple(d % (coefficients_stack.ndim + len(self._dim) - 1) for d in self._dim)
-        if len(dim) != len(set(dim)):
-            raise ValueError(f'Axis must be unique. Normalized axis are {dim}')
+        effective_ndim = coefficients_stack.ndim + len(self._dim) - 1
+        dim = normalize_indices(effective_ndim, self._dim)
 
         coefficients_stack = torch.moveaxis(coefficients_stack, min(dim), -1)
 
