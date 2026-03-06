@@ -523,9 +523,8 @@ class TseBlock(EPGBlock):
         """
         super().__init__()
 
-        refocusing_flip_angles_, refocusing_rf_phases_ = map(
-            torch.as_tensor, (refocusing_flip_angles, refocusing_rf_phases)
-        )
+        refocusing_flip_angles_ = torch.as_tensor(refocusing_flip_angles, dtype=torch.float32)
+        refocusing_rf_phases_ = torch.as_tensor(refocusing_rf_phases, dtype=torch.float32)
         try:
             self.refocusing_flip_angles, self.refocusing_rf_phases = torch.broadcast_tensors(
                 refocusing_flip_angles_, refocusing_rf_phases_
