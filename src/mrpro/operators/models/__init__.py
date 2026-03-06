@@ -10,6 +10,8 @@ from mrpro.operators.models.MonoExponentialDecay import MonoExponentialDecay
 from mrpro.operators.models.cMRF import CardiacFingerprinting
 from mrpro.operators.models.TransientSteadyStateWithPreparation import TransientSteadyStateWithPreparation
 from mrpro.operators.models import EPG
+from mrpro.operators.models.MESE import MultiEchoSpinEcho
+from mrpro.operators.models.NeuroMRF import NeuroMRF
 
 __all__ = [
     "CardiacFingerprinting",
@@ -17,6 +19,8 @@ __all__ = [
     "InversionRecovery",
     "MOLLI",
     "MonoExponentialDecay",
+    "MultiEchoSpinEcho",
+    "NeuroMRF",
     "SaturationRecovery",
     "SpoiledGRE",
     "TransientSteadyStateWithPreparation",
