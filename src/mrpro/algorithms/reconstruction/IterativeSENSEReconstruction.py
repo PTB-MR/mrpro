@@ -11,7 +11,9 @@ from mrpro.data.CsmData import CsmData
 from mrpro.data.DcfData import DcfData
 from mrpro.data.KData import KData
 from mrpro.data.KNoise import KNoise
+from mrpro.operators.DensityCompensationOp import DensityCompensationOp
 from mrpro.operators.LinearOperator import LinearOperator
+from mrpro.operators.SensitivityOp import SensitivityOp
 
 
 class IterativeSENSEReconstruction(RegularizedIterativeSENSEReconstruction):
@@ -37,9 +39,9 @@ class IterativeSENSEReconstruction(RegularizedIterativeSENSEReconstruction):
         self,
         kdata: KData | None = None,
         fourier_op: LinearOperator | None = None,
-        csm: Callable | CsmData | None = CsmData.from_idata_walsh,
+        csm: Callable | CsmData | SensitivityOp | None = CsmData.from_idata_walsh,
         noise: KNoise | None = None,
-        dcf: DcfData | None = None,
+        dcf: DcfData | DensityCompensationOp | None = None,
         *,
         n_iterations: int = 5,
     ) -> None:
