@@ -127,5 +127,5 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
         """
         parameters = Parameters(m0, t1, t2)
         _, signals = self.sequence(parameters, states=20)
-        signal = torch.stack(signals, dim=0)
+        signal = torch.stack(signals, dim=0).broadcast_to(-1, *torch.broadcast_shapes(m0.shape, t1.shape, t2.shape))
         return (signal,)
