@@ -6,6 +6,7 @@ from mrpro.operators.Functional import FunctionalType, ProximableFunctional, Ele
 from mrpro.operators import functionals, models
 from mrpro.operators.AveragingOp import AveragingOp
 from mrpro.operators.CartesianSamplingOp import CartesianSamplingOp, CartesianMaskingOp
+from mrpro.operators.CirculantPreconditioner import CirculantPreconditioner
 from mrpro.operators.ConjugateGradientOp import ConjugateGradientOp
 from mrpro.operators.ConstraintsOp import ConstraintsOp
 from mrpro.operators.DensityCompensationOp import DensityCompensationOp
@@ -39,6 +40,7 @@ __all__ = [
     "AveragingOp",
     "CartesianMaskingOp",
     "CartesianSamplingOp",
+    "CirculantPreconditioner",
     "ConjugateGradientOp",
     "ConstraintsOp",
     "DensityCompensationOp",
