@@ -53,7 +53,7 @@ class NeuroMRF(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tenso
         echo_time: float = 0.0007,
         repetition_time: float = 0.012,
         inversion_time: float = 0.020,
-        n_states: int = 64
+        n_states: int = 64,
     ) -> None:
         """Initialize the NeuroMRF signal model.
 
@@ -84,7 +84,6 @@ class NeuroMRF(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tenso
             )
         )
         self.n_states = n_states
-
 
     def __call__(
         self, m0: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor, relative_b1: torch.Tensor | None = None

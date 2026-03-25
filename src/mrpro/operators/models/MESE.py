@@ -33,7 +33,9 @@ class MultiEchoSpinEcho(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, to
            Rev Sci Instrum. 1958
     """
 
-    def __init__(self, flip_angles: torch.Tensor, rf_phases: torch.Tensor, echo_time: float = 0.02, n_states: int = 32) -> None:
+    def __init__(
+        self, flip_angles: torch.Tensor, rf_phases: torch.Tensor, echo_time: float = 0.02, n_states: int = 32
+    ) -> None:
         """Initialize the multi-echo spin echo signal model.
 
         Parameters
@@ -57,7 +59,6 @@ class MultiEchoSpinEcho(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, to
         )
         self.sequence = EPGSequence((tse,))
         self.n_states = n_states
-
 
     def __call__(
         self, m0: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor, relative_b1: torch.Tensor | None = None

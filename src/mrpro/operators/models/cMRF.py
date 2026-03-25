@@ -42,7 +42,7 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
         echo_time: float = 0.0015,
         repetition_time: float = 0.005,
         t2_prep_echo_times: tuple[float, float, float] = (0.03, 0.05, 0.08),
-        n_states: int = 20
+        n_states: int = 20,
     ) -> None:
         """Initialize the Cardiac MR Fingerprinting signal model.
 
