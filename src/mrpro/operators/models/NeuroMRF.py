@@ -69,7 +69,8 @@ class NeuroMRF(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tenso
         inversion_time
             Inversion time in seconds.
         n_states
-            Number of EPG states to simulate. Truncating the number of states speeds up simulation at the cost of accuracy.
+            Number of EPG states to simulate.
+            Truncating the number of states speeds up simulation at the cost of accuracy.
         """
         super().__init__()
 
