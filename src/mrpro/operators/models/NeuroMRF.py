@@ -53,6 +53,7 @@ class NeuroMRF(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tenso
         echo_time: float = 0.0007,
         repetition_time: float = 0.012,
         inversion_time: float = 0.020,
+        n_states: int = 64
     ) -> None:
         """Initialize the NeuroMRF signal model.
 
@@ -67,12 +68,13 @@ class NeuroMRF(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tenso
             Repetition time in seconds.
         inversion_time
             Inversion time in seconds.
+        n_states
+            Number of EPG states to simulate. Truncating the number of states speeds up simulation at the cost of accuracy.
         """
         super().__init__()
 
         self.sequence = EPGSequence()
         self.sequence.append(InversionBlock(inversion_time))
-
         self.sequence.append(
             FispBlock(
                 flip_angles=flip_angles,
@@ -81,6 +83,8 @@ class NeuroMRF(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tenso
                 tr=repetition_time,
             )
         )
+        self.n_states = n_states
+
 
     def __call__(
         self, m0: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor, relative_b1: torch.Tensor | None = None
@@ -121,7 +125,7 @@ class NeuroMRF(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tenso
             directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         params = Parameters(m0, t1, t2, relative_b1)
-        _, signals = self.sequence(params, states=100)
+        _, signals = self.sequence(params, states=self.n_states)
         shape = torch.broadcast_shapes(m0.shape, t1.shape, t2.shape)
         if relative_b1 is not None:
             shape = torch.broadcast_shapes(shape, relative_b1.shape)

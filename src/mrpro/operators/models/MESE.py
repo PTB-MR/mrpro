@@ -33,7 +33,7 @@ class MultiEchoSpinEcho(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, to
            Rev Sci Instrum. 1958
     """
 
-    def __init__(self, flip_angles: torch.Tensor, rf_phases: torch.Tensor, echo_time: float = 0.02) -> None:
+    def __init__(self, flip_angles: torch.Tensor, rf_phases: torch.Tensor, echo_time: float = 0.02, n_states: int = 32) -> None:
         """Initialize the multi-echo spin echo signal model.
 
         Parameters
@@ -46,7 +46,8 @@ class MultiEchoSpinEcho(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, to
             Shape `(n_echoes,)`.
         echo_time
             Echo time in seconds.
-
+        n_states
+            Number of EPG states to simulate. Truncating the number of states speeds up simulation at the cost of accuracy.
         """
         super().__init__()
         tse = TseBlock(
@@ -55,6 +56,8 @@ class MultiEchoSpinEcho(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, to
             te=echo_time,
         )
         self.sequence = EPGSequence((tse,))
+        self.n_states = n_states
+
 
     def __call__(
         self, m0: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor, relative_b1: torch.Tensor | None = None
@@ -97,7 +100,7 @@ class MultiEchoSpinEcho(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, to
             directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         parameters = Parameters(m0, t1, t2, relative_b1)
-        _, signals = self.sequence(parameters)
+        _, signals = self.sequence(parameters, states=self.n_states)
         shape = torch.broadcast_shapes(m0.shape, t1.shape, t2.shape)
         if relative_b1 is not None:
             shape = torch.broadcast_shapes(shape, relative_b1.shape)
