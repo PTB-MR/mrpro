@@ -14,6 +14,8 @@ from mrpro.utils.unit_conversion import (
     ms_to_s,
     rad_to_deg,
     s_to_ms,
+    sqrt_kwatt_to_volt,
+    volt_to_sqrt_kwatt,
 )
 
 
@@ -95,3 +97,52 @@ def test_magnetic_field_to_lamor_frequency():
     proton_gyromagnetic_ratio = 42.58 * 1e6
     magnetic_field_strength = 3.0
     assert magnetic_field_to_lamor_frequency(magnetic_field_strength, proton_gyromagnetic_ratio) == 127.74 * 1e6
+
+
+def test_volt_to_sqrt_kwatt():
+    """Verify Volt to sqrt(kW) conversion."""
+    rng = RandomGenerator(seed=0)
+    volt_input = rng.float32_tensor((3, 4, 5))
+    expected = volt_input / (50e3**0.5)
+    torch.testing.assert_close(volt_to_sqrt_kwatt(volt_input), expected)
+
+
+def test_sqrt_kwatt_to_volt():
+    """Verify sqrt(kW) to Volt conversion."""
+    rng = RandomGenerator(seed=0)
+    sqrt_kwatt_input = rng.float32_tensor((3, 4, 5))
+    expected = sqrt_kwatt_input * (50e3**0.5)
+    torch.testing.assert_close(sqrt_kwatt_to_volt(sqrt_kwatt_input), expected)
+
+
+def test_volt_sqrt_kwatt_round_trip():
+    """Verify Volt <-> sqrt(kW) conversions are inverse operations."""
+    rng = RandomGenerator(seed=42)
+    volt_input = rng.float32_tensor((3, 4, 5), low=1.0, high=1000.0)
+
+    # Test round trip: volt -> sqrt_kwatt -> volt
+    sqrt_kwatt_converted = volt_to_sqrt_kwatt(volt_input)
+    volt_recovered = sqrt_kwatt_to_volt(sqrt_kwatt_converted)
+    torch.testing.assert_close(volt_input, volt_recovered)
+
+    # Test round trip: sqrt_kwatt -> volt -> sqrt_kwatt
+    sqrt_kwatt_input = rng.float32_tensor((3, 4, 5), low=0.001, high=1.0)
+    volt_converted = sqrt_kwatt_to_volt(sqrt_kwatt_input)
+    sqrt_kwatt_recovered = volt_to_sqrt_kwatt(volt_converted)
+    torch.testing.assert_close(sqrt_kwatt_input, sqrt_kwatt_recovered)
+
+
+def test_volt_to_sqrt_kwatt_scalar():
+    """Verify Volt to sqrt(kW) conversion for scalar values."""
+    volt = 100.0
+    expected = volt / (50e3**0.5)
+    result = volt_to_sqrt_kwatt(volt)
+    assert abs(result - expected) < 1e-6
+
+
+def test_sqrt_kwatt_to_volt_scalar():
+    """Verify sqrt(kW) to Volt conversion for scalar values."""
+    sqrt_kwatt = 0.5
+    expected = sqrt_kwatt * (50e3**0.5)
+    result = sqrt_kwatt_to_volt(sqrt_kwatt)
+    assert abs(result - expected) < 1e-6
