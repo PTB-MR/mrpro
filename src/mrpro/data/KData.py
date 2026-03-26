@@ -603,11 +603,11 @@ class KData(Dataclass):
         # Flatten multi-dimensional other
         n_other = self.data.shape[:-4]  # Assume that data is not broadcasted along other
         header = self.header.apply(
-            lambda field: rearrange(
-                field.expand(*n_other, *field.shape[-4:]), '... coils k2 k1 k0->(...) coils k2 k1 k0'
+            lambda field: (
+                rearrange(field.expand(*n_other, *field.shape[-4:]), '... coils k2 k1 k0->(...) coils k2 k1 k0')
+                if isinstance(field, torch.Tensor | Rotation)
+                else field
             )
-            if isinstance(field, torch.Tensor | Rotation)
-            else field
         )
         traj = self.traj.as_tensor()
         traj = torch.broadcast_to(traj, (traj.shape[0], *self.data.shape[:-4], *traj.shape[-4:]))  # broadcast "other"
