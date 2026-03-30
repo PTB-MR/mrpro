@@ -70,7 +70,7 @@ show_images(
 # ### Signal model and loss function
 # We use the model $q$
 #
-# $q(TI) = M_0 (1 - e^{-TI/T_1})$
+# $q(TI) = M_0 (1 - 2e^{-TI/T_1})$
 #
 # with the equilibrium magnetization $M_0$, the inversion time $TI$, and $T_1$. We have to keep in mind that the DICOM
 # images only contain the magnitude of the signal. Therefore, we need $|q(TI)|$:
