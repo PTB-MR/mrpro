@@ -1,195 +1,260 @@
-"""B0-Informed Fourier Operator."""
+"""B0-informed Fourier operators."""
 
+from abc import ABC, abstractmethod
+
+import einops
 import torch
 
-from mrpro.operators.FastFourierOp import FastFourierOp
 from mrpro.operators.LinearOperator import LinearOperator
 
 
-class B0InformedFourierOp(LinearOperator):
-    """B0-informed (fast) Fourier operator class.
+class B0InformedFourierOp(LinearOperator, ABC):
+    """Abstract base class for B0-informed Fourier operators.
 
-    This operator implements a B0-informed Fourier transform that accounts for off-resonance effects.
-    It supports different modes of operation dependent on the input parameters:
-
-    .. note:
-        If `num_time_points` and `num_frequencies` are both `None` or `0`,
-        exact conjugate phase reconstruction with all individual frequencies is performed.
-        If only `num_time_points` is set, time-segmented approximation is used for efficient computation.
-        If only `num_frequencies` is set, conjugate phase reconstruction with frequency binning is performed.
-        If both `num_time_points` and `num_frequencies` are set, time-segmented approximation with frequency
-        binning is applied.
+    Accounts for off-resonance effects via a separable approximation of the
+    phase accumulation term.
+    Base class for Multi-Frequency Interpolation, Time-Segmented Reconstruction and
+    Conjugate Phase Fourier operators.
     """
 
     def __init__(
         self,
+        fourier_op: LinearOperator,
         b0_map: torch.Tensor,
         readout_times: torch.Tensor,
-        fft_op: FastFourierOp,
-        num_time_points: int | None = None,
-        num_frequencies: int | None = None,
-        b0_decimals: int = 0,
     ) -> None:
-        """Initialize B0 informed Fourier operator.
+        """Initialize B0-informed Fourier Operator.
 
         Parameters
         ----------
+        fourier_op
+            Underlying Fourier operator.
         b0_map
-            Off-resonance map in Hz. Shape (..., Z, Y, X).
+            Off-resonance map in Hz. Shape (..., z, y, x).
         readout_times
-            Readout time vector in seconds. Shape (X,).
-        fft_op
-            Underlying Fast Fourier Transform operator.
-        num_time_points
-            Number of time segments for approximation.
-        num_frequencies
-            Number of frequency bins.
-        b0_decimals
-            Number of decimals to round B0 map values to after converting to radians/sec.
+            Readout time vector in seconds. Shape (samples,).
         """
         super().__init__()
+        self._fourier_op = fourier_op
+        b0_map_rad = 2 * torch.pi * b0_map
+        self._spatial_basis, self._temporal_basis = self._compute_basis(b0_map_rad, readout_times)
 
-        # Validate inputs
-        if readout_times.shape[-1] != b0_map.shape[-1]:
-            raise ValueError('readout_times must have same size as last dim of b0_map')
-
-        device = b0_map.device
-        self._fft_op: FastFourierOp = fft_op.to(device)
-        b0_map_rad = torch.round(2 * torch.pi * b0_map, decimals=b0_decimals)  # Convert to radians/sec
-
-        # Mode 1: Time-Segmented Approximation
-        # Solves for an interpolator (C) such that: Basis(t_seg) @ C ≈ Basis(t_readout)
-        if num_time_points is not None and num_time_points > 0:
-            # Define Time Segments
-            t_seg = torch.linspace(readout_times[0], readout_times[-1], num_time_points, device=device)
-
-            # Determine Frequency Basis for Least Squares Design
-            # If num_frequencies is set, we use Quantiles to design the filter.
-            # Otherwise, we use all Unique Frequencies (weighted by their occurrence count).
-            if num_frequencies is not None and num_frequencies > 0:
-                q_steps = torch.linspace(0, 1, num_frequencies, device=device)
-                frequencies_rad = torch.quantile(b0_map_rad.flatten(), q_steps)
-                weights = None
-            else:
-                frequencies_rad, counts = torch.unique(b0_map_rad, return_counts=True)
-                weights = counts.to(dtype=b0_map_rad.dtype).sqrt()
-
-            # Solve for Interpolator C: Solve the system A @ C = B in a least-squares sense.
-            # A (Segment Phase): exp(-i * w * t_seg)
-            # B (Readout Phase): exp(-i * w * t_ro)
-
-            # Broadcasting: w (N_freq, 1) * t (1, N_time) -> (N_freq, N_time)
-            # Segmented phase values from segmented time vector with shape (N_freqs, L)
-            phase_segments = torch.exp(-1j * frequencies_rad[:, None] * t_seg[None, :])
-            # Target phase values from readout times with shape (N_freqs, N_ro)
-            phase_readout = torch.exp(-1j * frequencies_rad[:, None] * readout_times[None, :])
-
-            # Apply weighting to the system if using Unique mode
-            if weights is not None:
-                phase_segments *= weights[:, None]
-                phase_readout *= weights[:, None]
-
-            # Interpolator obtained by pinv(phase_segments) @ phase_readout with shape (L, N_ro)
-            temporal_basis = torch.linalg.lstsq(phase_segments, phase_readout, rcond=1e-15).solution
-
-            # Precompute spatial basis functions B_l(r) = exp(-i * w(r) * t_seg_l)
-            # with shape (L, ..., Z, Y, X) where ... are the spatial dimensions of b0_map.
-            spatial_basis = torch.exp(-1j * torch.einsum('l, ... -> l...', t_seg, b0_map_rad))
-
-        # Mode 2: Exact CPR with or without Frequency Binning
-        # Uses spatial masks (basis) and exact temporal evolution (phasor)
-        else:
-            # Determine Frequencies and Spatial Indices
-            if num_frequencies is not None and num_frequencies > 0:
-                # Quantile Binning
-                q_steps = torch.linspace(0, 1, num_frequencies + 1, device=device)
-                boundaries = torch.quantile(b0_map_rad.flatten(), q_steps)
-
-                # Use bin centers for frequency evolution
-                frequencies_rad = (boundaries[:-1] + boundaries[1:]) / 2
-
-                # Quantize/bucketize the map, indices will range [0, num_frequencies-1]
-                indices = torch.bucketize(b0_map_rad, boundaries[:-1], right=True) - 1
-                indices.clamp_(0, num_frequencies - 1)
-            else:
-                # Exact Unique Frequencies
-                frequencies_rad, indices = torch.unique(b0_map_rad, return_inverse=True)
-                indices = indices.view(b0_map_rad.shape)
-
-            num_bins = len(frequencies_rad)
-
-            # Compute Phasor (Temporal Evolution) with shape: (N_bins, N_readout)
-            temporal_basis = torch.exp(-1j * torch.einsum('l, x -> lx', frequencies_rad, readout_times))
-
-            # Compute Basis (One-Hot Masks) with shape: (number of frequencies/bins, *b0map shape)
-            # WARNING: This can be memory intensive if number of bins, i.e. the number of frequencies is large
-            idx_range = torch.arange(num_bins, device=device).view(-1, *([1] * b0_map_rad.ndim))
-            spatial_basis = (indices.unsqueeze(0) == idx_range).to(dtype=torch.complex64)
-
-        # Register buffers
-        self._spatial_basis: torch.Tensor
-        self._temporal_basis: torch.Tensor
-        self.register_buffer('_spatial_basis', spatial_basis)  # Time-Seg -> Complex Maps | Binning -> Boolean Masks
-        self.register_buffer('_temporal_basis', temporal_basis)  # Time-Seg -> Interpolator | Binning -> Time Evolution
+    @abstractmethod
+    def _compute_basis(
+        self, b0_map_rad: torch.Tensor, readout_times: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Compute the spatial and temporal bases."""
+        ...
 
     def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply B0-informed Fourier transform to input tensor (image to k-space).
+        """Apply B0-informed Fourier transform to input tensor.
 
-        This method multiplies the input with basis functions, applies FT to each segment,
-        and combines results using a phasor weighting scheme.
+        This transforms image data to k-space data, accounting for off-resonance effects.
 
         Parameters
         ----------
         x
-            Input image tensor of shape (..., z, y, x) to be transformed.
+            Input image tensor with shape (..., coils, z, y, x).
 
         Returns
         -------
-            Tuple containing the transformed k-space tensor of shape (..., z, y, x).
+            Transformed k-space tensor with shape (..., coils, k2, k1, k0).
         """
         return super().__call__(x)
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply forward of FourierOp.
+        """Apply forward of B0InformedFourierOp.
 
         .. note::
-            Prefer calling the instance of the FourierOp operator as ``operator(x)`` over
+            Prefer calling the instance of the operator as ``operator(x)`` over
             directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
-        # Multiply with masks / basis functions
-        x_l = torch.einsum('...zyx, l...zyx -> l...zyx', x, self._spatial_basis)
-
-        # Apply Fourier transform to each segment
-        (k_l,) = self._fft_op(x_l)
-
-        # Multiply with phasor and sum over segments
-        res = torch.einsum('l...zyx, lx -> ...zyx', k_l, self._temporal_basis)
-
-        return (res,)
+        img_weighted = einops.einsum(x, self._spatial_basis, '... z y x, l ... z y x -> l ... z y x')
+        (k_weighted,) = self._fourier_op(img_weighted)
+        k = einops.einsum(k_weighted, self._temporal_basis, 'l ... z y x, l x -> ... z y x')
+        return (k,)
 
     def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply the adjoint of the B0-informed fast Fourier operator.
+        """Apply the adjoint of the B0-informed Fourier operator.
 
-        Computes the adjoint operation by applying the conjugate phasor multiplication,
-        inverse FFT transformation, and basis function weighting to recover the original
-        signal space representation.
+        This transforms k-space data to image data, accounting for off-resonance effects.
 
         Parameters
         ----------
         y
-            Input k-spacetensor in Fourier space with shape (..., z, y, x).
+            Input k-space tensor with shape (..., coils, k2, k1, k0).
 
         Returns
         -------
-            Reconstructed image tensor in signal space with shape (..., z, y, x).
+            Reconstructed image tensor in signal space with shape (..., coils, z, y, x).
         """
-        # Multiply with conjugate phasor
-        y_l = torch.einsum('...zyx, lx -> l...zyx', y, self._temporal_basis.conj())
+        k_weighted = einops.einsum(y, self._temporal_basis.conj(), '... z y x, l x -> l ... z y x')
+        (img_weighted,) = self._fourier_op.adjoint(k_weighted)
+        img = einops.einsum(
+            img_weighted,
+            self._spatial_basis.conj(),
+            'l ... z y x, l ... z y x -> ... z y x',
+        )
+        return (img,)
 
-        # Inverse Fourier operator applied to each segment
-        (x_l,) = self._fft_op.adjoint(y_l)
 
-        # Multiply with Masks and sum over segments
-        res = torch.einsum('l...zyx, l...zyx -> ...zyx', x_l, self._spatial_basis.conj())
+class MultiFrequencyFourierOp(B0InformedFourierOp):
+    """Multi-Frequency Interpolation (MFI) B0-informed Fourier operator.
 
-        return (res,)
+    Approximates the off-resonance phase term by defining discrete frequency
+    bins and using soft spatial interpolation to compute image components.
+
+    References
+    ----------
+    .. [1] Man LC, Pauly JM, Macovski A. Multifrequency interpolation for fast
+       off-resonance correction. Magn Reson Med. 1997;37(5):785-792.
+    """
+
+    def __init__(
+        self,
+        fourier_op: LinearOperator,
+        b0_map: torch.Tensor,
+        readout_times: torch.Tensor,
+        n_bins: int = 32,
+    ) -> None:
+        """Initialize Multi-Frequency Fourier Operator.
+
+        Parameters
+        ----------
+        fourier_op
+            Underlying Fourier operator.
+        b0_map
+            Off-resonance map in Hz. Shape (..., z, y, x).
+        readout_times
+            Readout time vector in seconds. Shape (samples,).
+        n_bins
+            Number of frequency bins.
+        """
+        if n_bins <= 0:
+            raise ValueError('n_bins must be strictly positive.')
+        self.n_bins = n_bins
+        super().__init__(fourier_op, b0_map, readout_times)
+
+    def _compute_basis(
+        self, b0_map_rad: torch.Tensor, readout_times: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        with torch.no_grad():
+            quantile_steps = torch.linspace(0, 1, self.n_bins, device=b0_map_rad.device, dtype=b0_map_rad.dtype)
+            frequency_centers = torch.quantile(b0_map_rad.flatten(), quantile_steps)
+            frequency_centers = torch.unique(frequency_centers)
+
+        temporal_basis = torch.exp(-1j * frequency_centers[:, None] * readout_times[None, :]).to(
+            b0_map_rad.dtype.to_complex()
+        )
+
+        if frequency_centers.numel() == 1:
+            spatial_basis = torch.ones(
+                (1, *b0_map_rad.shape), dtype=b0_map_rad.dtype.to_complex(), device=b0_map_rad.device
+            )
+            return spatial_basis, temporal_basis
+
+        n_centers = frequency_centers.numel()
+        b0_map_flat = b0_map_rad.reshape(-1)
+
+        with torch.no_grad():
+            idx_right = torch.bucketize(b0_map_flat, frequency_centers).clamp(1, n_centers - 1)
+            idx_left = idx_right - 1
+            left_freq = frequency_centers[idx_left]
+            right_freq = frequency_centers[idx_right]
+            delta_freq = (right_freq - left_freq).clamp_min(1e-12)
+
+        spatial_basis = torch.zeros((n_centers, b0_map_flat.numel()), device=b0_map_rad.device, dtype=b0_map_rad.dtype)
+        w = (b0_map_flat - left_freq) / delta_freq
+        spatial_basis.scatter_add_(0, idx_left[None, :], (1 - w)[None, :])
+        spatial_basis.scatter_add_(0, idx_right[None, :], w[None, :])
+        spatial_basis = spatial_basis.reshape(n_centers, *b0_map_rad.shape).to(b0_map_rad.dtype.to_complex())
+
+        return spatial_basis, temporal_basis
+
+
+class TimeSegmentedFourierOp(B0InformedFourierOp):
+    """Time-Segmented Reconstruction (TSR) B0-informed Fourier operator.
+
+    Approximates the phase term by dividing the readout into time segments and
+    using least-squares optimized interpolators for temporal components.
+
+    References
+    ----------
+    .. [1] Noll DC, Meyer CH, Pauly JM, Nishimura DG, Macovski A. A homogeneity
+       correction method for magnetic resonance imaging with time-varying
+       gradients. IEEE Trans Med Imaging. 1991;10(4):629-637.
+    """
+
+    def __init__(
+        self,
+        fourier_op: LinearOperator,
+        b0_map: torch.Tensor,
+        readout_times: torch.Tensor,
+        n_segments: int = 32,
+        n_design_frequencies: int = 64,
+    ) -> None:
+        """Initialize Time-Segmented Fourier Operator.
+
+        Parameters
+        ----------
+        fourier_op
+            Underlying Fourier operator.
+        b0_map
+            Off-resonance map in Hz. Shape (..., z, y, x).
+        readout_times
+            Readout time vector in seconds. Shape (samples,).
+        n_segments
+            Number of time segments.
+        n_design_frequencies
+            Number of frequencies for least-squares design.
+        """
+        if n_segments <= 0:
+            raise ValueError('n_segments must be strictly positive.')
+        self.n_segments = n_segments
+        self.n_design_frequencies = n_design_frequencies
+        super().__init__(fourier_op, b0_map, readout_times)
+
+    def _compute_basis(
+        self, b0_map_rad: torch.Tensor, readout_times: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        time_segments = torch.linspace(readout_times[0], readout_times[-1], self.n_segments, device=b0_map_rad.device)
+
+        with torch.no_grad():
+            quantile_steps = torch.linspace(
+                0, 1, self.n_design_frequencies, device=b0_map_rad.device, dtype=b0_map_rad.dtype
+            )
+            design_frequencies = torch.unique(torch.quantile(b0_map_rad.flatten(), quantile_steps))
+
+            segment_phases = torch.exp(-1j * design_frequencies[:, None] * time_segments[None, :])
+            target_phases = torch.exp(-1j * design_frequencies[:, None] * readout_times[None, :])
+            temporal_basis = torch.linalg.lstsq(segment_phases, target_phases, rcond=1e-15).solution.to(
+                b0_map_rad.dtype.to_complex()
+            )
+
+        spatial_basis = torch.exp(-1j * einops.einsum(time_segments, b0_map_rad, 'l, ... -> l ...')).to(
+            b0_map_rad.dtype.to_complex()
+        )
+
+        return spatial_basis, temporal_basis
+
+
+class ConjugatePhaseFourierOp(B0InformedFourierOp):
+    """Conjugate Phase (CP) B0-informed Fourier operator.
+
+    Performs an exact direct evaluation of the phase accumulation integral
+    without separable approximation. Extremely computationally expensive.
+
+    References
+    ----------
+    .. [1] Maeda A, Sano K, Yokoyama T. Reconstruction by two-dimensional
+       time phase correction. IEEE Trans Med Imaging. 1988;7(1):26-31.
+    """
+
+    def _compute_basis(
+        self, b0_map_rad: torch.Tensor, readout_times: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        spatial_basis = torch.exp(-1j * einops.einsum(readout_times, b0_map_rad, 'l, ... -> l ...')).to(
+            b0_map_rad.dtype.to_complex()
+        )
+        temporal_basis = torch.eye(readout_times.numel(), dtype=b0_map_rad.dtype.to_complex(), device=b0_map_rad.device)
+        return spatial_basis, temporal_basis
