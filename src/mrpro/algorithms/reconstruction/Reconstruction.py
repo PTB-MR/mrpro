@@ -17,9 +17,10 @@ from mrpro.operators.DensityCompensationOp import DensityCompensationOp
 from mrpro.operators.FourierOp import FourierOp
 from mrpro.operators.LinearOperator import LinearOperator
 from mrpro.operators.SensitivityOp import SensitivityOp
+from mrpro.utils.TensorAttributeMixin import TensorAttributeMixin
 
 
-class Reconstruction(torch.nn.Module, ABC):
+class Reconstruction(TensorAttributeMixin, torch.nn.Module, ABC):
     """A Reconstruction."""
 
     dcf_op: DensityCompensationOp | None

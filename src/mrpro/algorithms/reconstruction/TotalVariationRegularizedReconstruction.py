@@ -136,7 +136,9 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
 
         # TV regularization
         nabla_operator = FiniteDifferenceOp(dim=regularization_dim, mode='forward')
-        l1_norm = L1NormViewAsReal(weight=unsqueeze_right(self.regularization_weight, kdata.data.ndim))
+        l1_norm = L1NormViewAsReal(
+            weight=unsqueeze_right(self.regularization_weight.to(kdata.data.device), kdata.data.ndim)
+        )
         operator = LinearOperatorMatrix(((acquisition_operator,), (nabla_operator,)))
 
         initial_value = acquisition_operator.H(self.dcf_op(kdata.data)[0] if self.dcf_op is not None else kdata.data)[0]

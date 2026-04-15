@@ -39,6 +39,7 @@ def test_regularized_iterative_sense_with_explicit_csm(cartesian_kdata: KData) -
     )
     idata = reconstruction(cartesian_kdata)
     assert idata.data.shape[-3:] == cartesian_kdata.header.recon_matrix.zyx
+    assert reconstruction.csm_op is not None
     torch.testing.assert_close(reconstruction.csm_op.csm_tensor, csm.data)
 
 
