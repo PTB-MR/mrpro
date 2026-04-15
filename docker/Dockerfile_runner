@@ -5,6 +5,8 @@ FROM ${BASE_IMAGE} AS base
 # GITHUB_OWNER
 # GITHUB_REPOSITORY
 
+ARG CUDA_VERSION=cu128
+
 ARG ACTION_RUNNER_URL=https://github.com/actions/runner/releases/download/v2.331.0/actions-runner-linux-x64-2.331.0.tar.gz
 
 ARG DEBIAN_FRONTEND=noninteractive
@@ -32,12 +34,14 @@ WORKDIR /
 COPY docker/install_dependencies.sh pyproject.toml src/mrpro/VERSION ./
 
 # the 1st argument for the install_dependencies specifies the cuda version 12.4 for torch
-RUN bash install_dependencies.sh cu124 && rm install_dependencies.sh pyproject.toml VERSION
+RUN bash install_dependencies.sh ${CUDA_VERSION} && rm install_dependencies.sh pyproject.toml VERSION
 
 # install mrpro
 # forces rebuild on any change in the mrpro directory
 COPY . /mrpro/
-RUN python -m pip install  "/mrpro[notebooks]" --no-cache-dir --upgrade --upgrade-strategy "eager" && rm -rf /mrpro
+RUN python -m pip install "/mrpro[notebooks]" --no-cache-dir --upgrade --upgrade-strategy "eager" \
+    torch --extra-index-url https://download.pytorch.org/whl/${CUDA_VERSION}
+RUN rm -rf /mrpro
 
 # set user and workdir
 USER runner
