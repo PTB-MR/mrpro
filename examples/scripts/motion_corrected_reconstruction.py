@@ -61,6 +61,7 @@ from mrpro.algorithms.reconstruction import IterativeSENSEReconstruction
 from mrpro.data import CsmData, KData
 from mrpro.data.traj_calculators import KTrajectoryRpe
 from mrpro.operators import AveragingOp, FastFourierOp, GridSamplingOp, SensitivityOp
+from mrpro.utils import unsqueeze_right
 
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
@@ -94,7 +95,7 @@ def show_views(*images: torch.Tensor, ylabels: Sequence[str] | None = None) -> N
         raise ValueError(f'Expected {len(images)} ylabels, got {len(ylabels)}')
     _, axes = plt.subplots(len(images), 3, squeeze=False, figsize=(12, 4 * len(images)))
     for idx, (image, ylabel) in enumerate(zip(images, ylabels or [''] * len(images), strict=True)):
-        image = torch.squeeze(image / image.flatten().sort()[0][int(image.numel() * 0.98)])
+        image = torch.squeeze(image / torch.quantile(image, 0.98))
         image_views = [image[:, 61, :], torch.fliplr(image[:, :, 63]), image[54, :, :]]
 
         for vdx, (view, title) in enumerate(zip(image_views, ['Coronal', 'Transversal', 'Sagittal'], strict=True)):
@@ -176,7 +177,8 @@ plt.ylabel('Navigator signal (a.u.)')
 # we have got enough data in each motion state.
 
 # %%
-n_points_per_motion_state = int(kdata.shape[-2] * 0.36)
+# With an overlap of 50% and 4 motion states, 40% of data are in each motion state.
+n_points_per_motion_state = int(kdata.shape[-2] * 0.4)
 navigator_idx = respiratory_navigator.argsort()
 navigator_idx = navigator_idx.unfold(0, n_points_per_motion_state, n_points_per_motion_state // 2)
 kdata_resp_resolved = kdata[..., navigator_idx, :]
@@ -249,13 +251,19 @@ fourier_op = recon_resp_resolved.fourier_op
 csm_op = SensitivityOp(csm_maps)
 averaging_op = AveragingOp(dim=0)
 acquisition_operator = fourier_op @ motion_op @ csm_op @ averaging_op.H
-
-if recon_resp_resolved.dcf is None:
-    (initial_value,) = acquisition_operator.H(kdata_resp_resolved.data)
-else:
-    dcf_op = recon_resp_resolved.dcf.as_operator()
-    (initial_value,) = acquisition_operator.H(dcf_op(kdata_resp_resolved.data)[0])
 (right_hand_side,) = acquisition_operator.H(kdata_resp_resolved.data)
+
+# The DCF is used to obtain a good starting point for the CG algorithm.
+# This is equivalten to running the CG algorithm with H = A^H DCF A and b = A^H DCF y
+# for a single iteration.
+if recon_resp_resolved.dcf_op is not None:
+    (u,) = (acquisition_operator.H @ recon_resp_resolved.dcf_op)(kdata_resp_resolved.data)
+    (v,) = (acquisition_operator.H @ recon_resp_resolved.dcf_op @ acquisition_operator)(u)
+    u_flat = u.flatten(start_dim=-3)
+    v_flat = v.flatten(start_dim=-3)
+    initial_value = unsqueeze_right(torch.linalg.vecdot(u_flat, u_flat) / torch.linalg.vecdot(v_flat, u_flat), 3) * u
+else:
+    initial_value = torch.zeros_like(right_hand_side)
 operator = acquisition_operator.H @ acquisition_operator
 
 # Minimize the functional
@@ -264,5 +272,3 @@ operator = acquisition_operator.H @ acquisition_operator
 
 # %%
 show_views(img.rss(), img_mcir.abs(), ylabels=('Uncorrected', 'MCIR'))
-
-# %%
