@@ -32,7 +32,7 @@ def interp(x: torch.Tensor, xp: torch.Tensor, fp: torch.Tensor) -> torch.Tensor:
         The interpolated values matching the shape of x.
     """
     x_clamped = torch.clamp(x, min=xp[0], max=xp[-1])
-    idx = torch.searchsorted(xp, x_clamped).clamp(idx, 1, len(xp) - 1)
+    idx = torch.searchsorted(xp, x_clamped).clamp(1, len(xp) - 1)
     x0 = xp[idx - 1]
     x1 = xp[idx]
     y0 = fp[idx - 1]
