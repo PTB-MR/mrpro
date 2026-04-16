@@ -7,7 +7,6 @@ import torch
 
 from mrpro.utils.reshape import normalize_indices
 
-import torch
 
 def interp(x: torch.Tensor, xp: torch.Tensor, fp: torch.Tensor) -> torch.Tensor:
     """One-dimensional linear interpolation for monotonically increasing sample points.
