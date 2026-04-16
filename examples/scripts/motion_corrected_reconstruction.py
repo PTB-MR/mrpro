@@ -4,7 +4,7 @@
 # the data acquisition can lead to motion artifacts in the reconstructed image. Mathematically speaking, the motion
 # occurring during data acquisition can be described by linear operators $M_m$ for each motion state $m$:
 #
-# $ y = \sum_m A_m M_m x_{\mathrm{true}} + n, $
+# $ y = [A_m M_m x_{\mathrm{true}}]_m + n, $
 #
 # where $y$ is the acquired k-space data, $A_m$ is the acquisition operator describing which data was acquired in motion
 # state $m$ and $n$ describes complex Gaussian noise.
@@ -30,14 +30,6 @@
 # 3. Reconstruct dynamic images of different breathing states
 # 4. Estimate non-rigid motion fields from the dynamic images
 # 5. Use the motion fields to obtain a motion-corrected image
-#
-# To achieve high image quality for the different respiratory motion states, a TV-regularized image reconstruction
-# should be used. To safe time we will skip this per default and only use the iterative SENSE reconstruction.
-# The TV-regularized reconstruction can be activated by setting `n_iterations_tv` to a value larger than 0 (100  yields
-# good results).
-
-# %%
-n_iterations_tv = 0
 
 # %% [markdown]
 # ### Data acquisition
@@ -65,7 +57,7 @@ import torch
 import zenodo_get
 from einops import rearrange
 from mrpro.algorithms.optimizers import cg
-from mrpro.algorithms.reconstruction import IterativeSENSEReconstruction, TotalVariationRegularizedReconstruction
+from mrpro.algorithms.reconstruction import IterativeSENSEReconstruction
 from mrpro.data import CsmData, KData
 from mrpro.data.traj_calculators import KTrajectoryRpe
 from mrpro.operators import AveragingOp, FastFourierOp, GridSamplingOp, SensitivityOp
@@ -135,20 +127,18 @@ def get_respiratory_self_navigator_from_grpe(
 ) -> torch.Tensor:
     """Get respiratory self-navigator from GRPE data set."""
     # Get all readout lines for ky = kz = 0
-    ky0_kz0_idx = torch.where((kdata.traj.ky == 0) & (kdata.traj.kz == 0))
-    navigator_data = kdata.data[ky0_kz0_idx[0], :, ky0_kz0_idx[2], ky0_kz0_idx[3], :]
-    navigator_time = kdata.header.acq_info.acquisition_time_stamp[ky0_kz0_idx[0], 0, ky0_kz0_idx[2], ky0_kz0_idx[3], 0]
+    kdata_navigator = kdata[(kdata.traj.ky == 0) & (kdata.traj.kz == 0)]
 
     # Apply a 1D FFT along the readout to get the projection of the object
     fft_op_1d = FastFourierOp(dim=(-1,))
-    navigator_data = torch.abs(fft_op_1d(navigator_data)[0])
+    navigator_data = fft_op_1d(kdata_navigator.data)[0].squeeze().abs()
 
     # Carry out SVD over all readout points and all coils to get the main signal components
-    navigator_data = rearrange(navigator_data, 'k1k2 coil k0 -> k1k2 (coil k0)')
+    navigator_data = rearrange(navigator_data, 'coil k1k2 k0 -> k1k2 (coil k0)')
     svd_navigator_data, _, _ = torch.linalg.svd(navigator_data - navigator_data.mean(dim=0, keepdim=True))
 
     # Select the SVD component the largest frequency contribution closest to the expected respiratory frequency
-    dt = torch.mean(torch.diff(navigator_time, dim=0))
+    dt = torch.mean(torch.diff(kdata_navigator.header.acq_info.acquisition_time_stamp.squeeze(), dim=0))
     fft_svd_navigator_data = torch.abs(torch.fft.fft(svd_navigator_data, dim=0))
     f_hz = torch.linspace(0, 1 / dt, svd_navigator_data.shape[0])
     fft_svd_navigator_data_in_resp_window = fft_svd_navigator_data[
@@ -160,7 +150,11 @@ def get_respiratory_self_navigator_from_grpe(
 
     # Interpolate navigator from k-space center ky=kz=0 to all phase encoding points
     return torch.as_tensor(
-        np.interp(kdata.header.acq_info.acquisition_time_stamp[0, 0, 0, :, 0], navigator_time, respiratory_navigator)
+        np.interp(
+            kdata.header.acq_info.acquisition_time_stamp.squeeze(),
+            kdata_navigator.header.acq_info.acquisition_time_stamp.squeeze(),
+            respiratory_navigator,
+        )
     )
 
 
@@ -171,7 +165,7 @@ kdata = kdata.rearrange('... k2 k1 k0 -> ... 1 (k2 k1) k0')
 respiratory_navigator = get_respiratory_self_navigator_from_grpe(kdata)
 
 plt.figure()
-acquisition_time = kdata.header.acq_info.acquisition_time_stamp[0, 0, 0, :, 0]
+acquisition_time = kdata.header.acq_info.acquisition_time_stamp.squeeze()
 plt.plot(acquisition_time - acquisition_time.min(), respiratory_navigator)
 plt.xlabel('Acquisition time (s)')
 plt.ylabel('Navigator signal (a.u.)')
@@ -182,7 +176,7 @@ plt.ylabel('Navigator signal (a.u.)')
 # we have got enough data in each motion state.
 
 # %%
-n_points_per_motion_state = int(kdata.data.shape[-2] * 0.36)
+n_points_per_motion_state = int(kdata.shape[-2] * 0.36)
 navigator_idx = respiratory_navigator.argsort()
 navigator_idx = navigator_idx.unfold(0, n_points_per_motion_state, n_points_per_motion_state // 2)
 kdata_resp_resolved = kdata[..., navigator_idx, :]
@@ -193,16 +187,6 @@ kdata_resp_resolved = kdata[..., navigator_idx, :]
 # %%
 recon_resp_resolved = IterativeSENSEReconstruction(kdata_resp_resolved, csm=csm_maps)
 img_resp_resolved = recon_resp_resolved(kdata_resp_resolved)
-
-if n_iterations_tv > 0:
-    recon_tv_resp_respolved = TotalVariationRegularizedReconstruction(
-        kdata_resp_resolved,
-        csm=csm_maps,
-        regularization_dim=(0, -3, -2, -1),
-        regularization_weight=(2e-6, 1e-7, 1e-7, 1e-7),
-        max_iterations=n_iterations_tv,
-    )
-    img_resp_resolved_tv = recon_tv_resp_respolved(kdata_resp_resolved)
 
 
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show plotting details"}
@@ -229,8 +213,6 @@ def show_motion_states(image: torch.Tensor, ylabel: str | None = None, slice_idx
 
 # %%
 show_motion_states(img_resp_resolved.rss(), ylabel='Iterative SENSE')
-if n_iterations_tv > 0:
-    show_motion_states(img_resp_resolved_tv.rss(), ylabel='TV-regularization', vmax=0.2)
 
 # %% [markdown]
 # ### 4. Estimate the motion fields from the dynamic images
@@ -238,6 +220,9 @@ if n_iterations_tv > 0:
 # [mirtk](https://mirtk.github.io/commands/register.html). Here we registered each of the dynamic respiratory phases to
 # the first motion state using the free-form deformation (FFD) registration approach with a control point spacing of 9.
 # Normalized mutual information was used as a similarity metric and a LogJac penalty weight of 0.001 was applied.
+#
+# To improve the motion estimation, we used a TV-regularized image reconstruction to obtain the dynamic images. Have
+# a look at `~mrpro.algorithms.reconstruction.TotalVariationRegularizedReconstruction` to find out more.
 #
 # We load the displacement fields and create a motion operator:
 
@@ -249,7 +234,7 @@ motion_op = GridSamplingOp.from_displacement(mf[..., 2], mf[..., 1], mf[..., 0])
 # ### 5. Use the motion fields to obtain a motion-corrected image
 # Now we obtain a motion-corrected image $x$ by minimizing the functionl $F$
 #
-# $ F(x) = ||\sum_m(A_mx - y_m)||_2^2 \quad$ with $\quad A_m = F_m M_m C $
+# $ F(x) = \sum_m||(A_mx - y_m)||_2^2 \quad$ with $\quad A_m = F_m M_m C $
 #
 # where $C$ describes the coil-sensitivity maps, $M_m$ is the motion transformation of motion state $m$ and $F_m$
 # describes the Fourier transform of all of the k-space points obtained in motion state $m$.
