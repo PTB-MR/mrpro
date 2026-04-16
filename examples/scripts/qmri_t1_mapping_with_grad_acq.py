@@ -56,6 +56,7 @@
 #
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show download details"}
 # Download raw data in ISMRMRD format from zenodo into a temporary directory
+import os
 import tempfile
 from pathlib import Path
 
@@ -63,7 +64,9 @@ import zenodo_get
 
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
-zenodo_get.download(record='13207352', retry_attempts=5, output_dir=data_folder)
+zenodo_get.download(
+    record='13207352', retry_attempts=5, output_dir=data_folder, access_token=os.environ.get('ZENODO_TOKEN')
+)
 # %% [markdown]
 # We will use the following libraries:
 # %%

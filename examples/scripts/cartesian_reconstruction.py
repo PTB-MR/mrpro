@@ -12,6 +12,7 @@
 
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show download details"}
 # Get the raw data from zenodo
+import os
 import tempfile
 from pathlib import Path
 
@@ -19,7 +20,13 @@ import zenodo_get
 
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
-zenodo_get.download(record='15223816', retry_attempts=5, output_dir=data_folder, file_glob=('*.mrd',))
+zenodo_get.download(
+    record='15223816',
+    retry_attempts=5,
+    output_dir=data_folder,
+    file_glob=('*.mrd',),
+    access_token=os.environ.get('ZENODO_TOKEN'),
+)
 
 # %% [markdown]
 # We have three different scans obtained from the same object with the same FOV and resolution, saved as ISMRMRD
@@ -414,7 +421,13 @@ show_images(idat_us_sense.rss().squeeze(), titles=['Iterative SENSE'])
 
 # %%
 # Download dicom image
-zenodo_get.download(record='15223816', retry_attempts=5, output_dir=data_folder, file_glob=('*.dcm',))
+zenodo_get.download(
+    record='15223816',
+    retry_attempts=5,
+    output_dir=data_folder,
+    file_glob=('*.dcm',),
+    access_token=os.environ.get('ZENODO_TOKEN'),
+)
 
 idat_dcm = mrpro.data.IData.from_dicom_files(data_folder / 'cart_t1_msense_integrated.dcm')
 show_images(idat_us_sense.rss().squeeze(), torch.fliplr(idat_dcm.rss().squeeze()), titles=['MRpro', 'Scanner'])

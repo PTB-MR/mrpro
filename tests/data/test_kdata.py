@@ -86,6 +86,13 @@ def test_KData_from_file_diff_nky_for_rep(ismrmrd_cart_invalid_reps) -> None:
     assert kdata.data.shape[-3] == 1, 'k2 should be 1'
 
 
+def test_KData_reshape_by_idx_idempotent(ismrmrd_cart) -> None:
+    """Test reshape_by_idx method is idempotent."""
+    kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    kdata_reshaped = kdata.reshape_by_idx()
+    assert kdata.shape == kdata_reshaped.shape
+
+
 def test_KData_calibration_lines(ismrmrd_cart_with_calibration_lines) -> None:
     """Correct handling of calibration lines."""
     # Exclude calibration lines

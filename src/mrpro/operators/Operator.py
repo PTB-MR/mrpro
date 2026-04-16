@@ -79,7 +79,7 @@ class Operator(Generic[Unpack[Tin], Tout], ABC, TensorAttributeMixin, torch.nn.M
             return OperatorSum(
                 cast(Operator[Unpack[Tin], Tout], other), self
             )  # cast due to https://github.com/python/mypy/issues/16335
-        return NotImplemented  # type: ignore[unreachable]
+        return NotImplemented
 
     def __mul__(self, other: torch.Tensor | complex) -> Operator[Unpack[Tin], Tout]:
         """Operator multiplication with tensor.

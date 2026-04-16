@@ -11,9 +11,13 @@ from mrpro.data import IData
     ('dcm_data_fixture'),
     [
         'dcm_2d',
+        'dcm_2d_with_empty_field',
         'dcm_3d',
+        'dcm_2d_rescale',
+        'dcm_3d_rescale',
         'dcm_2d_multi_echo_times',
         'dcm_2d_multi_echo_times_multi_folders',
+        'dcm_cardiac_2d',
         'dcm_m2d_multi_orientation',
         'dcm_3d_multi_echo',
         'dcm_3d_multi_echo_multi_cardiac_phases',
@@ -25,8 +29,11 @@ def test_IData_content_from_dcm(dcm_data_fixture, request):
     dcm_data = request.getfixturevalue(dcm_data_fixture)
     idata = IData.from_dicom_folder(dcm_data[0].filename.parent)
     # IData uses complex values but dicom only supports real values
-    img = torch.real(idata.data[0, 0, 0, ...])
-    torch.testing.assert_close(img, dcm_data[0].img_ref)
+    first_img = torch.real(idata.data.flatten(end_dim=-3)[0])
+    # Rescaling can lead to loss of precision due to uint16 storage
+    torch.testing.assert_close(
+        first_img, dcm_data[0].img_ref, atol=dcm_data[0].rescale_slope, rtol=dcm_data[0].rescale_slope / (2**16 - 1)
+    )
 
 
 def test_IData_from_dcm_file(dcm_2d):
@@ -35,6 +42,14 @@ def test_IData_from_dcm_file(dcm_2d):
     # IData uses complex values but dicom only supports real values
     img = torch.real(idata.data[0, 0, 0, ...])
     torch.testing.assert_close(img, dcm_2d[0].img_ref)
+
+
+@pytest.mark.parametrize('magnitude_only', [True, False])
+def test_IData_to_nifti(dcm_2d, tmp_path, magnitude_only: bool) -> None:
+    """Save image data as NIFTI 1/2 file."""
+    idata = IData.from_dicom_files(dcm_2d[0].filename)
+    idata.to_nifti(tmp_path / 'test.nii', magnitude_only=magnitude_only)
+    assert (tmp_path / 'test.nii').exists()
 
 
 @pytest.mark.parametrize(
@@ -132,13 +147,7 @@ def test_IData_rss(random_kheader, random_test_data):
     torch.testing.assert_close(idata.rss(keepdim=False), expected.squeeze(-4))
 
 
-@pytest.mark.parametrize(
-    ('dcm_data_fixture'),
-    [
-        'dcm_2d',
-        'dcm_3d',
-    ],
-)
+@pytest.mark.parametrize(('dcm_data_fixture'), ['dcm_2d', 'dcm_3d'])
 def test_IData_to_dicom_folder_identical(dcm_data_fixture, request):
     """Verify saving of different dicom types."""
     dcm_data = request.getfixturevalue(dcm_data_fixture)
@@ -147,7 +156,14 @@ def test_IData_to_dicom_folder_identical(dcm_data_fixture, request):
     idata_reloaded = IData.from_dicom_folder(dcm_data[0].filename.parent / 'test_output')
 
     torch.testing.assert_close(idata_reloaded.header.te, idata.header.te)
-    assert idata_reloaded.header.position == idata.header.position
+    torch.testing.assert_close(idata_reloaded.header.tr, idata.header.tr)
+    torch.testing.assert_close(idata_reloaded.header.fa, idata.header.fa)
+    torch.testing.assert_close(idata_reloaded.header.ti, idata.header.ti)
+
+    torch.testing.assert_close(idata_reloaded.header.position.x, idata.header.position.x)
+    torch.testing.assert_close(idata_reloaded.header.position.y, idata.header.position.y)
+    torch.testing.assert_close(idata_reloaded.header.position.z, idata.header.position.z)
+
     assert idata_reloaded.header.orientation == idata.header.orientation
     torch.testing.assert_close(idata_reloaded.data, idata.data)
 
@@ -168,11 +184,64 @@ def test_IData_to_dicom_folder(dcm_data_fixture, request):
         idata.to_dicom_folder(dcm_data[0].filename.parent / 'test_output', series_description='test_series')
     idata_reloaded = IData.from_dicom_folder(dcm_data[0].filename.parent / 'test_output')
 
-    # match dimensions
-    if idata_reloaded.ndim == 6:
-        idata = idata[None, ...]
-
     torch.testing.assert_close(idata_reloaded.header.te[0], idata.header.te[0])
-    assert idata_reloaded.header.position == idata.header.position
+    torch.testing.assert_close(idata_reloaded.header.position.x, idata.header.position.x)
+    torch.testing.assert_close(idata_reloaded.header.position.y, idata.header.position.y)
+    torch.testing.assert_close(idata_reloaded.header.position.z, idata.header.position.z)
     assert idata_reloaded.header.orientation == idata.header.orientation
     torch.testing.assert_close(idata_reloaded.data, idata.data)
+
+
+@pytest.mark.parametrize(('rescale_slope'), [10, 20])
+@pytest.mark.parametrize(('rescale_intercept'), [-100, -200])
+def test_IData_to_dicom_folder_with_scaling(tmp_path_factory, dcm_2d, rescale_slope, rescale_intercept):
+    """Verify data is correctly scaled during saving."""
+    idata = IData.from_dicom_folder(dcm_2d[0].filename.parent)
+    dicom_folder = tmp_path_factory.mktemp('dicom_scaling') / 'test_output'
+    idata.to_dicom_folder(
+        dicom_folder,
+        series_description='test_series',
+        rescale_slope=rescale_slope,
+        rescale_intercept=rescale_intercept,
+        normalize_data=True,
+    )
+    idata_reloaded = IData.from_dicom_folder(dicom_folder)
+    torch.testing.assert_close(idata_reloaded.data, idata.data, atol=rescale_slope, rtol=rescale_slope / (2**16 - 1))
+
+
+def test_IData_to_dicom_folder_warning_cropped(tmp_path_factory, dcm_2d):
+    """Warning if data is cropped"""
+    idata = IData.from_dicom_folder(dcm_2d[0].filename.parent)
+    dicom_folder = tmp_path_factory.mktemp('dicom_warning') / 'test_output'
+    with pytest.warns(UserWarning, match='Values outside of the uint16 range will be clipped.'):
+        idata.to_dicom_folder(
+            dicom_folder,
+            series_description='test_series',
+            rescale_slope=0.1,
+            rescale_intercept=100,
+            normalize_data=False,
+        )
+    idata_reloaded = IData.from_dicom_folder(dicom_folder)
+    assert idata_reloaded.header.orientation == idata.header.orientation
+
+
+def test_IData_from_kheader_and_tensor_to_dicom_folder(tmp_path_factory, random_kheader, random_test_data):
+    """IData from KHeader and data tensor."""
+    dicom_folder = tmp_path_factory.mktemp('dicom_from_kheader_and_tensor2') / 'test_output'
+    idata = IData.from_tensor_and_kheader(data=random_test_data, header=random_kheader)  # shape: [2, 8, 16, 32, 64]
+    idata.to_dicom_folder(dicom_folder, series_description='test_series')
+    idata_reloaded = IData.from_dicom_folder(dicom_folder)  # shape: [16, 1, 16, 32, 64]
+
+    torch.testing.assert_close(idata_reloaded.header.te[0], idata.header.te[0])
+    torch.testing.assert_close(idata_reloaded.header.position.x, idata.header.position.x)
+    torch.testing.assert_close(idata_reloaded.header.position.y, idata.header.position.y)
+    torch.testing.assert_close(idata_reloaded.header.position.z, idata.header.position.z)
+    assert idata_reloaded.header.orientation == idata.header.orientation
+
+    # Compare image pixel values
+    other, coil = idata.shape[:2]
+    idata_reloaded_ra = idata_reloaded.rearrange('(other coil) 1 z y x -> other coil z y x', other=other, coil=coil)
+    idata_reloaded_px = idata_reloaded_ra.data.abs() / (2**16 - 1)
+    idata_px = idata.data.abs()
+
+    torch.testing.assert_close(idata_px, idata_reloaded_px, rtol=1e-4, atol=1e-4)

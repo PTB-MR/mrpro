@@ -53,7 +53,7 @@ def test_patch_op_autodiff(
 
 def test_patch_op_invalid() -> None:
     """Test invalid parameters for PatchOp."""
-    with pytest.raises(ValueError, match='Duplicate values in axis are not allowed'):
+    with pytest.raises(ValueError, match='must be unique'):
         PatchOp(dim=(0, 0), patch_size=3)
 
     with pytest.raises(ValueError, match='patch_size must be positive'):
@@ -96,7 +96,7 @@ def test_patch_op_invalid() -> None:
         PatchOp(dim=(1, 2), patch_size=1, domain_size=(1,))
 
     operator = PatchOp(dim=(0, -1), patch_size=3)
-    with pytest.raises(ValueError, match='Duplicate values in axis are not allowed'):
+    with pytest.raises(IndexError, match='unique'):
         operator(torch.ones(10))
 
     operator = PatchOp(dim=0, patch_size=3)

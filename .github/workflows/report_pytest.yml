@@ -21,7 +21,7 @@ jobs:
     steps:
       # use the results of python 3.12, consider this as target platform
       - name: Download PyTest report artifact for mrpro_py312
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: pytest-report-mrpro_py312
           run-id: ${{ github.event.workflow_run.id }}
@@ -85,7 +85,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}

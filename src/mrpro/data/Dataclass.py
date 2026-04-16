@@ -12,7 +12,7 @@ from typing_extensions import Any, Protocol, Self, TypeVar, dataclass_transform,
 
 from mrpro.utils.indexing import HasIndex, Indexer
 from mrpro.utils.reduce_repeat import reduce_repeat
-from mrpro.utils.reshape import broadcasted_concatenate, broadcasted_rearrange
+from mrpro.utils.reshape import broadcasted_concatenate, broadcasted_rearrange, normalize_index
 from mrpro.utils.summarize import summarize_object
 from mrpro.utils.typing import TorchIndexerType
 
@@ -811,13 +811,11 @@ class Dataclass:
             A tuple of the splits.
         """
         shape = self.shape
-        if not -len(shape) <= dim < len(shape):
-            raise ValueError(f'Dimension {dim} out of bounds for shape {shape}')
+        dim = normalize_index(len(shape), dim)
         if dilation < 1:
             raise ValueError('Dilation must be larger than 0')
         if overlap > size:
             raise ValueError('Overlap must be smaller than size')
-        dim = dim % len(shape)
         indices = [
             (*[slice(None)] * dim, slice(start, start + size * dilation, dilation))
             for start in range(0, shape[dim] - size * dilation + 1 + max(0, overlap), size - overlap)

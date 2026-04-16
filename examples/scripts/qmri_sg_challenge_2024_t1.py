@@ -13,6 +13,7 @@
 # ### Get data from Zenodo
 
 # %%
+import os
 import tempfile
 import zipfile
 from pathlib import Path
@@ -21,7 +22,9 @@ import zenodo_get
 
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
-zenodo_get.download(record='10868350', retry_attempts=5, output_dir=data_folder)
+zenodo_get.download(
+    record='10868350', retry_attempts=5, output_dir=data_folder, access_token=os.environ.get('ZENODO_TOKEN')
+)
 with zipfile.ZipFile(data_folder / Path('T1 IR.zip'), 'r') as zip_ref:
     zip_ref.extractall(data_folder)
 
@@ -67,7 +70,7 @@ show_images(
 # ### Signal model and loss function
 # We use the model $q$
 #
-# $q(TI) = M_0 (1 - e^{-TI/T_1})$
+# $q(TI) = M_0 (1 - 2e^{-TI/T_1})$
 #
 # with the equilibrium magnetization $M_0$, the inversion time $TI$, and $T_1$. We have to keep in mind that the DICOM
 # images only contain the magnitude of the signal. Therefore, we need $|q(TI)|$:
