@@ -15,6 +15,7 @@ from tests import (
 
 
 def create_conv_analysis_dictionary_op_and_data(
+    img_shape: tuple[int, ...],
     kernel_shape: tuple[int, ...],
     pad_mode: Literal['constant', 'reflect', 'replicate', 'circular'],
     dtype_input: torch.dtype,
@@ -22,7 +23,6 @@ def create_conv_analysis_dictionary_op_and_data(
 ) -> tuple[ConvAnalysisDictionaryOp, torch.Tensor, torch.Tensor]:
     """Create a convolutional analysis dictionary operator and elements from domain and range."""
     rng = RandomGenerator(seed=0)
-    img_shape = (2, 3, 1, 8, 10, 11)
     rng_image = rng.complex64_tensor if dtype_input == torch.complex64 else rng.float32_tensor
 
     u = rng_image(size=img_shape)
@@ -38,6 +38,7 @@ def create_conv_analysis_dictionary_op_and_data(
 
 
 def create_conv_synthesis_dictionary_op_and_data(
+    img_shape: tuple[int, ...],
     kernel_shape: tuple[int, ...],
     pad_mode: Literal['constant', 'reflect', 'replicate', 'circular'],
     dtype_input: torch.dtype,
@@ -45,7 +46,6 @@ def create_conv_synthesis_dictionary_op_and_data(
 ) -> tuple[ConvSynthesisDictionaryOp, torch.Tensor, torch.Tensor]:
     """Create a convolutional synthesis dictionary operator and elements from domain and range."""
     rng = RandomGenerator(seed=0)
-    img_shape = (2, 3, 1, 8, 10, 11)
     rng_image = rng.complex64_tensor if dtype_input == torch.complex64 else rng.float32_tensor
 
     u = rng_image(size=(kernel_shape[0], *img_shape))
@@ -71,9 +71,10 @@ def test_conv_analysis_dictionary_op_adjointness(
     dtype_kernel: torch.dtype,
 ) -> None:
     """Test convolutional analysis dictionary operator adjoint property."""
+    img_shape = (2, 3, 1, 8, 10, 11)
     if not (dtype_input == torch.float32 and dtype_kernel == torch.complex64):
         dotproduct_adjointness_test(
-            *create_conv_analysis_dictionary_op_and_data(kernel_shape, pad_mode, dtype_input, dtype_kernel)
+            *create_conv_analysis_dictionary_op_and_data(img_shape, kernel_shape, pad_mode, dtype_input, dtype_kernel)
         )
 
 
@@ -88,9 +89,10 @@ def test_conv_synthesis_dictionary_op_adjointness(
     dtype_kernel: torch.dtype,
 ) -> None:
     """Test convolutional synthesis dictionary operator adjoint property."""
+    img_shape = (2, 3, 1, 8, 10, 11)
     if not (dtype_input == torch.float32 and dtype_kernel == torch.complex64):
         dotproduct_adjointness_test(
-            *create_conv_synthesis_dictionary_op_and_data(kernel_shape, pad_mode, dtype_input, dtype_kernel)
+            *create_conv_synthesis_dictionary_op_and_data(img_shape, kernel_shape, pad_mode, dtype_input, dtype_kernel)
         )
 
 
@@ -105,9 +107,10 @@ def test_conv_analysis_dictionary_op_forward_mode_autodiff(
     dtype_kernel: torch.dtype,
 ) -> None:
     """Test the forward-mode autodiff of the convolutional dictionary operator."""
+    img_shape = (2, 3, 1, 8, 10, 11)
     if not (dtype_input == torch.float32 and dtype_kernel == torch.complex64):
         forward_mode_autodiff_of_linear_operator_test(
-            *create_conv_analysis_dictionary_op_and_data(kernel_shape, pad_mode, dtype_input, dtype_kernel),
+            *create_conv_analysis_dictionary_op_and_data(img_shape, kernel_shape, pad_mode, dtype_input, dtype_kernel),
             relative_tolerance=1e-4,
             absolute_tolerance=1e-4,
         )
@@ -124,9 +127,10 @@ def test_conv_synthesis_dictionary_op_forward_mode_autodiff(
     dtype_kernel: torch.dtype,
 ) -> None:
     """Test the forward-mode autodiff of the convolutional dictionary operator."""
+    img_shape = (2, 3, 1, 8, 10, 11)
     if not (dtype_input == torch.float32 and dtype_kernel == torch.complex64):
         forward_mode_autodiff_of_linear_operator_test(
-            *create_conv_synthesis_dictionary_op_and_data(kernel_shape, pad_mode, dtype_input, dtype_kernel),
+            *create_conv_synthesis_dictionary_op_and_data(img_shape, kernel_shape, pad_mode, dtype_input, dtype_kernel),
             relative_tolerance=1e-4,
             absolute_tolerance=1e-4,
         )
@@ -143,9 +147,10 @@ def test_conv_analysis_dictionary_op_grad(
     dtype_kernel: torch.dtype,
 ) -> None:
     """Test the forward-mode autodiff of the convolutional analysis dictionary operator."""
+    img_shape = (2, 3, 8, 9, 10)
     if not (dtype_input == torch.float32 and dtype_kernel == torch.complex64):
         gradient_of_linear_operator_test(
-            *create_conv_analysis_dictionary_op_and_data(kernel_shape, pad_mode, dtype_input, dtype_kernel),
+            *create_conv_analysis_dictionary_op_and_data(img_shape, kernel_shape, pad_mode, dtype_input, dtype_kernel),
             relative_tolerance=1e-4,
             absolute_tolerance=1e-4,
         )
@@ -162,9 +167,10 @@ def test_conv_synthesis_dictionary_op_grad(
     dtype_kernel: torch.dtype,
 ) -> None:
     """Test the forward-mode autodiff of the convolutional synthesis dictionary operator."""
+    img_shape = (2, 3, 8, 9, 10)
     if not (dtype_input == torch.float32 and dtype_kernel == torch.complex64):
         gradient_of_linear_operator_test(
-            *create_conv_synthesis_dictionary_op_and_data(kernel_shape, pad_mode, dtype_input, dtype_kernel),
+            *create_conv_synthesis_dictionary_op_and_data(img_shape, kernel_shape, pad_mode, dtype_input, dtype_kernel),
             relative_tolerance=1e-4,
             absolute_tolerance=1e-4,
         )
@@ -199,14 +205,15 @@ def test_conv_dictionary_wrong_pad_mode():
 
 def test_conv_dictionary_invalid_dtype_combination():
     """Test that an error is raised a real-valued input is used with a complex-valued kernel."""
+    img_shape = (4, 32, 32)
     kernel_shape = (4, 3, 3)
     dtype_kernel = torch.complex64
     dtype_input = torch.float32
     conv_op_synthesis, u_synthesis, v_synthesis = create_conv_synthesis_dictionary_op_and_data(
-        kernel_shape, 'circular', dtype_input, dtype_kernel
+        img_shape, kernel_shape, 'circular', dtype_input, dtype_kernel
     )
     conv_op_analysis, u_analysis, v_analysis = create_conv_analysis_dictionary_op_and_data(
-        kernel_shape, 'circular', dtype_input, dtype_kernel
+        img_shape, kernel_shape, 'circular', dtype_input, dtype_kernel
     )
     with pytest.raises(ValueError, match='Input tensor must be complex-valued'):
         conv_op_synthesis(u_synthesis)

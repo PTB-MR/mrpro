@@ -3,7 +3,7 @@
 from typing import Literal
 
 import torch
-from torchnd import adjoint_pad_nd, conv_nd, pad_nd  # type: ignore[import-not-found]
+from torchnd import adjoint_pad_nd, conv_nd, pad_nd
 
 from mrpro.operators.LinearOperator import LinearOperator
 
@@ -77,13 +77,18 @@ class ConvSynthesisDictionaryOp(LinearOperator):
         n_dim = self.kernel.ndim - 1
         pad = tuple(p for k in self.kernel.shape[1:] for p in (k // 2, k // 2))
 
+        spatial_shape = x.shape[-n_dim:]
         batch_shape = x.shape[1:-n_dim]
-        x = x.moveaxis(0, -n_dim - 1).flatten(0, -n_dim - 2)
+
+        x = x.reshape(self.kernel.shape[0], -1, *spatial_shape).movedim(0, 1)
         x = pad_nd(x, pad=pad, dims=tuple(range(-n_dim, 0)), mode=self.pad_mode)
         y = conv_nd(x, self.kernel.unsqueeze(0), dim=tuple(range(-n_dim, 0)))
         y = y.squeeze(1)
+
         if batch_shape:
-            y = y.unflatten(0, batch_shape)
+            y = y.reshape(*batch_shape, *spatial_shape)
+        else:
+            y = y.reshape(*spatial_shape)
 
         return (y,)
 
@@ -104,10 +109,16 @@ class ConvSynthesisDictionaryOp(LinearOperator):
         n_dim = self.kernel.ndim - 1
         pad = tuple(p for k in self.kernel.shape[1:] for p in (k // 2, k // 2))
 
+        spatial_shape = x.shape[-n_dim:]
         batch_shape = x.shape[:-n_dim]
-        x = x.flatten(0, -n_dim - 1).unsqueeze(1)
+
+        x = x.reshape(-1, *spatial_shape).unsqueeze(1)
         y = conv_nd(x, self.kernel.unsqueeze(0).conj(), dim=tuple(range(-n_dim, 0)), transposed=True)
         y = adjoint_pad_nd(y, pad=pad, dims=tuple(range(-n_dim, 0)), mode=self.pad_mode)
-        y = y.unflatten(0, batch_shape).moveaxis(-n_dim - 1, 0)
+        if batch_shape:
+            y = y.reshape(*batch_shape, self.kernel.shape[0], *spatial_shape)
+            y = y.movedim(len(batch_shape), 0)
+        else:
+            y = y.reshape(self.kernel.shape[0], *spatial_shape)
 
         return (y,)
