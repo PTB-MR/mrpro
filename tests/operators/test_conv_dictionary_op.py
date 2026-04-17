@@ -258,6 +258,7 @@ def test_conv_synthesis_dictionary_op_cuda() -> None:
 
 
 def test_conv_synthesis_dictionary_op_no_batch_dim_adjointness() -> None:
+    """Test without batch dimension in the input."""
     dotproduct_adjointness_test(
         *create_conv_synthesis_dictionary_op_and_data(
             img_shape=(16,),
@@ -270,6 +271,7 @@ def test_conv_synthesis_dictionary_op_no_batch_dim_adjointness() -> None:
 
 
 def test_conv_analysis_dictionary_op_no_batch_dim_adjointness() -> None:
+    """Test without batch dimension in the input."""
     dotproduct_adjointness_test(
         *create_conv_analysis_dictionary_op_and_data(
             img_shape=(16,),
