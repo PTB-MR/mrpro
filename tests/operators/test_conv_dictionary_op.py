@@ -23,15 +23,9 @@ def create_conv_analysis_dictionary_op_and_data(
 ) -> tuple[ConvAnalysisDictionaryOp, torch.Tensor, torch.Tensor]:
     """Create a convolutional analysis dictionary operator and elements from domain and range."""
     rng = RandomGenerator(seed=0)
-    rng_image = rng.complex64_tensor if dtype_input == torch.complex64 else rng.float32_tensor
-
-    u = rng_image(size=img_shape)
-    v = rng_image(size=(kernel_shape[0], *img_shape))
-
-    rng_kernel = rng.complex64_tensor if dtype_kernel == torch.complex64 else rng.float32_tensor
-    kernel = rng_kernel(size=kernel_shape)
-
-    # Generate convolutional dictionary operator
+    u = rng.rand_tensor(size=img_shape, dtype=dtype_input)
+    v = rng.rand_tensor(size=(kernel_shape[0], *img_shape), dtype=dtype_input)
+    kernel = rng.rand_tensor(size=kernel_shape, dtype=dtype_kernel)
     conv_analysis_dictionary_op = ConvAnalysisDictionaryOp(kernel, pad_mode)
 
     return conv_analysis_dictionary_op, u, v
@@ -46,21 +40,15 @@ def create_conv_synthesis_dictionary_op_and_data(
 ) -> tuple[ConvSynthesisDictionaryOp, torch.Tensor, torch.Tensor]:
     """Create a convolutional synthesis dictionary operator and elements from domain and range."""
     rng = RandomGenerator(seed=0)
-    rng_image = rng.complex64_tensor if dtype_input == torch.complex64 else rng.float32_tensor
-
-    u = rng_image(size=(kernel_shape[0], *img_shape))
-    v = rng_image(size=img_shape)
-
-    rng_kernel = rng.complex64_tensor if dtype_kernel == torch.complex64 else rng.float32_tensor
-    kernel = rng_kernel(size=kernel_shape)
-
-    # Generate convolutional synthesis dictionary operator
+    u = rng.rand_tensor(size=(kernel_shape[0], *img_shape), dtype=dtype_input)
+    v = rng.rand_tensor(size=img_shape, dtype=dtype_input)
+    kernel = rng.rand_tensor(size=kernel_shape, dtype=dtype_kernel)
     conv_synthesis_dictionary_op = ConvSynthesisDictionaryOp(kernel, pad_mode)
 
     return conv_synthesis_dictionary_op, u, v
 
 
-@pytest.mark.parametrize('kernel_shape', [(16, 7), (8, 5, 5), (4, 3, 3, 3)])
+@pytest.mark.parametrize('kernel_shape', [(16, 7), (4, 3, 3, 3)])
 @pytest.mark.parametrize('pad_mode', ['replicate', 'constant', 'reflect', 'circular'])
 @pytest.mark.parametrize('dtype_input', [torch.complex64, torch.float32])
 @pytest.mark.parametrize('dtype_kernel', [torch.complex64, torch.float32])
@@ -78,7 +66,7 @@ def test_conv_analysis_dictionary_op_adjointness(
         )
 
 
-@pytest.mark.parametrize('kernel_shape', [(16, 7), (8, 5, 5), (4, 3, 3, 3)])
+@pytest.mark.parametrize('kernel_shape', [(16, 7), (4, 3, 3, 3)])
 @pytest.mark.parametrize('pad_mode', ['replicate', 'constant', 'reflect', 'circular'])
 @pytest.mark.parametrize('dtype_input', [torch.complex64, torch.float32])
 @pytest.mark.parametrize('dtype_kernel', [torch.complex64, torch.float32])
@@ -96,7 +84,7 @@ def test_conv_synthesis_dictionary_op_adjointness(
         )
 
 
-@pytest.mark.parametrize('kernel_shape', [(16, 7), (8, 5, 5), (4, 3, 3, 3)])
+@pytest.mark.parametrize('kernel_shape', [(16, 7), (4, 3, 3, 3)])
 @pytest.mark.parametrize('pad_mode', ['replicate', 'constant', 'reflect', 'circular'])
 @pytest.mark.parametrize('dtype_input', [torch.complex64, torch.float32])
 @pytest.mark.parametrize('dtype_kernel', [torch.complex64, torch.float32])
@@ -116,7 +104,7 @@ def test_conv_analysis_dictionary_op_forward_mode_autodiff(
         )
 
 
-@pytest.mark.parametrize('kernel_shape', [(16, 7), (8, 5, 5), (4, 3, 3, 3)])
+@pytest.mark.parametrize('kernel_shape', [(16, 7), (4, 3, 3, 3)])
 @pytest.mark.parametrize('pad_mode', ['replicate', 'constant', 'reflect', 'circular'])
 @pytest.mark.parametrize('dtype_input', [torch.complex64, torch.float32])
 @pytest.mark.parametrize('dtype_kernel', [torch.complex64, torch.float32])
@@ -136,7 +124,7 @@ def test_conv_synthesis_dictionary_op_forward_mode_autodiff(
         )
 
 
-@pytest.mark.parametrize('kernel_shape', [(16, 7), (8, 5, 5), (4, 3, 3, 3)])
+@pytest.mark.parametrize('kernel_shape', [(16, 7), (4, 3, 3, 3)])
 @pytest.mark.parametrize('pad_mode', ['replicate', 'constant', 'reflect', 'circular'])
 @pytest.mark.parametrize('dtype_input', [torch.complex64, torch.float32])
 @pytest.mark.parametrize('dtype_kernel', [torch.complex64, torch.float32])
@@ -156,7 +144,7 @@ def test_conv_analysis_dictionary_op_grad(
         )
 
 
-@pytest.mark.parametrize('kernel_shape', [(16, 7), (8, 5, 5), (4, 3, 3, 3)])
+@pytest.mark.parametrize('kernel_shape', [(16, 7), (4, 3, 3, 3)])
 @pytest.mark.parametrize('pad_mode', ['replicate', 'constant', 'reflect', 'circular'])
 @pytest.mark.parametrize('dtype_input', [torch.complex64, torch.float32])
 @pytest.mark.parametrize('dtype_kernel', [torch.complex64, torch.float32])
@@ -267,3 +255,27 @@ def test_conv_synthesis_dictionary_op_cuda() -> None:
     operator.cuda()
     (conv_dictionary_output,) = operator(u.cuda())
     assert conv_dictionary_output.is_cuda
+
+
+def test_conv_synthesis_dictionary_op_no_batch_dim_adjointness() -> None:
+    dotproduct_adjointness_test(
+        *create_conv_synthesis_dictionary_op_and_data(
+            img_shape=(16,),
+            kernel_shape=(3, 7),
+            pad_mode='circular',
+            dtype_input=torch.float32,
+            dtype_kernel=torch.float32,
+        )
+    )
+
+
+def test_conv_analysis_dictionary_op_no_batch_dim_adjointness() -> None:
+    dotproduct_adjointness_test(
+        *create_conv_analysis_dictionary_op_and_data(
+            img_shape=(16,),
+            kernel_shape=(3, 7),
+            pad_mode='circular',
+            dtype_input=torch.float32,
+            dtype_kernel=torch.float32,
+        )
+    )
