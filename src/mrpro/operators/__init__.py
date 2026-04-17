@@ -12,7 +12,8 @@ from mrpro.operators.Functional import (
 from mrpro.operators import functionals, models
 from mrpro.operators.AveragingOp import AveragingOp
 from mrpro.operators.CartesianSamplingOp import CartesianSamplingOp, CartesianMaskingOp
-from mrpro.operators.ConvDictionaryOp import ConvDictionaryOp
+from mrpro.operators.ConvAnalysisDictionaryOp import ConvAnalysisDictionaryOp
+from mrpro.operators.ConvSynthesisDictionaryOp import ConvSynthesisDictionaryOp
 from mrpro.operators.ConjugateGradientOp import ConjugateGradientOp
 from mrpro.operators.ConstraintsOp import ConstraintsOp
 from mrpro.operators.DensityCompensationOp import DensityCompensationOp
@@ -50,7 +51,8 @@ __all__ = [
     "CartesianSamplingOp",
     "ConjugateGradientOp",
     "ConstraintsOp",
-    "ConvDictionaryOp",
+    "ConvAnalysisDictionaryOp",
+    "ConvSynthesisDictionaryOp",
     "DensityCompensationOp",
     "DictionaryMatchOp",
     "EinsumOp",
