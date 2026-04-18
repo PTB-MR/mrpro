@@ -60,3 +60,13 @@ def test_interp() -> None:
     expected = torch.tensor([[10.0, 10.0, 15.0], [30.0, 40.0, 40.0]])
     result = interp(x, xp, fp)
     torch.testing.assert_close(result, expected)
+
+
+def test_interp_unsorted_xp() -> None:
+    """Test interp with unsorted xp."""
+    xp = torch.tensor([3.0, 2.0, 1.0])
+    fp = torch.tensor([40.0, 20.0, 10.0])
+    x = torch.tensor([[0.99, 1.0, 1.5], [2.5, 3.0, 3.01]])
+    expected = torch.tensor([[10.0, 10.0, 15.0], [30.0, 40.0, 40.0]])
+    result = interp(x, xp, fp)
+    torch.testing.assert_close(result, expected)

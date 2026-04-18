@@ -22,7 +22,9 @@ def interp(x: torch.Tensor, xp: torch.Tensor, fp: torch.Tensor) -> torch.Tensor:
     x
         The x-coordinates at which to evaluate the interpolated values.
     xp
-        1d tensor of strictly monotonically increasing x coordinates of data points.
+        1d tensor of x coordinates of data points.
+        The tensor will be sorted internally. If called repeatedly, it is recommended
+        to sort the tensor once and pass it in.
     fp
         1d tensor of y coordinates matching the length of xp.
 
@@ -30,6 +32,11 @@ def interp(x: torch.Tensor, xp: torch.Tensor, fp: torch.Tensor) -> torch.Tensor:
     -------
         The interpolated values matching the shape of x.
     """
+    if not torch.all(xp[:-1] <= xp[1:]):
+        sorter = torch.argsort(xp)
+        xp = xp[sorter]
+        fp = fp[sorter]
+
     x_clamped = torch.clamp(x, min=xp[0], max=xp[-1])
     idx = torch.searchsorted(xp, x_clamped).clamp(1, len(xp) - 1)
     x0 = xp[idx - 1]
