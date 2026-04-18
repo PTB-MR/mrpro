@@ -41,8 +41,8 @@ def test_zero_op_neutral_linop() -> None:
     lsum = zero + op
     assert rsum is op
     assert lsum is op
-    assert_type(lsum, LinearOperator)
-    assert_type(rsum, LinearOperator)
+    assert_type(lsum, IdentityOp)
+    assert_type(rsum, IdentityOp)
 
     assert zero + zero is zero
 
