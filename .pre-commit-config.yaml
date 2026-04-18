@@ -15,20 +15,20 @@ repos:
       - id: mixed-line-ending
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.4
+    rev: v0.15.9
     hooks:
       - id: ruff # linter
         args: [--fix]
       - id: ruff-format # formatter
 
   - repo: https://github.com/crate-ci/typos
-    rev: v1.44.0
+    rev: v1.45.1
     hooks:
       - id: typos
         args: [] # empty, to remove write-changes from the default arguments.
 
   - repo: https://github.com/fzimmermann89/check_all
-    rev: v1.1
+    rev: c646d96
     hooks:
       - id: check-init-all
         args: [--double-quotes, --fix]
@@ -82,7 +82,7 @@ repos:
       files: examples/notebooks
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.19.1
+    rev: v1.20.0
     hooks:
       - id: mypy
         pass_filenames: false
