@@ -28,7 +28,7 @@ repos:
         args: [] # empty, to remove write-changes from the default arguments.
 
   - repo: https://github.com/fzimmermann89/check_all
-    rev: v1.2
+    rev: c646d96
     hooks:
       - id: check-init-all
         args: [--double-quotes, --fix]
