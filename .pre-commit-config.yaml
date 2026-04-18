@@ -22,13 +22,13 @@ repos:
       - id: ruff-format # formatter
 
   - repo: https://github.com/crate-ci/typos
-    rev: v1
+    rev: v1.45.1
     hooks:
       - id: typos
         args: [] # empty, to remove write-changes from the default arguments.
 
   - repo: https://github.com/fzimmermann89/check_all
-    rev: v1.1
+    rev: v1.2
     hooks:
       - id: check-init-all
         args: [--double-quotes, --fix]
