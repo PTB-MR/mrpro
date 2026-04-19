@@ -1,5 +1,6 @@
 """Convolutional Synthesis Dictionary Operator."""
 
+import warnings
 from typing import Literal
 
 import torch
@@ -16,13 +17,21 @@ class ConvSynthesisDictionaryOp(LinearOperator):
         kernel: torch.Tensor,
         pad_mode: Literal['constant', 'reflect', 'replicate', 'circular'] = 'circular',
     ) -> None:
-        """Convolutional Synthesis Dictionary Operator class.
+        r"""Convolutional Synthesis Dictionary Operator class.
 
-        The operator implements the application of a convolutional synthesis transform to an input tensor.
-        Thereby, the following cases are supported: if the filter is real-valued, the transform can
-        be applied to both real and complex-valued inputs. For complex-valued inputs, the same filter is applied to
-        the real and the imaginary part. If the filter is complex-valued, the transform can only be applied to
-        complex-valued inputs.
+        The operator implements the application of a convolutional synthesis transform to an input tensor, i.e.
+            :math:`Ds:=\sum_{k=1}^K d_k \ast s`
+        for convolutional filters :math:`d_1, \ldots, d_K` and input tensor :math:`s`.
+        Thereby, for each :math:`k`, the operation is defined as
+            :math:`d_k \ast s := \
+                \mathrm{conv}(\mathrm{Re}(s), \mathrm{Re}(d_k)) \
+                - \mathrm{conv}(\mathrm{Im}(s), \mathrm{Im}(d_k)) \
+                + i \cdot (\mathrm{conv}(\mathrm{Re}(s), \mathrm{Im}(d_k)) \
+                + \mathrm{conv}(\mathrm{Im}(s), \mathrm{Re}(d_k)))`,
+        where :math:`\mathrm{conv}(\cdot, \cdot)` denotes the convolution operation.
+        Thus, if the filter is real-valued and the input complex-valued, the same filter is applied to real
+        and the imaginary part of the input.
+        Note that, `\mathrm{conv}` actually performs a cross-correltation, matching torch's convolution implementation.
 
         Parameters
         ----------
@@ -56,7 +65,7 @@ class ConvSynthesisDictionaryOp(LinearOperator):
 
         Returns
         -------
-            The result of the convolutional analysis dictionary applied to the input.
+            The result of the convolutional synthesis dictionary applied to the input.
 
 
         """
@@ -72,7 +81,12 @@ class ConvSynthesisDictionaryOp(LinearOperator):
         if x.shape[0] != self.kernel.shape[0]:
             raise ValueError('First dimension of input must match the number of filters in the kernel.')
         if self.kernel.is_complex() and not x.is_complex():
-            raise ValueError('Input tensor must be complex-valued when the kernel is complex-valued.')
+            warnings.warn(
+                'The input tensor is real-valued but the kernel is complex-valued. '
+                'The input tensor will be treated as complex-valued with zero imaginary part.',
+                UserWarning,
+                stacklevel=2,
+            )
 
         n_dim = self.kernel.ndim - 1
         pad = tuple(p for k in self.kernel.shape[1:] for p in (k // 2, k // 2))
@@ -99,7 +113,12 @@ class ConvSynthesisDictionaryOp(LinearOperator):
             The transformed input tensor.
         """
         if self.kernel.is_complex() and not x.is_complex():
-            raise ValueError('Input tensor must be complex-valued when the kernel is complex-valued.')
+            warnings.warn(
+                'The input tensor is real-valued but the kernel is complex-valued. '
+                'The input tensor will be treated as complex-valued with zero imaginary part.',
+                UserWarning,
+                stacklevel=2,
+            )
         n_dim = self.kernel.ndim - 1
         pad = tuple(p for k in self.kernel.shape[1:] for p in (k // 2, k // 2))
         batch_shape = x.shape[:-n_dim]

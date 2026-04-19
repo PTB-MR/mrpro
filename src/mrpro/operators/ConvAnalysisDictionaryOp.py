@@ -1,5 +1,6 @@
 """Convolutional Analysis Dictionary Operator."""
 
+import warnings
 from typing import Literal
 
 import torch
@@ -16,13 +17,21 @@ class ConvAnalysisDictionaryOp(LinearOperator):
         kernel: torch.Tensor,
         pad_mode: Literal['constant', 'reflect', 'replicate', 'circular'] = 'circular',
     ) -> None:
-        """Convolutional Analysis Dictionary Operator class.
+        r"""Convolutional Analysis Dictionary Operator class.
 
-        The operator implements the application of a convolutional analysis transform to an input tensor.
-        Thereby, the following cases are supported: if the filter is real-valued, the transform can
-        be applied to both real and complex-valued inputs. For complex-valued inputs, the same filter is applied to
-        the real and the imaginary part. If the filter is complex-valued, the transform can only be applied to
-        complex-valued inputs.
+        The operator implements the application of a convolutional analysis transform to an input tensor, i.e.
+            :math:`Hx:=[h_1 \ast x, \ldots, h_K \ast x]^T`
+        for convolutional filters :math:`h_1, \ldots, h_K` and input tensor :math:`x`.
+        Thereby, for each :math:`k`, the operation is defined as
+            :math:`h_k \ast x := \
+                \mathrm{conv}(\mathrm{Re}(x), \mathrm{Re}(h_k)) \
+                - \mathrm{conv}(\mathrm{Im}(x), \mathrm{Im}(h_k)) \
+                + i \cdot (\mathrm{conv}(\mathrm{Re}(x), \mathrm{Im}(h_k)) \
+                + \mathrm{conv}(\mathrm{Im}(x), \mathrm{Re}(h_k)))`,
+        where :math:`\mathrm{conv}(\cdot, \cdot)` denotes the convolution operation.
+        Thus, if the filter is real-valued and the input complex-valued, the same filter is applied to real
+        and the imaginary part of the input.
+        Note that, `\mathrm{conv}` actually performs a cross-correltation, matching torch's convolution implementation.
 
         Parameters
         ----------
@@ -70,10 +79,16 @@ class ConvAnalysisDictionaryOp(LinearOperator):
             directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         if self.kernel.is_complex() and not x.is_complex():
-            raise ValueError('Input tensor must be complex-valued when the kernel is complex-valued.')
+            warnings.warn(
+                'The input tensor is real-valued but the kernel is complex-valued. '
+                'The input tensor will be treated as complex-valued with zero imaginary part.',
+                UserWarning,
+                stacklevel=2,
+            )
 
         n_dim = self.kernel.ndim - 1
         pad = tuple(p for k in self.kernel.shape[1:] for p in (k // 2, k // 2))
+
         spatial_shape = x.shape[-n_dim:]
         batch_shape = x.shape[:-n_dim]
 
@@ -99,7 +114,12 @@ class ConvAnalysisDictionaryOp(LinearOperator):
         if x.shape[0] != self.kernel.shape[0]:
             raise ValueError('First dimension of input must match the number of filters in the kernel.')
         if self.kernel.is_complex() and not x.is_complex():
-            raise ValueError('Input tensor must be complex-valued when the kernel is complex-valued.')
+            warnings.warn(
+                'The input tensor is real-valued but the kernel is complex-valued. '
+                'The input tensor will be treated as complex-valued with zero imaginary part.',
+                UserWarning,
+                stacklevel=2,
+            )
 
         n_dim = self.kernel.ndim - 1
         pad = tuple(p for k in self.kernel.shape[1:] for p in (k // 2, k // 2))

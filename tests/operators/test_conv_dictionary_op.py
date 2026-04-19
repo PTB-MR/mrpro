@@ -164,6 +164,45 @@ def test_conv_synthesis_dictionary_op_grad(
         )
 
 
+@pytest.mark.parametrize(
+    'kernel_shape',
+    [
+        (16, 7),
+        (4, 3, 5),
+        (4, 3, 3, 3),
+        (
+            2,
+            5,
+            5,
+            3,
+        ),
+    ],
+)
+@pytest.mark.parametrize('pad_mode', ['constant', 'circular'])
+@pytest.mark.parametrize('dtype_input', [torch.complex64, torch.float32])
+@pytest.mark.parametrize('dtype_kernel', [torch.complex64, torch.float32])
+def test_conv_analysis_dictionary_adjoint_of_conv_synthesis_dictionary(
+    kernel_shape: tuple[int, ...],
+    pad_mode: Literal['constant', 'reflect', 'replicate', 'circular'],
+    dtype_input: torch.dtype,
+    dtype_kernel: torch.dtype,
+) -> None:
+    """Test that for constant and circular padding, the synthesis and analysis
+    operators are adjoints of each other when properly defined after flipping
+    and and complex-conjugation of the kernel."""
+    img_shape = (2, 3, 8, 9, 10)
+    rng = RandomGenerator(seed=0)
+    u = rng.rand_tensor(size=(kernel_shape[0], *img_shape), dtype=dtype_input)
+    v = rng.rand_tensor(size=img_shape, dtype=dtype_input)
+    kernel = rng.rand_tensor(size=kernel_shape, dtype=dtype_kernel)
+    conv_analysis_op = ConvAnalysisDictionaryOp(kernel, pad_mode=pad_mode)
+    ndims = kernel.ndim - 1
+    conv_synthesis_op = ConvSynthesisDictionaryOp(kernel.flip(dims=tuple(range(-ndims, 0))).conj(), pad_mode=pad_mode)
+    if not (dtype_input == torch.float32 and dtype_kernel == torch.complex64):
+        torch.testing.assert_close(conv_synthesis_op(u)[0], conv_analysis_op.H(u)[0], rtol=1e-2, atol=1e-2)
+        torch.testing.assert_close(conv_synthesis_op.H(v)[0], conv_analysis_op(v)[0], rtol=1e-2, atol=1e-2)
+
+
 @pytest.mark.parametrize('kernel_shape', [(4, 3, 3), (8, 5, 5, 5)])
 def test_conv_dictionary_wrong_input_shape(kernel_shape: tuple[int, ...]):
     """Test that an error is raised if the inputs dimension is not compatible with the kernel."""
