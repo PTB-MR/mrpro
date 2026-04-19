@@ -477,7 +477,7 @@ class Dataclass:
             If `True`, the returned tensor will always be a copy, even if the input was already on the correct device.
             This will also create new tensors for views.
         """
-        return self._to(device='cpu', dtype=None, non_blocking=True, memory_format=memory_format, copy=copy)
+        return self._to(device='cpu', dtype=None, non_blocking=False, memory_format=memory_format, copy=copy)
 
     def double(self, *, memory_format: torch.memory_format = torch.preserve_format, copy: bool = False) -> Self:
         """Convert all float tensors to double precision.
