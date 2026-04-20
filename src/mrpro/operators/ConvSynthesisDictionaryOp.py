@@ -32,7 +32,7 @@ class ConvSynthesisDictionaryOp(LinearOperator):
         where :math:`\mathrm{conv}(\cdot, \cdot)` denotes the convolution operation.
         Thus, if the filter is real-valued and the input complex-valued, the same filter is applied to real
         and the imaginary part of the input.
-        Note that, :math:`\mathrm{conv}` actually performs a cross-correltation, matching torch's convolution
+        Note that :math:`\mathrm{conv}` actually performs a cross-correltation matching torch's convolution
         implementation.
 
         Parameters
