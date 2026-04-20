@@ -141,7 +141,7 @@ def get_respiratory_self_navigator_from_grpe(
     # Select the SVD component the largest frequency contribution closest to the expected respiratory frequency
     dt = torch.mean(torch.diff(kdata_navigator.header.acq_info.acquisition_time_stamp.squeeze(), dim=0))
     fft_svd_navigator_data = torch.abs(torch.fft.fft(svd_navigator_data, dim=0))
-    f_hz = torch.linspace(0, 1 / dt, svd_navigator_data.shape[0])
+    f_hz = torch.fft.fftfreq(len(svd_navigator_data), dt)
     fft_svd_navigator_data_in_resp_window = fft_svd_navigator_data[
         (f_hz >= respiratory_frequency_range[0]) & (f_hz <= respiratory_frequency_range[1]), :
     ]
@@ -267,8 +267,12 @@ else:
 operator = acquisition_operator.H @ acquisition_operator
 
 # Minimize the functional
-(img_mcir,) = cg(operator, right_hand_side, initial_value=initial_value, max_iterations=30, tolerance=0.0)
+(img_mcir,) = cg(operator, right_hand_side, initial_value=initial_value, max_iterations=10, tolerance=0.0)
 
 
 # %%
 show_views(img.rss(), img_mcir.abs(), ylabels=('Uncorrected', 'MCIR'))
+
+# %% [markdown]
+# We have used a rather small number of CG iterations here to make sure the reconstruction does not take too long.
+# Increase `max_iterations` to get an even sharper image.
