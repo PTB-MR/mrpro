@@ -19,15 +19,18 @@ class ConvAnalysisDictionaryOp(LinearOperator):
     ) -> None:
         r"""Convolutional Analysis Dictionary Operator class.
 
-        The operator implements the application of a convolutional analysis transform to an input tensor, i.e.
-            :math:`Hx:=[h_1 \ast x, \ldots, h_K \ast x]^T`
-        for convolutional filters :math:`h_1, \ldots, h_K` and input tensor :math:`x`.
+        The operator implements the application of a convolutional analysis transform to an input tensor.
+
+        For convolutional filters :math:`h_1, \ldots, h_K` and input tensor :math:`x`, the operator is
+        defined by
+            :math:`Hx:=[h_1 \ast x, \ldots, h_K \ast x]^T.`
+
         Thereby, for each :math:`k`, the operation is defined as
             :math:`h_k \ast x :=` \
                 :math:`\mathrm{conv}(\mathrm{Re}(x), \mathrm{Re}(h_k))` \
                 :math:`- \mathrm{conv}(\mathrm{Im}(x), \mathrm{Im}(h_k))` \
-                :math:`+ i \cdot (\mathrm{conv}(\mathrm{Re}(x), \mathrm{Im}(h_k))` \
-                :math:`+ \mathrm{conv}(\mathrm{Im}(x), \mathrm{Re}(h_k)))`,
+                :math:`+ \mathrm{i} \cdot \big(\mathrm{conv}(\mathrm{Re}(x), \mathrm{Im}(h_k))` \
+                :math:`+ \mathrm{conv}(\mathrm{Im}(x), \mathrm{Re}(h_k))\big)`,
         where :math:`\mathrm{conv}(\cdot, \cdot)` denotes the convolution operation.
         Thus, if the filter is real-valued and the input complex-valued, the same filter is applied to real
         and the imaginary part of the input.
@@ -43,7 +46,7 @@ class ConvAnalysisDictionaryOp(LinearOperator):
             Note that, typically, odd spatial dimensions are used for the kernels to avoid spatial pixel-shift artifacts
             in the result of the composition of the adjoint and the forward operator.
         pad_mode
-            the mode to use for padding
+            the mode to use for padding.
         """
         super().__init__()
         if pad_mode not in ('constant', 'reflect', 'replicate', 'circular'):
