@@ -48,24 +48,22 @@
 
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show import and download details"}
 # Download raw data and pre-calculated motion fields from zenodo into a temporary directory
+import os
 import tempfile
 from collections.abc import Sequence
 from pathlib import Path
 
+import mrpro
 import numpy as np
 import torch
 import zenodo_get
 from einops import rearrange
-from mrpro.algorithms.optimizers import cg
-from mrpro.algorithms.reconstruction import IterativeSENSEReconstruction
-from mrpro.data import CsmData, KData
-from mrpro.data.traj_calculators import KTrajectoryRpe
-from mrpro.operators import AveragingOp, FastFourierOp, GridSamplingOp, SensitivityOp
-from mrpro.utils import unsqueeze_right
 
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
-zenodo_get.download(record='15849308', retry_attempts=5, output_dir=data_folder)
+zenodo_get.download(
+    record='15849308', retry_attempts=5, output_dir=data_folder, access_token=os.environ.get('ZENODO_TOKEN')
+)
 
 # %% [markdown]
 # ### Motion-corrupted image reconstruction
@@ -76,13 +74,16 @@ zenodo_get.download(record='15849308', retry_attempts=5, output_dir=data_folder)
 # We also removed the readout oversampling.
 # ```
 # %%
-kdata = KData.from_file(data_folder / 'grpe_t1_free_breathing.mrd', KTrajectoryRpe(angle=torch.pi * 0.618034))
+kdata = mrpro.data.KData.from_file(
+    data_folder / 'grpe_t1_free_breathing.mrd',
+    trajectory=mrpro.data.traj_calculators.KTrajectoryRpe(angle=torch.pi * 0.618034),
+)
 
 # Calculate coil maps
-csm_maps = CsmData.from_kdata_inati(kdata, smoothing_width=3, downsampled_size=64)
+csm_maps = mrpro.data.CsmData.from_kdata_inati(kdata, smoothing_width=3, downsampled_size=64)
 
 #  SENSE reconstruction
-iterative_sense = IterativeSENSEReconstruction(kdata, csm=csm_maps)
+iterative_sense = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction(kdata, csm=csm_maps)
 img = iterative_sense(kdata)
 
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show plotting details"}
@@ -95,7 +96,7 @@ def show_views(*images: torch.Tensor, ylabels: Sequence[str] | None = None) -> N
         raise ValueError(f'Expected {len(images)} ylabels, got {len(ylabels)}')
     _, axes = plt.subplots(len(images), 3, squeeze=False, figsize=(12, 4 * len(images)))
     for idx, (image, ylabel) in enumerate(zip(images, ylabels or [''] * len(images), strict=True)):
-        image = torch.squeeze(image / torch.quantile(image, 0.98))
+        image = (image / image.quantile(0.98)).squeeze()
         image_views = [image[:, 61, :], torch.fliplr(image[:, :, 63]), image[54, :, :]]
 
         for vdx, (view, title) in enumerate(zip(image_views, ['Coronal', 'Transversal', 'Sagittal'], strict=True)):
@@ -124,14 +125,14 @@ show_views(img.rss())
 
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show self-navigator calculation"}
 def get_respiratory_self_navigator_from_grpe(
-    kdata: KData, respiratory_frequency_range: tuple[float, float] = (0.2, 0.5)
+    kdata: mrpro.data.KData, respiratory_frequency_range: tuple[float, float] = (0.2, 0.5)
 ) -> torch.Tensor:
     """Get respiratory self-navigator from GRPE data set."""
     # Get all readout lines for ky = kz = 0
     kdata_navigator = kdata[(kdata.traj.ky == 0) & (kdata.traj.kz == 0)]
 
     # Apply a 1D FFT along the readout to get the projection of the object
-    fft_op_1d = FastFourierOp(dim=(-1,))
+    fft_op_1d = mrpro.operators.FastFourierOp(dim=(-1,))
     navigator_data = fft_op_1d(kdata_navigator.data)[0].squeeze().abs()
 
     # Carry out SVD over all readout points and all coils to get the main signal components
@@ -139,23 +140,19 @@ def get_respiratory_self_navigator_from_grpe(
     svd_navigator_data, _, _ = torch.linalg.svd(navigator_data - navigator_data.mean(dim=0, keepdim=True))
 
     # Select the SVD component the largest frequency contribution closest to the expected respiratory frequency
-    dt = torch.mean(torch.diff(kdata_navigator.header.acq_info.acquisition_time_stamp.squeeze(), dim=0))
-    fft_svd_navigator_data = torch.abs(torch.fft.fft(svd_navigator_data, dim=0))
+    dt = kdata_navigator.header.acq_info.acquisition_time_stamp.squeeze().diff(dim=0).mean()
+    fft_svd_navigator_data = torch.fft.fft(svd_navigator_data, dim=0).abs()
     f_hz = torch.fft.fftfreq(len(svd_navigator_data), dt)
     fft_svd_navigator_data_in_resp_window = fft_svd_navigator_data[
-        (f_hz >= respiratory_frequency_range[0]) & (f_hz <= respiratory_frequency_range[1]), :
+        (f_hz >= respiratory_frequency_range[0]) & (f_hz <= respiratory_frequency_range[1])
     ]
-    respiratory_navigator = svd_navigator_data[
-        :, torch.argmax(torch.max(fft_svd_navigator_data_in_resp_window, dim=0)[0])
-    ]
+    respiratory_navigator = svd_navigator_data[:, fft_svd_navigator_data_in_resp_window.amax(dim=0).argmax()]
 
     # Interpolate navigator from k-space center ky=kz=0 to all phase encoding points
-    return torch.as_tensor(
-        np.interp(
-            kdata.header.acq_info.acquisition_time_stamp.squeeze(),
-            kdata_navigator.header.acq_info.acquisition_time_stamp.squeeze(),
-            respiratory_navigator,
-        )
+    return mrpro.utils.interp(
+        kdata.header.acq_info.acquisition_time_stamp.squeeze(),
+        kdata_navigator.header.acq_info.acquisition_time_stamp.squeeze(),
+        respiratory_navigator,
     )
 
 
@@ -187,7 +184,7 @@ kdata_resp_resolved = kdata[..., navigator_idx, :]
 # ### 3. Reconstruct dynamic images of different breathing states
 
 # %%
-recon_resp_resolved = IterativeSENSEReconstruction(kdata_resp_resolved, csm=csm_maps)
+recon_resp_resolved = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction(kdata_resp_resolved, csm=csm_maps)
 img_resp_resolved = recon_resp_resolved(kdata_resp_resolved)
 
 
@@ -197,14 +194,14 @@ def show_motion_states(image: torch.Tensor, ylabel: str | None = None, slice_idx
     _, axes = plt.subplots(1, 3, squeeze=False, figsize=(12, 16))
     [a.set_xticks([]) for a in axes.flatten()]
     [a.set_yticks([]) for a in axes.flatten()]
-    image = torch.squeeze(image / image.max())
+    image = (image / image.max()).squeeze()
     axes[0, 0].imshow(torch.rot90(image[0, :, slice_idx, :], -1), vmin=0, vmax=vmax, cmap='grey')
     axes[0, 0].set_title('MS 1', fontsize=18)
     axes[0, 0].set_ylabel(ylabel, fontsize=18)
     axes[0, 1].imshow(torch.rot90(image[-1, :, slice_idx, :], -1), vmin=0, vmax=vmax, cmap='grey')
     axes[0, 1].set_title(f'MS {image.shape[0]}', fontsize=18)
     axes[0, 2].imshow(
-        torch.rot90(torch.abs(image[0, :, slice_idx, :] - image[-1, :, slice_idx, :]), -1),
+        torch.rot90(image[0, :, slice_idx, :] - image[-1, :, slice_idx, :] - 1).abs(),
         vmin=0,
         vmax=0.2,
         cmap='grey',
@@ -230,11 +227,11 @@ show_motion_states(img_resp_resolved.rss(), ylabel='Iterative SENSE')
 
 # %%
 mf = torch.as_tensor(np.load(data_folder / 'grpe_t1_free_breathing_displacement_fields.npy'), dtype=torch.float32)
-motion_op = GridSamplingOp.from_displacement(mf[..., 2], mf[..., 1], mf[..., 0])
+motion_op = mrpro.operators.GridSamplingOp.from_displacement(mf[..., 2], mf[..., 1], mf[..., 0])
 
 # %% [markdown]
 # ### 5. Use the motion fields to obtain a motion-corrected image
-# Now we obtain a motion-corrected image $x$ by minimizing the functionl $F$
+# Now we obtain a motion-corrected image $x$ by minimizing the functional $F$
 #
 # $ F(x) = \sum_m||(A_mx - y_m)||_2^2 \quad$ with $\quad A_m = F_m M_m C $
 #
@@ -248,26 +245,34 @@ motion_op = GridSamplingOp.from_displacement(mf[..., 2], mf[..., 1], mf[..., 0])
 # %%
 # Create acquisition operator
 fourier_op = recon_resp_resolved.fourier_op
-csm_op = SensitivityOp(csm_maps)
-averaging_op = AveragingOp(dim=0)
+csm_op = mrpro.operators.SensitivityOp(csm_maps)
+averaging_op = mrpro.operators.AveragingOp(dim=0)
 acquisition_operator = fourier_op @ motion_op @ csm_op @ averaging_op.H
 (right_hand_side,) = acquisition_operator.H(kdata_resp_resolved.data)
 
 # The DCF is used to obtain a good starting point for the CG algorithm.
-# This is equivalten to running the CG algorithm with H = A^H DCF A and b = A^H DCF y
+# This is equivalent to running the CG algorithm with H = A^H DCF A and b = A^H DCF y
 # for a single iteration.
 if recon_resp_resolved.dcf_op is not None:
     (u,) = (acquisition_operator.H @ recon_resp_resolved.dcf_op)(kdata_resp_resolved.data)
     (v,) = (acquisition_operator.H @ recon_resp_resolved.dcf_op @ acquisition_operator)(u)
     u_flat = u.flatten(start_dim=-3)
     v_flat = v.flatten(start_dim=-3)
-    initial_value = unsqueeze_right(torch.linalg.vecdot(u_flat, u_flat) / torch.linalg.vecdot(v_flat, u_flat), 3) * u
+    initial_value = (
+        mrpro.utils.unsqueeze_right(torch.linalg.vecdot(u_flat, u_flat) / torch.linalg.vecdot(v_flat, u_flat), 3) * u
+    )
 else:
     initial_value = torch.zeros_like(right_hand_side)
 operator = acquisition_operator.H @ acquisition_operator
 
 # Minimize the functional
-(img_mcir,) = cg(operator, right_hand_side, initial_value=initial_value, max_iterations=10, tolerance=0.0)
+(img_mcir,) = mrpro.algorithms.optimizers.cg(
+    operator,
+    right_hand_side,
+    initial_value=initial_value,
+    max_iterations=10,
+    tolerance=0.0,
+)
 
 
 # %%
