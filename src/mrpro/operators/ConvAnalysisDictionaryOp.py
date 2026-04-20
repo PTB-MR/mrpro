@@ -23,11 +23,11 @@ class ConvAnalysisDictionaryOp(LinearOperator):
             :math:`Hx:=[h_1 \ast x, \ldots, h_K \ast x]^T`
         for convolutional filters :math:`h_1, \ldots, h_K` and input tensor :math:`x`.
         Thereby, for each :math:`k`, the operation is defined as
-            :math:`h_k \ast x := \
-                \mathrm{conv}(\mathrm{Re}(x), \mathrm{Re}(h_k)) \
-                - \mathrm{conv}(\mathrm{Im}(x), \mathrm{Im}(h_k)) \
-                + i \cdot (\mathrm{conv}(\mathrm{Re}(x), \mathrm{Im}(h_k)) \
-                + \mathrm{conv}(\mathrm{Im}(x), \mathrm{Re}(h_k)))`,
+            :math:`h_k \ast x :=` \
+                `\mathrm{conv}(\mathrm{Re}(x), \mathrm{Re}(h_k))` \
+                `- \mathrm{conv}(\mathrm{Im}(x), \mathrm{Im}(h_k))` \
+                `+ i \cdot (\mathrm{conv}(\mathrm{Re}(x), \mathrm{Im}(h_k))` \
+                `+ \mathrm{conv}(\mathrm{Im}(x), \mathrm{Re}(h_k)))`,
         where :math:`\mathrm{conv}(\cdot, \cdot)` denotes the convolution operation.
         Thus, if the filter is real-valued and the input complex-valued, the same filter is applied to real
         and the imaginary part of the input.
