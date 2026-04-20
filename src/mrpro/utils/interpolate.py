@@ -8,6 +8,45 @@ import torch
 from mrpro.utils.reshape import normalize_indices
 
 
+def interp(x: torch.Tensor, xp: torch.Tensor, fp: torch.Tensor) -> torch.Tensor:
+    """One-dimensional linear interpolation for monotonically increasing sample points.
+
+    Implements numpy.interp
+
+    Evaluates the function at the given coordinates x based on the known points (xp, fp).
+    Out-of-bounds values are clamped to fp[0] and fp[-1], matching the default
+    behavior of numpy.interp.
+
+    Parameters
+    ----------
+    x
+        The x-coordinates at which to evaluate the interpolated values.
+    xp
+        1d tensor of x coordinates of data points.
+        The tensor will be sorted internally. If called repeatedly, it is recommended
+        to sort the tensor once and pass it in.
+    fp
+        1d tensor of y coordinates matching the length of xp.
+
+    Returns
+    -------
+        The interpolated values matching the shape of x.
+    """
+    if not torch.all(xp[:-1] <= xp[1:]):
+        sorter = torch.argsort(xp)
+        xp = xp[sorter]
+        fp = fp[sorter]
+
+    x_clamped = torch.clamp(x, min=xp[0], max=xp[-1])
+    idx = torch.searchsorted(xp, x_clamped).clamp(1, len(xp) - 1)
+    x0 = xp[idx - 1]
+    x1 = xp[idx]
+    y0 = fp[idx - 1]
+    y1 = fp[idx]
+    weight = (x_clamped - x0) / (x1 - x0)
+    return torch.lerp(y0, y1, weight)
+
+
 def interpolate(
     x: torch.Tensor, size: Sequence[int], dim: Sequence[int], mode: Literal['nearest', 'linear'] = 'linear'
 ) -> torch.Tensor:

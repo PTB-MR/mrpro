@@ -2,10 +2,18 @@
 
 from mrpro.operators.Operator import Operator
 from mrpro.operators.LinearOperator import LinearOperator
-from mrpro.operators.Functional import FunctionalType, ProximableFunctional, ElementaryFunctional, ElementaryProximableFunctional, ScaledProximableFunctional
+from mrpro.operators.Functional import (
+    FunctionalType,
+    ProximableFunctional,
+    ElementaryFunctional,
+    ElementaryProximableFunctional,
+    ScaledProximableFunctional,
+)
 from mrpro.operators import functionals, models
 from mrpro.operators.AveragingOp import AveragingOp
 from mrpro.operators.CartesianSamplingOp import CartesianSamplingOp, CartesianMaskingOp
+from mrpro.operators.ConvAnalysisDictionaryOp import ConvAnalysisDictionaryOp
+from mrpro.operators.ConvSynthesisDictionaryOp import ConvSynthesisDictionaryOp
 from mrpro.operators.ConjugateGradientOp import ConjugateGradientOp
 from mrpro.operators.ConstraintsOp import ConstraintsOp
 from mrpro.operators.DensityCompensationOp import DensityCompensationOp
@@ -25,7 +33,9 @@ from mrpro.operators.OptimizerOp import OptimizerOp
 from mrpro.operators.PatchOp import PatchOp
 from mrpro.operators.PCACompressionOp import PCACompressionOp
 from mrpro.operators.PhaseOp import PhaseOp
-from mrpro.operators.ProximableFunctionalSeparableSum import ProximableFunctionalSeparableSum
+from mrpro.operators.ProximableFunctionalSeparableSum import (
+    ProximableFunctionalSeparableSum,
+)
 from mrpro.operators.RearrangeOp import RearrangeOp
 from mrpro.operators.SensitivityOp import SensitivityOp
 from mrpro.operators.SignalModel import SignalModel
@@ -41,6 +51,8 @@ __all__ = [
     "CartesianSamplingOp",
     "ConjugateGradientOp",
     "ConstraintsOp",
+    "ConvAnalysisDictionaryOp",
+    "ConvSynthesisDictionaryOp",
     "DensityCompensationOp",
     "DictionaryMatchOp",
     "EinsumOp",
