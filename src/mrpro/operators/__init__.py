@@ -22,6 +22,11 @@ from mrpro.operators.EinsumOp import EinsumOp
 from mrpro.operators.FastFourierOp import FastFourierOp
 from mrpro.operators.FiniteDifferenceOp import FiniteDifferenceOp
 from mrpro.operators.FourierOp import FourierOp
+from mrpro.operators.B0InformedFourierOp import (
+    ConjugatePhaseFourierOp,
+    MultiFrequencyFourierOp,
+    TimeSegmentedFourierOp,
+)
 from mrpro.operators.GridSamplingOp import GridSamplingOp
 from mrpro.operators.IdentityOp import IdentityOp
 from mrpro.operators.Jacobian import Jacobian
@@ -43,13 +48,16 @@ from mrpro.operators.SliceProjectionOp import SliceProjectionOp
 from mrpro.operators.WaveletOp import WaveletOp
 from mrpro.operators.ZeroPadOp import ZeroPadOp
 from mrpro.operators.ZeroOp import ZeroOp
+from mrpro.operators.B0InformedFourierOp import B0InformedFourierOp
 
 
 __all__ = [
     "AveragingOp",
+    "B0InformedFourierOp",
     "CartesianMaskingOp",
     "CartesianSamplingOp",
     "ConjugateGradientOp",
+    "ConjugatePhaseFourierOp",
     "ConstraintsOp",
     "ConvAnalysisDictionaryOp",
     "ConvSynthesisDictionaryOp",
@@ -68,6 +76,7 @@ __all__ = [
     "LinearOperator",
     "LinearOperatorMatrix",
     "MagnitudeOp",
+    "MultiFrequencyFourierOp",
     "MultiIdentityOp",
     "NonUniformFastFourierOp",
     "Operator",
@@ -82,6 +91,7 @@ __all__ = [
     "SensitivityOp",
     "SignalModel",
     "SliceProjectionOp",
+    "TimeSegmentedFourierOp",
     "WaveletOp",
     "ZeroOp",
     "ZeroPadOp",
