@@ -154,17 +154,17 @@ class MultiFrequencyFourierOp(B0InformedFourierOp):
             return spatial_basis, temporal_basis
 
         n_centers = frequency_centers.numel()
-        b0_map_flat = b0_map_rad.reshape(-1)
+        b0_map_flat = b0_map_rad.flatten()
 
         with torch.no_grad():
             idx_right = torch.bucketize(b0_map_flat, frequency_centers).clamp(1, n_centers - 1)
             idx_left = idx_right - 1
-            left_freq = frequency_centers[idx_left]
-            right_freq = frequency_centers[idx_right]
-            delta_freq = (right_freq - left_freq).clamp_min(1e-12)
+            left_frequencies = frequency_centers[idx_left]
+            right_frequencies = frequency_centers[idx_right]
+            delta_frequencies = (right_frequencies - left_frequencies).clamp_min(1e-12)
 
+        w = (b0_map_flat - left_frequencies) / delta_frequencies
         spatial_basis = torch.zeros((n_centers, b0_map_flat.numel()), device=b0_map_rad.device, dtype=b0_map_rad.dtype)
-        w = (b0_map_flat - left_freq) / delta_freq
         spatial_basis.scatter_add_(0, idx_left[None, :], (1 - w)[None, :])
         spatial_basis.scatter_add_(0, idx_right[None, :], w[None, :])
         spatial_basis = spatial_basis.reshape(n_centers, *b0_map_rad.shape).to(b0_map_rad.dtype.to_complex())
@@ -227,6 +227,7 @@ class TimeSegmentedFourierOp(B0InformedFourierOp):
 
             segment_phases = torch.exp(-1j * design_frequencies[:, None] * time_segments[None, :])
             target_phases = torch.exp(-1j * design_frequencies[:, None] * readout_times[None, :])
+            # https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=10517636 eq 5
             temporal_basis = torch.linalg.lstsq(segment_phases, target_phases, rcond=1e-15).solution.to(
                 b0_map_rad.dtype.to_complex()
             )

@@ -1,9 +1,9 @@
 # %% [markdown]
-# # B0 Inhomogeneity Correction
-# Here, we are going to have a look at how to correct for B0 inhomogeneity in MRI data.
+# # B$_0$ Inhomogeneity Correction
+# Here, we are going to have a look at how to correct for B$_0$ inhomogeneity in MRI data.
 
 # ## Generate a field map and a simple phantom
-# We use an ellipse phantom and a random field map to simulate B0 inhomogeneity.
+# We use an ellipse phantom and a random field map to simulate B$_0$ inhomogeneity.
 # %%
 import mrpro
 import torch
@@ -27,8 +27,8 @@ plt.show()
 # %%
 
 # %% [markdown]
-# ## Simulate a distorted k-space data
-# We simulate a distorted k-space data by applying the B0-informed Fourier operator to the phantom.
+# ## Simulate distorted k-space data
+# We simulate distorted k-space data by applying the B$_0$-informed Fourier operator to the phantom.
 # %%
 
 ro_bandwidth = 20e3
@@ -55,7 +55,7 @@ ax[1].axis('off')
 plt.tight_layout()
 # %% [markdown]
 # ## Correct for B0 inhomogeneity
-# We can use a faster approximation of the B0-informed Fourier operator, i.e., the Time-Segmented operator
+# We can use a faster approximation of the B0-informed Fourier operator, namely the Time-Segmented operator.
 # The adjoint already fixes geometric distortions, using conjugate gradient (CG) we can actually invert the operator and
 # also fix intensity inhomogeneities. This is necessry, as F^H F != I for B0-informed Fourier operators!
 # %%
@@ -78,5 +78,5 @@ plt.tight_layout()
 
 # %% [markdown]
 # ## Summary
-# We have explored how to use the B0-informed Fourier operators to generate a distorted k-space data and
+# We have explored how to use the B0-informed Fourier operators to generate distorted k-space data and
 # and how to correct for B0 inhomogeneity in the reconstruction.
