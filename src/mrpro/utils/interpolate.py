@@ -44,7 +44,7 @@ def interp(x: torch.Tensor, xp: torch.Tensor, fp: torch.Tensor) -> torch.Tensor:
     y0 = fp[idx - 1]
     y1 = fp[idx]
     weight = (x_clamped - x0) / (x1 - x0)
-    return torch.lerp(y0, y1, weight)
+    return torch.lerp(y0, y1, weight.to(fp.dtype.to_real()))
 
 
 def interpolate(
