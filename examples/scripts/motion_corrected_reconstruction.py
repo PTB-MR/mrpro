@@ -196,15 +196,12 @@ def show_motion_states(image: torch.Tensor, ylabel: str | None = None, slice_idx
     [a.set_yticks([]) for a in axes.flatten()]
     image = (image / image.max()).squeeze()
     axes[0, 0].imshow(torch.rot90(image[0, :, slice_idx, :], -1), vmin=0, vmax=vmax, cmap='grey')
-    axes[0, 0].set_title('MS 1', fontsize=18)
+    axes[0, 0].set_title('Motion State 1', fontsize=18)
     axes[0, 0].set_ylabel(ylabel, fontsize=18)
     axes[0, 1].imshow(torch.rot90(image[-1, :, slice_idx, :], -1), vmin=0, vmax=vmax, cmap='grey')
-    axes[0, 1].set_title(f'MS {image.shape[0]}', fontsize=18)
+    axes[0, 1].set_title(f'Motion State {image.shape[0]}', fontsize=18)
     axes[0, 2].imshow(
-        torch.rot90(image[0, :, slice_idx, :] - image[-1, :, slice_idx, :] - 1).abs(),
-        vmin=0,
-        vmax=0.2,
-        cmap='grey',
+        torch.rot90(image[0, :, slice_idx, :] - image[-1, :, slice_idx, :], -1).abs(), vmin=0, vmax=0.2, cmap='grey'
     )
     axes[0, 2].set_title(f'|MS 1 - MS {image.shape[0]}|', fontsize=18)
     plt.show()
@@ -248,6 +245,7 @@ fourier_op = recon_resp_resolved.fourier_op
 csm_op = mrpro.operators.SensitivityOp(csm_maps)
 averaging_op = mrpro.operators.AveragingOp(dim=0)
 acquisition_operator = fourier_op @ motion_op @ csm_op @ averaging_op.H
+operator = acquisition_operator.gram
 (right_hand_side,) = acquisition_operator.H(kdata_resp_resolved.data)
 
 # The DCF is used to obtain a good starting point for the CG algorithm.
@@ -263,9 +261,8 @@ if recon_resp_resolved.dcf_op is not None:
     )
 else:
     initial_value = torch.zeros_like(right_hand_side)
-operator = acquisition_operator.H @ acquisition_operator
 
-# Minimize the functional
+# Minimize the functional by solving operator(x) = right_hand_side with conjugate gradient
 (img_mcir,) = mrpro.algorithms.optimizers.cg(
     operator,
     right_hand_side,
