@@ -44,7 +44,7 @@ class Jacobian(LinearOperator):
             output tensor
         """
         if self._vjp is None:
-            self._f_x0, self._vjp = torch.func.vjp(self._operator, *self._x0)
+            self._f_x0, self._vjp, *_ = torch.func.vjp(self._operator, *self._x0)
         assert self._vjp is not None  # noqa: S101 (hint for mypy)
         return (self._vjp(x)[0],)
 
@@ -69,7 +69,7 @@ class Jacobian(LinearOperator):
             Prefer calling the instance of the Jacobian as ``operator(x)`` over directly calling this method.
             See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
-        self._f_x0, jvp = torch.func.jvp(self._operator, self._x0, x)
+        self._f_x0, jvp, *_ = torch.func.jvp(self._operator, self._x0, x)
         return jvp
 
     @property
@@ -99,7 +99,7 @@ class Jacobian(LinearOperator):
             Value of the Taylor approximation at x
         """
         delta = tuple(ix - ix0 for ix, ix0 in zip(x, self._x0, strict=False))
-        self._f_x0, jvp = torch.func.jvp(self._operator, self._x0, delta)
+        self._f_x0, jvp, *_ = torch.func.jvp(self._operator, self._x0, delta)
         assert self._f_x0 is not None  # noqa: S101 (hint for mypy)
         f_x = tuple(ifx0 + ijvp for ifx0, ijvp in zip(self._f_x0, jvp, strict=False))
         return f_x
