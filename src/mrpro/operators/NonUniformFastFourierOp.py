@@ -6,6 +6,7 @@ from itertools import product
 from types import EllipsisType
 from typing import Literal
 
+import numpy as np
 import torch
 from pytorch_finufft.functional import finufft_type1, finufft_type2
 from typing_extensions import Self
@@ -60,6 +61,9 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         # Convert to negative indexing
         direction_dict = {'z': -3, 'y': -2, 'x': -1, -3: -3, -2: -2, -1: -1}
         self._direction_zyx = tuple(direction_dict[d] for d in direction)
+        # Directions are assumed to be in the order -3, -2, -1
+        direction_index = np.argsort(self._direction_zyx)
+        self._direction_zyx = tuple(self._direction_zyx[i] for i in direction_index)
         if len(direction) != len(set(self._direction_zyx)):
             raise ValueError(f'Directions must be unique. Normalized directions are {self._direction_zyx}')
         if not self._direction_zyx:
@@ -101,7 +105,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         else:
             if (n_recon_matrix := len(recon_matrix)) != (n_nufft_dir := len(self._direction_zyx)):
                 raise ValueError(f'recon_matrix should have {n_nufft_dir} entries but has {n_recon_matrix}')
-            im_size = tuple(recon_matrix)
+            im_size = tuple(recon_matrix[i] for i in direction_index)
         assert len(im_size) == 1 or len(im_size) == 2 or len(im_size) == 3  # mypy  # noqa: S101
 
         if isinstance(encoding_matrix, SpatialDimension):
@@ -109,7 +113,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         else:
             if (n_enc_matrix := len(encoding_matrix)) != (n_nufft_dir := len(self._direction_zyx)):
                 raise ValueError(f'encoding_matrix should have {n_nufft_dir} entries but has {n_enc_matrix}')
-            k_size = tuple(encoding_matrix)
+            k_size = tuple(encoding_matrix[i] for i in direction_index)
 
         omega_list = [
             k * 2 * torch.pi / ks

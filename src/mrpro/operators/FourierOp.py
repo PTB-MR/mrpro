@@ -1,5 +1,6 @@
 """Fourier Operator."""
 
+import warnings
 from collections.abc import Sequence
 from functools import cached_property
 
@@ -66,6 +67,34 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
             else:
                 self._nufft_dims.append(dim)
 
+        if self._nufft_dims:
+            fft_dims_k210 = [
+                dim
+                for dim in (-3, -2, -1)
+                if (traj.type_along_k210[dim] & TrajType.ONGRID)
+                and not (traj.type_along_k210[dim] & TrajType.SINGLEVALUE)
+            ]
+            if self._fft_dims != fft_dims_k210:
+                warnings.warn(
+                    'If both FFT and NUFFT dims are present, Cartesian FFT dims need to be aligned with the '
+                    'k-space dimension, i.e. kx along k0, ky along k1 and kz along k2. We are going to use NUFFT '
+                    'for all dimensions. Creating your own FourierOp with the desired combination of FFT and NUFFT '
+                    'dimensions might be more efficient. ',
+                    stacklevel=2,
+                )
+                self._nufft_dims.extend(self._fft_dims)
+                self._nufft_dims.sort()
+                self._fft_dims = []
+
+            self._non_uniform_fast_fourier_op: NonUniformFastFourierOp | None = NonUniformFastFourierOp(
+                direction=tuple(self._nufft_dims),  # type: ignore[arg-type]
+                recon_matrix=get_spatial_dims(recon_matrix, self._nufft_dims),
+                encoding_matrix=get_spatial_dims(encoding_matrix, self._nufft_dims),
+                traj=traj,
+            )
+        else:
+            self._non_uniform_fast_fourier_op = None
+
         if self._fft_dims:
             self._fast_fourier_op: FastFourierOp | None = FastFourierOp(
                 dim=tuple(self._fft_dims),
@@ -78,29 +107,6 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
         else:
             self._fast_fourier_op = None
             self._cart_sampling_op = None
-
-        # Find dimensions which require NUFFT
-        if self._nufft_dims:
-            fft_dims_k210 = [
-                dim
-                for dim in (-3, -2, -1)
-                if (traj.type_along_k210[dim] & TrajType.ONGRID)
-                and not (traj.type_along_k210[dim] & TrajType.SINGLEVALUE)
-            ]
-            if self._fft_dims != fft_dims_k210:
-                raise NotImplementedError(
-                    'If both FFT and NUFFT dims are present, Cartesian FFT dims need to be aligned with the '
-                    'k-space dimension, i.e. kx along k0, ky along k1 and kz along k2.',
-                )
-
-            self._non_uniform_fast_fourier_op: NonUniformFastFourierOp | None = NonUniformFastFourierOp(
-                direction=tuple(self._nufft_dims),  # type: ignore[arg-type]
-                recon_matrix=get_spatial_dims(recon_matrix, self._nufft_dims),
-                encoding_matrix=get_spatial_dims(encoding_matrix, self._nufft_dims),
-                traj=traj,
-            )
-        else:
-            self._non_uniform_fast_fourier_op = None
 
         self._trajectory_info = repr(traj)
 
