@@ -1,4 +1,5 @@
 from mrpro.nn.nets.BasicCNN import BasicCNN
+from mrpro.nn.nets.VAE import VAE
 from mrpro.nn.nets.HourglassTransformer import HourglassTransformer
 from mrpro.nn.nets.Restormer import Restormer
 from mrpro.nn.nets.SwinIR import SwinIR
@@ -14,5 +15,6 @@ __all__ = [
     "Restormer",
     "SwinIR",
     "UNet",
-    "Uformer"
+    "Uformer",
+    "VAE"
 ]
