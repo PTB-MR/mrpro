@@ -232,7 +232,7 @@ class DicomTestImage:
             dataset.RescaleIntercept = rescale_intercept
             dataset.RescaleType = 'US'
 
-        random = RandomGenerator()
+        random = RandomGenerator(1)
         noise = random.float32_tensor(size=(n_slices, matrix_size_x, matrix_size_y))
 
         # 'MONOCHROME2' means smallest value is black, largest value is white

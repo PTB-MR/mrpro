@@ -2,7 +2,7 @@
 
 import pytest
 import torch
-from mrpro.utils.interpolate import apply_lowres, interpolate
+from mrpro.utils.interpolate import apply_lowres, interp, interpolate
 
 
 @pytest.fixture
@@ -37,7 +37,7 @@ def test_interpolate_size_dim_mismatch() -> None:
 
 def test_interpolate_unique_dim() -> None:
     """Test non-unique interpolate dimensions."""
-    with pytest.raises(ValueError, match='Dim must be unique'):
+    with pytest.raises(IndexError, match='unique'):
         interpolate(torch.randn((2, 2, 2)), dim=(-1, -2, 1), size=(2, 2, 2))
 
 
@@ -50,3 +50,23 @@ def test_apply_lowres(data: torch.Tensor) -> None:
 
     apply = apply_lowres(identity_function, size=(8, 8, 8), dim=(-3, -2, -1))
     torch.testing.assert_close(data[..., 1:-1], apply(data)[..., 1:-1])
+
+
+def test_interp() -> None:
+    """Test interp vs expected values"""
+    xp = torch.tensor([1.0, 2.0, 3.0])
+    fp = torch.tensor([10.0, 20.0, 40.0])
+    x = torch.tensor([[0.99, 1.0, 1.5], [2.5, 3.0, 3.01]])
+    expected = torch.tensor([[10.0, 10.0, 15.0], [30.0, 40.0, 40.0]])
+    result = interp(x, xp, fp)
+    torch.testing.assert_close(result, expected)
+
+
+def test_interp_unsorted_xp() -> None:
+    """Test interp with unsorted xp."""
+    xp = torch.tensor([3.0, 2.0, 1.0])
+    fp = torch.tensor([40.0, 20.0, 10.0])
+    x = torch.tensor([[0.99, 1.0, 1.5], [2.5, 3.0, 3.01]])
+    expected = torch.tensor([[10.0, 10.0, 15.0], [30.0, 40.0, 40.0]])
+    result = interp(x, xp, fp)
+    torch.testing.assert_close(result, expected)

@@ -665,7 +665,7 @@ class AdjointLinearOperator(LinearOperator):
         -------
             Tensor resulting from applying the original operator.
         """
-        return self._operator.forward(x)
+        return self._operator(x)
 
     @property
     def H(self) -> LinearOperator:  # noqa: N802
