@@ -39,9 +39,9 @@ class PCACompressionOp(LinearOperator):
         """
         super().__init__()
         if centering:
-            data = data - data.mean(-1, keepdim=True)
+            data = data - data.mean(-2, keepdim=True)
         # different compression matrices along the *other dimensions
-        correlation = einops.einsum(data, data.conj(), '... joint comp1, ... joint comp2 -> ... comp1 comp2')
+        correlation = einops.einsum(data.conj(), data, '... joint comp1, ... joint comp2 -> ... comp1 comp2')
         _eigenvalues, v = torch.linalg.eigh(correlation)  # faster then svd if we only care about V
         # add joint_dim along which the the compression is the same
         v = repeat(v.conj(), '... comp1 comp2 -> ... joint_dim  comp2 comp1', joint_dim=1)
