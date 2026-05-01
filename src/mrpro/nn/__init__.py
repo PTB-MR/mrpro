@@ -12,6 +12,7 @@ from mrpro.nn.PermutedBlock import PermutedBlock
 from mrpro.nn.RMSNorm import RMSNorm
 from mrpro.nn.Residual import Residual
 from mrpro.nn.Sequential import Sequential
+from mrpro.nn import data_consistency
 from mrpro.nn.ndmodules import (
     adaptiveAvgPoolND,
     avgPoolND,
@@ -40,6 +41,7 @@ __all__ = [
     'batchNormND',
     'convND',
     'convTransposeND',
+    'data_consistency',
     'instanceNormND',
     'maxPoolND',
 ]
