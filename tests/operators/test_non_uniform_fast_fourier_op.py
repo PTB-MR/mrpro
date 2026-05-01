@@ -156,7 +156,23 @@ def test_non_uniform_fast_fourier_op_directions() -> None:
         encoding_matrix=SpatialDimension[int](z=kdata_shape[-3], y=kdata_shape[-2], x=kdata_shape[-1]),
         traj=traj,
     )
+
+    nufft_op_xy = NonUniformFastFourierOp(
+        direction=('x', 'y'),
+        recon_matrix=SpatialDimension[int](z=img_shape[-3], y=img_shape[-2], x=img_shape[-1]),
+        encoding_matrix=SpatialDimension[int](z=kdata_shape[-3], y=kdata_shape[-2], x=kdata_shape[-1]),
+        traj=traj,
+    )
+
+    nufft_op_xy_matrix_sequence = NonUniformFastFourierOp(
+        direction=('x', 'y'),
+        recon_matrix=(img_shape[-1], img_shape[-2]),
+        encoding_matrix=(kdata_shape[-1], kdata_shape[-2]),
+        traj=traj,
+    )
     torch.testing.assert_close(nufft_op_12(img)[0], nufft_op_yx(img)[0])
+    torch.testing.assert_close(nufft_op_12(img)[0], nufft_op_xy(img)[0])
+    torch.testing.assert_close(nufft_op_12(img)[0], nufft_op_xy_matrix_sequence(img)[0])
 
 
 def test_non_uniform_fast_fourier_op_error_directions() -> None:
