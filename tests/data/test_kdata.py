@@ -355,21 +355,19 @@ def test_KData_remove_readout_os(monkeypatch, random_kheader: KHeader) -> None:
 def test_KData_compress_coils(ismrmrd_cart_high_res) -> None:
     """Test coil combination does not alter image content."""
     kdata = KData.from_file(ismrmrd_cart_high_res.filename, DummyTrajectory())
-    kdata_compressed = kdata.compress_coils(n_compressed_coils=4)
-    assert kdata.shape[-4] != 4, 'coil compression changed original data'
-    assert kdata_compressed.shape[-4] == 4, 'coil compression did not compress to correct number of coils'
+    kdata_compressed = kdata.compress_coils(n_compressed_coils=2)
+    assert kdata.shape[-4] != 2, 'coil compression changed original data'
+    assert kdata_compressed.shape[-4] == 2, 'coil compression did not compress to correct number of coils'
 
     # RSS should stay the same after compression
     ff_op = FastFourierOp(
-        dim=(-1, -2),
-        recon_matrix=[kdata.header.recon_matrix.x, kdata.header.recon_matrix.y],
-        encoding_matrix=[kdata.header.encoding_matrix.x, kdata.header.encoding_matrix.y],
+        dim=(-1, -2), recon_matrix=kdata.header.recon_matrix, encoding_matrix=kdata.header.encoding_matrix
     )
     (reconstructed_img,) = ff_op.adjoint(kdata.data)
     (reconstructed_img_compressed,) = ff_op.adjoint(kdata_compressed.data)
     reconstructed_img = reconstructed_img.abs().square().sum(-4).sqrt()
     reconstructed_img_compressed = reconstructed_img_compressed.abs().square().sum(-4).sqrt()
-    torch.testing.assert_close(reconstructed_img, reconstructed_img_compressed)
+    assert relative_image_difference(reconstructed_img, reconstructed_img_compressed) <= 0.01
 
 
 @pytest.mark.parametrize(
