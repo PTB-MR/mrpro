@@ -462,7 +462,7 @@ class NonUniformFastFourierOpGramOp(LinearOperator, adjoint_as_backward=True):
         """
         # We do the fft and cropping here directly, as it faster and more memory efficient
         # then using the operators. As this will be a bottleneck in iterative 3D reconstructions,
-        # it is worth the specialisation.
+        # it is worth the specialization.
 
         # This function on its own is also not autograd save (in-place ops), but we rely on the
         # adjoint-as-backward trick for linear operators to make it work
