@@ -11,9 +11,9 @@ import torch
 from pytorch_finufft.functional import finufft_type1, finufft_type2
 from typing_extensions import Self
 
+from mrpro.data.DcfData import DcfData
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.SpatialDimension import SpatialDimension
-from mrpro.operators.FastFourierOp import FastFourierOp
 from mrpro.operators.LinearOperator import LinearOperator
 
 
@@ -316,7 +316,9 @@ def symmetrize(kernel: torch.Tensor, rank: int) -> torch.Tensor:
 
 
 def gram_nufft_kernel(
-    weight: torch.Tensor, trajectory: torch.Tensor, recon_shape: tuple[int] | tuple[int, int] | tuple[int, int, int]
+    weight: torch.Tensor,
+    trajectory: torch.Tensor,
+    recon_shape: tuple[int] | tuple[int, int] | tuple[int, int, int],
 ) -> torch.Tensor:
     """Calculate the convolution kernel for the NUFFT gram operator.
 
@@ -356,17 +358,17 @@ def gram_nufft_kernel(
             else:  # second half in the dimension
                 idx.append(slice(kernel_part.size(dim) + 1, None))
                 kernel_part = kernel_part.index_select(
-                    dim, torch.arange(kernel_part.size(dim) - 1, 0, -1, device=kernel.device)
-                )  # flip
+                    dim,
+                    torch.arange(kernel_part.size(dim) - 1, 0, -1, device=kernel.device),
+                )
         kernel[tuple(idx)] = kernel_part
 
     kernel = symmetrize(kernel, rank)
     kernel = torch.fft.hfftn(kernel, dim=list(range(-rank, 0)), norm='backward')
-    kernel = torch.fft.fftshift(kernel, dim=list(range(-rank, 0)))
     return kernel
 
 
-class NonUniformFastFourierOpGramOp(LinearOperator):
+class NonUniformFastFourierOpGramOp(LinearOperator, adjoint_as_backward=True):
     """Gram operator for `NonUniformFastFourierOp`.
 
     Implements the adjoint of the forward operator of the non-uniform Fast Fourier operator, i.e. the gram operator
@@ -381,47 +383,115 @@ class NonUniformFastFourierOpGramOp(LinearOperator):
 
     _kernel: torch.Tensor | None
 
-    def __init__(self, nufft_op: NonUniformFastFourierOp) -> None:
+    def __init__(
+        self,
+        nufft_op: NonUniformFastFourierOp,
+        weight: torch.Tensor | DcfData | None = None,
+    ) -> None:
         """Initialize the gram operator.
 
         Parameters
         ----------
         nufft_op
             The py:class:`NonUniformFastFourierOp` to calculate the gram operator for.
-
+        weight
+            Optional density compensation weights. If provided, calculates F^H W F.
         """
         super().__init__()
-        self.nufft_gram: None | LinearOperator = None
+        self._dim = nufft_op._direction_zyx
+        self._recon_shape = nufft_op._im_size
 
         if not nufft_op._dimension_210:
+            self._kernel = None
             return
 
-        weight = torch.ones(
-            [*nufft_op._traj_broadcast_shape[:-4], 1, *nufft_op._traj_broadcast_shape[-3:]],
-        ).to(nufft_op._omega)
+        if isinstance(weight, DcfData):
+            weight = weight.data
 
-        # We rearrange weight into (sep_dims, joint_dims, nufft_dims)
+        weight_shape = [*nufft_op._traj_broadcast_shape[:-4], 1, *nufft_op._traj_broadcast_shape[-3:]]
+
+        if weight is None:
+            weight = torch.ones(weight_shape, device=nufft_op._omega.device)
+        else:
+            weight = weight.to(nufft_op._omega.device).broadcast_to(weight_shape)
+
         _, permute_zyx, sep_dims_210, permute_210 = nufft_op._separate_joint_dimensions(weight.ndim)
         unpermute_zyx = torch.tensor(permute_zyx).argsort().tolist()
 
         weight = weight.permute(*permute_210)
-        unflatten_other_shape = weight.shape[: -len(nufft_op._dimension_210) - 1]  # -1 for coil
-        # combine sep_dims
-        weight = weight.flatten(end_dim=len(sep_dims_210) - 1) if len(sep_dims_210) else weight[None, :]
-        # combine joint_dims and nufft_dims
+        unflatten_other_shape = weight.shape[: -len(nufft_op._dimension_210) - 1]
+        if sep_dims_210:
+            weight = weight.flatten(end_dim=len(sep_dims_210) - 1)
+        else:
+            weight = weight[None, :]
         weight = weight.flatten(start_dim=1, end_dim=-len(nufft_op._dimension_210) - 1).flatten(start_dim=2)
 
-        kernel = gram_nufft_kernel(weight, nufft_op._omega, nufft_op._im_size)
-        kernel = kernel.reshape(*unflatten_other_shape, -1, *kernel.shape[-len(nufft_op._direction_zyx) :])
-        kernel = kernel.permute(*unpermute_zyx)
-        kernel = kernel * (nufft_op.scale) ** 2
+        padded_shape = torch.Size([2 * size for size in nufft_op._im_size])
+        scale = nufft_op.scale.item() ** 2
 
-        fft = FastFourierOp(
-            dim=nufft_op._direction_zyx,
-            encoding_matrix=[2 * s for s in nufft_op._im_size],
-            recon_matrix=nufft_op._im_size,
-        )
-        self.nufft_gram = fft.H * kernel @ fft
+        if nufft_op._omega.shape[-2] == 3:
+            # Special case for memory-hungry 3D case
+            # We loop over the batch/coil samples to reduce peak memory usage
+            # and we create the kernel in a non-contiguous way, such that after the final
+            # permute, we are back at a contiguous tensor.
+            kernel_shape = list(weight_shape)
+            for d, s in zip(nufft_op._direction_zyx, padded_shape, strict=True):
+                kernel_shape[d] = s
+            try:
+                kernel = weight.new_empty(kernel_shape, dtype=torch.float16)
+            except torch.OutOfMemoryError:
+                kernel = torch.empty(kernel_shape, device='cpu', dtype=torch.float16)
+            kernel = kernel.permute(*permute_zyx)
+
+            for i, (w, o) in enumerate(zip(weight[:, None], nufft_op._omega[:, None], strict=True)):
+                idx = np.unravel_index(i, unflatten_other_shape)
+                kernel[idx] = gram_nufft_kernel(w, o, nufft_op._im_size)[0] * scale
+
+        else:  # 2D or 1D
+            kernel = gram_nufft_kernel(weight, nufft_op._omega, nufft_op._im_size)
+            kernel = kernel * scale
+            kernel = kernel.reshape(*unflatten_other_shape, -1, *kernel.shape[-len(nufft_op._direction_zyx) :])
+        self._kernel = kernel.permute(*unpermute_zyx)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply forward of NonUniformFastFourierOpGramOp.
+
+        .. note::
+            Prefer calling the instance of the NonUniformFastFourierOpGramOp operator as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
+        """
+        # We do the fft and cropping here directly, as it faster and more memory efficient
+        # then using the operators. As this will be a bottleneck in iterative 3D reconstructions,
+        # it is worth the specialisation.
+
+        # This function on its own is also not autograd save (in-place ops), but we rely on the
+        # adjoint-as-backward trick for linear operators to make it work
+
+        if self._kernel is None:
+            return (x,)
+
+        padded_shape = [2 * s for s in self._recon_shape]
+        spatial_crop: list[slice | EllipsisType] = [..., slice(None), slice(None), slice(None)]
+        for d, s in zip(self._dim, self._recon_shape, strict=True):
+            spatial_crop[d] = slice(0, s)
+
+        if len(self._recon_shape) <= 2:  # do batch samples at once
+            x = torch.fft.fftn(x, s=padded_shape, dim=self._dim)
+            x.mul_(self._kernel)
+            x = torch.fft.ifftn(x, dim=self._dim, out=x)
+            x = x[tuple(spatial_crop)]
+            out = x.clone()  # clone to deallocate the larger x on exit
+
+        else:  # 3D: loop over batch samples to save memory
+            out = torch.empty_like(x)
+            kernel = self._kernel.expand(*x.shape[:-3], *self._kernel.shape[-3:])
+            for idx in product(*[range(s) for s in x.shape[:-3]]):
+                xi = torch.fft.fftn(x[idx], s=padded_shape, dim=self._dim)
+                xi.mul_(kernel[idx])
+                xi = torch.fft.ifftn(xi, dim=self._dim, out=xi)
+                out[idx] = xi[tuple(spatial_crop)]
+
+        return (out,)
 
     def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the Gram operator of the NonUniformFastFourierOp (NUFFT.H @ NUFFT).
@@ -440,18 +510,6 @@ class NonUniformFastFourierOpGramOp(LinearOperator):
             Output tensor, image-space data after NUFFT.H @ NUFFT has been applied.
         """
         return super().__call__(x)
-
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply forward of NonUniformFastFourierOpGramOp.
-
-        .. note::
-            Prefer calling the instance of the NonUniformFastFourierOpGramOp operator as ``operator(x)`` over
-            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
-        """
-        if self.nufft_gram is not None:
-            (x,) = self.nufft_gram(x)
-
-        return (x,)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the adjoint of the Gram operator.
