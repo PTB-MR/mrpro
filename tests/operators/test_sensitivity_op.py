@@ -4,7 +4,7 @@ from collections.abc import Sequence
 
 import pytest
 import torch
-from mrpro.data import CsmData, QHeader, SpatialDimension
+from mrpro.data import CsmData
 from mrpro.operators import SensitivityOp
 from mrpro.utils import RandomGenerator
 
@@ -15,7 +15,7 @@ from tests import (
 )
 
 
-def create_sensitivity_op_and_domain_range() -> tuple[SensitivityOp, torch.Tensor, torch.Tensor]:
+def create_sensitivity_op_and_domain_range(random_iheader) -> tuple[SensitivityOp, torch.Tensor, torch.Tensor]:
     """Create a sensitivity operator and an element from domain and range."""
     rng = RandomGenerator(seed=0)
 
@@ -24,7 +24,7 @@ def create_sensitivity_op_and_domain_range() -> tuple[SensitivityOp, torch.Tenso
     n_coils = 4
     # Generate sensitivity operator
     random_tensor = rng.complex64_tensor(size=(*n_other, n_coils, *n_zyx))
-    random_csmdata = CsmData(data=random_tensor, header=QHeader(resolution=SpatialDimension(1.0, 1.0, 1.0)))
+    random_csmdata = CsmData(data=random_tensor, header=random_iheader)
     sensitivity_op = SensitivityOp(random_csmdata)
 
     u = rng.complex64_tensor(size=(*n_other, 1, *n_zyx))
@@ -32,22 +32,22 @@ def create_sensitivity_op_and_domain_range() -> tuple[SensitivityOp, torch.Tenso
     return sensitivity_op, u, v
 
 
-def test_sensitivity_op_adjointness() -> None:
+def test_sensitivity_op_adjointness(random_iheader) -> None:
     """Test Sensitivity operator adjoint property."""
-    dotproduct_adjointness_test(*create_sensitivity_op_and_domain_range())
+    dotproduct_adjointness_test(*create_sensitivity_op_and_domain_range(random_iheader))
 
 
-def test_sensitivity_op_grad() -> None:
+def test_sensitivity_op_grad(random_iheader) -> None:
     """Test gradient of sensitivity operator."""
-    gradient_of_linear_operator_test(*create_sensitivity_op_and_domain_range())
+    gradient_of_linear_operator_test(*create_sensitivity_op_and_domain_range(random_iheader))
 
 
-def test_sensitivity_op_forward_mode_autodiff() -> None:
+def test_sensitivity_op_forward_mode_autodiff(random_iheader) -> None:
     """Test forward-mode autodiff of sensitivity operator."""
-    forward_mode_autodiff_of_linear_operator_test(*create_sensitivity_op_and_domain_range())
+    forward_mode_autodiff_of_linear_operator_test(*create_sensitivity_op_and_domain_range(random_iheader))
 
 
-def test_sensitivity_op_csmdata_tensor() -> None:
+def test_sensitivity_op_csmdata_tensor(random_iheader) -> None:
     """Test matching result after creation via tensor and CSMData."""
 
     rng = RandomGenerator(seed=0)
@@ -58,7 +58,7 @@ def test_sensitivity_op_csmdata_tensor() -> None:
 
     # Generate sensitivity operators
     random_tensor = rng.complex64_tensor(size=(*n_other, n_coils, *n_zyx))
-    random_csmdata = CsmData(data=random_tensor, header=QHeader(resolution=SpatialDimension(1.0, 1.0, 1.0)))
+    random_csmdata = CsmData(data=random_tensor, header=random_iheader)
     sensitivity_op_csmdata = SensitivityOp(random_csmdata)
     sensitivity_op_tensor = SensitivityOp(random_tensor)
 
@@ -70,7 +70,9 @@ def test_sensitivity_op_csmdata_tensor() -> None:
 
 
 @pytest.mark.parametrize(('n_other_csm', 'n_other_img'), [((2,), (2,)), ((1, 1), (2, 1)), ((3,), (1, 2, 3))])
-def test_sensitivity_op_other_dim_compatibility_pass(n_other_csm: Sequence[int], n_other_img: Sequence[int]) -> None:
+def test_sensitivity_op_other_dim_compatibility_pass(
+    random_iheader, n_other_csm: Sequence[int], n_other_img: Sequence[int]
+) -> None:
     """Test paired-dimensions that have to pass applying the sensitivity
     operator."""
 
@@ -81,7 +83,7 @@ def test_sensitivity_op_other_dim_compatibility_pass(n_other_csm: Sequence[int],
 
     # Generate sensitivity operator
     random_tensor = rng.complex64_tensor(size=(*n_other_csm, n_coils, *n_zyx))
-    random_csmdata = CsmData(data=random_tensor, header=QHeader(resolution=SpatialDimension(1.0, 1.0, 1.0)))
+    random_csmdata = CsmData(data=random_tensor, header=random_iheader)
     sensitivity_op = SensitivityOp(random_csmdata)
 
     # Apply to n_other_img shape
@@ -91,7 +93,7 @@ def test_sensitivity_op_other_dim_compatibility_pass(n_other_csm: Sequence[int],
 
 
 @pytest.mark.parametrize(('n_other_csm', 'n_other_img'), [(6, 3), (3, 6)])
-def test_sensitivity_op_other_dim_compatibility_fail(n_other_csm: int, n_other_img: int) -> None:
+def test_sensitivity_op_other_dim_compatibility_fail(random_iheader, n_other_csm: int, n_other_img: int) -> None:
     """Test paired-dimensions that have to raise error for the sensitivity
     operator."""
 
@@ -102,7 +104,7 @@ def test_sensitivity_op_other_dim_compatibility_fail(n_other_csm: int, n_other_i
 
     # Generate sensitivity operator with n_other_csm shape
     random_tensor = rng.complex64_tensor(size=(n_other_csm, n_coils, *n_zyx))
-    random_csmdata = CsmData(data=random_tensor, header=QHeader(resolution=SpatialDimension(1.0, 1.0, 1.0)))
+    random_csmdata = CsmData(data=random_tensor, header=random_iheader)
     sensitivity_op = SensitivityOp(random_csmdata)
 
     # Apply to n_other_img shape
@@ -116,7 +118,7 @@ def test_sensitivity_op_other_dim_compatibility_fail(n_other_csm: int, n_other_i
 
 
 @pytest.mark.cuda
-def test_sensitivity_op_cuda() -> None:
+def test_sensitivity_op_cuda(random_iheader) -> None:
     """Test sensitivity operator works on CUDA devices."""
     random_generator = RandomGenerator(seed=0)
 
@@ -126,7 +128,7 @@ def test_sensitivity_op_cuda() -> None:
     # Generate input tensor and Csm data
     random_tensor = random_generator.complex64_tensor(size=(*n_other, n_coils, *n_zyx))
     u = random_generator.complex64_tensor(size=(*n_other, 1, *n_zyx))
-    random_csmdata = CsmData(data=random_tensor, header=QHeader(resolution=SpatialDimension(1.0, 1.0, 1.0)))
+    random_csmdata = CsmData(data=random_tensor, header=random_iheader)
 
     # Create on CPU, transfer to GPU, run on GPU
     sensitivity_op = SensitivityOp(random_csmdata)

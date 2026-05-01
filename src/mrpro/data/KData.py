@@ -33,6 +33,7 @@ from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.Rotation import Rotation
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 from mrpro.data.traj_calculators.KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
+from mrpro.utils.reshape import normalize_index, normalize_indices
 from mrpro.utils.summarize import summarize_object
 from mrpro.utils.typing import FileOrPath
 
@@ -466,7 +467,7 @@ class KData(Dataclass):
         """
         from mrpro.operators import PCACompressionOp
 
-        coil_dim = -4 % self.data.ndim
+        coil_dim = normalize_index(self.data.ndim, -4)
 
         if n_compressed_coils > (n_current_coils := self.data.shape[coil_dim]):
             raise ValueError(
@@ -478,14 +479,14 @@ class KData(Dataclass):
             raise ValueError('Either batch_dims or joint_dims can be defined not both.')
 
         if joint_dims is not Ellipsis:
-            joint_dims_normalized = [i % self.data.ndim for i in joint_dims]
+            joint_dims_normalized = normalize_indices(self.data.ndim, joint_dims)
             if coil_dim in joint_dims_normalized:
                 raise ValueError('Coil dimension must not be in joint_dims')
-            batch_dims_normalized = [
-                d for d in range(self.data.ndim) if d not in joint_dims_normalized and d is not coil_dim
-            ]
+            batch_dims_normalized = tuple(
+                [d for d in range(self.data.ndim) if d not in joint_dims_normalized and d is not coil_dim]
+            )
         else:
-            batch_dims_normalized = [] if batch_dims is None else [i % self.data.ndim for i in batch_dims]
+            batch_dims_normalized = normalize_indices(self.data.ndim, batch_dims)
             if coil_dim in batch_dims_normalized:
                 raise ValueError('Coil dimension must not be in batch_dims')
 
@@ -602,11 +603,11 @@ class KData(Dataclass):
         # Flatten multi-dimensional other
         n_other = self.data.shape[:-4]  # Assume that data is not broadcasted along other
         header = self.header.apply(
-            lambda field: rearrange(
-                field.expand(*n_other, *field.shape[-4:]), '... coils k2 k1 k0->(...) coils k2 k1 k0'
+            lambda field: (
+                rearrange(field.expand(*n_other, *field.shape[-4:]), '... coils k2 k1 k0->(...) coils k2 k1 k0')
+                if isinstance(field, torch.Tensor | Rotation)
+                else field
             )
-            if isinstance(field, torch.Tensor | Rotation)
-            else field
         )
         traj = self.traj.as_tensor()
         traj = torch.broadcast_to(traj, (traj.shape[0], *self.data.shape[:-4], *traj.shape[-4:]))  # broadcast "other"
