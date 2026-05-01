@@ -158,9 +158,9 @@ def main() -> None:
 
     Runs indefinitely until cancelled or the event loop is stopped.
     """
-    logger.debug(f'Request GitHub API, query: {RUNS_CHECK_QUERY}, params: {RUNS_CHECK_PARAMS}')
+    logger.info(f'Request GitHub API, query: {RUNS_CHECK_QUERY}, params: {RUNS_CHECK_PARAMS}')
     resp = r.get(RUNS_CHECK_QUERY, params=RUNS_CHECK_PARAMS, headers=API_HEADERS, timeout=10)
-    logger.debug(f'Response code: {resp.status_code}')
+    logger.info(f'Response code: {resp.status_code}')
     if resp.status_code == 200:
         payload = resp.json()
         if payload.get('total_count') > 0:
