@@ -12,10 +12,13 @@ from mrpro.nn.GroupNorm import GroupNorm
 from mrpro.nn.LayerNorm import LayerNorm
 from mrpro.nn.PermutedBlock import PermutedBlock
 from mrpro.nn.RMSNorm import RMSNorm
+from mrpro.nn.ResBlock import ResBlock
 from mrpro.nn.Residual import Residual
+from mrpro.nn.SeparableResBlock import SeparableResBlock
 from mrpro.nn.Sequential import Sequential
 from mrpro.nn import attention
 from mrpro.nn import data_consistency
+from mrpro.nn import nets
 from mrpro.nn.ndmodules import (
     adaptiveAvgPoolND,
     avgPoolND,
@@ -39,7 +42,9 @@ __all__ = [
     'LayerNorm',
     'PermutedBlock',
     'RMSNorm',
+    'ResBlock',
     'Residual',
+    'SeparableResBlock',
     'Sequential',
     'adaptiveAvgPoolND',
     'attention',
@@ -50,4 +55,5 @@ __all__ = [
     'data_consistency',
     'instanceNormND',
     'maxPoolND',
+    'nets',
 ]
