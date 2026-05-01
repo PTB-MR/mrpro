@@ -360,7 +360,7 @@ def gram_nufft_kernel(
                 kernel_part = kernel_part.index_select(
                     dim,
                     torch.arange(kernel_part.size(dim) - 1, 0, -1, device=kernel.device),
-                )
+                )  # flip
         kernel[tuple(idx)] = kernel_part
 
     kernel = symmetrize(kernel, rank)
