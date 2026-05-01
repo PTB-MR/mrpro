@@ -316,9 +316,7 @@ def symmetrize(kernel: torch.Tensor, rank: int) -> torch.Tensor:
 
 
 def gram_nufft_kernel(
-    weight: torch.Tensor,
-    trajectory: torch.Tensor,
-    recon_shape: tuple[int] | tuple[int, int] | tuple[int, int, int],
+    weight: torch.Tensor, trajectory: torch.Tensor, recon_shape: tuple[int] | tuple[int, int] | tuple[int, int, int]
 ) -> torch.Tensor:
     """Calculate the convolution kernel for the NUFFT gram operator.
 
@@ -383,11 +381,7 @@ class NonUniformFastFourierOpGramOp(LinearOperator, adjoint_as_backward=True):
 
     _kernel: torch.Tensor | None
 
-    def __init__(
-        self,
-        nufft_op: NonUniformFastFourierOp,
-        weight: torch.Tensor | DcfData | None = None,
-    ) -> None:
+    def __init__(self, nufft_op: NonUniformFastFourierOp, weight: torch.Tensor | DcfData | None = None) -> None:
         """Initialize the gram operator.
 
         Parameters
@@ -414,16 +408,17 @@ class NonUniformFastFourierOpGramOp(LinearOperator, adjoint_as_backward=True):
             weight = torch.ones(weight_shape, device=nufft_op._omega.device)
         else:
             weight = weight.to(nufft_op._omega.device).broadcast_to(weight_shape)
-
+        # We rearrange weight into (sep_dims, joint_dims, nufft_directions)
         _, permute_zyx, sep_dims_210, permute_210 = nufft_op._separate_joint_dimensions(weight.ndim)
         unpermute_zyx = torch.tensor(permute_zyx).argsort().tolist()
 
         weight = weight.permute(*permute_210)
-        unflatten_other_shape = weight.shape[: -len(nufft_op._dimension_210) - 1]
-        if sep_dims_210:
+        unflatten_other_shape = weight.shape[: -len(nufft_op._dimension_210) - 1]  # -1 for coil
+        if sep_dims_210:  # combine sep_dims
             weight = weight.flatten(end_dim=len(sep_dims_210) - 1)
         else:
             weight = weight[None, :]
+        # combine joint_dims and nufft_dims
         weight = weight.flatten(start_dim=1, end_dim=-len(nufft_op._dimension_210) - 1).flatten(start_dim=2)
 
         padded_shape = torch.Size([2 * size for size in nufft_op._im_size])
