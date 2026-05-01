@@ -42,6 +42,7 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
         echo_time: float = 0.0015,
         repetition_time: float = 0.005,
         t2_prep_echo_times: tuple[float, float, float] = (0.03, 0.05, 0.08),
+        n_states: int = 20,
     ) -> None:
         """Initialize the Cardiac MR Fingerprinting signal model.
 
@@ -51,13 +52,15 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
             Times of the acquisistions in s.
             Either 15 values (the first acquisition of each block) or 705 values for all acquisitions.
             In both cases only the time of the first acquisition of each block will be used to calculate the delays.
-
         echo_time
             TE in s
         repetition_time
             TR in s
         t2_prep_echo_times
             Echo times of the three T2 preparation blocks in s
+        n_states
+            Number of EPG states to simulate.
+            Truncating the number of states speeds up simulation at the cost of accuracy.
         """
         super().__init__()
         sequence = EPGSequence()
@@ -93,6 +96,7 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
                 sequence.append(DelayBlock(delay))
             sequence.append(block)
         self.sequence = sequence.to(device=block_time.device)
+        self.n_states = n_states
 
     def __call__(self, m0: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor) -> tuple[torch.Tensor]:
         """Simulate the Cardiac MR Fingerprinting (cMRF) signal.
@@ -127,5 +131,5 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
         """
         parameters = Parameters(m0, t1, t2)
         _, signals = self.sequence(parameters, states=20)
-        signal = torch.stack(signals, dim=0)
+        signal = torch.stack(signals, dim=0).broadcast_to(-1, *torch.broadcast_shapes(m0.shape, t1.shape, t2.shape))
         return (signal,)

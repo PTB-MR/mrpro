@@ -231,7 +231,7 @@ def test_fourier_op_not_supported_traj(
         int(trajectory.ky.max() - trajectory.ky.min() + 1),
         int(trajectory.kx.max() - trajectory.kx.min() + 1),
     )
-    with pytest.raises(NotImplementedError, match='Cartesian FFT dims need to be aligned'):
+    with pytest.raises(UserWarning, match='Cartesian FFT dims need to be aligned'):
         FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
 
 
