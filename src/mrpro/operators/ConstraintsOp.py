@@ -247,7 +247,7 @@ class InverseConstraintOp(EndomorphOperator):
     @endomorph
     def invert(self, *x_constrained: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Apply constraint operator."""
-        return self.constraints_op.forward(*x_constrained)
+        return self.constraints_op(*x_constrained)
 
     @property
     def inverse(self) -> 'ConstraintsOp':

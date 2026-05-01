@@ -1,3 +1,5 @@
+"""Tests for CardiacFingerprinting signal model."""
+
 from collections.abc import Sequence
 
 import pytest
