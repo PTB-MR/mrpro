@@ -63,7 +63,7 @@ def prewhiten_kspace(kdata: KData, knoise: KNoise, scale_factor: float | torch.T
     kdata_flat = rearrange(kdata.data, '... coils k2 k1 k0 -> coils (... k2 k1 k0)')
     whitened = torch.linalg.solve_triangular(cholsky, kdata_flat, upper=False)
     whitened = rearrange(
-           whitened, 'coil (other k2 k1 k0)-> other coil k2 k1 k0', **parse_shape(kdata.data, '... k2 k1 k0')
+        whitened, 'coil (other k2 k1 k0)-> other coil k2 k1 k0', **parse_shape(kdata.data, '... k2 k1 k0')
     )
     whitened = whitened * (scale_factor**0.5)
     whitened = whitened.reshape(kdata.data.shape)
