@@ -13,7 +13,7 @@ from mrpro.data.acq_filters import has_n_coils, is_coil_calibration_acquisition,
 from mrpro.data.Dataclass import InconsistentDeviceError
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
-from mrpro.operators import FastFourierOp
+from mrpro.operators import FastFourierOp, LinearOperator
 from mrpro.utils import RandomGenerator
 
 from tests import relative_image_difference
@@ -370,11 +370,45 @@ def test_KData_compress_coils(ismrmrd_cart_high_res) -> None:
     assert relative_image_difference(reconstructed_img, reconstructed_img_compressed) <= 0.01
 
 
+def test_KData_compress_coils_return_compression_op(consistently_shaped_kdata: KData) -> None:
+    """Test returning the coil compression operator."""
+    n_compressed_coils = 2
+    orig_kdata_shape = consistently_shaped_kdata.data.shape
+
+    kdata, compression_op = consistently_shaped_kdata.compress_coils(
+        n_compressed_coils=n_compressed_coils, return_compression_op=True
+    )
+    (compressed_data,) = compression_op(consistently_shaped_kdata.data)
+    (expanded_data,) = compression_op.H(kdata.data)
+
+    assert kdata.data.shape == (*orig_kdata_shape[:-4], n_compressed_coils, *orig_kdata_shape[-3:])
+    assert isinstance(compression_op, LinearOperator)
+    torch.testing.assert_close(compressed_data, kdata.data)
+    assert expanded_data.shape == consistently_shaped_kdata.data.shape
+
+
+def test_KData_compress_coils_rotate(consistently_shaped_kdata: KData) -> None:
+    """Test coil compression with varimax rotation."""
+    n_compressed_coils = 2
+
+    kdata, compression_op = consistently_shaped_kdata.compress_coils(
+        n_compressed_coils=n_compressed_coils, return_compression_op=True
+    )
+    (data_expanded,) = compression_op.H(kdata.data)
+
+    kdata_rotated, rotated_compression_op = consistently_shaped_kdata.compress_coils(
+        n_compressed_coils=n_compressed_coils, rotate=True, return_compression_op=True
+    )
+    (data_expanded_rotated,) = rotated_compression_op.H(kdata_rotated.data)
+    torch.testing.assert_close(data_expanded, data_expanded_rotated)
+
+
 @pytest.mark.parametrize(
     ('batch_dims', 'joint_dims'),
     [
         (None, ...),
         ((0,), ...),
+        ((0, 1), ...),
         ((-2, -1), ...),
         (None, (-1, -2, -3)),
         (None, (0, -1, -2, -3)),
@@ -382,6 +416,7 @@ def test_KData_compress_coils(ismrmrd_cart_high_res) -> None:
     ids=[
         'single_compression',
         'batching_along_dim0',
+        'batching_along_leading_dims',
         'batching_along_dim-2_and_dim-1',
         'single_compression_for_last_3_dims',
         'single_compression_for_last_3_and_first_dims',
@@ -417,6 +452,23 @@ def test_KData_compress_coils_error_n_coils(consistently_shaped_kdata: KData) ->
     existing_coils = consistently_shaped_kdata.data.shape[-4]
     with pytest.raises(ValueError, match='greater'):
         consistently_shaped_kdata.compress_coils(existing_coils + 1)
+
+
+def test_KData_prewhiten(random_kheader) -> None:
+    """Test prewhitening with tensor noise input."""
+    n_coils = 4
+    n_k0 = 32
+    random_data = RandomGenerator(0).complex64_tensor((n_coils, n_k0))
+    trajectory = KTrajectory(
+        torch.zeros(1, 1, 1, 1, n_k0), torch.zeros(1, 1, 1, 1, n_k0), torch.zeros(1, 1, 1, 1, n_k0)
+    )
+    kdata = KData(header=random_kheader, data=random_data[None, :, None, None, :], traj=trajectory)
+
+    kdata_white = kdata.prewhiten(random_data)
+    whitened = kdata_white.data.permute(1, 0, 2, 3, 4).reshape(n_coils, -1)
+    covariance = (1.0 / whitened.shape[-1]) * torch.einsum('ax,bx->ab', whitened, whitened.conj())
+
+    torch.testing.assert_close(covariance, torch.eye(n_coils, dtype=torch.complex64))
 
 
 def test_KData_to_file(ismrmrd_cart, tmp_path_factory):
