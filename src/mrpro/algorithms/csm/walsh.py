@@ -9,7 +9,7 @@ from mrpro.utils.filters import uniform_filter
 def walsh(
     coil_images: torch.Tensor,
     smoothing_width: SpatialDimension[int] | int,
-    align_phase: bool = False,
+    align_phase: bool = True,
 ) -> torch.Tensor:
     """Calculate a coil sensitivity map (csm) using Walsh's method [WAL2000]_.
 
@@ -37,15 +37,15 @@ def walsh(
        coil data [INA2013]_. This prevents phase singularities that otherwise cause destructive
        interference when spatially interpolating or downsampling the maps.
 
-    This function works on a single set of coil images. The input should be a tensor with dimensions
-    `(... coils, z, y, x)`. The output will have the same dimensions. Either apply this function individually to
-    each set of coil images, or see `~mrpro.data.CsmData.from_idata_walsh` which performs this operation on
-    a whole dataset.
+    This function supports one or more sets of coil images with leading dimensions. The input
+    should be a tensor with dimensions `(..., coils, z, y, x)`. Prefer using
+    `~mrpro.data.CsmData` when sensitivity estimation should stay synchronized with MRpro data
+    containers and metadata.
 
     Parameters
     ----------
     coil_images
-        images for each coil element, shape (..., coils, z, y, x).
+        Images for each coil element, shape `(..., coils, z, y, x)`.
     smoothing_width
         width of the smoothing filter.
     align_phase
@@ -54,7 +54,7 @@ def walsh(
     Returns
     -------
     csm
-        coil sensitivity map, shape (..., coils, z, y, x).
+        Coil sensitivity map, shape `(..., coils, z, y, x)`.
 
     References
     ----------

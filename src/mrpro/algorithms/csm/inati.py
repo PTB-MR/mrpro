@@ -10,7 +10,7 @@ from mrpro.utils.filters import uniform_filter
 def inati(
     coil_img: torch.Tensor,
     smoothing_width: SpatialDimension[int] | int,
-    n_iterations: int = 5,
+    n_iterations: int = 10,
 ) -> torch.Tensor:
     """Calculate a coil sensitivity map (csm) using the iterative Inati method [INA2014]_.
 
@@ -33,19 +33,24 @@ def inati(
     3. **Final Normalization**:
        Normalize the sensitivity maps to have unit 2-norm across the coil dimension.
 
+    This function supports one or more sets of coil images with leading dimensions. The input
+    should be a tensor with dimensions `(..., coils, z, y, x)`. Prefer using
+    `~mrpro.data.CsmData` when sensitivity estimation should stay synchronized with MRpro data
+    containers and metadata.
+
     Parameters
     ----------
     coil_img
-        images for each coil element, shape (..., coils, z, y, x).
+        Images for each coil element, shape `(..., coils, z, y, x)`.
     smoothing_width
         size of the smoothing kernel.
     n_iterations
-        number of iterations to refine the maps. Default is 5.
+        number of iterations to refine the maps.
 
     Returns
     -------
     csm
-        coil sensitivity map, shape (..., coils, z, y, x).
+        Coil sensitivity map, shape `(..., coils, z, y, x)`.
 
     References
     ----------
@@ -56,6 +61,9 @@ def inati(
        Italy, 7115.
     """
     eps = 1e-12
+
+    if n_iterations < 1:
+        raise ValueError(f'n_iterations must be at least 1, got {n_iterations}')
 
     if isinstance(smoothing_width, int):
         smoothing_width = SpatialDimension(
