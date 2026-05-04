@@ -1,4 +1,4 @@
-"""(Iterative) Walsh method for coil sensitivity map calculation."""
+"""Walsh method for coil sensitivity map calculation."""
 
 import torch
 
@@ -6,8 +6,12 @@ from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.filters import uniform_filter
 
 
-def walsh(coil_images: torch.Tensor, smoothing_width: SpatialDimension[int] | int) -> torch.Tensor:
-    """Calculate a coil sensitivity map (csm) using an iterative version of the Walsh method.
+def walsh(
+    coil_images: torch.Tensor,
+    smoothing_width: SpatialDimension[int] | int,
+    align_phase: bool = False,
+) -> torch.Tensor:
+    """Calculate a coil sensitivity map (csm) using Walsh's method [WAL2000]_.
 
     This function computes CSMs from a set of complex coil images assuming spatially
     slowly changing sensitivity maps using Walsh's method [WAL2000]_.
@@ -28,44 +32,64 @@ def walsh(coil_images: torch.Tensor, smoothing_width: SpatialDimension[int] | in
     4. **Normalize Sensitivity Maps**:
        Normalize the resulting eigenvectors to produce the final CSMs.
 
-    This function works on a single set of coil images. The input should be a tensor with dimensions
-    `(coils, z, y, x)`. The output will have the same dimensions. Either apply this function individually to each set of
-    coil images, or see `~mrpro.data.CsmData.from_idata_walsh` which performs this operation on a whole dataset
-    [WAL2000]_.
+    5. **Phase Alignment (Optional)**:
+       If `align_phase` is True, aligns the eigenvectors' global phase to a reference derived from the
+       coil data [INA2013]_. This prevents phase singularities that otherwise cause destructive
+       interference when spatially interpolating or downsampling the maps.
 
-    This implementation is inspired by `ismrmrd-python-tools <https://github.com/ismrmrd/ismrmrd-python-tools>`_.
+    This function works on a single set of coil images. The input should be a tensor with dimensions
+    `(... coils, z, y, x)`. The output will have the same dimensions. Either apply this function individually to
+    each set of coil images, or see `~mrpro.data.CsmData.from_idata_walsh` which performs this operation on
+    a whole dataset.
 
     Parameters
     ----------
     coil_images
-        images for each coil element
+        images for each coil element, shape (..., coils, z, y, x).
     smoothing_width
-        width of the smoothing filter
+        width of the smoothing filter.
+    align_phase
+        if True, resolve the phase ambiguity of eigenvectors relative to the data [INA2013]_.
+
+    Returns
+    -------
+    csm
+        coil sensitivity map, shape (..., coils, z, y, x).
 
     References
     ----------
     .. [WAL2000] Walsh DO, Gmitro AF, Marcellin MW (2000) Adaptive reconstruction of phased array MR imagery. MRM 43
+    .. [INA2013] Inati S, Hansen M, Kellman P (2013) A solution to the phase problem in adaptive coil combination.
+       in Proceedings of the 21st Annual Meeting of ISMRM, Salt Lake City, USA, 2672.
     """
-    # After 10 power iterations we will have a very good estimate of the singular vector
     n_power_iterations = 10
+    eps = 1e-12
 
     if isinstance(smoothing_width, int):
-        smoothing_width = SpatialDimension(smoothing_width, smoothing_width, smoothing_width)
-    # Compute the pointwise covariance between coils
-    coil_covariance = torch.einsum('azyx,bzyx->abzyx', coil_images, coil_images.conj())
+        smoothing_width = SpatialDimension(
+            z=smoothing_width if coil_images.shape[-3] > 1 else 1, y=smoothing_width, x=smoothing_width
+        )
 
-    # Smooth the covariance along y-x for 2D and z-y-x for 3D data
+    # Pointwise covariance
+    coil_covariance = torch.einsum('... a z y x, ... b z y x -> ... a b z y x', coil_images, coil_images.conj())
+
+    # Smooth covariance
     coil_covariance = uniform_filter(coil_covariance, width=smoothing_width.zyx, dim=(-3, -2, -1))
 
-    # At each point in the image, find the dominant eigenvector
-    # of the signal covariance matrix using the power method
-    v = coil_covariance.sum(dim=0)
+    # Power iterations for dominant eigenvector
+    v = coil_covariance.sum(dim=-4)
     for _ in range(n_power_iterations):
-        v /= v.norm(dim=0)
-        v = torch.einsum('abzyx,bzyx->azyx', coil_covariance, v)
-    csm = v / v.norm(dim=0)
+        v = v / (v.norm(dim=-4, keepdim=True) + eps)
+        v = torch.einsum('... a b z y x, ... b z y x -> ... a z y x', coil_covariance, v)
 
-    # Make sure there are no inf or nan-values due to very small values in the covariance matrix
-    # nan_to_num does not work for complexfloat, boolean indexing not with vmap.
+    csm = v / (v.norm(dim=-4, keepdim=True) + eps)
+
+    if align_phase:
+        # Resolve global phase ambiguity using a low-res data projection
+        d_sum = torch.sum(coil_images, dim=(-3, -2, -1), keepdim=True)
+        d_sum /= d_sum.norm(dim=-4, keepdim=True) + eps
+        phase_map = torch.einsum('... c z y x, ... c z y x -> ... z y x', d_sum.conj(), csm).angle()
+        csm = csm * torch.exp(-1j * phase_map).unsqueeze(-4)
+
     csm = torch.where(torch.isfinite(csm), csm, 0.0)
     return csm
