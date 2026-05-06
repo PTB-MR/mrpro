@@ -14,12 +14,15 @@ class PCACompressionOp(LinearOperator):
         self,
         data: torch.Tensor,
         n_components: int,
+        centering: bool = True,
     ) -> None:
         """Construct a PCA based compression operator.
 
-        The operator carries out an SVD followed by a threshold of the `n_components` largest values along the last
-        dimension of a data with shape `(*other, joint_dim, compression_dim)`.
+        The operator carries out an SVD of the correlation followed by a threshold of the `n_components` largest values
+        along the last dimension of a data with shape `(*other, joint_dim, compression_dim)`.
         A single SVD is carried out for everything along `joint_dim`. `other` are batch dimensions.
+
+        You should disable centering for MRF subspace reconstruction, and keep it enabled for coil compression.
 
         Consider combining this operator with `~mrpro.operators.RearrangeOp` to make sure the data is
         in the correct shape before applying.
@@ -30,15 +33,19 @@ class PCACompressionOp(LinearOperator):
             Data of shape `(*other, joint_dim, compression_dim)` to be used to find the principal components.
         n_components
             Number of principal components to keep along the compression_dim.
+        centering
+            Should the data be centered? With centering, only fluctuations around the mean are encoded in the
+            subspace. You should not use centering for qMRI signal compression.
         """
         super().__init__()
+        if centering:
+            data = data - data.mean(-2, keepdim=True)
         # different compression matrices along the *other dimensions
-        data = data - data.mean(-1, keepdim=True)
-        correlation = einops.einsum(data, data.conj(), '... joint comp1, ... joint comp2 -> ... comp1 comp2')
-        _, _, v = torch.svd(correlation)
+        correlation = einops.einsum(data.conj(), data, '... joint comp1, ... joint comp2 -> ... comp1 comp2')
+        _eigenvalues, v = torch.linalg.eigh(correlation)  # faster then svd if we only care about V
         # add joint_dim along which the the compression is the same
-        v = repeat(v, '... comp1 comp2 -> ... joint_dim comp1 comp2', joint_dim=1)
-        self._compression_matrix = v[..., :n_components, :].clone()
+        v = repeat(v.conj(), '... comp1 comp2 -> ... joint_dim  comp2 comp1', joint_dim=1)
+        self._compression_matrix = v[..., -n_components:, :].flip(-2)  # V is sorted in ascending order
 
     def __call__(self, data: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply PCA-based compression to the input data.
