@@ -84,7 +84,7 @@ class PCACompressionOp(LinearOperator):
             result = (self._compression_matrix @ data.unsqueeze(-1)).squeeze(-1)
         except RuntimeError as e:
             raise RuntimeError(
-                'Shape or devicemismatch in Compression: '
+                'Shape or device mismatch in Compression: '
                 f'Matrix {tuple(self._compression_matrix.shape)} on {self._compression_matrix.device} '
                 f'cannot be multiplied with Data {tuple(data.shape)} on {data.device}.'
             ) from e

@@ -558,7 +558,7 @@ class KData(Dataclass):
         Parameters
         ----------
         knoise
-            Noise measurements. Either a KNoise object or a tensor of shape (coils, k0).
+            Noise measurements. Either a KNoise object or a tensor of shape ``(..., coils, k0)``.
         scale_factor
             Square root is applied on the noise covariance matrix. Used to adjust for effective noise bandwidth
             and difference in sampling rate between noise calibration and actual measurement:

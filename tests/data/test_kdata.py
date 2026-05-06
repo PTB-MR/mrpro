@@ -8,7 +8,7 @@ from typing import Literal
 import pytest
 import torch
 from einops import repeat
-from mrpro.data import KData, KHeader, KTrajectory, SpatialDimension
+from mrpro.data import KData, KHeader, KNoise, KTrajectory, SpatialDimension
 from mrpro.data.acq_filters import has_n_coils, is_coil_calibration_acquisition, is_image_acquisition
 from mrpro.data.Dataclass import InconsistentDeviceError
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
@@ -454,21 +454,48 @@ def test_KData_compress_coils_error_n_coils(consistently_shaped_kdata: KData) ->
         consistently_shaped_kdata.compress_coils(existing_coils + 1)
 
 
-def test_KData_prewhiten(random_kheader) -> None:
-    """Test prewhitening with tensor noise input."""
+def test_KData_prewhiten() -> None:
+    """Test split and batched prewhitening for tensor and KNoise inputs."""
+    n_batch = 2
     n_coils = 4
-    n_k0 = 32
-    random_data = RandomGenerator(0).complex64_tensor((n_coils, n_k0))
-    trajectory = KTrajectory(
-        torch.zeros(1, 1, 1, 1, n_k0), torch.zeros(1, 1, 1, 1, n_k0), torch.zeros(1, 1, 1, 1, n_k0)
+    n_k0 = 1024
+
+    rng = RandomGenerator(0)
+    kspace_data = rng.complex64_tensor((n_batch, n_coils, 1, 1, n_k0))
+    noise_data = rng.complex64_tensor((n_batch, n_coils, 1, 1, n_k0))
+
+    # create correlation between first two coils
+    noise_data[:, 0] += noise_data[:, 1] / 2
+    kspace_data[..., 0, :, :, :] += kspace_data[..., 1, :, :, :] / 2
+
+    traj = DummyTrajectory()(n_k0, torch.zeros(1, 1, 1, 1, 1), torch.zeros(1, 1, 1, 1, 1))
+    matrix = SpatialDimension(1, 1, n_k0)
+    kdata = KData(header=KHeader(matrix, matrix, matrix, matrix), data=kspace_data, traj=traj)
+    knoise = KNoise(noise_data)
+
+    whitened = kdata.prewhiten(knoise)
+
+    # result should have cloned header
+    assert whitened.header is not kdata.header
+    assert whitened.traj.kx is not kdata.traj.kx
+    assert (whitened.traj.kx == kdata.traj.kx).all()
+
+    # result should be uncorrelated
+    covariance = (1.0 / n_k0) * torch.einsum('ax,bx->ab', whitened.data[0].squeeze(), whitened.data.conj()[0].squeeze())
+    torch.testing.assert_close(covariance, torch.eye(n_coils, dtype=torch.complex64), atol=0.1, rtol=0)
+
+    # batch equivalence
+    split_whitened = torch.cat(
+        [kdata[idx].prewhiten(noise_data[idx, :, 0, 0, :]).data for idx in range(n_batch)],
+        dim=0,
     )
-    kdata = KData(header=random_kheader, data=random_data[None, :, None, None, :], traj=trajectory)
+    tensor_whitened = kdata.prewhiten(noise_data[..., 0, 0, :])
+    torch.testing.assert_close(whitened.data, split_whitened)
+    torch.testing.assert_close(tensor_whitened.data, split_whitened)
 
-    kdata_white = kdata.prewhiten(random_data)
-    whitened = kdata_white.data.permute(1, 0, 2, 3, 4).reshape(n_coils, -1)
-    covariance = (1.0 / whitened.shape[-1]) * torch.einsum('ax,bx->ab', whitened, whitened.conj())
-
-    torch.testing.assert_close(covariance, torch.eye(n_coils, dtype=torch.complex64))
+    shared_noise_whitened = kdata.prewhiten(noise_data[:1, :, 0, 0, :])
+    broadcast_knoise_whitened = kdata.prewhiten(KNoise(noise_data[:1]))
+    torch.testing.assert_close(shared_noise_whitened.data, broadcast_knoise_whitened.data)
 
 
 def test_KData_to_file(ismrmrd_cart, tmp_path_factory):
