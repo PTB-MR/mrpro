@@ -3,8 +3,7 @@
 import einops
 import pytest
 import torch
-from mrpro.data import DcfData, KData, KTrajectory
-from mrpro.data import SpatialDimension
+from mrpro.data import DcfData, KData, KTrajectory, SpatialDimension
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 from mrpro.operators import (
     DensityCompensationOp,
