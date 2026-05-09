@@ -35,7 +35,6 @@ from mrpro.operators.MagnitudeOp import MagnitudeOp
 from mrpro.operators.MultiIdentityOp import MultiIdentityOp
 from mrpro.operators.NonUniformFastFourierOp import (
     NonUniformFastFourierOp,
-    SubspaceNonUniformFastFourierOpGramOp,
 )
 from mrpro.operators.OptimizerOp import OptimizerOp
 from mrpro.operators.PatchOp import PatchOp
@@ -94,7 +93,6 @@ __all__ = [
     "SensitivityOp",
     "SignalModel",
     "SliceProjectionOp",
-    "SubspaceNonUniformFastFourierOpGramOp",
     "TimeSegmentedFourierOp",
     "WaveletOp",
     "ZeroOp",
