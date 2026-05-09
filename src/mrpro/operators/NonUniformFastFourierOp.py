@@ -425,12 +425,12 @@ class NonUniformFastFourierOpGramOp(LinearOperator, adjoint_as_backward=True):
             Optional density compensation weights. If provided, calculates F^H W F.
         """
         super().__init__()
-        self._dim = nufft_op._direction_zyx
-        self._recon_shape = nufft_op._im_size
-
-        if not nufft_op._dimension_210:
+        if not nufft_op._direction_zyx:
             self._kernel = None
             return
+
+        self._dim = nufft_op._direction_zyx
+        self._recon_shape = nufft_op._im_size
 
         if isinstance(weight, DcfData):
             weight = weight.data
@@ -568,26 +568,26 @@ class SubspaceNonUniformFastFourierOpGramOp(LinearOperator, adjoint_as_backward=
             Optional density compensation or k-space weights. If provided, calculates
             the compressed normal operator corresponding to :math:`F^H W F`.
         subspace_dim
-            Dimension of the coefficient channel in the input/output tensors. Spatial
-            dimensions are assumed to remain trailing, matching the usual MR2 image layout.
+            Dimension of the coefficient channel in the input/output tensors.
         """
         super().__init__()
+        if not nufft_op._direction_zyx:
+            self._kernel = None
+            return
+
         self._dim = nufft_op._direction_zyx
         self._recon_shape = nufft_op._im_size
         self._subspace_dim = subspace_dim
 
-        if not nufft_op._dimension_210:
-            self._kernel = None
-            return
-
         if isinstance(subspace_basis, PCACompressionOp):
-            basis = subspace_basis._compression_matrix.mH
+            basis = subspace_basis.compression_matrix.mH
         else:
             basis = subspace_basis
-        basis = basis.squeeze()
         if basis.ndim > 2:
-            raise ValueError(f'Basis cannot contain non-singleton batch dimensions; got squeezed shape {basis.shape}.')
-        elif basis.ndim == 1:  # rank-1 special case, we squeezed the singleton subspace dimension
+            basis = basis.squeeze(tuple(range(basis.ndim - 2)))
+        if basis.ndim > 2:
+            raise ValueError(f'Basis cannot contain non-singleton batch dimensions; got shape {basis.shape}.')
+        if basis.ndim == 1:  # rank-1 special case: only one coefficient
             basis = basis.unsqueeze(-1)
         basis = basis.to(device=nufft_op._omega.device)
 
@@ -625,13 +625,17 @@ class SubspaceNonUniformFastFourierOpGramOp(LinearOperator, adjoint_as_backward=
             subspace_kernel = term if subspace_kernel is None else subspace_kernel + term
 
         assert subspace_kernel is not None  # noqa: S101
+        kernel_shape = [1, 1, 1]
+        for direction, size in zip(self._dim, subspace_kernel.shape[2:], strict=True):
+            kernel_shape[direction] = size
+        subspace_kernel = subspace_kernel.reshape(*subspace_kernel.shape[:2], *kernel_shape)
         self._kernel = subspace_kernel * nufft_op.scale.item() ** 2
 
     @property
     def n_coefficients(self) -> int:
         """Number of compressed coefficient channels."""
         if self._kernel is None:
-            raise RuntimeError('n_coefficients is undefined before the Toeplitz kernel is initialized.')
+            raise RuntimeError('n_coefficients is undefined if there are no NUFFT axes.')
         return self._kernel.shape[0]
 
     @property
@@ -664,15 +668,14 @@ class SubspaceNonUniformFastFourierOpGramOp(LinearOperator, adjoint_as_backward=
             )
         x = x.movedim(subspace_dim, 0)
 
-        spatial_dims = tuple(range(x.ndim - len(self._dim), x.ndim))
         padded_shape = [2 * s for s in self._recon_shape]
-        spatial_crop: list[slice] = [slice(None)] * x.ndim
-        for d, s in zip(spatial_dims, self._recon_shape, strict=True):
+        spatial_crop: list[slice | EllipsisType] = [..., slice(None), slice(None), slice(None)]
+        for d, s in zip(self._dim, self._recon_shape, strict=True):
             spatial_crop[d] = slice(0, s)
 
-        x = torch.fft.fftn(x, s=padded_shape, dim=spatial_dims)
+        x = torch.fft.fftn(x, s=padded_shape, dim=self._dim)
         x = einops.einsum(self._kernel.to(x.dtype), x, 'coeff_out coeff_in ..., coeff_in ... -> coeff_out ...')
-        x = torch.fft.ifftn(x, dim=spatial_dims)
+        x = torch.fft.ifftn(x, dim=self._dim)
         x = x[tuple(spatial_crop)]
         out = x.clone().movedim(0, subspace_dim)
         return (out,)
@@ -683,9 +686,7 @@ class SubspaceNonUniformFastFourierOpGramOp(LinearOperator, adjoint_as_backward=
         Parameters
         ----------
         x
-            Subspace coefficient images. The coefficient axis is given by `subspace_dim`;
-            the selected spatial dimensions are trailing axes, e.g. `(coeff, z, y, x)`
-            for 3D or `(coeff, y, x)` for 2D when `subspace_dim=0`.
+            Subspace coefficient images. The coefficient axis is given by `subspace_dim`
 
         Returns
         -------
@@ -703,9 +704,8 @@ class SubspaceNonUniformFastFourierOpGramOp(LinearOperator, adjoint_as_backward=
         Parameters
         ----------
         x
-            Subspace coefficient images. The coefficient axis is given by `subspace_dim`;
-            the selected spatial dimensions are trailing axes, e.g. `(coeff, z, y, x)`
-            for 3D or `(coeff, y, x)` for 2D when `subspace_dim=0`.
+            Subspace coefficient images. The coefficient axis is given by `subspace_dim`
+
 
         Returns
         -------
