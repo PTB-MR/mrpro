@@ -6,6 +6,7 @@ import pytest
 import torch
 from mr2.data import CsmData, KData, KHeader, SpatialDimension
 from mr2.data.traj_calculators.KTrajectoryCartesian import KTrajectoryCartesian
+from mr2.data.traj_calculators.KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
 from mr2.operators import FourierOp
 
 from tests import relative_image_difference
@@ -87,3 +88,21 @@ def test_CsmData_kdata_inati(ismrmrd_cart_single_rep) -> None:
     csm_from_kdata = CsmData.from_kdata_inati(kdata)
     csm_from_idata = CsmData.from_idata_inati(idata)
     torch.testing.assert_close(csm_from_kdata.data, csm_from_idata.data, rtol=1e-5, atol=1e-5)
+
+
+def test_CsmData_kdata_espirit_requires_fully_sampled_cartesian(ismrmrd_cart_random_us) -> None:
+    """ESPIRiT should reject undersampled Cartesian k-space data."""
+    kdata = KData.from_file(ismrmrd_cart_random_us.filename, KTrajectoryCartesian())
+
+    with pytest.raises(ValueError, match='fully sampled Cartesian'):
+        CsmData.from_kdata_espirit(kdata)
+
+
+def test_CsmData_kdata_espirit_regrids_noncartesian(ismrmrd_rad) -> None:
+    """ESPIRiT should warn and regrid non-Cartesian k-space data."""
+    kdata = KData.from_file(ismrmrd_rad.filename, KTrajectoryIsmrmrd())
+
+    with pytest.warns(UserWarning, match='Regridding non-Cartesian data'):
+        csm = CsmData.from_kdata_espirit(kdata)
+
+    assert csm.data.shape == (1, 2, *kdata.header.recon_matrix.zyx)

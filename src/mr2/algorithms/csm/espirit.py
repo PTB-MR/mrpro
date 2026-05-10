@@ -1,4 +1,4 @@
-"""ESPIRIT method for coil sensitivity map calculation."""
+"""ESPIRiT method for coil sensitivity map calculation."""
 
 import torch
 from einops import rearrange
@@ -16,18 +16,21 @@ def espirit(
 ) -> torch.Tensor:
     """Calculate a coil sensitivity map (csm) using the ESPIRIT method.
 
-    This is for a single set of coil images. The input should be a tensor with dimensions (coils, z, y, x).
-    The output will have the same dimensions. Either apply this function individually to each set of coil images, or see
-    CsmData.from_idata_espirit which performs this operation on a whole dataset [UEC2013]_.
+    This is for a single set of Cartesian coil k-space data. The input should be a
+    tensor with dimensions `(coils, z, y, x)`. The output will have the same
+    dimensions. Either apply this function individually to each set of coil
+    k-space data, or see `~mr2.data.CsmData.from_kdata_espirit` which performs
+    this operation on a whole dataset [UEC2013]_.
 
-    This function inspired by https://sigpy.readthedocs.io/en/latest/_modules/sigpy/mri/app.html#EspiritCalib.
+    This function is inspired by
+    `sigpy.mri.app.EspiritCalib <https://sigpy.readthedocs.io/en/latest/_modules/sigpy/mri/app.html#EspiritCalib>`_.
 
     Parameters
     ----------
     coil_k_space
-        k-space for each coil element
+        Cartesian k-space for each coil element.
     img_shape
-        shape of the image
+        Shape of the reconstructed image.
     singular_value_threshold
         threshold for singular value decomposition
     kernel_width
