@@ -33,7 +33,9 @@ from mrpro.operators.Jacobian import Jacobian
 from mrpro.operators.LinearOperatorMatrix import LinearOperatorMatrix
 from mrpro.operators.MagnitudeOp import MagnitudeOp
 from mrpro.operators.MultiIdentityOp import MultiIdentityOp
-from mrpro.operators.NonUniformFastFourierOp import NonUniformFastFourierOp
+from mrpro.operators.NonUniformFastFourierOp import (
+    NonUniformFastFourierOp,
+)
 from mrpro.operators.OptimizerOp import OptimizerOp
 from mrpro.operators.PatchOp import PatchOp
 from mrpro.operators.PCACompressionOp import PCACompressionOp
