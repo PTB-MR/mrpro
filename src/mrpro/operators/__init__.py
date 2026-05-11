@@ -12,6 +12,7 @@ from mrpro.operators.Functional import (
 from mrpro.operators import functionals, models
 from mrpro.operators.AveragingOp import AveragingOp
 from mrpro.operators.CartesianSamplingOp import CartesianSamplingOp, CartesianMaskingOp
+from mrpro.operators.CirculantPreconditioner import CirculantPreconditioner
 from mrpro.operators.ConvAnalysisDictionaryOp import ConvAnalysisDictionaryOp
 from mrpro.operators.ConvSynthesisDictionaryOp import ConvSynthesisDictionaryOp
 from mrpro.operators.ConjugateGradientOp import ConjugateGradientOp
@@ -56,6 +57,7 @@ __all__ = [
     "B0InformedFourierOp",
     "CartesianMaskingOp",
     "CartesianSamplingOp",
+    "CirculantPreconditioner",
     "ConjugateGradientOp",
     "ConjugatePhaseFourierOp",
     "ConstraintsOp",
