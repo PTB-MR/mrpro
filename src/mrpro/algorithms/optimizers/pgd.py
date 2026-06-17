@@ -156,7 +156,7 @@ def pgd(
                 raise RuntimeError('Stepsize to small.')
 
         if convergent_iterates_variant:
-            t = (iteration + 2) / 3
+            t = (iteration + 3) / 3
         else:
             t = (1 + math.sqrt(1 + 4 * t_old**2)) / 2
 
