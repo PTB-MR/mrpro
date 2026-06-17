@@ -198,7 +198,8 @@ def pdhg(
         )
         primals_new = g_sum.prox(*primals_new, sigma=primal_stepsize_)
         primals_relaxed = tuple(
-            torch.lerp(primal, primal_new, relaxation) for primal, primal_new in zip(primals, primals_new, strict=False)
+            torch.lerp(primal, primal_new, -relaxation)
+            for primal, primal_new in zip(primals, primals_new, strict=False)
         )
 
         # check if the solution is already accurate enough
