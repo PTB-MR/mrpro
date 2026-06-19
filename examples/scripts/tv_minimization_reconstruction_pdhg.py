@@ -53,6 +53,7 @@
 
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show download details"}
 # Download raw data from Zenodo
+import os
 import tempfile
 from pathlib import Path
 
@@ -60,7 +61,9 @@ import zenodo_get
 
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
-zenodo_get.download(record='14617082', retry_attempts=5, output_dir=data_folder)
+zenodo_get.download(
+    record='14617082', retry_attempts=5, output_dir=data_folder, access_token=os.environ.get('ZENODO_TOKEN')
+)
 
 # %%
 import mrpro
@@ -94,8 +97,8 @@ img_direct_24 = direct_reconstruction_24(kdata_24spokes)
 sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction(
     kdata_24spokes,
     n_iterations=8,
-    csm=direct_reconstruction_24.csm,
-    dcf=direct_reconstruction_24.dcf,
+    csm=direct_reconstruction_24.csm_op,
+    dcf=direct_reconstruction_24.dcf_op,
 )
 img_sense_24 = sense_reconstruction(kdata_24spokes)
 
@@ -108,8 +111,8 @@ img_sense_24 = sense_reconstruction(kdata_24spokes)
 # %%
 fourier_operator = mrpro.operators.FourierOp.from_kdata(kdata_24spokes)
 
-assert direct_reconstruction_24.csm is not None
-csm_operator = direct_reconstruction_24.csm.as_operator()
+csm_operator = direct_reconstruction_24.csm_op
+assert csm_operator is not None
 
 # The acquisition operator is the composition of the Fourier operator and the CSM operator
 acquisition_operator = fourier_operator @ csm_operator
@@ -234,7 +237,7 @@ show_images(
 # %%
 tv_reconstruction = mrpro.algorithms.reconstruction.TotalVariationRegularizedReconstruction(
     kdata_24spokes,
-    csm=direct_reconstruction_24.csm,
+    csm=direct_reconstruction_24.csm_op,
     max_iterations=257,
     regularization_dim=(-2, -1),
     regularization_weight=regularization_lambda,

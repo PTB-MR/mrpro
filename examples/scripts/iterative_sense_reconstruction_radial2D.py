@@ -45,6 +45,7 @@
 
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show download details"}
 # ### Download raw data from Zenodo
+import os
 import tempfile
 from pathlib import Path
 
@@ -52,7 +53,9 @@ import zenodo_get
 
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
-zenodo_get.download(record='14617082', retry_attempts=5, output_dir=data_folder)
+zenodo_get.download(
+    record='14617082', retry_attempts=5, output_dir=data_folder, access_token=os.environ.get('ZENODO_TOKEN')
+)
 
 # %%
 import mrpro
@@ -90,8 +93,8 @@ img_direct = direct_reconstruction(kdata)
 # %%
 iterative_sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction(
     fourier_op=direct_reconstruction.fourier_op,
-    csm=direct_reconstruction.csm,
-    dcf=direct_reconstruction.dcf,
+    csm=direct_reconstruction.csm_op,
+    dcf=direct_reconstruction.dcf_op,
     n_iterations=4,
 )
 

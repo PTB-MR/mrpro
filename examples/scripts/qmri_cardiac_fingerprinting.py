@@ -39,6 +39,7 @@
 
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show download details"}
 # Download data from zenodo
+import os
 import tempfile
 from pathlib import Path
 
@@ -46,7 +47,9 @@ import zenodo_get
 
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
-zenodo_get.download(record='15726937', retry_attempts=5, output_dir=data_folder)
+zenodo_get.download(
+    record='15726937', retry_attempts=5, output_dir=data_folder, access_token=os.environ.get('ZENODO_TOKEN')
+)
 
 
 # %% [markdown]
@@ -81,7 +84,7 @@ kdata_split = kdata[..., split_indices, :]
 
 # %%
 avg_recon = mrpro.algorithms.reconstruction.DirectReconstruction(kdata)
-recon = mrpro.algorithms.reconstruction.DirectReconstruction(kdata_split, csm=avg_recon.csm)
+recon = mrpro.algorithms.reconstruction.DirectReconstruction(kdata_split, csm=avg_recon.csm_op)
 img = recon(kdata_split)
 
 # %% [markdown]

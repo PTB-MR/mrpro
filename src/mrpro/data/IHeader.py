@@ -68,7 +68,12 @@ def get_items(datasets: Sequence[Dataset], name: TagType, target_type: Callable[
     -------
         A list of converted items.
     """
-    return [target_type(item.value) for ds in datasets for item in ds.iterall() if item.tag == Tag(name)]
+    return [
+        target_type(item.value)
+        for ds in datasets
+        for item in ds.iterall()
+        if (item.tag == Tag(name)) and item.value is not None
+    ]
 
 
 def try_reduce_repeat(value: T) -> T:
@@ -360,7 +365,9 @@ class IHeader(Dataclass):
             header.acquisition_time_stamp = unsqueeze_right(time_stamp, 4)
 
         if dcm_cardiac_trigger := get_items(dataset, 'NominalCardiacTriggerDelayTime', float):
-            header.physiology_time_stamps = PhysiologyTimestamps(timestamp1=ms_to_s(torch.tensor(dcm_cardiac_trigger)))
+            header.physiology_time_stamps = PhysiologyTimestamps(
+                timestamp1=unsqueeze_right(ms_to_s(torch.tensor(dcm_cardiac_trigger)), 4)
+            )
 
         # The in stack position accounts for the slice position for multi-file data with cardiac phases,
         # as well as for single file dicom with multiple slices. Index is reduced by 1 to start indexing at 0.

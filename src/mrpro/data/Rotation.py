@@ -59,7 +59,7 @@ from typing_extensions import Self, Unpack, overload
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.indexing import Indexer
 from mrpro.utils.reduce_repeat import reduce_repeat
-from mrpro.utils.reshape import broadcasted_rearrange
+from mrpro.utils.reshape import broadcasted_rearrange, normalize_indices
 from mrpro.utils.typing import NestedSequence, TorchIndexerType
 from mrpro.utils.vmf import sample_vmf
 
@@ -624,8 +624,11 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         rotation
             Object containing the rotations represented by the basis vectors.
         """
-        b1, b2, b3 = (torch.stack([torch.as_tensor(getattr(v_, axis)) for axis in AXIS_ORDER], -1) for v_ in basis)
-        matrix = torch.stack((b1, b2, b3), -1)
+        b1, b2, b3 = (
+            torch.stack(torch.broadcast_tensors(*(torch.as_tensor(getattr(v_, ax)) for ax in AXIS_ORDER)), dim=-1)
+            for v_ in basis
+        )
+        matrix = torch.stack(torch.broadcast_tensors(b1, b2, b3), -1)
         det = torch.linalg.det(matrix)
         if not allow_improper and (det < 0).any():
             raise ValueError('The given basis vectors do not form a proper rotation matrix.')
@@ -2027,6 +2030,9 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
            https://link.springer.com/article/10.1007/s11263-012-0601-0
 
         """
+        if self._single:
+            return self.__class__(self._quaternions[0], inversion=self._is_improper, normalize=False)
+
         if weights is None:
             weights = torch.ones(*self.shape)
         else:
@@ -2049,11 +2055,7 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
             weights = weights.reshape(-1)
             dim = list(range(len(self.shape)))
         else:
-            dim = (
-                [d % (quaternions.ndim - 1) for d in dim]
-                if isinstance(dim, Sequence)
-                else [dim % (quaternions.ndim - 1)]
-            )
+            dim = normalize_indices(quaternions.ndim - 1, dim)
             batch_dims = [i for i in range(quaternions.ndim - 1) if i not in dim]
             permute_dims = (*batch_dims, *dim)
             quaternions = quaternions.permute(*permute_dims, -1).flatten(start_dim=len(batch_dims), end_dim=-2)

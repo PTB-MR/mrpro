@@ -56,6 +56,7 @@
 #
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show download details"}
 # Download raw data in ISMRMRD format from zenodo into a temporary directory
+import os
 import tempfile
 from pathlib import Path
 
@@ -63,7 +64,9 @@ import zenodo_get
 
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
-zenodo_get.download(record='13207352', retry_attempts=5, output_dir=data_folder)
+zenodo_get.download(
+    record='13207352', retry_attempts=5, output_dir=data_folder, access_token=os.environ.get('ZENODO_TOKEN')
+)
 # %% [markdown]
 # We will use the following libraries:
 # %%
@@ -104,7 +107,7 @@ kdata_dynamic = kdata[..., split_idx, :]
 # %%
 # Perform the reconstruction
 # Here we use the same coil sensitivity map for all dynamics
-reconstruction_dynamic = mrpro.algorithms.reconstruction.DirectReconstruction(kdata_dynamic, csm=reconstruction.csm)
+reconstruction_dynamic = mrpro.algorithms.reconstruction.DirectReconstruction(kdata_dynamic, csm=reconstruction.csm_op)
 img_dynamic = reconstruction_dynamic(kdata_dynamic)
 # Get absolute value of complex image and normalize the images
 img_rss_dynamic = img_dynamic.rss()

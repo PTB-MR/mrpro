@@ -6,6 +6,7 @@ import warnings
 from collections.abc import Generator, Sequence
 from pathlib import Path
 
+import nibabel
 import numpy as np
 import pydicom
 import torch
@@ -16,9 +17,11 @@ from pydicom.pixels import set_pixel_data
 from typing_extensions import Self
 
 from mrpro.data.Dataclass import Dataclass
-from mrpro.data.IHeader import IHeader
+from mrpro.data.IHeader import IHeader, get_items
 from mrpro.data.KHeader import KHeader
 from mrpro.data.SpatialDimension import SpatialDimension
+from mrpro.utils.reshape import unsqueeze_right
+from mrpro.utils.summarize import summarize_values
 from mrpro.utils.unit_conversion import m_to_mm, rad_to_deg, s_to_ms
 
 
@@ -28,27 +31,24 @@ def _dcm_pixelarray_to_tensor(dataset: Dataset) -> torch.Tensor:
     Rescale intercept, (0028|1052), and rescale slope (0028|1053) are
     DICOM tags that specify the linear transformation from pixels in
     their stored on disk representation to their in memory
-    representation.     U = m*SV + b where U is in output units, m is
+    representation. U = m*SV + b where U is in output units, m is
     the rescale slope, SV is the stored value, and b is the rescale
     intercept [RES]_.
+
+    Rescale intercept and rescale slope can be defined for each frame in a 3D/M2D dicom file, as a global value or
+    not at all.
 
     References
     ----------
     .. [RES] Rescale intercept and slope https://www.kitware.com/dicom-rescale-intercept-rescale-slope-and-itk/
     """
-    slope = (
-        float(element.value)
-        if 'RescaleSlope' in dataset and (element := dataset.data_element('RescaleSlope')) is not None
-        else 1.0
-    )
-    intercept = (
-        float(element.value)
-        if 'RescaleIntercept' in dataset and (element := dataset.data_element('RescaleIntercept')) is not None
-        else 0.0
-    )
+    slope = sl if (sl := get_items([dataset], 'RescaleSlope', lambda x: float(x))) else [1.0]
+    slope_tensor = unsqueeze_right(torch.as_tensor(slope), dataset.pixel_array.ndim - 1)
+    intercept = ic if (ic := get_items([dataset], 'RescaleIntercept', lambda x: float(x))) else [0.0]
+    intercept_tensor = unsqueeze_right(torch.as_tensor(intercept), dataset.pixel_array.ndim - 1)
 
-    # Image data is 2D np.array of Uint16, which cannot directly be converted to tensor
-    return slope * torch.as_tensor(dataset.pixel_array.astype(np.complex64)) + intercept
+    # Image data is 2D or 3D np.array of Uint16, which cannot directly be converted to tensor
+    return slope_tensor * torch.as_tensor(dataset.pixel_array.astype(np.complex64)) + intercept_tensor
 
 
 def _natural_key(s: str | Path) -> list[int | str]:
@@ -178,11 +178,61 @@ class IData(Dataclass):
         # Pass on sorted file list as order of dicom files is often the same as the required order
         return cls.from_dicom_files(filenames=sorted(file_paths))
 
+    def to_nifti(self, filename: str | Path, magnitude_only: bool = False) -> None:
+        """Save image data as NIFTI file.
+
+        Parameters
+        ----------
+        filename
+            filename / path of the NIFTI file.
+        magnitude_only
+            if `True`, only the magnitude of the image data is saved as a NIFTI1 file,
+            otherwise the complex image data is saved as a NIFTI2 file.
+            Many software packages do not support complex data.
+        """
+        orientation = self.header.orientation.mean().as_matrix()
+        position = torch.stack([p.mean() for p in self.header.position.zyx])
+        affine_zyx = torch.cat(
+            [torch.tensor([[1.0, 0.0, 0.0, 0.0]]), torch.cat([position[:, None], orientation], 1)], 0
+        )
+        affine = affine_zyx.flip([0, 1])
+        data = rearrange(self.data, '... other coils z y x-> x y z 1 other (...) coils')
+        if magnitude_only:
+            nifti = nibabel.nifti2.Nifti1Image(data.abs().numpy(), affine.numpy(), dtype=np.float32)
+        else:
+            nifti = nibabel.nifti2.Nifti2Image(data.numpy(), affine.numpy(), dtype=np.complex64)
+
+        nifti.header['pixdim'][1:4] = [self.header.resolution.x, self.header.resolution.y, self.header.resolution.z]
+        description = (
+            f'TE={summarize_values(self.header.te)}ms; '
+            f'TI={summarize_values(self.header.ti)}ms; '
+            f'TR={summarize_values(self.header.tr)}ms; '
+            f'FA={summarize_values(self.header.fa)}rad'
+        )
+        nifti.header['descrip'] = description.encode('utf-8')
+        nifti.to_filename(filename)
+
+    def __repr__(self):
+        """Representation method for IData class."""
+        try:
+            device = str(self.device)
+        except RuntimeError:
+            device = 'mixed'
+        out = (
+            f'{type(self).__name__} with shape: {list(self.data.shape)!s} and dtype {self.data.dtype}\n'
+            f'Device: {device}\n{self.header}'
+        )
+        return out
+
     def to_dicom_folder(
         self,
         foldername: str | Path,
+        *,
         series_description: str | None = None,
         reference_patient_table_position: SpatialDimension | None = None,
+        rescale_slope: float = 1.0,
+        rescale_intercept: float = 0.0,
+        normalize_data: bool = True,
     ) -> None:
         """Write the image data to DICOM files in a folder.
 
@@ -197,6 +247,12 @@ class IData(Dataclass):
         reference_patient_table_position
             If provided, the image position is calculated relative to this table positiion. This ensures that the
             image position is consistent across different scans even if the patient table has moved.
+        rescale_slope
+            Slope of linear scaling of data. Data is save as (data - intercept)/slope.
+        rescale_intercept
+            Intercept of linear scaling of data. Data is save as (data - intercept)/slope.
+        normalize_data
+            Normalize data prior to applying scaling.
         """
         if not isinstance(foldername, Path):
             foldername = Path(foldername)
@@ -312,12 +368,27 @@ class IData(Dataclass):
                     timing_parameters.RepetitionTime = s_to_ms(repetition_time)
                 frame_info.MRTimingAndRelatedParametersSequence = pydicom.Sequence([timing_parameters])
 
+                pixel_value_transformation = Dataset()
+                pixel_value_transformation.RescaleSlope = rescale_slope
+                pixel_value_transformation.RescaleIntercept = rescale_intercept
+                pixel_value_transformation.RescaleType = 'US'
+                frame_info.PixelValueTransformationSequence = pydicom.Sequence([pixel_value_transformation])
+
                 dataset.PerFrameFunctionalGroupsSequence.append(frame_info)
 
             # (frames, rows, columns) for multi-frame grayscale data
             pixel_data = dcm_file_idata.data.abs().cpu().numpy()
-            pixel_data = pixel_data / pixel_data.max() * (2**16 - 1)
+            pixel_data = pixel_data / pixel_data.max() * (2**16 - 1) if normalize_data else pixel_data
+            pixel_data = (pixel_data - rescale_intercept) / rescale_slope
             pixel_data = rearrange(pixel_data[0, 0, ...], 'frames y x -> frames x y')
+
+            if np.any(clipped_idx := (pixel_data < 0) | (pixel_data > 65535)):
+                clipped_data = pixel_data[clipped_idx]
+                warnings.warn(
+                    'Values outside of the uint16 range will be clipped. '
+                    + f'Data range [{clipped_data.min()} - {clipped_data.max()}]',
+                    stacklevel=2,
+                )
 
             # 'MONOCHROME2' means smallest value is black, largest value is white
             set_pixel_data(

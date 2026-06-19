@@ -15,27 +15,27 @@ repos:
       - id: mixed-line-ending
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.7
+    rev: v0.15.9
     hooks:
       - id: ruff # linter
         args: [--fix]
       - id: ruff-format # formatter
 
   - repo: https://github.com/crate-ci/typos
-    rev: v1.40.0
+    rev: v1.45.1
     hooks:
       - id: typos
         args: [] # empty, to remove write-changes from the default arguments.
 
   - repo: https://github.com/fzimmermann89/check_all
-    rev: v1.1
+    rev: c646d96
     hooks:
       - id: check-init-all
         args: [--double-quotes, --fix]
         exclude: ^tests/
 
   - repo: https://github.com/kynan/nbstripout
-    rev: 0.8.2
+    rev: 0.9.1
     hooks:
     # cleans the .ipynbs (removes outputs, resets all cell-ids to 0..N, cleans steps)
     # also clean any kernel information left after execution
@@ -72,7 +72,7 @@ repos:
        types_or: [python]
 
   - repo: https://github.com/kynan/nbstripout
-    rev: 0.8.2
+    rev: 0.9.1
     hooks:
     # cleans the .ipynbs (removes outputs, resets all cell-ids to 0..N, cleans steps)
     # also clean any kernel information left after execution
@@ -82,7 +82,7 @@ repos:
       files: examples/notebooks
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.19.0
+    rev: v1.20.0
     hooks:
       - id: mypy
         pass_filenames: false
@@ -91,6 +91,7 @@ repos:
         additional_dependencies:
           - numpy>=2.3
           - torch>=2.6.0
+          - torchnd>=0.1.0
           - pytorch-finufft
           - types-requests
           - typing-extensions
