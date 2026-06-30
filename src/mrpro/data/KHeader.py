@@ -14,6 +14,7 @@ from typing_extensions import Self
 from mrpro.data import enums
 from mrpro.data.AcqInfo import AcqInfo
 from mrpro.data.Dataclass import Dataclass
+from mrpro.data.EncodingLimits import EncodingLimits, Limits
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 from mrpro.utils.unit_conversion import (
@@ -104,6 +105,9 @@ class KHeader(Dataclass):
 
     patient_name: str = UNKNOWN
     """Name of the patient."""
+
+    patient_position: enums.PatientPosition = enums.PatientPosition.HFS
+    """Patient position."""
 
     _misc: dict = field(default_factory=dict)
     """Dictionary with miscellaneous parameters. These parameters are for information purposes only. Reconstruction
@@ -213,6 +217,11 @@ class KHeader(Dataclass):
             if header.measurementInformation.protocolName is not None:
                 parameters['protocol_name'] = header.measurementInformation.protocolName
 
+            if header.measurementInformation.patientPosition is not None:
+                parameters['patient_position'] = enums.PatientPosition(
+                    header.measurementInformation.patientPosition.value
+                )
+
         if header.acquisitionSystemInformation is not None:
             if header.acquisitionSystemInformation.systemVendor is not None:
                 parameters['vendor'] = header.acquisitionSystemInformation.systemVendor
@@ -252,26 +261,22 @@ class KHeader(Dataclass):
         -------
             ISMRMRD header
         """
-        header = ismrmrdschema.ismrmrdHeader()
-
         # Experimental conditions
-        exp = ismrmrdschema.experimentalConditionsType()
-        exp.H1resonanceFrequency_Hz = self.lamor_frequency_proton
-        header.experimentalConditions = exp
+        exp = ismrmrdschema.experimentalConditionsType(H1resonanceFrequency_Hz=int(self.lamor_frequency_proton or 0))
 
         # Subject information
         subj = ismrmrdschema.subjectInformationType()
         subj.patientName = self.patient_name
-        header.subjectInformation = subj
 
         # Measurement information
-        meas = ismrmrdschema.measurementInformationType()
+        meas = ismrmrdschema.measurementInformationType(
+            patientPosition=ismrmrdschema.patientPositionType(self.patient_position.value)
+        )
         meas.protocolName = self.protocol_name
         meas.measurementID = self.measurement_id
         if self.datetime is not None:
             meas.seriesTime = str(self.datetime.time())
             meas.seriesDate = str(self.datetime.date())
-        header.measurementInformation = meas
 
         # Acquisition system information
         sys = ismrmrdschema.acquisitionSystemInformationType()
@@ -279,7 +284,6 @@ class KHeader(Dataclass):
         sys.systemVendor = self.vendor
         if self.lamor_frequency_proton:
             sys.systemFieldStrength_T = lamor_frequency_to_magnetic_field(self.lamor_frequency_proton)
-        header.acquisitionSystemInformation = sys
 
         # Sequence information
         seq = ismrmrdschema.sequenceParametersType()
@@ -293,34 +297,48 @@ class KHeader(Dataclass):
             else s_to_ms(self.echo_spacing)
         )
         seq.sequence_type = self.sequence_type
-        header.sequenceParameters = seq
-
-        # Encoding
-        encoding = ismrmrdschema.encodingType()
 
         # Encoded space
-        encoding_space = ismrmrdschema.encodingSpaceType()
         encoding_fov = ismrmrdschema.fieldOfViewMm(
-            m_to_mm(self.encoding_fov.x), m_to_mm(self.encoding_fov.y), m_to_mm(self.encoding_fov.z)
+            x=m_to_mm(self.encoding_fov.x), y=m_to_mm(self.encoding_fov.y), z=m_to_mm(self.encoding_fov.z)
         )
         encoding_matrix = ismrmrdschema.matrixSizeType(
-            self.encoding_matrix.x, self.encoding_matrix.y, self.encoding_matrix.z
+            x=self.encoding_matrix.x, y=self.encoding_matrix.y, z=self.encoding_matrix.z
         )
-        encoding_space.matrixSize = encoding_matrix
-        encoding_space.fieldOfView_mm = encoding_fov
+        encoding_space = ismrmrdschema.encodingSpaceType(matrixSize=encoding_matrix, fieldOfView_mm=encoding_fov)
 
         # Recon space
-        recon_space = ismrmrdschema.encodingSpaceType()
         recon_fov = ismrmrdschema.fieldOfViewMm(
-            m_to_mm(self.recon_fov.x), m_to_mm(self.recon_fov.y), m_to_mm(self.recon_fov.z)
+            x=m_to_mm(self.recon_fov.x), y=m_to_mm(self.recon_fov.y), z=m_to_mm(self.recon_fov.z)
         )
-        recon_matrix = ismrmrdschema.matrixSizeType(self.recon_matrix.x, self.recon_matrix.y, self.recon_matrix.z)
-        recon_space.matrixSize = recon_matrix
-        recon_space.fieldOfView_mm = recon_fov
+        recon_matrix = ismrmrdschema.matrixSizeType(x=self.recon_matrix.x, y=self.recon_matrix.y, z=self.recon_matrix.z)
+        recon_space = ismrmrdschema.encodingSpaceType(matrixSize=recon_matrix, fieldOfView_mm=recon_fov)
 
-        # Set encoded and recon spaces
-        encoding.encodedSpace = encoding_space
-        encoding.reconSpace = recon_space
-        header.encoding.append(encoding)
+        def limits_from_acq_idx(acq_idx_tensor: torch.Tensor) -> Limits:
+            return Limits(int(acq_idx_tensor.min().item()), int(acq_idx_tensor.max().item()), 0)
+
+        encoding_limits = EncodingLimits(
+            **{
+                field.name: limits_from_acq_idx(getattr(self.acq_info.idx, field.name))
+                for field in dataclasses.fields(self.acq_info.idx)
+            }
+        )
+
+        # Encoding
+        encoding = ismrmrdschema.encodingType(
+            encodedSpace=encoding_space,
+            reconSpace=recon_space,
+            encodingLimits=encoding_limits.to_ismrmrd_encoding_limits_type(),
+            trajectory=ismrmrdschema.trajectoryType(self.trajectory_type.value),
+        )
+
+        header = ismrmrdschema.ismrmrdHeader(
+            experimentalConditions=exp,
+            subjectInformation=subj,
+            measurementInformation=meas,
+            acquisitionSystemInformation=sys,
+            sequenceParameters=seq,
+            encoding=[encoding],
+        )
 
         return header
