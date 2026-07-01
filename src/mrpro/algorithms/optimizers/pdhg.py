@@ -33,7 +33,10 @@ class PDHGStatus(OptimizerStatus):
 
 def _norm_squared(*values: torch.Tensor) -> torch.Tensor:
     """Calculate the squared L2 norm of the stack of tensors."""
-    return sum([torch.vdot(value.flatten(), value.flatten()).real for value in values], start=torch.tensor(0.0))
+    return sum(
+        [torch.vdot(value.flatten(), value.flatten()).real for value in values],
+        start=torch.tensor(0.0),
+    )
 
 
 def pdhg(
@@ -124,7 +127,8 @@ def pdhg(
     """
     if f is None and g is None:
         warnings.warn(
-            'Both f and g are None. The objective is constant. Returning x0 as a possible solution', stacklevel=2
+            'Both f and g are None. The objective is constant. Returning x0 as a possible solution',
+            stacklevel=2,
         )
         return tuple(initial_values)
 
@@ -165,12 +169,12 @@ def pdhg(
         raise ValueError('Number of columns in operator does not match number of functionals in g')
 
     if primal_stepsize is None or dual_stepsize is None:
-        # choose primal and dual step size such that their product is 1/|operator|**2
-        # to ensure convergence
+        # choose primal and dual step sizes such that their product is strictly smaller than 1/|operator|**2
+        # to ensure convergence by using safety factor of 0.97.
+        safety_factor = 0.97
         squared_operator_norm = (
             operator_matrix.operator_norm(*[torch.randn_like(v) for v in initial_values]).amax().square()
         )
-        safety_factor = 0.97
         if primal_stepsize is None and dual_stepsize is None:
             primal_stepsize_ = dual_stepsize_ = safety_factor / squared_operator_norm
         elif primal_stepsize is None and dual_stepsize is not None:

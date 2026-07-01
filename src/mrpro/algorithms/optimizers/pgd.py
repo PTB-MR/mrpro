@@ -22,7 +22,7 @@ class PGDStatus(OptimizerStatus):
 
 
 def pgd(
-    f: Operator[torch.Tensor, tuple[torch.Tensor]] | Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torch.Tensor]],
+    f: (Operator[torch.Tensor, tuple[torch.Tensor]] | Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torch.Tensor]]),
     g: ProximableFunctional | ProximableFunctionalSeparableSum,
     initial_value: torch.Tensor | tuple[torch.Tensor, ...],
     stepsize: float = 1.0,
@@ -130,7 +130,10 @@ def pgd(
     for iteration in range(max_iterations):
         while stepsize > 1e-30:
             gradient, f_y = grad_and_value_f(y)
-            x = g_sum.prox(*[yi - stepsize * gi for yi, gi in zip(y, gradient, strict=True)], sigma=stepsize)
+            x = g_sum.prox(
+                *[yi - stepsize * gi for yi, gi in zip(y, gradient, strict=True)],
+                sigma=stepsize,
+            )
 
             if not backtracking:
                 # no need to check stepsize, continue to next iteration
@@ -156,6 +159,7 @@ def pgd(
                 raise RuntimeError('Stepsize to small.')
 
         if convergent_iterates_variant:
+            # t_n = (n + a -1)/a, for a=3. Note that here, n starts from 0.
             t = (iteration + 3) / 3
         else:
             t = (1 + math.sqrt(1 + 4 * t_old**2)) / 2
@@ -168,7 +172,10 @@ def pgd(
         if callback is not None:
             continue_iterations = callback(
                 PGDStatus(
-                    solution=x, iteration_number=iteration, stepsize=stepsize, objective=lambda *x: f(*x)[0] + g(*x)[0]
+                    solution=x,
+                    iteration_number=iteration,
+                    stepsize=stepsize,
+                    objective=lambda *x: f(*x)[0] + g(*x)[0],
                 )
             )
             if continue_iterations is False:
