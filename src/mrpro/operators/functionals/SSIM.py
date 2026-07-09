@@ -246,8 +246,8 @@ class SSIM(Operator[torch.Tensor, tuple[torch.Tensor]]):
             See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         ssim = ssim3d(
-            self.target.real,
-            x.real,
+            self.target,
+            x,
             weight=self.weight,
             k1=self.k1,
             k2=self.k2,
