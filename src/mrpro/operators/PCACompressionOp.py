@@ -116,3 +116,8 @@ class PCACompressionOp(LinearOperator):
                 f'cannot be multiplied with Data {tuple(data.shape)} on {data.device}.'
             ) from e
         return (result,)
+
+    @property
+    def compression_matrix(self) -> torch.Tensor:
+        """Get the compression matrix."""
+        return self._compression_matrix
