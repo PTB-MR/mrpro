@@ -45,5 +45,11 @@ def test_kheader_to_ismrmrd(random_mandatory_ismrmrd_header, random_acq_info):
     kheader_again = KHeader.from_ismrmrd(ismrmrd_header, random_acq_info, {'trajectory': DummyTrajectory()})
     assert ismrmrd_header.experimentalConditions.H1resonanceFrequency_Hz == kheader.lamor_frequency_proton
     assert ismrmrd_header.encoding[0].encodedSpace.matrixSize.z == kheader.encoding_matrix.zyx[0]
+    assert ismrmrd_header.encoding[0].encodingLimits.kspace_encoding_step_1.minimum == int(
+        kheader.acq_info.idx.k1.min()
+    )
+    assert ismrmrd_header.encoding[0].encodingLimits.kspace_encoding_step_1.maximum == int(
+        kheader.acq_info.idx.k1.max()
+    )
     assert ismrmrd_header.sequenceParameters.flipAngle_deg == fa
     torch.testing.assert_close(torch.as_tensor(kheader_again.fa), kheader.fa)

@@ -52,6 +52,8 @@ def mock_fastmri_brain_data(tmp_path_factory):
                 <z>5</z>
             </fieldOfView_mm>
         </reconSpace>
+        <encodingLimits/>
+        <trajectory>cartesian</trajectory>
     </encoding>
     </ismrmrdHeader>
 """
@@ -100,6 +102,8 @@ def mock_fastmri_knee_data(tmp_path_factory):
                 <z>3</z>
             </fieldOfView_mm>
         </reconSpace>
+        <encodingLimits/>
+        <trajectory>cartesian</trajectory>
     </encoding>
     </ismrmrdHeader>
     """

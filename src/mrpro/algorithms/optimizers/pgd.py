@@ -22,7 +22,7 @@ class PGDStatus(OptimizerStatus):
 
 
 def pgd(
-    f: Operator[torch.Tensor, tuple[torch.Tensor]] | Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torch.Tensor]],
+    f: (Operator[torch.Tensor, tuple[torch.Tensor]] | Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torch.Tensor]]),
     g: ProximableFunctional | ProximableFunctionalSeparableSum,
     initial_value: torch.Tensor | tuple[torch.Tensor, ...],
     stepsize: float = 1.0,
@@ -93,8 +93,10 @@ def pgd(
     convergent_iterates_variant
         by default, the algorithm updates the variable t as originally described in [BE2009]_.
         If set to `True`, the algorithm updates t as suggested by [CHAM2015]_,
-        i.e. at iteration :math:`n`, :math:`t_n = \frac{n+a-1}{a}`, with chosen :math:`a=3`.
+        i.e. at iteration :math:`n\geq 0`, :math:`t_n = \frac{n+a}{a}`, with chosen :math:`a=3`.
         This choice ensures the theoretical convergence of solution.
+        Note that here, we use :math:`n\geq 0`, whereas in [CHAM2015], :math:`n\geq 1`
+        and hence, :math:`t_n = \frac{n+a-1}{a}`.
     callback
         function to be called at each iteration. This can be used to monitor the progress of the algorithm.
         If it returns `False`, the algorithm stops at that iteration.
@@ -130,7 +132,10 @@ def pgd(
     for iteration in range(max_iterations):
         while stepsize > 1e-30:
             gradient, f_y = grad_and_value_f(y)
-            x = g_sum.prox(*[yi - stepsize * gi for yi, gi in zip(y, gradient, strict=True)], sigma=stepsize)
+            x = g_sum.prox(
+                *[yi - stepsize * gi for yi, gi in zip(y, gradient, strict=True)],
+                sigma=stepsize,
+            )
 
             if not backtracking:
                 # no need to check stepsize, continue to next iteration
@@ -156,7 +161,7 @@ def pgd(
                 raise RuntimeError('Stepsize to small.')
 
         if convergent_iterates_variant:
-            t = (iteration + 2) / 3
+            t = (iteration + 3) / 3
         else:
             t = (1 + math.sqrt(1 + 4 * t_old**2)) / 2
 
@@ -168,7 +173,10 @@ def pgd(
         if callback is not None:
             continue_iterations = callback(
                 PGDStatus(
-                    solution=x, iteration_number=iteration, stepsize=stepsize, objective=lambda *x: f(*x)[0] + g(*x)[0]
+                    solution=x,
+                    iteration_number=iteration,
+                    stepsize=stepsize,
+                    objective=lambda *x: f(*x)[0] + g(*x)[0],
                 )
             )
             if continue_iterations is False:

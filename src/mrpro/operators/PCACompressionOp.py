@@ -4,6 +4,7 @@ import einops
 import torch
 from einops import repeat
 
+from mrpro.algorithms.varimax import varimax
 from mrpro.operators.LinearOperator import LinearOperator
 
 
@@ -15,6 +16,7 @@ class PCACompressionOp(LinearOperator):
         data: torch.Tensor,
         n_components: int,
         centering: bool = True,
+        rotate: bool = False,
     ) -> None:
         """Construct a PCA based compression operator.
 
@@ -36,6 +38,9 @@ class PCACompressionOp(LinearOperator):
         centering
             Should the data be centered? With centering, only fluctuations around the mean are encoded in the
             subspace. You should not use centering for qMRI signal compression.
+        rotate
+            Apply a varimax rotation to the compression matrix to distribute the signal more equally across the
+            subspace.
         """
         super().__init__()
         if centering:
@@ -45,7 +50,10 @@ class PCACompressionOp(LinearOperator):
         _eigenvalues, v = torch.linalg.eigh(correlation)  # faster then svd if we only care about V
         # add joint_dim along which the the compression is the same
         v = repeat(v.conj(), '... comp1 comp2 -> ... joint_dim  comp2 comp1', joint_dim=1)
-        self._compression_matrix = v[..., -n_components:, :].flip(-2)  # V is sorted in ascending order
+        v = v[..., -n_components:, :].flip(-2)  # V is sorted in ascending order
+        if rotate:
+            v = varimax(v)
+        self._compression_matrix = v
 
     def __call__(self, data: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply PCA-based compression to the input data.
@@ -76,9 +84,9 @@ class PCACompressionOp(LinearOperator):
             result = (self._compression_matrix @ data.unsqueeze(-1)).squeeze(-1)
         except RuntimeError as e:
             raise RuntimeError(
-                'Shape mismatch in adjoint Compression: '
-                f'Matrix {tuple(self._compression_matrix.shape)} '
-                f'cannot be multiplied with Data {tuple(data.shape)}.'
+                'Shape or device mismatch in Compression: '
+                f'Matrix {tuple(self._compression_matrix.shape)} on {self._compression_matrix.device} '
+                f'cannot be multiplied with Data {tuple(data.shape)} on {data.device}.'
             ) from e
         return (result,)
 
@@ -103,9 +111,9 @@ class PCACompressionOp(LinearOperator):
             result = (self._compression_matrix.mH @ data.unsqueeze(-1)).squeeze(-1)
         except RuntimeError as e:
             raise RuntimeError(
-                'Shape mismatch in adjoint Compression: '
-                f'Matrix^H {tuple(self._compression_matrix.mH.shape)} '
-                f'cannot be multiplied with Data {tuple(data.shape)}.'
+                'Shape or device mismatch in adjoint Compression: '
+                f'Matrix^H {tuple(self._compression_matrix.mH.shape)} on {self._compression_matrix.device} '
+                f'cannot be multiplied with Data {tuple(data.shape)} on {data.device}.'
             ) from e
         return (result,)
 
