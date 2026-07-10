@@ -1,7 +1,6 @@
 """MR raw data / k-space data class."""
 
 import copy
-import dataclasses
 import datetime
 import warnings
 from collections.abc import Callable, Mapping, Sequence
@@ -29,7 +28,7 @@ from mrpro.data.AcqInfo import (
     write_acqinfo_to_ismrmrd_acquisition_,
 )
 from mrpro.data.Dataclass import Dataclass
-from mrpro.data.EncodingLimits import EncodingLimits, Limits
+from mrpro.data.EncodingLimits import EncodingLimits
 from mrpro.data.enums import AcqFlags
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KNoise import KNoise
@@ -364,23 +363,16 @@ class KData(Dataclass):
         header = self.header.to_ismrmrd()
         header.acquisitionSystemInformation.receiverChannels = self.data.shape[-4]
 
-        # Calculate the encoding limits as min/max of the acquisition indices
-        def limits_from_acq_idx(acq_idx_tensor: torch.Tensor) -> Limits:
-            return Limits(int(acq_idx_tensor.min().item()), int(acq_idx_tensor.max().item()), 0)
-
-        encoding_limits = EncodingLimits(
-            **{
-                field.name: limits_from_acq_idx(getattr(self.header.acq_info.idx, field.name))
-                for field in dataclasses.fields(self.header.acq_info.idx)
-            }
-        )
-
         # For the k-space center of k1 and k2 we can only make an educated guess on where it is:
         # k-space point closest to 0
+        encoding_limits = header.encoding[0].encodingLimits
         center_idx = self.traj.as_tensor(-1).abs().sum(dim=-1).argmin()
-        encoding_limits.k1.center = int(self.header.acq_info.idx.k1.broadcast_to(self.traj.shape).flatten()[center_idx])
-        encoding_limits.k2.center = int(self.header.acq_info.idx.k2.broadcast_to(self.traj.shape).flatten()[center_idx])
-        header.encoding[0].encodingLimits = encoding_limits.to_ismrmrd_encoding_limits_type()
+        encoding_limits.kspace_encoding_step_1.center = int(
+            self.header.acq_info.idx.k1.broadcast_to(self.traj.shape).flatten()[center_idx]
+        )
+        encoding_limits.kspace_encoding_step_2.center = int(
+            self.header.acq_info.idx.k2.broadcast_to(self.traj.shape).flatten()[center_idx]
+        )
 
         # Vendors use different units for time stamps
         if self.header.vendor.lower() == 'osi2':
