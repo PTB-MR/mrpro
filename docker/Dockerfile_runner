@@ -37,7 +37,7 @@ WORKDIR /
 COPY docker/install_dependencies.sh pyproject.toml src/mrpro/VERSION ./
 
 # the 1st argument for the install_dependencies specifies the cuda version for torch
-RUN bash install_dependencies.sh ${CUDA_VERSION} && rm install_dependencies.sh pyproject.toml VERSION
+#RUN bash install_dependencies.sh ${CUDA_VERSION} && rm install_dependencies.sh pyproject.toml VERSION
 
 # install mrpro
 # forces rebuild on any change in the mrpro directory
@@ -46,7 +46,7 @@ RUN python -m pip install "/mrpro[notebooks]" --no-cache-dir --upgrade --upgrade
 RUN rm -rf /mrpro
 
 # No matter what the eager upgrade did to torch, force it back to the pinned CUDA build
-RUN python -m pip install --no-cache-dir --force-reinstall --no-deps torch==${TORCH_VERSION} --index-url https://download.pytorch.org/whl/${CUDA_VERSION}
+RUN python -m pip install --no-cache-dir --force-reinstall --no-deps torch==${TORCH_VERSION} torchvision --index-url https://download.pytorch.org/whl/${CUDA_VERSION}
 
 
 # set user and workdir
