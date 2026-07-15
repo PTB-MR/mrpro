@@ -6,7 +6,6 @@ FROM ${BASE_IMAGE} AS base
 # GITHUB_REPOSITORY
 
 ARG CUDA_VERSION=cu121
-ARG TORCH_VERSION=2.5.1
 
 RUN echo "CUDA_VERSION='${CUDA_VERSION}' TORCH_VERSION='${TORCH_VERSION}'"
 
@@ -38,7 +37,7 @@ WORKDIR /
 # forces rebuild on any change in the mrpro directory
 COPY . /mrpro/
 # Install torch first, pinned, from the correct CUDA-specific index
-RUN python -m pip install --no-cache-dir torch==${TORCH_VERSION} --index-url https://download.pytorch.org/whl/${CUDA_VERSION}
+RUN python -m pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/${CUDA_VERSION}
 
 # Freeze that exact torch version into a constraints file
 RUN python -m pip freeze | grep -i "^torch==" > /tmp/constraints.txt
