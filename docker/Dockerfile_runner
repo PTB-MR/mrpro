@@ -8,6 +8,8 @@ FROM ${BASE_IMAGE} AS base
 ARG CUDA_VERSION=cu121
 ARG TORCH_VERSION=2.5.1
 
+RUN echo "CUDA_VERSION='${CUDA_VERSION}' TORCH_VERSION='${TORCH_VERSION}'"
+
 ARG ACTION_RUNNER_URL=https://github.com/actions/runner/releases/download/v2.335.1/actions-runner-linux-x64-2.335.1.tar.gz
 
 ARG DEBIAN_FRONTEND=noninteractive
@@ -41,11 +43,9 @@ RUN bash install_dependencies.sh ${CUDA_VERSION} && rm install_dependencies.sh p
 RUN python -m pip install --no-cache-dir torch==${TORCH_VERSION} --index-url https://download.pytorch.org/whl/${CUDA_VERSION}
 
 # Pin torch via env var so it also applies inside pip's build-isolation subprocesses
-ENV PIP_CONSTRAINT=constraints.txt
-RUN echo "torch==${TORCH_VERSION}" > constraints.txt
-
-RUN echo "constraints"
-RUN cat constraints.txt
+ENV PIP_CONSTRAINT=/tmp/constraints.txt
+RUN echo "torch==${TORCH_VERSION}" > /tmp/constraints.txt
+RUN cat /tmp/constraints.txt
 
 # install mrpro
 # forces rebuild on any change in the mrpro directory
