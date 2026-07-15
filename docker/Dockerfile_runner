@@ -33,7 +33,8 @@ WORKDIR /
 # install mrpro dependencies
 # forces rebuild if either the version or the pyproject.toml changes
 COPY docker/install_dependencies.sh pyproject.toml src/mrpro/VERSION ./
-RUN bash install_dependencies.sh && rm install_dependencies.sh pyproject.toml VERSION
+# the 1st argument for the install_dependencies specifies the cuda version
+RUN bash install_dependencies.sh ${CUDA_VERSION} && rm install_dependencies.sh pyproject.toml VERSION
 
 # install mrpro
 # forces rebuild on any change in the mrpro directory
