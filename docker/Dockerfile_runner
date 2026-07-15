@@ -39,19 +39,15 @@ COPY docker/install_dependencies.sh pyproject.toml src/mrpro/VERSION ./
 # the 1st argument for the install_dependencies specifies the cuda version for torch
 RUN bash install_dependencies.sh ${CUDA_VERSION} && rm install_dependencies.sh pyproject.toml VERSION
 
-# Install torch first, pinned, from the correct CUDA-specific index
-RUN python -m pip install --no-cache-dir torch==${TORCH_VERSION} --index-url https://download.pytorch.org/whl/${CUDA_VERSION}
-
-# Pin torch via env var so it also applies inside pip's build-isolation subprocesses
-ENV PIP_CONSTRAINT=/tmp/constraints.txt
-RUN echo "torch==${TORCH_VERSION}" > /tmp/constraints.txt
-RUN cat /tmp/constraints.txt
-
 # install mrpro
 # forces rebuild on any change in the mrpro directory
 COPY . /mrpro/
 RUN python -m pip install "/mrpro[notebooks]" --no-cache-dir --upgrade --upgrade-strategy "eager"
 RUN rm -rf /mrpro
+
+# No matter what the eager upgrade did to torch, force it back to the pinned CUDA build
+RUN python -m pip install --no-cache-dir --force-reinstall --no-deps torch==${TORCH_VERSION} --index-url https://download.pytorch.org/whl/${CUDA_VERSION}
+
 
 # set user and workdir
 USER runner
