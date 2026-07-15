@@ -34,11 +34,6 @@ RUN mkdir /work && chmod 777 /work
 # forces rebuild if either the version or the pyproject.toml changes
 WORKDIR /
 
-COPY docker/install_dependencies.sh pyproject.toml src/mrpro/VERSION ./
-
-# the 1st argument for the install_dependencies specifies the cuda version for torch
-#RUN bash install_dependencies.sh ${CUDA_VERSION} && rm install_dependencies.sh pyproject.toml VERSION
-
 # install mrpro
 # forces rebuild on any change in the mrpro directory
 COPY . /mrpro/
