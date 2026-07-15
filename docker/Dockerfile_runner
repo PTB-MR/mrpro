@@ -37,12 +37,15 @@ COPY docker/install_dependencies.sh pyproject.toml src/mrpro/VERSION ./
 RUN bash install_dependencies.sh ${CUDA_VERSION} && rm install_dependencies.sh pyproject.toml VERSION
 
 # Freeze that exact torch version into a constraints file
-RUN python -m pip freeze | grep -i "^torch==" > /tmp/constraints.txt
+RUN python -m pip freeze | grep -i "^torch==" | sed 's/+.*//' > /tmp/constraints.txt
+
+RUN cat /tmp/constraints.txt
 
 # install mrpro
 # forces rebuild on any change in the mrpro directory
+ENV PIP_CONSTRAINT=/tmp/constraints.txt
 COPY . /mrpro/
-RUN python -m pip install "/mrpro[notebooks]" --no-cache-dir --upgrade --upgrade-strategy "eager" --constraint /tmp/constraints.txt
+RUN python -m pip install "/mrpro[notebooks]" --no-cache-dir --upgrade --upgrade-strategy "eager"
 RUN rm -rf /mrpro
 
 # set user and workdir
