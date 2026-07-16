@@ -50,7 +50,7 @@ jobs:
         uses: actions/checkout@v4 # Don't change without a reason. Self hosted runner update might be broken.
 
       - name: Install MRpro and Dependencies
-        run: pip install --upgrade --upgrade-strategy eager .[tests]
+        run: pip install .[tests]
 
       - name: Run PyTest and Generate Coverage Report
         # shell bash sets the -o pipefail
