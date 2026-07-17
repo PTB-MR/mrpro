@@ -40,6 +40,7 @@ RUN bash install_dependencies.sh ${CUDA_VERSION} && rm install_dependencies.sh p
 # forces rebuild on any change in the mrpro directory
 COPY . /mrpro/
 RUN python -m pip install  "/mrpro[notebooks]" --no-cache-dir && rm -rf /mrpro
+RUN python -m pip check
 
 # set user and workdir
 USER runner

@@ -84,9 +84,9 @@ jobs:
         run: |
           # for the test of minimal requirements we do not want to update dependencies
           if [ "${{ matrix.imagename }}" = "mrpro_py310_minimal" ]; then
-            python -m pytest -n 4 -m "not cuda"
+            pytest -n 4 -m "not cuda"
           else
-            python -m pytest -n 4 -m "not cuda" --junitxml=pytest.xml \
+            pytest -n 4 -m "not cuda" --junitxml=pytest.xml \
             --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt
           fi
         shell: bash
