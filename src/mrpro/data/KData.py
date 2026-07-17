@@ -1,20 +1,22 @@
 """MR raw data / k-space data class."""
 
 import copy
-import dataclasses
 import datetime
 import warnings
 from collections.abc import Callable, Mapping, Sequence
 from importlib.metadata import version
 from types import EllipsisType
-from typing import Literal, cast
+from typing import TYPE_CHECKING, Literal, cast
 
 import h5py
 import ismrmrd
 import numpy as np
 import torch
 from einops import rearrange
-from typing_extensions import Self, TypeVar
+from typing_extensions import Self, TypeVar, overload
+
+if TYPE_CHECKING:
+    from mrpro.operators.LinearOperator import LinearOperator
 
 from mrpro.data.acq_filters import has_n_coils, is_image_acquisition
 from mrpro.data.AcqInfo import (
@@ -26,9 +28,10 @@ from mrpro.data.AcqInfo import (
     write_acqinfo_to_ismrmrd_acquisition_,
 )
 from mrpro.data.Dataclass import Dataclass
-from mrpro.data.EncodingLimits import EncodingLimits, Limits
+from mrpro.data.EncodingLimits import EncodingLimits
 from mrpro.data.enums import AcqFlags
 from mrpro.data.KHeader import KHeader
+from mrpro.data.KNoise import KNoise
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.Rotation import Rotation
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
@@ -36,6 +39,9 @@ from mrpro.data.traj_calculators.KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
 from mrpro.utils.reshape import normalize_index, normalize_indices
 from mrpro.utils.summarize import summarize_object
 from mrpro.utils.typing import FileOrPath
+
+if TYPE_CHECKING:
+    from mrpro.operators import LinearOperator
 
 RotationOrTensor = TypeVar('RotationOrTensor', bound=torch.Tensor | Rotation)
 
@@ -357,23 +363,16 @@ class KData(Dataclass):
         header = self.header.to_ismrmrd()
         header.acquisitionSystemInformation.receiverChannels = self.data.shape[-4]
 
-        # Calculate the encoding limits as min/max of the acquisition indices
-        def limits_from_acq_idx(acq_idx_tensor: torch.Tensor) -> Limits:
-            return Limits(int(acq_idx_tensor.min().item()), int(acq_idx_tensor.max().item()), 0)
-
-        encoding_limits = EncodingLimits(
-            **{
-                field.name: limits_from_acq_idx(getattr(self.header.acq_info.idx, field.name))
-                for field in dataclasses.fields(self.header.acq_info.idx)
-            }
-        )
-
         # For the k-space center of k1 and k2 we can only make an educated guess on where it is:
         # k-space point closest to 0
+        encoding_limits = header.encoding[0].encodingLimits
         center_idx = self.traj.as_tensor(-1).abs().sum(dim=-1).argmin()
-        encoding_limits.k1.center = int(self.header.acq_info.idx.k1.broadcast_to(self.traj.shape).flatten()[center_idx])
-        encoding_limits.k2.center = int(self.header.acq_info.idx.k2.broadcast_to(self.traj.shape).flatten()[center_idx])
-        header.encoding[0].encodingLimits = encoding_limits.to_ismrmrd_encoding_limits_type()
+        encoding_limits.kspace_encoding_step_1.center = int(
+            self.header.acq_info.idx.k1.broadcast_to(self.traj.shape).flatten()[center_idx]
+        )
+        encoding_limits.kspace_encoding_step_2.center = int(
+            self.header.acq_info.idx.k2.broadcast_to(self.traj.shape).flatten()[center_idx]
+        )
 
         # Vendors use different units for time stamps
         if self.header.vendor.lower() == 'osi2':
@@ -416,12 +415,34 @@ class KData(Dataclass):
         )
         return representation
 
+    @overload
     def compress_coils(
-        self: Self,
+        self,
         n_compressed_coils: int,
-        batch_dims: None | Sequence[int] = None,
+        batch_dims: Sequence[int] | None = None,
         joint_dims: Sequence[int] | EllipsisType = ...,
-    ) -> Self:
+        rotate: bool = False,
+        return_compression_op: Literal[False] = False,
+    ) -> Self: ...
+
+    @overload
+    def compress_coils(
+        self,
+        n_compressed_coils: int,
+        batch_dims: Sequence[int] | None = None,
+        joint_dims: Sequence[int] | EllipsisType = ...,
+        rotate: bool = False,
+        return_compression_op: Literal[True] = True,
+    ) -> tuple[Self, 'LinearOperator']: ...
+
+    def compress_coils(
+        self,
+        n_compressed_coils: int,
+        batch_dims: Sequence[int] | None = None,
+        joint_dims: Sequence[int] | EllipsisType = ...,
+        rotate: bool = False,
+        return_compression_op: bool = False,
+    ) -> Self | tuple[Self, 'LinearOperator']:
         """Reduce the number of coils based on a PCA compression.
 
         A PCA is carried out along the coil dimension and the n_compressed_coils virtual coil elements are selected. For
@@ -443,10 +464,16 @@ class KData(Dataclass):
             Dimensions which are combined to calculate single coil compression matrix (e.g. k0, k1, contrast). Default
             is that all dimensions (except for the coil dimension) are joint_dims. Only batch_dim or joint_dim can
             be defined. If joint_dims is not ... batch_dims has to be None
+        rotate
+            Apply a varimax rotation to the compression matrix to distribute the signal more equally across the
+            compressed coils.
+        return_compression_op
+            If True, return the compression operator used for compression along with the compressed data.
 
         Returns
         -------
             Copy of K-space data with compressed coils.
+            (Optional) Compression operator used for compression along with the compressed data.
 
         Raises
         ------
@@ -465,7 +492,7 @@ class KData(Dataclass):
            technique for faster reconstruction with many channels. MRM 26. https://doi.org/10.1016/j.mri.2007.04.010
 
         """
-        from mrpro.operators import PCACompressionOp
+        from mrpro.operators import PCACompressionOp, RearrangeOp
 
         coil_dim = normalize_index(self.data.ndim, -4)
 
@@ -478,38 +505,72 @@ class KData(Dataclass):
         if batch_dims is not None and joint_dims is not Ellipsis:
             raise ValueError('Either batch_dims or joint_dims can be defined not both.')
 
+        all_dims = tuple(range(self.data.ndim))
+        dim_names = (*[f'other{dim}' for dim in all_dims[:-4]], 'coils', 'kz', 'ky', 'kx')
+
         if joint_dims is not Ellipsis:
             joint_dims_normalized = normalize_indices(self.data.ndim, joint_dims)
             if coil_dim in joint_dims_normalized:
                 raise ValueError('Coil dimension must not be in joint_dims')
             batch_dims_normalized = tuple(
-                [d for d in range(self.data.ndim) if d not in joint_dims_normalized and d is not coil_dim]
+                dim for dim in all_dims if dim not in joint_dims_normalized and dim != coil_dim
             )
         else:
             batch_dims_normalized = normalize_indices(self.data.ndim, batch_dims)
             if coil_dim in batch_dims_normalized:
                 raise ValueError('Coil dimension must not be in batch_dims')
+            joint_dims_normalized = tuple(
+                dim for dim in all_dims if dim not in batch_dims_normalized and dim != coil_dim
+            )
 
-        # reshape to (*batch dimension, -1, coils)
-        permute_order = (
-            *batch_dims_normalized,
-            *[i for i in range(self.data.ndim) if i != coil_dim and i not in batch_dims_normalized],
-            coil_dim,
+        batch_pattern = ' '.join(dim_names[dim] for dim in batch_dims_normalized)
+        joint_pattern = ' '.join(dim_names[dim] for dim in joint_dims_normalized)
+        input_pattern = ' '.join(dim_names)
+        to_pca_layout = RearrangeOp(
+            f'{input_pattern} -> {batch_pattern} ({joint_pattern}) coils',
+            {dim_names[dim]: self.data.shape[dim] for dim in joint_dims_normalized},
         )
-        kdata_permuted = self.data.permute(permute_order)
-        kdata_flattened = kdata_permuted.flatten(
-            start_dim=len(batch_dims_normalized), end_dim=-2
-        )  # keep separate dimensions and coil
 
-        pca_compression_op = PCACompressionOp(data=kdata_flattened, n_components=n_compressed_coils)
-        (kdata_coil_compressed_flattened,) = pca_compression_op(kdata_flattened)
+        (kdata_flattened,) = to_pca_layout(self.data)
+        pca_compression_op = PCACompressionOp(data=kdata_flattened, n_components=n_compressed_coils, rotate=rotate)
+        compression_op = to_pca_layout.H @ pca_compression_op @ to_pca_layout
+        (kdata_coil_compressed,) = compression_op(self.data)
         del kdata_flattened
-        # reshape to original dimensions and undo permutation
-        kdata_coil_compressed = torch.reshape(
-            kdata_coil_compressed_flattened, [*kdata_permuted.shape[:-1], n_compressed_coils]
-        ).permute(*np.argsort(permute_order))
 
-        return type(self)(self.header.clone(), kdata_coil_compressed, self.traj.clone())
+        kdata = type(self)(self.header.clone(), kdata_coil_compressed, self.traj.clone())
+        if return_compression_op:
+            return kdata, compression_op
+        return kdata
+
+    def prewhiten(self, knoise: KNoise | torch.Tensor, scale_factor: float | torch.Tensor = 1.0) -> Self:
+        """Calculate noise prewhitening matrix and decorrelate coils.
+
+        This is a convenience wrapper around :func:`mrpro.algorithms.prewhiten_kspace`.
+
+        Parameters
+        ----------
+        knoise
+            Noise measurements. Either a KNoise object or a tensor of shape ``(..., coils, k0)``.
+        scale_factor
+            Square root is applied on the noise covariance matrix. Used to adjust for effective noise bandwidth
+            and difference in sampling rate between noise calibration and actual measurement:
+            ``scale_factor = (T_acq_dwell/T_noise_dwell)*NoiseReceiverBandwidthRatio``
+
+        Returns
+        -------
+            Prewhitened copy of k-space data.
+        """
+        from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
+
+        if not isinstance(knoise, KNoise):
+            if knoise.ndim == 2:
+                knoise = rearrange(knoise, 'coils k0 -> 1 coils 1 1 k0')
+            else:
+                knoise = rearrange(knoise, '... coils k0 -> ... coils 1 1 k0')
+            knoise = KNoise(knoise)
+
+        whitened = prewhiten_kspace(self, knoise, scale_factor)
+        return type(self)(whitened.header, whitened.data, whitened.traj)
 
     def remove_readout_os(self: Self) -> Self:
         """Remove any oversampling along the readout direction.
