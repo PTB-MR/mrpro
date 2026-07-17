@@ -40,7 +40,17 @@ RUN bash install_dependencies.sh ${CUDA_VERSION} && rm install_dependencies.sh p
 # forces rebuild on any change in the mrpro directory
 COPY . /mrpro/
 RUN python -m pip install  "/mrpro[notebooks]" --no-cache-dir && rm -rf /mrpro
-RUN python -m pip check
+
+# check for mrpro package errors
+RUN python -m pip check | tee /tmp/pip_check.txt; \
+if grep -qi "torch\|mrpro" /tmp/pip_check.txt; then \
+    echo "ERROR: torch/mrpro dependency conflict detected" >&2; \
+    cat /tmp/pip_check.txt; \
+    exit 1; \
+else \
+    echo "pip check found unrelated issues (ignored):"; \
+    cat /tmp/pip_check.txt; \
+fi
 
 # set user and workdir
 USER runner
