@@ -562,7 +562,7 @@ class Dataclass:
         -------
             The device of the fields or `None` if no field implements a `device` attribute.
         """
-        device: None | torch.device = None
+        device: torch.device | None = None
         for _, data in self.items():
             if not hasattr(data, 'device'):
                 continue

@@ -391,7 +391,7 @@ class NonUniformFastFourierOpGramOp(LinearOperator):
 
         """
         super().__init__()
-        self.nufft_gram: None | LinearOperator = None
+        self.nufft_gram: LinearOperator | None = None
 
         if not nufft_op._dimension_210:
             return
