@@ -7,6 +7,7 @@ from collections.abc import Callable, Mapping, Sequence
 from importlib.metadata import version
 from types import EllipsisType
 from typing import TYPE_CHECKING, Literal, cast
+from xml.etree import ElementTree as ET
 
 import h5py
 import ismrmrd
@@ -121,7 +122,18 @@ class KData(Dataclass):
         # Can raise FileNotFoundError
         with ismrmrd.File(filename, 'r') as file:
             dataset = file[list(file.keys())[dataset_idx]]
-            ismrmrd_header = dataset.header
+            try:
+                ismrmrd_header = dataset.header
+            except TypeError:
+                root = ET.fromstring(dataset._contents['xml'][0])  # noqa: S314
+                prefix = root.tag.removesuffix('ismrmrdHeader')
+                measurement = root.find(f'{prefix}measurementInformation')
+                if measurement is not None and measurement.find(f'{prefix}patientPosition') is None:
+                    ET.SubElement(measurement, f'{prefix}patientPosition').text = 'HFS'
+                for encoding in root.findall(f'{prefix}encoding'):
+                    if encoding.find(f'{prefix}trajectory') is None:
+                        ET.SubElement(encoding, f'{prefix}trajectory').text = 'other'
+                ismrmrd_header = ismrmrd.xsd.CreateFromDocument(ET.tostring(root))
             acquisitions = dataset.acquisitions[:]
             try:
                 mtime: int = h5py.h5g.get_objinfo(dataset['data']._contents.id).mtime
