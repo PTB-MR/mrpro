@@ -97,7 +97,9 @@ def test_KData_from_file_does_not_repair_unrelated_required_fields(ismrmrd_cart,
         encoding.remove(recon_space)
         file['dataset/xml'][0] = ET.tostring(root, encoding='utf-8')
 
-    with pytest.raises(TypeError, match='reconSpace'):
+    # The XML parser raises TypeError with ismrmrd >=1.15; older versions
+    # defer validation to KHeader, which raises ValueError instead.
+    with pytest.raises((TypeError, ValueError), match=r'reconSpace|Missing parameters'):
         KData.from_file(filename, DummyTrajectory())
 
 
