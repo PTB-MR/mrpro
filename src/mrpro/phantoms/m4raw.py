@@ -104,7 +104,7 @@ class M4RawDataset(torch.utils.data.Dataset):
         echo_spacing = [
             ms_to_s(float(e.replace('ms', ''))) for e in get('ns0:sequenceParameters/ns0:echo_spacing') if e != 'N/A'
         ]
-        echo_train_length = int(get('ns0:encoding/ns0:echoTrainLength')[0])
+        echo_train_length = int(get('ns0:sequenceParameters/ns0:echo_train_length')[0])
         sequence_type = get('ns0:sequenceParameters/ns0:sequence_type')[0]
         model = get('ns0:acquisitionSystemInformation/ns0:systemModel')[0]
         vendor = get('ns0:acquisitionSystemInformation/ns0:systemVendor')[0]
