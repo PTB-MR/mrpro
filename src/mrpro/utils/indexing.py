@@ -101,10 +101,10 @@ class Indexer:
         has_fancy_index = False
         """Are there any advanced indices, such as boolean or integer array indices?"""
 
-        vectorized_shape: None | tuple[int, ...] = None
+        vectorized_shape: tuple[int, ...] | None = None
         """Number of dimensions of the integer indices"""
 
-        expanded_index: list[slice | torch.Tensor | tuple[int, ...] | None | int] = []
+        expanded_index: list[slice | torch.Tensor | tuple[int, ...] | int | None] = []
         """"Index with ellipsis expanded to full slices"""
 
         # basics checks and figuring out the number of axes already covered by the index,
@@ -332,7 +332,7 @@ class Indexer:
             return tensor
 
         # we need to modify the fancy index to efficiently handle broadcasted dimensions
-        fancy_index: list[None | tuple[int, ...] | torch.Tensor | slice] = []
+        fancy_index: list[tuple[int, ...] | torch.Tensor | slice | None] = []
         tensor_index = 0
         stride = tensor.stride()
         for idx in self.fancy_index:

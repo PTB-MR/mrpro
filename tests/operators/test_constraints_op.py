@@ -28,7 +28,7 @@ def test_constraints_operator_bounds(bounds: tuple[tuple[float | None, float | N
     constraints_op = ConstraintsOp(bounds, beta_sigmoid=beta, beta_softplus=beta)
     (cx,) = constraints_op(x)
 
-    def isset(bound: None | float):
+    def isset(bound: float | None):
         return bound is not None and torch.tensor(bound).isfinite()
 
     # check if min/max values of transformed tensor match bounds
