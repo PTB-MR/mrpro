@@ -27,7 +27,7 @@ def lbfgs(
     tolerance_grad: float = 1e-07,
     tolerance_change: float = 1e-09,
     history_size: int = 10,
-    line_search_fn: None | Literal['strong_wolfe'] = 'strong_wolfe',
+    line_search_fn: Literal['strong_wolfe'] | None = 'strong_wolfe',
     callback: Callable[[OptimizerStatus], bool | None] | None = None,
 ) -> tuple[torch.Tensor, ...]:
     r"""
