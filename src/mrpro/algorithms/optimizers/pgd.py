@@ -29,7 +29,7 @@ def pgd(
     max_iterations: int = 128,
     backtrack_factor: float = 1.0,
     convergent_iterates_variant: bool = False,
-    callback: Callable[[PGDStatus], None | bool] | None = None,
+    callback: Callable[[PGDStatus], bool | None] | None = None,
 ) -> tuple[torch.Tensor, ...]:
     r"""Proximal gradient descent algorithm for solving problem :math:`min_x f(x) + g(x)`.
 

@@ -62,7 +62,7 @@ class Reconstruction(TensorAttributeMixin, torch.nn.Module, ABC):
         self,
         kdata: KData,
         csm_calculation: Callable[[IData], CsmData] = CsmData.from_idata_walsh,
-        noise: KNoise | None | Literal[False] = None,
+        noise: KNoise | Literal[False] | None = None,
     ) -> Self:
         """Update (in place) the CSM from KData.
 
@@ -91,8 +91,8 @@ class Reconstruction(TensorAttributeMixin, torch.nn.Module, ABC):
         self,
         kdata: KData,
         *,
-        csm: CsmData | None | Literal[False] = None,
-        noise: KNoise | None | Literal[False] = None,
+        csm: CsmData | Literal[False] | None = None,
+        noise: KNoise | Literal[False] | None = None,
     ) -> IData:
         """Direct reconstruction of the MR acquisition.
 
