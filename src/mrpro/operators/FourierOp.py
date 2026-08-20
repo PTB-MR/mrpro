@@ -258,14 +258,14 @@ class FourierGramOp(LinearOperator):
                     'FourierGramOp does not support non-uniform FFTs combined with Cartesian sampling '
                     'that differs along the NUFFT dimensions.'
                 )
-            self.fast_fourier_gram: None | LinearOperator = (
+            self.fast_fourier_gram: LinearOperator | None = (
                 fourier_op._fast_fourier_op.H @ fourier_op._cart_sampling_op.gram @ fourier_op._fast_fourier_op
             )
         else:
             self.fast_fourier_gram = None
 
         if fourier_op._non_uniform_fast_fourier_op:
-            self.nufft_gram: None | LinearOperator = fourier_op._non_uniform_fast_fourier_op.gram
+            self.nufft_gram: LinearOperator | None = fourier_op._non_uniform_fast_fourier_op.gram
         else:
             self.nufft_gram = None
 
