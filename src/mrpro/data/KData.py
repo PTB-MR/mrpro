@@ -125,6 +125,7 @@ class KData(Dataclass):
             try:
                 ismrmrd_header = dataset.header
             except TypeError:
+# Ismrmrd files created with ismrmrd<1.15 can lead to errors regarding patientPosition and trajectory type when reading in with ismrmrd >=1.15.
                 root = ET.fromstring(dataset._contents['xml'][0])  # noqa: S314
                 prefix = root.tag.removesuffix('ismrmrdHeader')
                 measurement = root.find(f'{prefix}measurementInformation')
