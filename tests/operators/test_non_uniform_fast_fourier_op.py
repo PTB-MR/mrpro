@@ -427,12 +427,12 @@ def test_non_uniform_fast_fourier_op_gram_cuda() -> None:
     image = rng.complex64_tensor((n_timepoints, 1, 1, *image_shape)).cuda()
 
     nufft_op = create_time_varying_2d_nufft_op(n_timepoints=n_timepoints, image_shape=image_shape).cuda()
-    gram = nufft_op.gram.cuda()
+    gram = nufft_op.gram
     (result,) = gram(image)
     assert result.is_cuda
 
     nufft_op = create_time_varying_2d_nufft_op(n_timepoints=n_timepoints, image_shape=image_shape)
-    gram = nufft_op.gram
+    gram = nufft_op.gram.cuda()
     (result,) = gram(image)
     assert result.is_cuda
 
