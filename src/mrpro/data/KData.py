@@ -109,7 +109,7 @@ class KData(Dataclass):
             path to the ISMRMRD file or file-like object
         trajectory
             KTrajectoryCalculator to calculate the k-space trajectory or an already calculated KTrajectory
-            If a KTrajectory is given, the shape should be `(acquisisions 1 1 k0)` in the same order as the acquisitions
+            If a KTrajectory is given, the shape should be `(acquisitions 1 1 k0)` in the same order as the acquisitions
             in the ISMRMRD file.
         header_overwrites
             dictionary of key-value pairs to overwrite the header
@@ -129,7 +129,51 @@ class KData(Dataclass):
                 mtime = 0
             modification_time = datetime.datetime.fromtimestamp(mtime)
 
-        acquisitions = [acq for acq in acquisitions if acquisition_filter_criterion(acq)]
+        return cls.from_ismrmrd(
+            ismrmrd_header,
+            acquisitions,
+            trajectory,
+            header_overwrites=header_overwrites,
+            acquisition_filter_criterion=acquisition_filter_criterion,
+            modification_time=modification_time,
+        )
+
+    @classmethod
+    def from_ismrmrd(
+        cls,
+        ismrmrd_header: ismrmrd.xsd.ismrmrdschema.ismrmrd.ismrmrdHeader,
+        acquisitions: Sequence[ismrmrd.Acquisition],
+        trajectory: KTrajectoryCalculator | KTrajectory | KTrajectoryIsmrmrd,
+        header_overwrites: Mapping[str, object] | None = None,
+        acquisition_filter_criterion: Callable | None = is_image_acquisition,
+        modification_time: datetime.datetime | None = None,
+    ) -> Self:
+        """Create KData from an ISMRMRD header and a list of ISMRMRD acquisitions.
+
+        Parameters
+        ----------
+        ismrmrd_header
+            ISMRMRD header (ismrmrd.xsd.ismrmrdschema.ismrmrd.ismrmrdHeader)
+        acquisitions
+            sequence of ISMRMRD acquisitions
+        trajectory
+            KTrajectoryCalculator to calculate the k-space trajectory or an already calculated KTrajectory
+            If a KTrajectory is given, the shape should be `(acquisitions 1 1 k0)` in the same order as the acquisitions
+            in the ISMRMRD file.
+        header_overwrites
+            dictionary of key-value pairs to overwrite the header
+        acquisition_filter_criterion
+            function which returns True if an acquisition should be included in KData
+            If None, no filtering is applied.
+        modification_time
+            optional datetime to use as fallback for the header datetime field.
+            If None, the current time is used as fallback.
+        """
+        if modification_time is None:
+            modification_time = datetime.datetime.now()
+
+        if acquisition_filter_criterion is not None:
+            acquisitions = [acq for acq in acquisitions if acquisition_filter_criterion(acq)]
 
         # we need the same number of receiver coils for all acquisitions
         n_coils_available = {acq.data.shape[0] for acq in acquisitions}
