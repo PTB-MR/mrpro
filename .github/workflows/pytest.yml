@@ -55,6 +55,7 @@ jobs:
           ZENODO_TOKEN: ${{ secrets.ZENODO_TOKEN }}
         shell: bash
         run: |
+          set -o pipefail
           if [ "${{ matrix.python-version == '3.12' }}" = "true" ]; then
             python -m pytest -m "not cuda" --junitxml=pytest.xml \
               --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt
