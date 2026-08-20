@@ -153,7 +153,7 @@ class KData(Dataclass):
         Parameters
         ----------
         ismrmrd_header
-            ISMRMRD header (ismrmrd.xsd.ismrmrdschema.ismrmrd.ismrmrdHeader)
+            ISMRMRD header object
         acquisitions
             sequence of ISMRMRD acquisitions
         trajectory
