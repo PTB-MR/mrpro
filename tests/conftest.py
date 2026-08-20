@@ -128,18 +128,22 @@ def random_full_ismrmrd_header(request) -> xsd.ismrmrdschema.ismrmrdHeader:
         ),
         echoTrainLength=rng.uint8(),
         parallelImaging=xsd.parallelImagingType(
-            accelerationFactor=xsd.accelerationFactorType(rng.uint8(), rng.uint8()),
+            accelerationFactor=xsd.accelerationFactorType(
+                kspace_encoding_step_1=rng.uint8(),
+                kspace_encoding_step_2=rng.uint8(),
+            ),
             calibrationMode=xsd.calibrationModeType('other'),
         ),
         encodingLimits=xsd.encodingLimitsType(
-            kspace_encoding_step_1=xsd.limitType(0, 0, 0),
-            kspace_encoding_step_2=xsd.limitType(0, 0, 0),
+            kspace_encoding_step_1=xsd.limitType(minimum=0, maximum=0, center=0),
+            kspace_encoding_step_2=xsd.limitType(minimum=0, maximum=0, center=0),
         ),
     )
     measurement_information = xsd.measurementInformationType(
         measurementID=rng.ascii(10),
         seriesDate=XmlDate(rng.uint16(1970, 2030), rng.uint8(1, 12), rng.uint8(0, 30)),
         seriesTime=XmlTime(rng.uint8(0, 23), rng.uint8(0, 59), rng.uint8(0, 59)),
+        patientPosition=xsd.patientPositionType.HFS,
         sequenceName=rng.ascii(10),
     )
 

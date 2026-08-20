@@ -62,7 +62,10 @@ import zenodo_get
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
 zenodo_get.download(
-    record='14617082', retry_attempts=5, output_dir=data_folder, access_token=os.environ.get('ZENODO_TOKEN')
+    record='14617082',
+    retry_attempts=5,
+    output_dir=data_folder,
+    access_token=os.environ.get('ZENODO_TOKEN'),
 )
 
 # %%
@@ -70,10 +73,12 @@ import mrpro
 
 # We have embedded the trajectory information in the ISMRMRD files.
 kdata_402spokes = mrpro.data.KData.from_file(
-    data_folder / 'radial2D_402spokes_golden_angle_with_traj.h5', mrpro.data.traj_calculators.KTrajectoryIsmrmrd()
+    data_folder / 'radial2D_402spokes_golden_angle_with_traj.h5',
+    mrpro.data.traj_calculators.KTrajectoryIsmrmrd(),
 )
 kdata_24spokes = mrpro.data.KData.from_file(
-    data_folder / 'radial2D_24spokes_golden_angle_with_traj.h5', mrpro.data.traj_calculators.KTrajectoryIsmrmrd()
+    data_folder / 'radial2D_24spokes_golden_angle_with_traj.h5',
+    mrpro.data.traj_calculators.KTrajectoryIsmrmrd(),
 )
 
 # %% [markdown]
@@ -191,7 +196,7 @@ def callback(optimizer_status: PDHGStatus) -> None:
     f=f,
     g=g,
     operator=K,
-    initial_values=(img_sense_24.data,),
+    initial_values=(img_direct_24.data,),
     max_iterations=257,
     callback=callback,
 )
@@ -224,7 +229,12 @@ show_images(
     img_direct_24.rss().squeeze(),
     img_sense_24.rss().squeeze(),
     img_pdhg_24.abs().squeeze(),
-    titles=['402 spokes', '24 spokes (direct)', '24 spokes (SENSE)', '24 spokes (PDHG)'],
+    titles=[
+        '402 spokes',
+        '24 spokes (direct)',
+        '24 spokes (SENSE)',
+        '24 spokes (PDHG)',
+    ],
 )
 
 

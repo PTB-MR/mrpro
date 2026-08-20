@@ -62,7 +62,7 @@ from einops import rearrange
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
 zenodo_get.download(
-    record='15849308', retry_attempts=5, output_dir=data_folder, access_token=os.environ.get('ZENODO_TOKEN')
+    record='20758499', retry_attempts=5, output_dir=data_folder, access_token=os.environ.get('ZENODO_TOKEN')
 )
 
 # %% [markdown]

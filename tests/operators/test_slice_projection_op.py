@@ -260,3 +260,14 @@ def test_slice_projection_op_cuda() -> None:
     assert result.is_cuda
 
     # Creation on GPU is not supported (see docstring)
+
+
+def test_slice_projection_op_width() -> None:
+    """Test profile width via the adjoint"""
+    width = 11
+    input_shape = SpatialDimension(100, 100, 100)
+    slice_profile = SliceSmoothedRectangular(width, 0)
+    operator = SliceProjectionOp(input_shape=input_shape, slice_profile=slice_profile, slice_shift=-0.5)
+    slices = torch.ones(1, 1, 100, 100)
+    (volume,) = operator.adjoint(slices)
+    assert (volume[:, 50, 50] > 0).sum() == width

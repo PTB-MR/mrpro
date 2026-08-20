@@ -1,19 +1,23 @@
 """Tests for the KData class."""
 
 import re
+import shutil
 from collections.abc import Sequence
 from types import EllipsisType
 from typing import Literal
+from xml.etree import ElementTree as ET
 
+import h5py
 import pytest
 import torch
 from einops import repeat
-from mrpro.data import KData, KHeader, KTrajectory, SpatialDimension
+from mrpro.data import KData, KHeader, KNoise, KTrajectory, SpatialDimension
 from mrpro.data.acq_filters import has_n_coils, is_coil_calibration_acquisition, is_image_acquisition
 from mrpro.data.Dataclass import InconsistentDeviceError
+from mrpro.data.enums import TrajectoryType
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
-from mrpro.operators import FastFourierOp
+from mrpro.operators import FastFourierOp, LinearOperator
 from mrpro.utils import RandomGenerator
 
 from tests import relative_image_difference
@@ -24,6 +28,79 @@ def test_KData_from_file(ismrmrd_cart) -> None:
     """Read in data from file."""
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     assert kdata is not None
+
+
+def test_KData_from_file_repairs_missing_required_xml_fields(ismrmrd_cart, tmp_path) -> None:
+    """Required fields omitted by older writers are repaired without changing the file."""
+    filename = tmp_path / 'missing_fields.h5'
+    shutil.copy2(ismrmrd_cart.filename, filename)
+    with h5py.File(filename, 'r+') as file:
+        xml = file['dataset/xml'][0]
+        root = ET.fromstring(xml)  # noqa: S314
+        namespace = root.tag.partition('}')[0].removeprefix('{')
+        qualified = lambda name: f'{{{namespace}}}{name}'  # noqa: E731
+        encoding = root.find(qualified('encoding'))
+        assert encoding is not None
+        trajectory = encoding.find(qualified('trajectory'))
+        assert trajectory is not None
+        encoding.remove(trajectory)
+        measurement = ET.Element(qualified('measurementInformation'))
+        ET.SubElement(measurement, qualified('protocolName')).text = 'legacy'
+        acquisition_system = root.find(qualified('acquisitionSystemInformation'))
+        assert acquisition_system is not None
+        root.insert(list(root).index(acquisition_system), measurement)
+        file['dataset/xml'][0] = ET.tostring(root, encoding='utf-8')
+        xml_before = file['dataset/xml'][0]
+
+    kdata = KData.from_file(
+        filename, DummyTrajectory(), header_overwrites={'trajectory_type': TrajectoryType.CARTESIAN}
+    )
+
+    assert kdata.header.patient_position.value == 'HFS'
+    assert kdata.header.trajectory_type.value == 'cartesian'
+    with h5py.File(filename, 'r') as file:
+        assert file['dataset/xml'][0] == xml_before
+
+
+def test_KData_from_file_repairs_invalid_patient_position(ismrmrd_cart, tmp_path) -> None:
+    """Legacy free-text patient positions fall back to the KHeader default."""
+    filename = tmp_path / 'invalid_patient_position.h5'
+    shutil.copy2(ismrmrd_cart.filename, filename)
+    with h5py.File(filename, 'r+') as file:
+        root = ET.fromstring(file['dataset/xml'][0])  # noqa: S314
+        namespace = root.tag.partition('}')[0].removeprefix('{')
+        qualified = lambda name: f'{{{namespace}}}{name}'  # noqa: E731
+        measurement = ET.Element(qualified('measurementInformation'))
+        ET.SubElement(measurement, qualified('patientPosition')).text = 'head first'
+        acquisition_system = root.find(qualified('acquisitionSystemInformation'))
+        assert acquisition_system is not None
+        root.insert(list(root).index(acquisition_system), measurement)
+        file['dataset/xml'][0] = ET.tostring(root, encoding='utf-8')
+
+    with pytest.warns(Warning, match='not a valid'):
+        kdata = KData.from_file(filename, DummyTrajectory())
+    assert kdata.header.patient_position.value == 'HFS'
+
+
+def test_KData_from_file_does_not_repair_unrelated_required_fields(ismrmrd_cart, tmp_path) -> None:
+    """Compatibility handling remains limited to fields with safe defaults."""
+    filename = tmp_path / 'missing_recon_space.h5'
+    shutil.copy2(ismrmrd_cart.filename, filename)
+    with h5py.File(filename, 'r+') as file:
+        root = ET.fromstring(file['dataset/xml'][0])  # noqa: S314
+        namespace = root.tag.partition('}')[0].removeprefix('{')
+        qualified = lambda name: f'{{{namespace}}}{name}'  # noqa: E731
+        encoding = root.find(qualified('encoding'))
+        assert encoding is not None
+        recon_space = encoding.find(qualified('reconSpace'))
+        assert recon_space is not None
+        encoding.remove(recon_space)
+        file['dataset/xml'][0] = ET.tostring(root, encoding='utf-8')
+
+    # The XML parser raises TypeError with ismrmrd >=1.15; older versions
+    # defer validation to KHeader, which raises ValueError instead.
+    with pytest.raises((TypeError, ValueError), match=r'reconSpace|Missing parameters'):
+        KData.from_file(filename, DummyTrajectory())
 
 
 def test_KData_random_cart_undersampling(ismrmrd_cart_random_us) -> None:
@@ -353,23 +430,54 @@ def test_KData_remove_readout_os(monkeypatch, random_kheader: KHeader) -> None:
 
 
 def test_KData_compress_coils(ismrmrd_cart_high_res) -> None:
-    """Test coil combination does not alter image content (much)."""
+    """Test coil combination does not alter image content."""
     kdata = KData.from_file(ismrmrd_cart_high_res.filename, DummyTrajectory())
-    kdata = kdata.compress_coils(n_compressed_coils=4)
+    kdata_compressed = kdata.compress_coils(n_compressed_coils=2)
+    assert kdata.shape[-4] != 2, 'coil compression changed original data'
+    assert kdata_compressed.shape[-4] == 2, 'coil compression did not compress to correct number of coils'
+
+    # RSS should stay the same after compression
     ff_op = FastFourierOp(
-        dim=(-1, -2),
-        recon_matrix=[kdata.header.recon_matrix.x, kdata.header.recon_matrix.y],
-        encoding_matrix=[kdata.header.encoding_matrix.x, kdata.header.encoding_matrix.y],
+        dim=(-1, -2), recon_matrix=kdata.header.recon_matrix, encoding_matrix=kdata.header.encoding_matrix
     )
     (reconstructed_img,) = ff_op.adjoint(kdata.data)
+    (reconstructed_img_compressed,) = ff_op.adjoint(kdata_compressed.data)
+    reconstructed_img = reconstructed_img.abs().square().sum(-4).sqrt()
+    reconstructed_img_compressed = reconstructed_img_compressed.abs().square().sum(-4).sqrt()
+    assert relative_image_difference(reconstructed_img, reconstructed_img_compressed) <= 0.01
 
-    # Image content of each coil is the same. Therefore we only compare one coil image but we need to normalize.
-    reconstructed_img = reconstructed_img[0, 0, 0, ...].abs()
-    reconstructed_img /= reconstructed_img.max()
-    ref_img = ismrmrd_cart_high_res.img_ref[0, 0, 0, ...].abs()
-    ref_img /= ref_img.max()
 
-    assert relative_image_difference(reconstructed_img, ref_img) <= 0.1
+def test_KData_compress_coils_return_compression_op(consistently_shaped_kdata: KData) -> None:
+    """Test returning the coil compression operator."""
+    n_compressed_coils = 2
+    orig_kdata_shape = consistently_shaped_kdata.data.shape
+
+    kdata, compression_op = consistently_shaped_kdata.compress_coils(
+        n_compressed_coils=n_compressed_coils, return_compression_op=True
+    )
+    (compressed_data,) = compression_op(consistently_shaped_kdata.data)
+    (expanded_data,) = compression_op.H(kdata.data)
+
+    assert kdata.data.shape == (*orig_kdata_shape[:-4], n_compressed_coils, *orig_kdata_shape[-3:])
+    assert isinstance(compression_op, LinearOperator)
+    torch.testing.assert_close(compressed_data, kdata.data)
+    assert expanded_data.shape == consistently_shaped_kdata.data.shape
+
+
+def test_KData_compress_coils_rotate(consistently_shaped_kdata: KData) -> None:
+    """Test coil compression with varimax rotation."""
+    n_compressed_coils = 2
+
+    kdata, compression_op = consistently_shaped_kdata.compress_coils(
+        n_compressed_coils=n_compressed_coils, return_compression_op=True
+    )
+    (data_expanded,) = compression_op.H(kdata.data)
+
+    kdata_rotated, rotated_compression_op = consistently_shaped_kdata.compress_coils(
+        n_compressed_coils=n_compressed_coils, rotate=True, return_compression_op=True
+    )
+    (data_expanded_rotated,) = rotated_compression_op.H(kdata_rotated.data)
+    torch.testing.assert_close(data_expanded, data_expanded_rotated)
 
 
 @pytest.mark.parametrize(
@@ -377,6 +485,7 @@ def test_KData_compress_coils(ismrmrd_cart_high_res) -> None:
     [
         (None, ...),
         ((0,), ...),
+        ((0, 1), ...),
         ((-2, -1), ...),
         (None, (-1, -2, -3)),
         (None, (0, -1, -2, -3)),
@@ -384,6 +493,7 @@ def test_KData_compress_coils(ismrmrd_cart_high_res) -> None:
     ids=[
         'single_compression',
         'batching_along_dim0',
+        'batching_along_leading_dims',
         'batching_along_dim-2_and_dim-1',
         'single_compression_for_last_3_dims',
         'single_compression_for_last_3_and_first_dims',
@@ -419,6 +529,50 @@ def test_KData_compress_coils_error_n_coils(consistently_shaped_kdata: KData) ->
     existing_coils = consistently_shaped_kdata.data.shape[-4]
     with pytest.raises(ValueError, match='greater'):
         consistently_shaped_kdata.compress_coils(existing_coils + 1)
+
+
+def test_KData_prewhiten() -> None:
+    """Test split and batched prewhitening for tensor and KNoise inputs."""
+    n_batch = 2
+    n_coils = 4
+    n_k0 = 1024
+
+    rng = RandomGenerator(0)
+    kspace_data = rng.complex64_tensor((n_batch, n_coils, 1, 1, n_k0))
+    noise_data = rng.complex64_tensor((n_batch, n_coils, 1, 1, n_k0))
+
+    # create correlation between first two coils
+    noise_data[:, 0] += noise_data[:, 1] / 2
+    kspace_data[..., 0, :, :, :] += kspace_data[..., 1, :, :, :] / 2
+
+    traj = DummyTrajectory()(n_k0, torch.zeros(1, 1, 1, 1, 1), torch.zeros(1, 1, 1, 1, 1))
+    matrix = SpatialDimension(1, 1, n_k0)
+    kdata = KData(header=KHeader(matrix, matrix, matrix, matrix), data=kspace_data, traj=traj)
+    knoise = KNoise(noise_data)
+
+    whitened = kdata.prewhiten(knoise)
+
+    # result should have cloned header
+    assert whitened.header is not kdata.header
+    assert whitened.traj.kx is not kdata.traj.kx
+    assert (whitened.traj.kx == kdata.traj.kx).all()
+
+    # result should be uncorrelated
+    covariance = (1.0 / n_k0) * torch.einsum('ax,bx->ab', whitened.data[0].squeeze(), whitened.data.conj()[0].squeeze())
+    torch.testing.assert_close(covariance, torch.eye(n_coils, dtype=torch.complex64), atol=0.1, rtol=0)
+
+    # batch equivalence
+    split_whitened = torch.cat(
+        [kdata[idx].prewhiten(noise_data[idx, :, 0, 0, :]).data for idx in range(n_batch)],
+        dim=0,
+    )
+    tensor_whitened = kdata.prewhiten(noise_data[..., 0, 0, :])
+    torch.testing.assert_close(whitened.data, split_whitened)
+    torch.testing.assert_close(tensor_whitened.data, split_whitened)
+
+    shared_noise_whitened = kdata.prewhiten(noise_data[:1, :, 0, 0, :])
+    broadcast_knoise_whitened = kdata.prewhiten(KNoise(noise_data[:1]))
+    torch.testing.assert_close(shared_noise_whitened.data, broadcast_knoise_whitened.data)
 
 
 def test_KData_to_file(ismrmrd_cart, tmp_path_factory):
