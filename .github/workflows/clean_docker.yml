@@ -1,4 +1,4 @@
-name: Prune old docker test images
+name: Clean docker
 
 on:
   schedule:
