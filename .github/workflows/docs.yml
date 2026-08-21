@@ -6,9 +6,6 @@ on:
       - main
   pull_request:
 
-env:
-  IMAGE_NAME: ghcr.io/ptb-mr/mrpro_runner
-
 permissions:
   contents: write
 
@@ -43,7 +40,7 @@ jobs:
       pull-requests: write
       contents: write
     container:
-      image: ${{ env.IMAGE_NAME }}:latest
+      image: ghcr.io/ptb-mr/mrpro_runner:latest
       options: --user root
     strategy:
       fail-fast: false
@@ -115,7 +112,7 @@ jobs:
     needs: run_notebook
     runs-on: ubuntu-latest
     container:
-      image: ${{ env.IMAGE_NAME }}:latest
+      image: ghcr.io/ptb-mr/mrpro_runner:latest
       options: --user runner
     steps:
       - name: Checkout
