@@ -20,12 +20,36 @@ TESTCASES = pytest.mark.parametrize(
     ],
 )
 
+TESTCASES_FAST = pytest.mark.parametrize(
+    ('input_shape', 'arguments', 'output_shape'),
+    [
+        ((9, 16), {'dim': (-1, 0), 'patch_size': (2, 3), 'stride': (2, 3), 'dilation': 1}, (24, 3, 2)),
+        ((9, 16), {'dim': (-1, 0), 'patch_size': (2, 3), 'stride': None, 'flatten_patches': False}, (8, 3, 3, 2)),
+    ],
+)
+
+
+@TESTCASES_FAST
+def test_patch_op_adjoints_match(
+    input_shape: Sequence[int], arguments: dict[str, Any], output_shape: Sequence[int]
+) -> None:
+    """Test PatchOp _adjoint_scatter and _adjoint_fast match."""
+    rng = RandomGenerator(seed=0)
+    v = rng.complex64_tensor(size=output_shape)
+    domain_size = (
+        input_shape[arguments['dim']]
+        if isinstance(arguments['dim'], int)
+        else [input_shape[ax] for ax in arguments['dim']]
+    )
+    operator = PatchOp(**arguments, domain_size=domain_size)
+    assert torch.allclose(operator._adjoint_scatter(v), operator._adjoint_fast(v))
+
 
 @TESTCASES
 def test_patch_op_adjointness(
     input_shape: Sequence[int], arguments: dict[str, Any], output_shape: Sequence[int]
 ) -> None:
-    """Test adjointness and shape of Rearrange Op."""
+    """Test adjointness and shape of PatchOp."""
     rng = RandomGenerator(seed=0)
     u = rng.complex64_tensor(size=input_shape)
     v = rng.complex64_tensor(size=output_shape)
