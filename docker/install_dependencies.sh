@@ -1,26 +1,42 @@
-# pre-install cpu-version of torch by default
-# either use the 1st argument as specifier (cu118, cu124 or cu126)
-python -m pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/${1:-cpu}
+#!/bin/bash
+set -euo pipefail
 
-#parse dependencies
-python -m pip install --no-cache-dir toml
+# pre-install cuda/cpu-specific torch build first
+# CUDA_VERSION build arg selects the variant (cu118, cu121, cu124, cu126, or cpu)
+python -m pip install --no-cache-dir torch torchvision --index-url "https://download.pytorch.org/whl/${CUDA_VERSION:-cpu}"
+
+# parse dependencies, excluding torch/torchvision (already installed above,
+# with a specific CUDA build — don't let a generic pypi resolve overwrite it)
 dependencies=$(python -c "
-import toml
-pyproject = toml.load('pyproject.toml')
+import sys
+try:
+    import tomllib as toml_lib
+    load = lambda f: toml_lib.load(f)
+    mode = 'rb'
+except ImportError:
+    import toml as toml_lib
+    load = lambda f: toml_lib.load(f)
+    mode = 'r'
+
+with open('pyproject.toml', mode) as f:
+    pyproject = load(f)
+
 all_deps = (
     pyproject['project']['dependencies'] +
     sum(pyproject['project'].get('optional-dependencies', {}).values(), [])
 )
-print(' '.join(f'\"{dep}\"' for dep in all_deps))
+excluded = {'torch', 'torchvision'}
+filtered = [d for d in all_deps if d.split('[')[0].split('=')[0].split('>')[0].split('<')[0].strip().lower() not in excluded]
+print(' '.join(f'\"{dep}\"' for dep in filtered))
 ")
+
 if [ -z "$dependencies" ]; then
     echo "ERROR: dependency parsing produced an empty list" >&2
     exit 1
 fi
-echo Dependencies to install: $dependencies
+echo "Dependencies to install: $dependencies"
 
-# install dependencies
-eval python -m pip install --no-cache-dir $dependencies
+read -ra dep_array <<< "$dependencies"
+python -m pip install --no-cache-dir "${dep_array[@]}"
 
-#clean up
 rm -rf /root/.cache
