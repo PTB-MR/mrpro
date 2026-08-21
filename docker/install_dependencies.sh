@@ -27,16 +27,17 @@ all_deps = (
 )
 excluded = {'torch', 'torchvision'}
 filtered = [d for d in all_deps if d.split('[')[0].split('=')[0].split('>')[0].split('<')[0].strip().lower() not in excluded]
-print(' '.join(f'\"{dep}\"' for dep in filtered))
+print('\n'.join(filtered))
 ")
 
 if [ -z "$dependencies" ]; then
     echo "ERROR: dependency parsing produced an empty list" >&2
     exit 1
 fi
-echo "Dependencies to install: $dependencies"
+echo "Dependencies to install:"
+echo "$dependencies"
 
-read -ra dep_array <<< "$dependencies"
+mapfile -t dep_array <<< "$dependencies"
 python -m pip install --no-cache-dir "${dep_array[@]}"
 
 rm -rf /root/.cache
