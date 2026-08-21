@@ -190,7 +190,7 @@ class KHeader(Dataclass):
         if enc.echoTrainLength is not None:
             parameters['echo_train_length'] = enc.echoTrainLength
 
-        if enc.trajectory is not None:
+        if isinstance(enc.trajectory, ismrmrdschema.trajectoryType):
             parameters['trajectory_type'] = enums.TrajectoryType(enc.trajectory.value)
 
         # Either use the series or study time if available
@@ -217,7 +217,7 @@ class KHeader(Dataclass):
             if header.measurementInformation.protocolName is not None:
                 parameters['protocol_name'] = header.measurementInformation.protocolName
 
-            if header.measurementInformation.patientPosition is not None:
+            if isinstance(header.measurementInformation.patientPosition, ismrmrdschema.patientPositionType):
                 parameters['patient_position'] = enums.PatientPosition(
                     header.measurementInformation.patientPosition.value
                 )
