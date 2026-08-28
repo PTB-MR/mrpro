@@ -1,5 +1,6 @@
 """Tests for the KData class."""
 
+import datetime
 import re
 import shutil
 from collections.abc import Sequence
@@ -635,3 +636,79 @@ def test_KData_repr(consistently_shaped_kdata: KData) -> None:
 \s{5}patient_name: unknown""",
         actual_repr,
     )
+
+
+def test_KData_from_ismrmrd_matches_from_file(ismrmrd_cart) -> None:
+    """from_ismrmrd should produce the same result as from_file."""
+    kdata_from_file = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    kdata_from_ismrmrd = KData.from_ismrmrd(ismrmrd_cart.ismrmrd_header, ismrmrd_cart.acquisitions, DummyTrajectory())
+    torch.testing.assert_close(kdata_from_ismrmrd.data, kdata_from_file.data)
+    torch.testing.assert_close(kdata_from_ismrmrd.traj.as_tensor(), kdata_from_file.traj.as_tensor())
+    assert kdata_from_ismrmrd.data.shape == kdata_from_file.data.shape
+
+
+def test_KData_from_ismrmrd_manual_filter(ismrmrd_cart) -> None:
+    """from_ismrmrd with pre-filtered acquisitions and acquisition_filter_criterion=None should match default."""
+    # Pre-filter manually, then pass with no filter criterion
+    image_acquisitions = [acq for acq in ismrmrd_cart.acquisitions if is_image_acquisition(acq)]
+    kdata_manual_filtered = KData.from_ismrmrd(
+        ismrmrd_cart.ismrmrd_header,
+        image_acquisitions,
+        DummyTrajectory(),
+        acquisition_filter_criterion=None,
+    )
+
+    kdata_default = KData.from_ismrmrd(
+        ismrmrd_cart.ismrmrd_header,
+        ismrmrd_cart.acquisitions,
+        DummyTrajectory(),
+    )
+    torch.testing.assert_close(kdata_manual_filtered.data, kdata_default.data)
+
+
+def test_Kdata_from_ismrmrd_without_filter_raise_warning(ismrmrd_cart) -> None:
+    """from_ismrmrd without filter criterion should raise warning for test data with noise acquisitions."""
+    with pytest.raises(UserWarning, match='There are different numbers of acquisistions'):
+        KData.from_ismrmrd(
+            ismrmrd_cart.ismrmrd_header,
+            ismrmrd_cart.acquisitions,
+            DummyTrajectory(),
+            acquisition_filter_criterion=None,
+        )
+
+
+def test_KData_from_ismrmrd_modification_time(ismrmrd_cart) -> None:
+    """from_ismrmrd should use the provided modification_time as fallback."""
+    custom_time = datetime.datetime(2020, 6, 15, 12, 0, 0)
+    kdata = KData.from_ismrmrd(
+        ismrmrd_cart.ismrmrd_header, ismrmrd_cart.acquisitions, DummyTrajectory(), modification_time=custom_time
+    )
+    assert kdata.header.datetime == custom_time
+
+
+def test_KData_from_ismrmrd_default_modification_time(ismrmrd_cart) -> None:
+    """from_ismrmrd without modification_time should fall back to now()."""
+    before = datetime.datetime.now()
+    kdata = KData.from_ismrmrd(ismrmrd_cart.ismrmrd_header, ismrmrd_cart.acquisitions, DummyTrajectory())
+    after = datetime.datetime.now()
+    assert kdata.header.datetime is not None
+    assert before <= kdata.header.datetime <= after
+
+
+def test_KData_from_ismrmrd_header_overwrites(ismrmrd_cart) -> None:
+    """from_ismrmrd should apply header_overwrites."""
+    kdata = KData.from_ismrmrd(
+        ismrmrd_cart.ismrmrd_header, ismrmrd_cart.acquisitions, DummyTrajectory(), header_overwrites={'tr': [12.34]}
+    )
+    assert kdata.header.tr == [12.34]
+
+
+def test_KData_from_ismrmrd_empty_after_filter(ismrmrd_cart) -> None:
+    """from_ismrmrd should raise if no acquisitions remain after filtering."""
+    with pytest.raises(ValueError, match='No acquisitions meeting the given filter criteria were found'):
+        KData.from_ismrmrd(
+            ismrmrd_cart.ismrmrd_header,
+            ismrmrd_cart.acquisitions,
+            DummyTrajectory(),
+            acquisition_filter_criterion=lambda _: False,
+        )
