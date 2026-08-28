@@ -647,15 +647,34 @@ def test_KData_from_ismrmrd_matches_from_file(ismrmrd_cart) -> None:
     assert kdata_from_ismrmrd.data.shape == kdata_from_file.data.shape
 
 
-def test_KData_from_ismrmrd_no_filter(ismrmrd_cart) -> None:
-    """from_ismrmrd with acquisition_filter_criterion=None should not filter."""
+def test_KData_from_ismrmrd_manual_filter(ismrmrd_cart) -> None:
+    """from_ismrmrd with pre-filtered acquisitions and acquisition_filter_criterion=None should match default."""
     # Pre-filter manually, then pass with no filter criterion
     image_acquisitions = [acq for acq in ismrmrd_cart.acquisitions if is_image_acquisition(acq)]
-    kdata = KData.from_ismrmrd(
-        ismrmrd_cart.ismrmrd_header, image_acquisitions, DummyTrajectory(), acquisition_filter_criterion=None
+    kdata_manual_filtered = KData.from_ismrmrd(
+        ismrmrd_cart.ismrmrd_header,
+        image_acquisitions,
+        DummyTrajectory(),
+        acquisition_filter_criterion=None,
     )
-    kdata_default = KData.from_ismrmrd(ismrmrd_cart.ismrmrd_header, ismrmrd_cart.acquisitions, DummyTrajectory())
-    torch.testing.assert_close(kdata.data, kdata_default.data)
+
+    kdata_default = KData.from_ismrmrd(
+        ismrmrd_cart.ismrmrd_header,
+        ismrmrd_cart.acquisitions,
+        DummyTrajectory(),
+    )
+    torch.testing.assert_close(kdata_manual_filtered.data, kdata_default.data)
+
+
+def test_Kdata_from_ismrmrd_without_filter_raise_warning(ismrmrd_cart) -> None:
+    """from_ismrmrd without filter criterion should raise warning for test data with noise acquisitions."""
+    with pytest.raises(UserWarning, match='There are different numbers of acquisistions'):
+        KData.from_ismrmrd(
+            ismrmrd_cart.ismrmrd_header,
+            ismrmrd_cart.acquisitions,
+            DummyTrajectory(),
+            acquisition_filter_criterion=None,
+        )
 
 
 def test_KData_from_ismrmrd_modification_time(ismrmrd_cart) -> None:
