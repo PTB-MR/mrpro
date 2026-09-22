@@ -49,7 +49,7 @@ class ElementaryFunctional(Operator[torch.Tensor, tuple[torch.Tensor]], ABC):
 
     def __init__(
         self,
-        target: torch.Tensor | None | complex = None,
+        target: torch.Tensor | complex | None = None,
         weight: torch.Tensor | complex = 1.0,
         dim: int | Sequence[int] | None = None,
         divide_by_n: bool = False,
@@ -92,7 +92,7 @@ class ElementaryFunctional(Operator[torch.Tensor, tuple[torch.Tensor]], ABC):
         self.divide_by_n = divide_by_n
         self.keepdim = keepdim
 
-    def _divide_by_n(self, x: torch.Tensor, shape: None | Sequence[int]) -> torch.Tensor:
+    def _divide_by_n(self, x: torch.Tensor, shape: Sequence[int] | None) -> torch.Tensor:
         """Apply factor for normalization.
 
         Input is scaled by the number of elements of either the input

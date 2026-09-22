@@ -86,6 +86,24 @@ def test_pca_compression_op_wrong_shapes() -> None:
         pca_comp_op.adjoint(input_data)
 
 
+def test_pca_compression_op_with_varimax_rotation() -> None:
+    """Test PCA compression with Varimax rotation preserves the PCA subspace."""
+    rng = RandomGenerator(seed=0)
+    data = rng.complex64_tensor((40, 10))
+    pca_comp_op = PCACompressionOp(data=data, n_components=6)
+    rotated_pca_comp_op = PCACompressionOp(data=data, n_components=6, rotate=True)
+
+    assert rotated_pca_comp_op._compression_matrix.shape == pca_comp_op._compression_matrix.shape
+    torch.testing.assert_close(
+        rotated_pca_comp_op._compression_matrix @ rotated_pca_comp_op._compression_matrix.mH,
+        pca_comp_op._compression_matrix @ pca_comp_op._compression_matrix.mH,
+    )
+    torch.testing.assert_close(
+        rotated_pca_comp_op._compression_matrix.mH @ rotated_pca_comp_op._compression_matrix,
+        pca_comp_op._compression_matrix.mH @ pca_comp_op._compression_matrix,
+    )
+
+
 @pytest.mark.cuda
 def test_pca_compression_op_cuda() -> None:
     """Test if PCA compression operator works on CUDA devices."""

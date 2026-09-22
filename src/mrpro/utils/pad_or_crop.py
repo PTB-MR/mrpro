@@ -12,7 +12,7 @@ from mrpro.utils.reshape import normalize_index, unsqueeze_left
 def pad_or_crop(
     data: torch.Tensor,
     new_shape: Sequence[int] | torch.Size,
-    dim: None | Sequence[int] = None,
+    dim: Sequence[int] | None = None,
     mode: Literal['constant', 'reflect', 'replicate', 'circular'] = 'constant',
     value: float = 0.0,
 ) -> torch.Tensor:

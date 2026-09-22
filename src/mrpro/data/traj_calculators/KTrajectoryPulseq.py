@@ -13,7 +13,7 @@ from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalcula
 class KTrajectoryPulseq(KTrajectoryCalculator):
     """Trajectory from .seq file."""
 
-    def __init__(self, seq_path: str | Path, repeat_detection_tolerance: None | float = 1e-3) -> None:
+    def __init__(self, seq_path: str | Path, repeat_detection_tolerance: float | None = 1e-3) -> None:
         """Initialize KTrajectoryPulseq.
 
         Parameters

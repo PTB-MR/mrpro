@@ -12,7 +12,7 @@ class MSE(L2NormSquared):
 
     def __init__(
         self,
-        target: torch.Tensor | None | complex = None,
+        target: torch.Tensor | complex | None = None,
         weight: torch.Tensor | complex = 1.0,
         dim: int | Sequence[int] | None = None,
         divide_by_n: bool = True,

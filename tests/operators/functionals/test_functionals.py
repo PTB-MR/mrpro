@@ -21,7 +21,7 @@ from tests.operators.functionals.conftest import (
 @pytest.mark.parametrize('dim', [None, -2])
 @pytest.mark.parametrize('keepdim', [True, False])
 @pytest.mark.parametrize('functional', FUNCTIONALS)
-def test_functional_shape(functional: type[ElementaryFunctional], shape: torch.Size, dim: None | int, keepdim: bool):
+def test_functional_shape(functional: type[ElementaryFunctional], shape: torch.Size, dim: int | None, keepdim: bool):
     """Test the shape returned by the forward of the functional."""
     f = functional(dim=dim, keepdim=keepdim)
     x = torch.ones(shape)
@@ -56,7 +56,7 @@ def test_functional_shape(functional: type[ElementaryFunctional], shape: torch.S
 @pytest.mark.parametrize('keepdim', [True, False])
 @pytest.mark.parametrize('functional', FUNCTIONALS)
 def test_functional_divide_by_n(
-    functional: type[ElementaryFunctional], shape: torch.Size, dim: None | tuple[int, ...], keepdim: bool
+    functional: type[ElementaryFunctional], shape: torch.Size, dim: tuple[int, ...] | None, keepdim: bool
 ):
     """Test if divide_by_n scales by number of elements indexed by dim."""
 

@@ -21,7 +21,8 @@ def m4raw_data(tmp_path_factory):
     rng = RandomGenerator(0)
 
     # xml header similar to what's in the M4Raw dataset, but
-    # only including elements that are actually used in the M4RawDataset
+    # only including elements that are actually used in the M4RawDataset.
+    # This is not 100% ismrmrd (example: echo_train_length).
     header = """<?xml version="1.0" encoding="utf-8"?>
     <ns0:ismrmrdHeader xmlns:ns0="http://www.ismrm.org/ISMRMRD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <ns0:measurementInformation>
@@ -32,9 +33,6 @@ def m4raw_data(tmp_path_factory):
             <ns0:systemVendor>XinGaoYi Medical Equipment Co.,Ltd.</ns0:systemVendor>
             <ns0:systemModel>XGY OPER-0.3</ns0:systemModel>
         </ns0:acquisitionSystemInformation>
-        <ns0:encoding>
-            <ns0:echoTrainLength>1</ns0:echoTrainLength>
-        </ns0:encoding>
         <ns0:sequenceParameters>
             <ns0:TR>500.0</ns0:TR>
             <ns0:TE>18.4</ns0:TE>
@@ -42,6 +40,7 @@ def m4raw_data(tmp_path_factory):
             <ns0:flipAngle_deg>180.0</ns0:flipAngle_deg>
             <ns0:sequence_type>SpinEcho_TRA</ns0:sequence_type>
             <ns0:echo_spacing>N/A</ns0:echo_spacing>
+            <ns0:echo_train_length>11</ns0:echo_train_length>
         </ns0:sequenceParameters>
     </ns0:ismrmrdHeader>
     """

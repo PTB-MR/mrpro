@@ -13,10 +13,14 @@ all_deps = (
 )
 print(' '.join(f'\"{dep}\"' for dep in all_deps))
 ")
+if [ -z "$dependencies" ]; then
+    echo "ERROR: dependency parsing produced an empty list" >&2
+    exit 1
+fi
 echo Dependencies to install: $dependencies
 
 # install dependencies
-eval python -m pip install --no-cache-dir --upgrade --upgrade-strategy "eager" $dependencies torch --extra-index-url https://download.pytorch.org/whl/${1:-cpu}
+eval python -m pip install --no-cache-dir $dependencies
 
 #clean up
 rm -rf /root/.cache

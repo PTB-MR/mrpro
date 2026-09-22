@@ -1795,7 +1795,7 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         self._is_improper[indexer] = inversion
 
     @classmethod
-    def identity(cls, shape: int | None | tuple[int, ...] = None) -> Self:
+    def identity(cls, shape: int | tuple[int, ...] | None = None) -> Self:
         """Get identity rotation(s).
 
         Composition with the identity rotation has no effect.
@@ -1985,7 +1985,7 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
     def mean(
         self,
         weights: torch.Tensor | NestedSequence[float] | None = None,
-        dim: None | int | Sequence[int] = None,
+        dim: int | Sequence[int] | None = None,
         keepdim: bool = False,
     ) -> Self:
         r"""Get the mean of the rotations.

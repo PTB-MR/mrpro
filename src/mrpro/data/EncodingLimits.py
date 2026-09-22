@@ -29,7 +29,7 @@ class Limits:
 
     def to_ismrmrd(self) -> limitType:
         """Convert Limits to ismsmrd.limitType."""
-        return limitType(self.min, self.max, self.center)
+        return limitType(minimum=self.min, maximum=self.max, center=self.center)
 
     @property
     def length(self) -> int:

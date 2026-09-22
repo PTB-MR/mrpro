@@ -61,7 +61,7 @@ class BrainwebTissue:
     m0_phase: float | tuple[float, float] = 0.0
     """Phase value or range (Phase_min, Phase_max) of the complex M0 in radians."""
 
-    def sample_r1(self, rng: None | torch.Generator = None) -> torch.Tensor:
+    def sample_r1(self, rng: torch.Generator | None = None) -> torch.Tensor:
         """Get (possibly randomized) r1=1/t1 value.
 
         Parameters
@@ -73,7 +73,7 @@ class BrainwebTissue:
             return 1 / torch.empty(1).uniform_(*self.t1, generator=rng)
         return 1 / torch.tensor(self.t1)
 
-    def sample_r2(self, rng: None | torch.Generator = None) -> torch.Tensor:
+    def sample_r2(self, rng: torch.Generator | None = None) -> torch.Tensor:
         """Get (possibly randomized) r2=1/t2 value.
 
         Parameters
@@ -85,7 +85,7 @@ class BrainwebTissue:
             return 1 / torch.empty(1).uniform_(*self.t2, generator=rng)
         return 1 / torch.tensor(self.t2)
 
-    def sample_m0(self, rng: None | torch.Generator = None) -> torch.Tensor:
+    def sample_m0(self, rng: torch.Generator | None = None) -> torch.Tensor:
         """Get (possibly randomized) complex m0 value.
 
         Parameters

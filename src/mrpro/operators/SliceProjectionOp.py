@@ -158,7 +158,7 @@ class SliceProjectionOp(LinearOperator):
         def _find_width(slice_profile: TensorFunction) -> int:
             # figure out how far along the profile we have to consider values
             # clip up to 0.01 of intensity on both sides
-            test_values = torch.arange(-max_shape, max_shape, max_shape)
+            test_values = torch.linspace(-max_shape, max_shape, 4 * max_shape + 1)
             profile = slice_profile(test_values)
             cdf = torch.cumsum(profile, -1) / profile.sum()
             left = test_values[(cdf > 0.01).int().argmax()]

@@ -17,12 +17,12 @@ if TYPE_CHECKING:
     from typing_extensions import ParamSpec, SupportsIndex, Unpack, overload
 
     # This matches the torch.Tensor indexer typehint
-    _TorchIndexerTypeInner: TypeAlias = None | bool | int | slice | EllipsisType | torch.Tensor
+    _TorchIndexerTypeInner: TypeAlias = bool | int | slice | EllipsisType | torch.Tensor | None
     _SingleTorchIndexerType: TypeAlias = SupportsIndex | _TorchIndexerTypeInner | NestedSequence[_TorchIndexerTypeInner]
     TorchIndexerType: TypeAlias = tuple[_SingleTorchIndexerType, ...] | _SingleTorchIndexerType
 
     # This matches the numpy.ndarray indexer typehint
-    _SingleNumpyIndexerType: TypeAlias = ndarray | SupportsIndex | None | slice | EllipsisType
+    _SingleNumpyIndexerType: TypeAlias = ndarray | SupportsIndex | slice | EllipsisType | None
     NumpyIndexerType: TypeAlias = tuple[_SingleNumpyIndexerType, ...] | _SingleNumpyIndexerType
 
     Tout = TypeVar('Tout', bound=tuple[torch.Tensor, ...], covariant=True)

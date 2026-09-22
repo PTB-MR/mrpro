@@ -65,7 +65,7 @@ def download_mdcnn(
     def fetch(file_id: int) -> None:
         nonlocal n_files
         url = f'https://dataverse.harvard.edu/api/access/datafile/{file_id}'
-        with urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'mrpro'})) as resp:  # noqa: S310
+        with urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'mrpro'})) as resp:
             if (match := re.search('(P[0-9]+)_', resp.headers['Content-Disposition'])) is None:
                 return
             if n_files < 1:
