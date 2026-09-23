@@ -21,28 +21,43 @@ from mrpro.operators.SensitivityOp import SensitivityOp
 
 
 class PlugAndPlayPriorsReconstruction(DirectReconstruction):
-    r"""Plug-and-Play Priors reconstruction.
+    r"""Plug-and-Play (PnP) priors reconstruction.
 
-    This algorithm ...
+    This algorithm solves the problem :math:`min_x \frac{1}{2}||Ax - y||_2^2 + \beta s(x)` using the plug-and-play
+    ADMM scheme of [Venkatakrishnan2013]_. :math:`A` is the acquisition model (coil sensitivity maps, Fourier operator,
+    k-space sampling), :math:`y` is the acquired k-space data and :math:`s` is an (implicit) regularizer. Using the
+    splitting :math:`x = v`, each ADMM iteration consists of a data-consistency step
+
+    :math:`x_{k+1} = argmin_x \frac{1}{2}||Ax - y||_2^2 + \frac{\lambda}{2}||x - (v_k - u_k)||_2^2`,
+
+    which is solved with CG, a denoising step :math:`v_{k+1} = H(x_{k+1} + u_k)` in which the proximal operator of
+    :math:`\beta s` is replaced by an arbitrary denoiser :math:`H`, and the update of the scaled dual variable
+    :math:`u_{k+1} = u_k + x_{k+1} - v_{k+1}`. :math:`\lambda` is the ADMM penalty parameter.
+
+    References
+    ----------
+    .. [Venkatakrishnan2013] Venkatakrishnan, S. V., Bouman, C. A., & Wohlberg, B. (2013). Plug-and-Play priors for
+       model based reconstruction. IEEE Global Conference on Signal and Information Processing, 945-948.
+       https://doi.org/10.1109/GlobalSIP.2013.6737048
     """
 
-    denoiser: Callable
-    """Denoiser function."""
+    denoiser: Callable[[torch.Tensor], torch.Tensor]
+    """Denoiser :math:`H` applied to the image tensor, returning a tensor of the same shape."""
 
-    admm_regularization_strength: torch.Tensor
-    """Strengths of the ADMM regularization."""
+    admm_regularization_strength: float
+    r"""ADMM penalty parameter :math:`\lambda`."""
 
     max_iterations: int
-    """Maximum number of iterations."""
+    """Maximum number of ADMM iterations."""
 
     max_iterations_cg: int
     """Maximum number of iterations of internal CG."""
 
     tolerance: float
-    """Tolerance for the convergence check."""
+    """Tolerance for the relative change of the image between two ADMM iterations."""
 
     tolerance_cg: float
-    """Tolerance for the convergence check of the internal CG."""
+    """Tolerance for the residual norm of the internal CG."""
 
     def __init__(
         self,
@@ -53,13 +68,13 @@ class PlugAndPlayPriorsReconstruction(DirectReconstruction):
         dcf: DcfData | DensityCompensationOp | None = None,
         *,
         denoiser: Callable[[torch.Tensor], torch.Tensor],
-        admm_regularization_strength: torch.Tensor,
+        admm_regularization_strength: float,
         max_iterations: int = 100,
         max_iterations_cg: int = 100,
         tolerance: float = 0,
         tolerance_cg: float = 1e-6,
     ) -> None:
-        """Initialize PlugAndPlayReconstruction.
+        r"""Initialize PlugAndPlayPriorsReconstruction.
 
         Parameters
         ----------
@@ -79,19 +94,20 @@ class PlugAndPlayPriorsReconstruction(DirectReconstruction):
             KNoise used for prewhitening. If `None`, no prewhitening is performed
         dcf
             K-space sampling density compensation. If `None`, set up based on `kdata`. The `dcf` is only used to
-            calculate a starting estimate for PDHG.
+            calculate a starting estimate.
         denoiser
-            Denoiser function.
+            Denoiser :math:`H` applied to the image tensor, returning a tensor of the same shape.
         admm_regularization_strength
-            Strengths of the ADMM regularization.
+            ADMM penalty parameter :math:`\lambda`.
         max_iterations
-            Maximum number of PDHG iterations
+            Maximum number of ADMM iterations.
         max_iterations_cg
             Maximum number of iterations of internal CG.
         tolerance
-            Tolerance of PDHG for relative change of the primal solution; if zero, `max_iterations` of PDHG are run.
+            Tolerance for the relative change of the image between two ADMM iterations; if zero, `max_iterations`
+            iterations are run.
         tolerance_cg
-            Tolerance for the convergence check of the internal CG.
+            Tolerance for the residual norm of the internal CG.
 
         Raises
         ------
@@ -121,26 +137,30 @@ class PlugAndPlayPriorsReconstruction(DirectReconstruction):
         if self.noise is not None:
             kdata = prewhiten_kspace(kdata, self.noise)
 
-        acquisition_op = self.fourier_op
-        if self.csm_op is not None:
-            acquisition_op = acquisition_op @ self.csm_op
+        acquisition_operator = self.fourier_op @ self.csm_op if self.csm_op is not None else self.fourier_op
+        (right_hand_side,) = acquisition_operator.H(kdata.data)
+        operator = acquisition_operator.gram + self.admm_regularization_strength * IdentityOp()
 
-        (adjoint_op,) = acquisition_op.H(kdata.data)
+        image = acquisition_operator.H(self.dcf_op(kdata.data)[0] if self.dcf_op is not None else kdata.data)[0]
 
-        initial_image = acquisition_op.H(self.dcf_op(kdata.data)[0] if self.dcf_op is not None else kdata.data)[0]
+        denoised_image = image
+        dual_variable = torch.zeros_like(image)
 
-        dual_variable = torch.zeros_like(initial_image)
-        image_hat = torch.zeros_like(initial_image)
-
-        for _iter in range(self.max_iterations):
-            (image_hat,) = cg(
-                operator=acquisition_op.H @ acquisition_op + self.admm_regularization_strength * IdentityOp(),
-                right_hand_side=adjoint_op + self.admm_regularization_strength * (image_hat - dual_variable),
-                initial_value=initial_image,
+        for _ in range(self.max_iterations):
+            image_old = image
+            (image,) = cg(
+                operator=operator,
+                right_hand_side=right_hand_side + self.admm_regularization_strength * (denoised_image - dual_variable),
+                initial_value=image_old,
                 max_iterations=self.max_iterations_cg,
+                tolerance=self.tolerance_cg,
             )
+            denoised_image = self.denoiser(image + dual_variable)
+            dual_variable = dual_variable + image - denoised_image
 
-            denoise_image_hat = self.denoiser(image_hat + dual_variable)
-            dual_variable = dual_variable + image_hat - denoise_image_hat
+            if self.tolerance != 0:
+                relative_change = torch.linalg.vector_norm(image - image_old) / torch.linalg.vector_norm(image_old)
+                if relative_change < self.tolerance:
+                    break
 
-        return IData.from_tensor_and_kheader(denoise_image_hat, kdata.header)
+        return IData.from_tensor_and_kheader(image, kdata.header)
