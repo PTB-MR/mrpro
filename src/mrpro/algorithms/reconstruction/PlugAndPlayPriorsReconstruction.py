@@ -32,9 +32,6 @@ class PlugAndPlayPriorsReconstruction(DirectReconstruction):
     denoiser: Callable
     """Denoiser function."""
 
-    noise_level: float
-    """Noise level for the denoiser."""
-
     admm_regularization_strength: torch.Tensor
     """Strengths of the ADMM regularization."""
 
@@ -58,12 +55,15 @@ class PlugAndPlayPriorsReconstruction(DirectReconstruction):
         noise: KNoise | None = None,
         dcf: DcfData | DensityCompensationOp | None = None,
         *,
+        denoiser: Callable,
+        admm_regularization_strength: torch.Tensor,
         max_iterations: int = 100,
+        max_iterations_cg: int = 100,
         tolerance: float = 0,
-        regularization_dim: Sequence[int],
-        regularization_weight: float | Sequence[float] | Sequence[torch.Tensor],
+        tolerance_cg: float = 1e-6,
+        
     ) -> None:
-        """Initialize TotalVariationRegularizedReconstruction.
+        """Initialize PlugAndPlayReconstruction.
 
         Parameters
         ----------
@@ -84,38 +84,32 @@ class PlugAndPlayPriorsReconstruction(DirectReconstruction):
         dcf
             K-space sampling density compensation. If `None`, set up based on `kdata`. The `dcf` is only used to
             calculate a starting estimate for PDHG.
+        denoiser
+            Denoiser function.
+        admm_regularization_strength
+            Strengths of the ADMM regularization.            
         max_iterations
             Maximum number of PDHG iterations
+        max_iterations_cg
+            Maximum number of iterations of internal CG.
         tolerance
             Tolerance of PDHG for relative change of the primal solution; if zero, `max_iterations` of PDHG are run.
-        regularization_dim
-            Dimensions along which the total variation reguarization is applied (:math:`i`).
-        regularization_weight
-            Strengths of the regularization (:math:`l_i`). If a single values is given, it is applied to all dimensions.
-            If a sequence is given, it must have the same length as `regularization_dim`.
-
+        tolerance_cg
+            Tolerance for the convergence check of the internal CG.
         Raises
         ------
         ValueError
             If the `kdata` and `fourier_op` are `None` or if `csm` is a `Callable` but `kdata` is `None`.
-        ValueError
-            If `regularization_dim` contains repeated values.
-        ValueError
-            If the length of `regularization_dim` and `regularization_weight` do not match
         """
         super().__init__(kdata, fourier_op, csm, noise, dcf)
         self.max_iterations = max_iterations
         self.tolerance = tolerance
-
-        if len(regularization_dim) != len(set(regularization_dim)):
-            raise ValueError('Repeated values are not allowed in regularization_dim')
-        self.regularization_dim = regularization_dim
-
-        if isinstance(regularization_weight, float):
-            regularization_weight = [regularization_weight] * len(regularization_dim)
-        if len(regularization_dim) != len(regularization_weight):
-            raise ValueError('Regularization dimensions and weights must have the same length')
-        self.regularization_weight = torch.as_tensor(regularization_weight)
+        self.tolerance_cg = tolerance_cg
+        self.max_iterations_cg = max_iterations_cg
+        self.denoiser = denoiser
+        self.admm_regularization_strength = admm_regularization_strength
+        
+        # add any more checks and raises for the denoiser, admm_regularization_strength?
 
     def forward(self, kdata: KData) -> IData:
         """Apply the reconstruction.
