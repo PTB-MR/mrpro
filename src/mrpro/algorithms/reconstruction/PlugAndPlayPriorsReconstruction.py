@@ -6,6 +6,7 @@ from collections.abc import Callable
 
 import torch
 
+from mrpro.algorithms.optimizers import cg
 from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
 from mrpro.algorithms.reconstruction.DirectReconstruction import DirectReconstruction
 from mrpro.data.CsmData import CsmData
@@ -13,13 +14,10 @@ from mrpro.data.DcfData import DcfData
 from mrpro.data.IData import IData
 from mrpro.data.KData import KData
 from mrpro.data.KNoise import KNoise
-from mrpro.operators import LinearOperatorMatrix
 from mrpro.operators.DensityCompensationOp import DensityCompensationOp
-from mrpro.operators.FiniteDifferenceOp import FiniteDifferenceOp
-from mrpro.operators.functionals import L1NormViewAsReal, L2NormSquared
+from mrpro.operators.IdentityOp import IdentityOp
 from mrpro.operators.LinearOperator import LinearOperator
 from mrpro.operators.SensitivityOp import SensitivityOp
-from mrpro.utils import normalize_index, unsqueeze_right
 
 
 class PlugAndPlayPriorsReconstruction(DirectReconstruction):
@@ -129,19 +127,19 @@ class PlugAndPlayPriorsReconstruction(DirectReconstruction):
         if self.csm_op is not None:
             acquisition_model = acquisition_model @ self.csm_op
 
-        forward_op = acquisition_model.gram
         (right_hand_side,) = acquisition_model.H(kdata.data)
 
         acquisition_operator = self.fourier_op @ self.csm_op if self.csm_op is not None else self.fourier_op
 
-        identity_op = mrpro.operators.IdentityOp()
         initial_image = acquisition_operator.H(self.dcf_op(kdata.data)[0] if self.dcf_op is not None else kdata.data)[0]
-        
+
         dual_variable = torch.zeros_like(initial_image)
-        
-        for iter in range(self.max_iterations):
-            (image_hat,) = mrpro.algorithms.optimizers.cg(
-                operator=acquisition_operator.H @ acquisition_operator + self.admm_regularization_strength * identity_op,
+        image_hat = torch.zeros_like(initial_image)
+
+        for _iter in range(self.max_iterations):
+            (image_hat,) = cg(
+                operator=acquisition_operator.H @ acquisition_operator
+                + self.admm_regularization_strength * IdentityOp(),
                 right_hand_side=right_hand_side + self.admm_regularization_strength * (image_hat - dual_variable),
                 initial_value=initial_image,
                 max_iterations=self.max_iterations_cg,
