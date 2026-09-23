@@ -119,7 +119,110 @@ pnp_recon = mrpro.algorithms.reconstruction.PlugAndPlayPriorsReconstruction(
 )
 img_pnp = pnp_recon(kdata)
 
+#%%
+import importlib
+
+if not importlib.util.find_spec("mrpro"):
+    %pip install ismrmrd==1.14.2
+    # %pip install mrpro[notebooks]
+
+if not importlib.util.find_spec("SNRAware"):
+    !git clone https://github.com/microsoft/SNRAware.git
+    !cd SNRAware && pip install .
 # %%
+!wget --directory-prefix=./small/ https://huggingface.co/microsoft/SNRAware/resolve/main/small/snraware_small_model.pts
+!wget --directory-prefix=./small/ https://huggingface.co/microsoft/SNRAware/resolve/main/small/snraware_small_model.yaml
+#%%
+from omegaconf import OmegaConf
+from snraware.projects.mri.denoising.inference import apply_model
+from snraware.projects.mri.denoising.inference_model import load_scripted_model
+import numpy as np
+# direct_recon = mrpro.algorithms.reconstruction.DirectReconstruction(kdata)
+# idata = direct_recon(kdata)
+# idat = idata.data.cpu().numpy().squeeze()
+# image = idat[2 * idat.shape[0] // 3]
+# noise = idat[12]
+
+# image_normalized = image / np.std(noise)
+
+# fig, ax = plt.subplots(1, 3, figsize=(3 * 6, 6))
+# ax[0].imshow(np.rot90(np.abs(image)), cmap="gray")
+# ax[1].imshow(np.rot90(np.abs(noise)), cmap="gray")
+# ax[2].imshow(np.rot90(np.abs(image_normalized)), cmap="gray")
+
+#%%
+# set up the model
+from einops import rearrange
+
+# image_normalized = rearrange(image_normalized, "y x -> x y 1")
+gmap = np.ones([img_direct.shape[0], img_direct.shape[1], 1])
+
+model_parameter_path = "./small/snraware_small_model.pts"
+model_config_path = "./small/snraware_small_model.yaml"
+
+model = load_scripted_model(model_parameter_path)
+config = OmegaConf.load(model_config_path)
+
+batch_size = 1
+cutout = tuple(config.dataset.cutout_shape)
+if cutout is not None:
+    cutout = tuple(cutout)
+overlap = (16, 16, 8)
+#%%
+# denoise the image slices
+# device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+# device = torch.device("cpu")
+# print("Using device:", device)
+
+# scaling_factor = 0.5
+
+# image_denoised = apply_model(
+#     model=model,
+#     data=image_normalized,
+#     gmap=gmap,
+#     scaling_factor=scaling_factor,
+#     cutout=cutout,
+#     overlap=overlap,
+#     batch_size=batch_size,
+#     device=device,
+#     verbose=True,
+# )
+#%%
+# use SNRaware in Plug-and-Play reconstruction
+
+# build a wrapper around the SNRaware denoiser to use it in the Plug-and-Play reconstruction
+device = torch.device("cpu")
+
+
+def snraware_denoiser(img: torch.Tensor) -> torch.Tensor:
+    """Apply SNRaware while preserving the MRpro tensor layout and type."""
+    image_hwt = rearrange(img.squeeze(), "T W H -> H W T").detach().cpu().numpy()
+    denoised_hwt = apply_model(
+        model=model,
+        data=image_hwt,
+        gmap=np.ones(image_hwt.shape[:2] + (1,)),
+        # scaling_factor=scaling_factor,
+        cutout=cutout,
+        overlap=overlap,
+        batch_size=batch_size,
+        device=device,
+        verbose=True,
+    )
+    denoised_twh = rearrange(denoised_hwt, "H W T -> T W H")
+    return torch.as_tensor(denoised_twh, device=img.device, dtype=img.dtype)
+
+
+pnp_recon = mrpro.algorithms.reconstruction.PlugAndPlayPriorsReconstruction(
+    kdata=kdata,
+    denoiser=snraware_denoiser,
+    admm_regularization_strength=0.02,
+    max_iterations=10,
+    max_iterations_cg=10,
+    tolerance=1e-6,
+    tolerance_cg=1e-6,
+)
+img_pnp = pnp_recon(kdata)
+#%%
 # see the collapsed cell above for the implementation of show_images
 slice_pos = img_direct.shape[-3] // 2
 show_images(
