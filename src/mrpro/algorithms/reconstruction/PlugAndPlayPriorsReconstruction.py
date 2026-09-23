@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 
 import torch
 
-from mrpro.algorithms.optimizers.pdhg import pdhg
 from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
 from mrpro.algorithms.reconstruction.DirectReconstruction import DirectReconstruction
 from mrpro.data.CsmData import CsmData
@@ -14,7 +13,7 @@ from mrpro.data.DcfData import DcfData
 from mrpro.data.IData import IData
 from mrpro.data.KData import KData
 from mrpro.data.KNoise import KNoise
-from mrpro.operators import LinearOperatorMatrix, ProximableFunctionalSeparableSum
+from mrpro.operators import LinearOperatorMatrix
 from mrpro.operators.DensityCompensationOp import DensityCompensationOp
 from mrpro.operators.FiniteDifferenceOp import FiniteDifferenceOp
 from mrpro.operators.functionals import L1NormViewAsReal, L2NormSquared
@@ -61,7 +60,6 @@ class PlugAndPlayPriorsReconstruction(DirectReconstruction):
         max_iterations_cg: int = 100,
         tolerance: float = 0,
         tolerance_cg: float = 1e-6,
-        
     ) -> None:
         """Initialize PlugAndPlayReconstruction.
 
@@ -87,7 +85,7 @@ class PlugAndPlayPriorsReconstruction(DirectReconstruction):
         denoiser
             Denoiser function.
         admm_regularization_strength
-            Strengths of the ADMM regularization.            
+            Strengths of the ADMM regularization.
         max_iterations
             Maximum number of PDHG iterations
         max_iterations_cg
@@ -96,6 +94,7 @@ class PlugAndPlayPriorsReconstruction(DirectReconstruction):
             Tolerance of PDHG for relative change of the primal solution; if zero, `max_iterations` of PDHG are run.
         tolerance_cg
             Tolerance for the convergence check of the internal CG.
+
         Raises
         ------
         ValueError
@@ -108,7 +107,7 @@ class PlugAndPlayPriorsReconstruction(DirectReconstruction):
         self.max_iterations_cg = max_iterations_cg
         self.denoiser = denoiser
         self.admm_regularization_strength = admm_regularization_strength
-        
+
         # add any more checks and raises for the denoiser, admm_regularization_strength?
 
     def forward(self, kdata: KData) -> IData:
@@ -123,32 +122,33 @@ class PlugAndPlayPriorsReconstruction(DirectReconstruction):
         -------
             the reconstruced image.
         """
-        regularization_dim = tuple(normalize_index(kdata.ndim, idx) for idx in self.regularization_dim)
-        if len(regularization_dim) != len(set(regularization_dim)):
-            raise ValueError('Repeated values are not allowed in regularization_dim')
-
         if self.noise is not None:
             kdata = prewhiten_kspace(kdata, self.noise)
 
+        acquisition_model = self.fourier_op
+        if self.csm_op is not None:
+            acquisition_model = acquisition_model @ self.csm_op
+
+        forward_op = acquisition_model.gram
+        (right_hand_side,) = acquisition_model.H(kdata.data)
+
         acquisition_operator = self.fourier_op @ self.csm_op if self.csm_op is not None else self.fourier_op
-        l2_norm_squared = L2NormSquared(target=kdata.data)
 
-        # TV regularization
-        nabla_operator = FiniteDifferenceOp(dim=regularization_dim, mode='forward')
-        l1_norm = L1NormViewAsReal(
-            weight=unsqueeze_right(self.regularization_weight.to(kdata.data.device), kdata.data.ndim)
-        )
-        operator = LinearOperatorMatrix(((acquisition_operator,), (nabla_operator,)))
+        identity_op = mrpro.operators.IdentityOp()
+        initial_image = acquisition_operator.H(self.dcf_op(kdata.data)[0] if self.dcf_op is not None else kdata.data)[0]
+        
+        dual_variable = torch.zeros_like(initial_image)
+        
+        for iter in range(self.max_iterations):
+            (image_hat,) = mrpro.algorithms.optimizers.cg(
+                operator=acquisition_operator.H @ acquisition_operator + self.admm_regularization_strength * identity_op,
+                right_hand_side=right_hand_side + self.admm_regularization_strength * (image_hat - dual_variable),
+                initial_value=initial_image,
+                max_iterations=self.max_iterations_cg,
+            )
 
-        initial_value = acquisition_operator.H(self.dcf_op(kdata.data)[0] if self.dcf_op is not None else kdata.data)[0]
+            denoise_image_hat = self.denoiser(image_hat + dual_variable)
+            dual_variable = dual_variable + image_hat - denoise_image_hat
 
-        (img_tensor,) = pdhg(
-            f=ProximableFunctionalSeparableSum(l2_norm_squared, l1_norm),
-            g=None,
-            operator=operator,
-            initial_values=(initial_value,),
-            max_iterations=self.max_iterations,
-            tolerance=self.tolerance,
-        )
-        img = IData.from_tensor_and_kheader(img_tensor, kdata.header)
+        img = IData.from_tensor_and_kheader(image_hat, kdata.header)
         return img
