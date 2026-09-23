@@ -52,7 +52,7 @@ class PlugAndPlayPriorsReconstruction(DirectReconstruction):
         noise: KNoise | None = None,
         dcf: DcfData | DensityCompensationOp | None = None,
         *,
-        denoiser: Callable,
+        denoiser: Callable[[torch.Tensor], torch.Tensor],
         admm_regularization_strength: torch.Tensor,
         max_iterations: int = 100,
         max_iterations_cg: int = 100,
@@ -106,8 +106,6 @@ class PlugAndPlayPriorsReconstruction(DirectReconstruction):
         self.denoiser = denoiser
         self.admm_regularization_strength = admm_regularization_strength
 
-        # add any more checks and raises for the denoiser, admm_regularization_strength?
-
     def forward(self, kdata: KData) -> IData:
         """Apply the reconstruction.
 
@@ -123,24 +121,21 @@ class PlugAndPlayPriorsReconstruction(DirectReconstruction):
         if self.noise is not None:
             kdata = prewhiten_kspace(kdata, self.noise)
 
-        acquisition_model = self.fourier_op
+        acquisition_op = self.fourier_op
         if self.csm_op is not None:
-            acquisition_model = acquisition_model @ self.csm_op
+            acquisition_op = acquisition_op @ self.csm_op
 
-        (right_hand_side,) = acquisition_model.H(kdata.data)
+        (adjoint_op,) = acquisition_op.H(kdata.data)
 
-        acquisition_operator = self.fourier_op @ self.csm_op if self.csm_op is not None else self.fourier_op
-
-        initial_image = acquisition_operator.H(self.dcf_op(kdata.data)[0] if self.dcf_op is not None else kdata.data)[0]
+        initial_image = acquisition_op.H(self.dcf_op(kdata.data)[0] if self.dcf_op is not None else kdata.data)[0]
 
         dual_variable = torch.zeros_like(initial_image)
         image_hat = torch.zeros_like(initial_image)
 
         for _iter in range(self.max_iterations):
             (image_hat,) = cg(
-                operator=acquisition_operator.H @ acquisition_operator
-                + self.admm_regularization_strength * IdentityOp(),
-                right_hand_side=right_hand_side + self.admm_regularization_strength * (image_hat - dual_variable),
+                operator=acquisition_op.H @ acquisition_op + self.admm_regularization_strength * IdentityOp(),
+                right_hand_side=adjoint_op + self.admm_regularization_strength * (image_hat - dual_variable),
                 initial_value=initial_image,
                 max_iterations=self.max_iterations_cg,
             )
@@ -148,5 +143,4 @@ class PlugAndPlayPriorsReconstruction(DirectReconstruction):
             denoise_image_hat = self.denoiser(image_hat + dual_variable)
             dual_variable = dual_variable + image_hat - denoise_image_hat
 
-        img = IData.from_tensor_and_kheader(image_hat, kdata.header)
-        return img
+        return IData.from_tensor_and_kheader(denoise_image_hat, kdata.header)
