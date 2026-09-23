@@ -106,14 +106,30 @@ def show_images(*images: torch.Tensor, titles: list[str] | None = None) -> None:
 
 
 # %%
+pnp_recon = mrpro.algorithms.reconstruction.PlugAndPlayPriorsReconstruction(
+    kdata=kdata,
+    denoiser=lambda img: mrpro.algorithms.total_variation_denoising(
+        img, regularization_dim=(-3, -2, -1), regularization_weight=0.02, tolerance=1e-6
+    ),
+    admm_regularization_strength=0.02,
+    max_iterations=10,
+    max_iterations_cg=10,
+    tolerance=1e-6,
+    tolerance_cg=1e-6,
+)
+img_pnp = pnp_recon(kdata)
+
+# %%
 # see the collapsed cell above for the implementation of show_images
 slice_pos = img_direct.shape[-3] // 2
 show_images(
     img_direct.rss().squeeze()[slice_pos],
     img_tv_denoised.rss().squeeze()[slice_pos],
+    img_pnp.rss().squeeze()[slice_pos],
     titles=[
         'Direct',
         'TV-Denoising',
+        'PnP Reconstruction',
     ],
 )
 
