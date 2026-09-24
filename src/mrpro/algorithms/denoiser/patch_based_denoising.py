@@ -1,6 +1,5 @@
 """Patch-based Dictionary Denoising using Proximal Gradient Descent (PGD)."""
 
-# %%
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -56,7 +55,8 @@ def patch_based_denoising(
     r"""Apply patch-based dictionary denoising.
 
     The noisy image :math:`x_\mathrm{noisy}` is split into (possibly overlapping) patches, defined by
-    the patch size and strides. Each patch is sparsely coded with respect to a dictionary :math:`\Psi`:
+    the patch size and strides. Each patch is then coded with respect to a dictionary :math:`\Psi`:,
+    mapping sparse coefficients :math:`\gamma_j` to the zero-mean image patches.
 
     .. math::
 
@@ -68,7 +68,7 @@ def patch_based_denoising(
     where :math:`R_j` extracts the :math:`j`-th patch from the image and the adjoint :math:`R_j^T` puts it back in its
     position in the image. :math:`\mu_j` is the mean of the :math:`j`-th patch and
     :math:`z_j` is the corresponding patch
-    with mean zero. :math:`\lambda > 0` is the regularization weight for the sparse coefficients.
+    with mean zero. :math:`\lambda > 0` is the regularization weight for the sparse coefficients, and
     :math:`d` counts for the overlap of the patches.
     The minimization problem for sparse coefficients :math:`\gamma_j^*` is solved
     with the Proximal Gradient Descent (PGD) algorithm.
@@ -79,7 +79,7 @@ def patch_based_denoising(
         input image
     dictionary_op
         Linear Operator representing the dictionary (:math:`\Psi`), mapping the sparse coefficients
-        :math:`\gamma_j` to the patches.
+        to the patches.
     patch_dim
         Dimension(s) to extract patches from.
     patch_size
@@ -125,7 +125,7 @@ def patch_based_denoising(
 
     # compute stepsize for pgd from the operator norm of the dictionary
     op_norm = dictionary_op.operator_norm(initial_value=torch.randn_like(initial_coefficients), dim=None)
-    stepsize = 1.0 / op_norm.item() ** 2
+    stepsize = 0.97 / op_norm.item() ** 2
 
     # solve the problem for sparse coefficients
     (opt_sparse_coefficients,) = pgd(
@@ -148,6 +148,3 @@ def patch_based_denoising(
     opt_img_tensor = opt_img_tensor / overlap_map
 
     return opt_img_tensor if isinstance(idata, torch.Tensor) else IData(opt_img_tensor, idata.header)
-
-
-# %%
