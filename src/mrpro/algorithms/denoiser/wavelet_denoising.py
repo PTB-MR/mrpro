@@ -64,7 +64,7 @@ def wavelet_denoising(
     wavelet_name
         Name of the wavelet, see `~mrpro.operators.WaveletOp`.
     level
-        Number of wavelet levels. If `None`, the maximum number of levels is used.
+        Number of wavelet levels. If `None`, maximum number of levels is used.
 
     Returns
     -------
