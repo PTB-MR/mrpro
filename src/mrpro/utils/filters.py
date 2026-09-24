@@ -1,5 +1,6 @@
 """Spatial and temporal filters."""
 
+import math
 import warnings
 from collections.abc import Sequence
 from functools import reduce
@@ -167,3 +168,84 @@ def uniform_filter(
     kernels = tuple([torch.ones(width, device=x.device) / width for width in width])
     x_filtered = filter_separable(x, kernels, dim, pad_mode, pad_value)
     return x_filtered
+
+
+def gabor_filters_2d(
+    n_filters: int,
+    kernel_size: tuple,
+    sigma: float = 2.0,
+    frequency: float = 0.25,
+) -> torch.Tensor:
+    """Generate a bank of two-dimensional Gabor filters.
+
+    The filters consist of a Gaussian envelope modulated by a sinusoidal
+    carrier. The orientations are uniformly distributed over the interval
+    [0, pi), while the spatial frequency and Gaussian width are shared
+    across all filters. Each filter is centered, zero-mean, and normalized
+    to unit L2 norm.
+
+    Parameters
+    ----------
+    n_filters
+        Number of Gabor filters to generate.
+    kernel_size
+        size of the 2D kernel (kernel_size_y, kernel_size_x).
+    sigma
+        Standard deviation of the Gaussian envelope, in pixels.
+    frequency
+        Spatial frequency of the sinusoidal carrier, in cycles per pixel.
+
+    Returns
+    -------
+    torch.Tensor
+        Gabor filter bank with shape ``(n_filters, ky, kx)``. Each filter
+        has zero mean and unit L2 norm.
+
+    Notes
+    -----
+    The orientation of filter ``i`` is given by
+
+    ``theta_i = i * pi / n_filters``,
+
+    such that the orientations uniformly cover 180 degrees. Orientations
+    differing by 180 degrees are omitted because they produce equivalent
+    real-valued cosine Gabor filters.
+    """
+    # Coordinates
+    ky, kx = kernel_size
+    x = torch.linspace(-(kx - 1) / 2, (kx - 1) / 2, kx)
+    y = torch.linspace(-(ky - 1) / 2, (ky - 1) / 2, ky)
+
+    yy, xx = torch.meshgrid(y, x, indexing='ij')
+
+    filters = torch.zeros(n_filters, ky, kx)
+
+    for i in range(n_filters):
+        # Orientation in [0, pi)
+        theta = i * math.pi / n_filters
+
+        # Rotate coordinates
+        x_theta = xx * math.cos(theta) + yy * math.sin(theta)
+        y_theta = -xx * math.sin(theta) + yy * math.cos(theta)
+
+        # Gaussian envelope
+        gaussian = torch.exp(-(x_theta**2 + y_theta**2) / (2.0 * sigma**2))
+
+        # Cosine carrier
+        carrier = torch.cos(2.0 * math.pi * frequency * x_theta)
+
+        # Gabor filter
+        gabor = gaussian * carrier
+
+        # Remove mean
+        gabor = gabor - gabor.mean()
+
+        # Normalize
+        norm = torch.sqrt(torch.sum(gabor**2))
+
+        if norm > 0:
+            gabor = gabor / norm
+
+        filters[i] = gabor
+
+    return filters
