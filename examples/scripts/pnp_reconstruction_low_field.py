@@ -1,5 +1,6 @@
 # %% [markdown]
 # # Plug-and-Play (PnP) Reconstruction of low-field MRI data
+# # Plug-and-Play (PnP) Reconstruction of low-field MRI data
 
 # %% [markdown]
 # ### Image reconstruction
@@ -85,6 +86,13 @@ img_tv_denoised = mrpro.algorithms.total_variation_denoising(
 )
 
 # %% [markdown]
+# ### Wavelet-based Denoising
+# We apply a wavelet-based denoiser to the image data.
+#%%
+img_wavelet_denoised = mrpro.algorithms.wavelet_denoising(
+    img_direct, regularization_dim=(-3, -2, -1), regularization_weight=0.02, wavelet_name='db4', level=None
+)
+# %% [markdown]
 # ### Compare the results
 # We now compare the results of the direct reconstruction and the denoised images.
 
@@ -119,7 +127,7 @@ def show_images(
 
 
 # %%
-pnp_recon = mrpro.algorithms.reconstruction.PlugAndPlayPriorsReconstruction(
+pnp_recon_tv = mrpro.algorithms.reconstruction.PlugAndPlayPriorsReconstruction(
     kdata=kdata,
     denoiser=lambda img: mrpro.algorithms.total_variation_denoising(
         img, regularization_dim=(-3, -2, -1), regularization_weight=0.02, tolerance=1e-6
@@ -130,8 +138,20 @@ pnp_recon = mrpro.algorithms.reconstruction.PlugAndPlayPriorsReconstruction(
     tolerance=1e-6,
     tolerance_cg=1e-6,
 )
-img_pnp = pnp_recon(kdata)
-
+img_pnp_tv = pnp_recon_tv(kdata)
+#%%
+pnp_recon_wavelet = mrpro.algorithms.reconstruction.PlugAndPlayPriorsReconstruction(
+    kdata=kdata,
+    denoiser=lambda img: mrpro.algorithms.wavelet_denoising(
+        img, regularization_dim=(-3, -2, -1), regularization_weight=0.02, wavelet_name='db4', level=None
+    ),
+    admm_regularization_strength=0.02,
+    max_iterations=10,
+    max_iterations_cg=10,
+    tolerance=1e-6,
+    tolerance_cg=1e-6,
+)
+img_pnp_wavelet = pnp_recon_wavelet(kdata)
 #%%
 import importlib
 
@@ -143,28 +163,13 @@ import importlib
 #     !git clone https://github.com/microsoft/SNRAware.git
 #     !cd SNRAware && pip install .
 # %%
-# !wget --directory-prefix=./small/ https://huggingface.co/microsoft/SNRAware/resolve/main/small/snraware_small_model.pts
-# !wget --directory-prefix=./small/ https://huggingface.co/microsoft/SNRAware/resolve/main/small/snraware_small_model.yaml
+!wget --directory-prefix=./small/ https://huggingface.co/microsoft/SNRAware/resolve/main/small/snraware_small_model.pts
+!wget --directory-prefix=./small/ https://huggingface.co/microsoft/SNRAware/resolve/main/small/snraware_small_model.yaml
 #%%
 from omegaconf import OmegaConf
 from snraware.projects.mri.denoising.inference import apply_model
 from snraware.projects.mri.denoising.inference_model import load_scripted_model
 import numpy as np
-# direct_recon = mrpro.algorithms.reconstruction.DirectReconstruction(kdata)
-# idata = direct_recon(kdata)
-# idat = idata.data.cpu().numpy().squeeze()
-# image = idat[2 * idat.shape[0] // 3]
-# noise = idat[12]
-
-# image_normalized = image / np.std(noise)
-
-# fig, ax = plt.subplots(1, 3, figsize=(3 * 6, 6))
-# ax[0].imshow(np.rot90(np.abs(image)), cmap="gray")
-# ax[1].imshow(np.rot90(np.abs(noise)), cmap="gray")
-# ax[2].imshow(np.rot90(np.abs(image_normalized)), cmap="gray")
-
-#%%
-# set up the model
 from einops import rearrange
 
 # image_normalized = rearrange(image_normalized, "y x -> x y 1")
@@ -174,35 +179,8 @@ model_parameter_path = "./small/snraware_small_model.pts"
 model_config_path = "./small/snraware_small_model.yaml"
 
 model = load_scripted_model(model_parameter_path)
-config = OmegaConf.load(model_config_path)
-
-batch_size = 1
-cutout = tuple(config.dataset.cutout_shape)
-if cutout is not None:
-    cutout = tuple(cutout)
-overlap = (16, 16, 8)
-#%%
-# denoise the image slices
-# device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-# device = torch.device("cpu")
-# print("Using device:", device)
-
-# scaling_factor = 0.5
-
-# image_denoised = apply_model(
-#     model=model,
-#     data=image_normalized,
-#     gmap=gmap,
-#     scaling_factor=scaling_factor,
-#     cutout=cutout,
-#     overlap=overlap,
-#     batch_size=batch_size,
-#     device=device,
-#     verbose=True,
-# )
 #%%
 # use SNRaware in Plug-and-Play reconstruction
-
 # build a wrapper around the SNRaware denoiser to use it in the Plug-and-Play reconstruction
 device = torch.device("cpu")
 
@@ -214,9 +192,7 @@ def snraware_denoiser(img: torch.Tensor) -> torch.Tensor:
         model=model,
         data=image_hwt,
         gmap=np.ones(image_hwt.shape[:2] + (1,)),
-        cutout=cutout,
-        overlap=overlap,
-        batch_size=batch_size,
+        batch_size=1,
         device=device,
         verbose=True,
     )
@@ -251,7 +227,7 @@ slice_pos = img_direct.shape[-3] // 2
 show_images(
     img_direct.rss().squeeze()[slice_pos],
     img_tv_denoised.rss().squeeze()[slice_pos],
-    img_pnp.rss().squeeze()[slice_pos],
+    img_pnp_tv.rss().squeeze()[slice_pos],
     img_pnp_SNRaware_1_it.rss().squeeze()[slice_pos],
     img_pnp_SNRaware.rss().squeeze()[slice_pos],
     titles=[
@@ -266,27 +242,33 @@ show_images(
 # change plotting to show the difference images.
 # First row shows Direct, TV-Denoising and SNRaware_1_it,
 # second row shows PnP TV-Denoising and PnP SNRaware-Denoising
-# third row shows the difference images between TV-Denoising and PnP TV-Denoising, and between SNRaware_1_it and PnP SNRaware-Denoising
+# third row shows the difference images between TV-Denoising and PnP TV-Denoising,
+# and between SNRaware_1_it and PnP SNRaware-Denoising
 slice_pos = img_direct.shape[-3] // 2
 show_images(
     img_direct.rss().squeeze()[slice_pos],
     img_tv_denoised.rss().squeeze()[slice_pos],
+    img_wavelet_denoised.rss().squeeze()[slice_pos],
     img_pnp_SNRaware_1_it.rss().squeeze()[slice_pos],
-    img_pnp.rss().squeeze()[slice_pos],
+    img_pnp_tv.rss().squeeze()[slice_pos],
+    img_pnp_wavelet.rss().squeeze()[slice_pos],
     img_pnp_SNRaware.rss().squeeze()[slice_pos],
-    (img_tv_denoised.rss().squeeze()[slice_pos] - img_pnp.rss().squeeze()[slice_pos]),
+    (img_tv_denoised.rss().squeeze()[slice_pos] - img_pnp_tv.rss().squeeze()[slice_pos]),
+    (img_wavelet_denoised.rss().squeeze()[slice_pos] - img_pnp_wavelet.rss().squeeze()[slice_pos]),
     (img_pnp_SNRaware_1_it.rss().squeeze()[slice_pos] - img_pnp_SNRaware.rss().squeeze()[slice_pos]),
     titles=[
         'Direct',
         'TV-Denoising',
+        'Wavelet-Denoising',
         'SNRaware Denoising',
         'PnP TV-Denoising',
+        'PnP Wavelet-Denoising',
         'PnP SNRaware-Denoising',
         'Diff. TV vs PnP TV',
+        'Diff. Wavelet vs PnP Wavelet',
         'Diff. SNRaware vs PnP SNRaware'
     ],
     nrows=3,
-    ncols=3,
+    ncols=4,
     empty_positions={(1, 0), (2, 0)},
 )
-#%%
