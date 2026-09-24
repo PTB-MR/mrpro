@@ -40,7 +40,7 @@ jobs:
       pull-requests: write
       contents: write
     container:
-      image: ghcr.io/ptb-mr/mrpro_py311:latest
+      image: ghcr.io/ptb-mr/mrpro_runner:latest
       options: --user root
     strategy:
       fail-fast: false
@@ -51,29 +51,38 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install mrpro and dependencies
-        run: pip install --index-url=https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple/ --upgrade --upgrade-strategy "eager" -e .[notebooks]
+        run: pip install --upgrade --upgrade-strategy "eager" .[notebooks]
 
       - name: Notebook name
         run: |
           echo "current jupyter-notebook: ${{ matrix.notebook_path }}"
 
       - name: Add nb-myst download badge
+        env:
+          NOTEBOOK: ${{ matrix.notebook_path }}
         run: |
-          notebook=${{ matrix.notebook_path }}
-          notebook_name=$(basename $notebook)
-          download_badge_md="[![Download notebook](https://img.shields.io/badge/Download-notebook-blue?logo=jupyter)](path:$notebook_name)"
-          python_command="import nbformat as nbf\n\
-          nb = nbf.read(open('$notebook'), as_version=4)\n\
-          # if the 1st cell is md and has colab text => add space after\n\
-          if nb['cells'][0]['cell_type'] == 'markdown' and 'colab' in nb['cells'][0]['source'].lower():\n\
-              nb['cells'][0]['source'] += ' '\n\
-          # if there is no md cell with colab => create empty md cell on top\n\
-          else:\n\
-              nb['cells'].insert(0, nbf.v4.new_markdown_cell())\n\
-          nb['cells'][0]['source'] += '$download_badge_md'\n\
-          nbf.write(nb, open('$notebook', 'w'))"
+          python - <<'EOF'
+          import os
+          import nbformat as nbf
 
-          python -c "exec (\"$python_command\")"
+          notebook = os.environ["NOTEBOOK"]
+          notebook_name = os.path.basename(notebook)
+          badge_md = (
+              f"[![Download notebook](https://img.shields.io/badge/Download-notebook-blue?logo=jupyter)]"
+              f"(path:{notebook_name})"
+          )
+
+          nb = nbf.read(open(notebook), as_version=4)
+          first_cell = nb["cells"][0] if nb["cells"] else None
+
+          if first_cell and first_cell["cell_type"] == "markdown" and "colab" in first_cell["source"].lower():
+              first_cell["source"] += " "
+          else:
+              nb["cells"].insert(0, nbf.v4.new_markdown_cell())
+
+          nb["cells"][0]["source"] += badge_md
+          nbf.write(nb, open(notebook, "w"))
+          EOF
 
       - name: Run notebook
         uses: fzimmermann89/run-notebook@v3
@@ -103,7 +112,7 @@ jobs:
     needs: run_notebook
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/ptb-mr/mrpro_py311:latest
+      image: ghcr.io/ptb-mr/mrpro_runner:latest
       options: --user runner
     steps:
       - name: Checkout
@@ -113,7 +122,7 @@ jobs:
           fetch-tags: true
 
       - name: Install mrpro and dependencies
-        run: pip install --index-url=https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple/ --upgrade --upgrade-strategy "eager" -e .[docs]
+        run: pip install .[docs]
 
       - name: Download executed notebook ipynb files
         id: download
@@ -134,7 +143,7 @@ jobs:
           name: Documentation
           path: docs/build/html/
 
-      # if the one of above steps fails the "artifact-url" will be an empty string
+      # if one of the above steps fails the "artifact-url" will be an empty string
       - name: Dump documentation info
         if: always()
         run: |

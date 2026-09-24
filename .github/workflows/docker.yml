@@ -1,4 +1,4 @@
-name: Build and test docker
+name: Docker
 
 on:
   pull_request:
@@ -8,67 +8,35 @@ on:
     branches:
       - main
 
-
 jobs:
-  get_dockerfiles:
-    name: Get list of Docker files for different containers
+  changes:
+    name: Check if Docker files changed
     runs-on: ubuntu-latest
     outputs:
-      docker_toml: ${{ steps.filter.outputs.docker_toml }}
-      docker_tasks: ${{ steps.set-matrix.outputs.docker_tasks }}
+      docker_changed: ${{ steps.filter.outputs.docker }}
     steps:
       - name: Checkout mrpro repo
         uses: actions/checkout@v6
 
-      - name: Check if files in docker or the toml file has been modified
+      - name: Check if files in docker or the workflow file have been modified
         uses: dorny/paths-filter@v3
         id: filter
         with:
           filters: |
-            docker_toml:
+            docker:
               - 'docker/*'
               - '.github/workflows/docker.yml'
 
-      - name: Do we need to do something?
-        run: |
-          echo "Push to main? ${{ github.event_name }} "
-          echo "Rebuild containers? ${{ steps.filter.outputs.docker_toml }}"
-
-      - name: Define docker image names
-        id: set-matrix
-        if: steps.filter.outputs.docker_toml == 'true' || github.event_name == 'push'
-        run: |
-          # docker_tasks is a list of pairs (dictionaries) with keys 'filepath' and 'image_name' like:
-          # [{"filepath": "docker/Dockerfile_x1", "image_name": "ghcr.io/ptb-mr/mrpro_x1"}, ...]
-          docker_tasks=$(find docker -type f -name 'Dockerfile_*' | jq -R -s -c 'split("\n")[:-1]' | \
-          jq -r -c 'map({filepath: ., image_name:  . | sub("docker/Dockerfile"; "ghcr.io\/ptb-mr\/mrpro")})')
-          echo "docker_tasks: $docker_tasks"
-          echo "docker_tasks=$docker_tasks" >> $GITHUB_OUTPUT
-
-      - name: Dockerfile overview
-        if: steps.filter.outputs.docker_toml == 'true' || github.event_name == 'push'
-        run: |
-          echo "final list of docker_tasks: ${{ steps.set-matrix.outputs.docker_tasks }}"
-
   push_test:
-    name: Create test images and push to GCR
-    needs: get_dockerfiles
-    if: needs.get_dockerfiles.outputs.docker_toml == 'true' || github.event_name == 'push'
+    name: Build test image and push to GHCR
+    needs: changes
+    if: needs.changes.outputs.docker_changed == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       packages: write
-    strategy:
-      fail-fast: false
-      matrix:
-        docker_task: ${{ fromJson(needs.get_dockerfiles.outputs.docker_tasks) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-
-      - name: Get image basename
-        id: image_name
-        run: |
-          echo "dockerfile_basename=$(basename ${{ matrix.docker_task.filepath }})" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -84,66 +52,38 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          cache-from: type=gha,scope=$${{ steps.image_name.outputs.dockerfile_basename }})
-          cache-to: type=gha,mode=max,scope=${{ steps.image_name.outputs.dockerfile_basename }}
-          file: ${{ matrix.docker_task.filepath }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          file: docker/Dockerfile
           push: true
-          tags: ${{ matrix.docker_task.image_name }}:test
+          tags: ghcr.io/ptb-mr/mrpro_runner:${{ github.run_id }}
 
   test:
-    name: Test docker containers
-    needs: [get_dockerfiles, push_test]
-    if: needs.get_dockerfiles.outputs.docker_toml == 'true' || github.event_name == 'push'
+    name: Test docker container
+    needs: [changes, push_test]
+    if: needs.changes.outputs.docker_changed == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-      contents: write
-    strategy:
-      matrix:
-        docker_task: ${{ fromJson(needs.get_dockerfiles.outputs.docker_tasks) }}
-    # runs within Docker container
     container:
-      image: ${{ matrix.docker_task.image_name }}:test
+      image: ghcr.io/ptb-mr/mrpro_runner:${{ github.run_id }}
       options: --user runner
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
 
-      - name: Install mrpro and dependencies
-        run: |
-          # for the test of minimal requirements we do not want to update dependencies
-          # the image_url is like ghcr.io/ptb-mr/mrpro_py310_minimal, we want to check the last part after the last slash
-          image_url="${{ matrix.docker_task.image_name }}"
-          if [ "${image_url##*/}" = "mrpro_py310_minimal" ]; then
-            pip install .[tests]
-          elif [ "${image_url##*/}" = "mrpro_runner" ]; then
-            pip install --upgrade --upgrade-strategy eager .[tests]
-          else
-            pip install --index-url=https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple/ --upgrade --upgrade-strategy eager .[tests]
-          fi
-
-      - name: Install pytest-github-actions-annotate-failures plugin
-        run: pip install pytest-github-actions-annotate-failures
+      - name: Install mrpro and test dependencies
+        run: pip install ".[tests]" pytest-github-actions-annotate-failures
 
       - name: Run PyTest
-        run: |
-          pytest -n 4 -m "not cuda"
+        run: pytest -n 4 -m "not cuda"
 
   push_latest:
-    name: Pull latest images and push to GCR with new tag
-    needs: [get_dockerfiles, test]
-    if: needs.get_dockerfiles.outputs.docker_toml == 'true' || github.event_name == 'push'
+    name: Pull test image and push with new tag
+    needs: [changes, test]
+    if: needs.changes.outputs.docker_changed == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       packages: write
-    strategy:
-      matrix:
-        docker_task: ${{ fromJson(needs.get_dockerfiles.outputs.docker_tasks) }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
       - name: Login to GitHub Packages
         uses: docker/login-action@v3
         with:
@@ -153,6 +93,6 @@ jobs:
 
       - name: Pull and push Docker image with new tag
         run: |
-            docker pull ${{ matrix.docker_task.image_name }}:test
-            docker tag ${{ matrix.docker_task.image_name }}:test ${{ matrix.docker_task.image_name }}:latest
-            docker push ${{ matrix.docker_task.image_name}}:latest
+          docker pull ghcr.io/ptb-mr/mrpro_runner:${{ github.run_id }}
+          docker tag ghcr.io/ptb-mr/mrpro_runner:${{ github.run_id }}  ghcr.io/ptb-mr/mrpro_runner:latest
+          docker push ghcr.io/ptb-mr/mrpro_runner:latest
