@@ -93,15 +93,28 @@ import matplotlib.pyplot as plt
 import torch
 
 
-def show_images(*images: torch.Tensor, titles: list[str] | None = None) -> None:
+def show_images(
+    *images: torch.Tensor,
+    titles: list[str] | None = None,
+    nrows: int = 1,
+    ncols: int | None = None,
+    empty_positions: set[tuple[int, int]] | None = None,
+) -> None:
     """Plot images."""
     n_images = len(images)
-    _, axes = plt.subplots(1, n_images, squeeze=False, figsize=(n_images * 3, 3))
-    for i in range(n_images):
-        axes[0][i].imshow(images[i], cmap='gray')
-        axes[0][i].axis('off')
-        if titles:
-            axes[0][i].set_title(titles[i])
+    ncols = ncols or n_images
+    empty_positions = empty_positions or set()
+    _, axes = plt.subplots(nrows, ncols, squeeze=False, figsize=(ncols * 3, nrows * 3))
+    image_index = 0
+    for row in range(nrows):
+        for col in range(ncols):
+            axes[row][col].axis('off')
+            if (row, col) in empty_positions or image_index >= n_images:
+                continue
+            axes[row][col].imshow(images[image_index], cmap='gray')
+            if titles:
+                axes[row][col].set_title(titles[image_index])
+            image_index += 1
     plt.show()
 
 
@@ -122,16 +135,16 @@ img_pnp = pnp_recon(kdata)
 #%%
 import importlib
 
-if not importlib.util.find_spec("mrpro"):
-    %pip install ismrmrd==1.14.2
-    # %pip install mrpro[notebooks]
+# if not importlib.util.find_spec("mrpro"):
+#     %pip install ismrmrd==1.14.2
+#     # %pip install mrpro[notebooks]
 
-if not importlib.util.find_spec("SNRAware"):
-    !git clone https://github.com/microsoft/SNRAware.git
-    !cd SNRAware && pip install .
+# if not importlib.util.find_spec("SNRAware"):
+#     !git clone https://github.com/microsoft/SNRAware.git
+#     !cd SNRAware && pip install .
 # %%
-!wget --directory-prefix=./small/ https://huggingface.co/microsoft/SNRAware/resolve/main/small/snraware_small_model.pts
-!wget --directory-prefix=./small/ https://huggingface.co/microsoft/SNRAware/resolve/main/small/snraware_small_model.yaml
+# !wget --directory-prefix=./small/ https://huggingface.co/microsoft/SNRAware/resolve/main/small/snraware_small_model.pts
+# !wget --directory-prefix=./small/ https://huggingface.co/microsoft/SNRAware/resolve/main/small/snraware_small_model.yaml
 #%%
 from omegaconf import OmegaConf
 from snraware.projects.mri.denoising.inference import apply_model
@@ -201,7 +214,6 @@ def snraware_denoiser(img: torch.Tensor) -> torch.Tensor:
         model=model,
         data=image_hwt,
         gmap=np.ones(image_hwt.shape[:2] + (1,)),
-        # scaling_factor=scaling_factor,
         cutout=cutout,
         overlap=overlap,
         batch_size=batch_size,
@@ -211,8 +223,19 @@ def snraware_denoiser(img: torch.Tensor) -> torch.Tensor:
     denoised_twh = rearrange(denoised_hwt, "H W T -> T W H")
     return torch.as_tensor(denoised_twh, device=img.device, dtype=img.dtype)
 
-
-pnp_recon = mrpro.algorithms.reconstruction.PlugAndPlayPriorsReconstruction(
+# %%
+pnp_recon_SNRaware_1_it = mrpro.algorithms.reconstruction.PlugAndPlayPriorsReconstruction(
+    kdata=kdata,
+    denoiser=snraware_denoiser,
+    admm_regularization_strength=0.02,
+    max_iterations=1,
+    max_iterations_cg=10,
+    tolerance=1e-6,
+    tolerance_cg=1e-6,
+)
+img_pnp_SNRaware_1_it = pnp_recon_SNRaware_1_it(kdata)
+#%%
+pnp_recon_SNRaware = mrpro.algorithms.reconstruction.PlugAndPlayPriorsReconstruction(
     kdata=kdata,
     denoiser=snraware_denoiser,
     admm_regularization_strength=0.02,
@@ -221,7 +244,7 @@ pnp_recon = mrpro.algorithms.reconstruction.PlugAndPlayPriorsReconstruction(
     tolerance=1e-6,
     tolerance_cg=1e-6,
 )
-img_pnp = pnp_recon(kdata)
+img_pnp_SNRaware = pnp_recon_SNRaware(kdata)
 #%%
 # see the collapsed cell above for the implementation of show_images
 slice_pos = img_direct.shape[-3] // 2
@@ -229,11 +252,41 @@ show_images(
     img_direct.rss().squeeze()[slice_pos],
     img_tv_denoised.rss().squeeze()[slice_pos],
     img_pnp.rss().squeeze()[slice_pos],
+    img_pnp_SNRaware_1_it.rss().squeeze()[slice_pos],
+    img_pnp_SNRaware.rss().squeeze()[slice_pos],
     titles=[
         'Direct',
         'TV-Denoising',
-        'PnP Reconstruction',
+        'PnP TV-Denoising',
+        'SNRaware Denoising',
+        'PnP SNRaware-Denoising'
     ],
 )
-
 # %%
+# change plotting to show the difference images.
+# First row shows Direct, TV-Denoising and SNRaware_1_it,
+# second row shows PnP TV-Denoising and PnP SNRaware-Denoising
+# third row shows the difference images between TV-Denoising and PnP TV-Denoising, and between SNRaware_1_it and PnP SNRaware-Denoising
+slice_pos = img_direct.shape[-3] // 2
+show_images(
+    img_direct.rss().squeeze()[slice_pos],
+    img_tv_denoised.rss().squeeze()[slice_pos],
+    img_pnp_SNRaware_1_it.rss().squeeze()[slice_pos],
+    img_pnp.rss().squeeze()[slice_pos],
+    img_pnp_SNRaware.rss().squeeze()[slice_pos],
+    (img_tv_denoised.rss().squeeze()[slice_pos] - img_pnp.rss().squeeze()[slice_pos]),
+    (img_pnp_SNRaware_1_it.rss().squeeze()[slice_pos] - img_pnp_SNRaware.rss().squeeze()[slice_pos]),
+    titles=[
+        'Direct',
+        'TV-Denoising',
+        'SNRaware Denoising',
+        'PnP TV-Denoising',
+        'PnP SNRaware-Denoising',
+        'Diff. TV vs PnP TV',
+        'Diff. SNRaware vs PnP SNRaware'
+    ],
+    nrows=3,
+    ncols=3,
+    empty_positions={(1, 0), (2, 0)},
+)
+#%%
