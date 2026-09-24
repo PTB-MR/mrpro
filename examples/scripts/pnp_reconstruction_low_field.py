@@ -49,19 +49,19 @@ from pathlib import Path
 
 import zenodo_get
 
-tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
-data_folder = Path(tmp.name)
-zenodo_get.download(
-    record='19661402',
-    retry_attempts=5,
-    output_dir=data_folder,
-    file_glob=('LLR.zip',),
-    access_token=os.environ.get('ZENODO_TOKEN'),
-)
-with zipfile.ZipFile(data_folder / Path('LLR.zip'), 'r') as zip_ref:
-    zip_ref.extractall(data_folder)
-
-
+# tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
+# data_folder = Path(tmp.name)
+# zenodo_get.download(
+#     record='19661402',
+#     retry_attempts=5,
+#     output_dir=data_folder,
+#     file_glob=('LLR.zip',),
+#     access_token=os.environ.get('ZENODO_TOKEN'),
+# )
+# with zipfile.ZipFile(data_folder / Path('LLR.zip'), 'r') as zip_ref:
+#     zip_ref.extractall(data_folder)
+# %%
+data_folder = Path('/tmp/tmpvs57g2j9')
 # %% [markdown]
 # ### Direct Reconstruction
 # We do a simple direct reconstruction of the data.
@@ -152,6 +152,78 @@ pnp_recon_wavelet = mrpro.algorithms.reconstruction.PlugAndPlayPriorsReconstruct
     tolerance_cg=1e-6,
 )
 img_pnp_wavelet = pnp_recon_wavelet(kdata)
+#%%
+# add patch based denoisng
+patch_based_dicts = "/echo/allgemein/projects/MRpro/pre_trained-dictionaries/patch_lasso_filters/"
+patch_based_file = "K288_d4x6x6.pt"
+patch_based_dict = torch.load(patch_based_dicts + patch_based_file).to(torch.complex64)
+dict_op = mrpro.operators.DictionaryOp(patch_based_dict, dim=(-3, -2, -1)).H
+
+patch_based_recon = mrpro.algorithms.patch_based_denoising(
+    idata=img_direct,
+    dictionary_op=dict_op,
+    patch_dim=(-3, -2, -1),
+    patch_size=(4, 6, 6),
+    regularization_weight=0.1,
+)
+#%%
+# add patch based denoisng in Plug-and-Play reconstruction
+pnp_recon_patch_based = mrpro.algorithms.reconstruction.PlugAndPlayPriorsReconstruction(
+    kdata=kdata,
+    denoiser=lambda img: mrpro.algorithms.patch_based_denoising(
+        idata=img,
+        dictionary_op=dict_op,
+        patch_dim=(-3, -2, -1),
+        patch_size=(4, 6, 6),
+        regularization_weight=0.1,
+    ),
+    admm_regularization_strength=0.02,
+    max_iterations=2,
+    max_iterations_cg=10,
+    tolerance=1e-6,
+    tolerance_cg=1e-6,
+)
+img_pnp_patch_based = pnp_recon_patch_based(kdata)
+#%%
+# add convolutional synthesis dictionary based denoisng
+path_name = (
+    "/echo/allgemein/projects/MRpro/pre_trained-dictionaries/conv_synthesis_filters/"
+)
+file_name = "d_filter_sporco_K32_k11x11_lmbda1em01_fltlmbd2em01.pt"
+kernel = torch.load(path_name + file_name)
+
+low_pass_parameter = 1.0
+regularization_weight = 3e-2
+max_iterations_low_pass_filtering = 12
+tolerance_low_pass_filtering = 1e-4
+
+denoised_image_conv_synth = mrpro.algorithms.conv_synthesis_dictionary_denoising(
+    img_direct,
+    kernel,
+    low_pass_parameter=low_pass_parameter,
+    regularization_weight=regularization_weight,
+    max_iterations_low_pass_filtering=max_iterations_low_pass_filtering,
+    max_iterations_pgd=128,
+)
+#%%
+# add convolutional synthesis dictionary based denoisng in Plug-and-Play reconstruction
+pnp_recon_conv_synth = mrpro.algorithms.reconstruction.PlugAndPlayPriorsReconstruction(
+    kdata=kdata,
+    denoiser=lambda img: mrpro.algorithms.conv_synthesis_dictionary_denoising(
+        img,
+        kernel,
+        low_pass_parameter=low_pass_parameter,
+        regularization_weight=regularization_weight,
+        max_iterations_low_pass_filtering=max_iterations_low_pass_filtering,
+        max_iterations_pgd=128,
+    ),
+    admm_regularization_strength=0.02,
+    max_iterations=10,
+    max_iterations_cg=10,
+    tolerance=1e-6,
+    tolerance_cg=1e-6,
+)
+img_pnp_conv_synth = pnp_recon_conv_synth(kdata)
 #%%
 import importlib
 
