@@ -87,11 +87,8 @@ def conv_synthesis_dictionary_denoising(
     """
     img_tensor = idata if isinstance(idata, torch.Tensor) else idata.data
 
-    # pre process image data by computing a low pass-filtered image
-    regularization_dimensions = tuple(-k for k in range(1, len(kernel.shape[1:]) + 1))[
-        ::-1
-    ]
-    nabla_operator = FiniteDifferenceOp(dim=regularization_dimensions, mode="forward")
+    regularization_dimensions = tuple(-k for k in range(1, len(kernel.shape[1:]) + 1))[::-1]
+    nabla_operator = FiniteDifferenceOp(dim=regularization_dimensions, mode='forward')
 
     (image_low_pass,) = cg(
         operator=IdentityOp() + low_pass_parameter * nabla_operator.gram,
@@ -101,19 +98,13 @@ def conv_synthesis_dictionary_denoising(
         tolerance=tolerance_low_pass_filtering,
     )
 
-    conv_synthesis_operator = ConvSynthesisDictionaryOp(
-        kernel=kernel, pad_mode="circular"
-    )
-    l2_norm_squared = 0.5 * (
-        L2NormSquared(target=img_tensor - image_low_pass) @ conv_synthesis_operator
-    )
+    conv_synthesis_operator = ConvSynthesisDictionaryOp(kernel=kernel, pad_mode='circular')
+    l2_norm_squared = 0.5 * (L2NormSquared(target=img_tensor - image_low_pass) @ conv_synthesis_operator)
 
     l1_norm = regularization_weight * L1Norm()
 
     (initial_codes,) = (
-        conv_synthesis_operator.H(torch.zeros_like(img_tensor))
-        if initial_codes is None
-        else initial_codes
+        conv_synthesis_operator.H(torch.zeros_like(img_tensor)) if initial_codes is None else initial_codes
     )
 
     operator_norm = conv_synthesis_operator.operator_norm(
@@ -131,8 +122,4 @@ def conv_synthesis_dictionary_denoising(
 
     img_tensor = conv_synthesis_operator(sparse_codes)[0] + image_low_pass
 
-    return (
-        img_tensor
-        if isinstance(idata, torch.Tensor)
-        else IData(img_tensor, idata.header)
-    )
+    return img_tensor if isinstance(idata, torch.Tensor) else IData(img_tensor, idata.header)
