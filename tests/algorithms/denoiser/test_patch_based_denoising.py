@@ -67,3 +67,33 @@ def test_fft_dictionary_denoising(idata_single_coil: IData, tensor_input: bool) 
     assert relative_image_difference(denoised, idata_single_coil.data) < relative_image_difference(
         noisy.data, idata_single_coil.data
     )
+
+
+@pytest.mark.parametrize(
+    ('image_size', 'patch_size', 'stride'),
+    [
+        ((30, 30), (8, 8), (6, 6)),
+        ((37, 51), (7, 5), (3, 4)),
+        ((20, 20), (8, 8), None),
+    ],
+)
+def test_padding_prevents_nan_at_uncovered_pixels(
+    image_size: tuple[int, int], patch_size: tuple[int, int], stride: tuple[int, int] | None
+) -> None:
+    """Padding works for different image size, patch size and stride combinations.
+
+    Without padding, pixels not in any patch are 0 in the output image and in the overlap map, giving 0/0 = NaN.
+    """
+    rng = RandomGenerator(seed=0)
+    image = rng.complex64_tensor((1, 1, 1, *image_size))
+    dictionary_op = FastFourierOp(dim=(-2, -1)).H
+    denoised = patch_based_denoising(
+        image,
+        dictionary_op,
+        patch_dim=(-2, -1),
+        patch_size=patch_size,
+        stride=stride,
+        regularization_weight=0.0,
+    )
+    assert not denoised.isnan().any()
+    torch.testing.assert_close(denoised, image)
