@@ -54,24 +54,29 @@ def conv_synthesis_dictionary_denoising(
     r"""Apply image denoising using a pre-trained convolutional synthesis dictionary.
 
     This algorithm solves the problems
-        :math:`x_{\mathrm{low}}:=\arg\min_x \frac{1}{2}||x - x||_2^2 + \frac{\beta}{2} ||\nabla x||_2^2`
-        :math:`s^{\ast}:= \arg\min_s \frac{1}{2}||Ds - (y - x_{\mathrm{low}})||_2^2 + \lambda || s||_1`
+        :math:`x_{\mathrm{low}}:=\arg\min_x \frac{1}{2}||x - x||_2^2 + \frac{\beta}{2} ||\nabla x||_2^2`,
+
+        :math:`s^{\ast}:= \arg\min_s \frac{1}{2}||Ds - (y - x_{\mathrm{low}})||_2^2 + \lambda || s||_1`,
+
         :math:`x^{\ast}:= Ds^\ast + x_{\mathrm{low}}`
 
-    by using the FISTA-algorithm. :math:`y` is the given noisy image, :math:`\lambda` is the sparsity level
+    by using the FISTA-algorithm. Thereby, :math:`y` is the given noisy image, :math:`\lambda` is the sparsity level,
     :math:`\nabla` is the finite difference operator applied to :math:`x` along the last n dimensions that are
-    defined by the number of dimensions that the convolutiona kernelis applied to.
+    defined by the number of dimensions that the convolutiona kernel is applied to.
+
+    Denoising is achieved by computing a sparse approximation of the high-pass component of the noisy image and then
+    subsequently adding back the low-pass component of the noisy image.
 
     Parameters
     ----------
     idata
         noisy image
     kernel
-        convolutional kernel for the synthesis operator
+        convolutional kernel for the synthesis operator.
     low_pass_parameter
-        regularization parameter of the
+        regularization parameter of the low-pass filtering problem.
     regularization_weight
-        Strength of the regularization, i.e. the sparsity of the coefficient maps.
+        strength of the regularization, i.e. the sparsity of the coefficient maps.
     initial_codes
         initial estimate of the sparse coefficient maps; if `none`, it is initialized as zeros.
     max_iterations_low_pass_filtering
