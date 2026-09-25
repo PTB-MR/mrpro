@@ -62,7 +62,7 @@ def conv_synthesis_dictionary_denoising(
 
     by using the FISTA-algorithm. Thereby, :math:`y` is the given noisy image, :math:`\lambda` is the sparsity level,
     :math:`\nabla` is the finite difference operator applied to :math:`x` along the last n dimensions that are
-    defined by the number of dimensions that the convolutiona kernel is applied to.
+    defined by the number of dimensions that the convolutional kernel is applied to.
 
     Denoising is achieved by computing a sparse approximation of the high-pass component of the noisy image and then
     subsequently adding back the low-pass component of the noisy image.
