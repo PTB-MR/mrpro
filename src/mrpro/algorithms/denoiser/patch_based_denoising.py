@@ -1,4 +1,5 @@
 """Patch-based Dictionary Denoising using Proximal Gradient Descent (PGD)."""
+# %%
 
 from __future__ import annotations
 
@@ -11,6 +12,7 @@ from mrpro.algorithms.optimizers import pgd
 from mrpro.data.IData import IData
 from mrpro.operators import LinearOperator, PatchOp
 from mrpro.operators.functionals import L1NormViewAsReal, L2NormSquared
+from mrpro.utils import pad_or_crop
 
 
 @overload
@@ -106,8 +108,16 @@ def patch_based_denoising(
         dim=patch_dim,
     )
 
+    # pad (by reflection) each patch dimension so that the patches cover the whole image
+    image_shape = [img_tensor.shape[d] for d in patch_dim]
+    padded_shape = [
+        n + (step - (n - size) % step) % step
+        for n, size, step in zip(image_shape, patch_op.patch_size, patch_op.stride, strict=True)
+    ]
+    padded_img_tensor = pad_or_crop(img_tensor, padded_shape, dim=patch_dim, mode='reflect')
+
     # extract patches: (n_patches, ..., patch_size)
-    (patches,) = patch_op(img_tensor)
+    (patches,) = patch_op(padded_img_tensor)
 
     # remove the mean of each patch
     mean_dims = tuple(d - img_tensor.ndim if d >= 0 else d for d in patch_dim)
@@ -143,8 +153,14 @@ def patch_based_denoising(
     (opt_img_tensor,) = patch_op.adjoint(opt_patches + patches_average)
 
     # average overlapping patches
-    (ones_patches,) = patch_op(torch.ones_like(img_tensor))
+    (ones_patches,) = patch_op(torch.ones_like(padded_img_tensor))
     (overlap_map,) = patch_op.adjoint(ones_patches)
     opt_img_tensor = opt_img_tensor / overlap_map
 
+    # crop the padding
+    opt_img_tensor = pad_or_crop(opt_img_tensor, image_shape, dim=patch_dim)
+
     return opt_img_tensor if isinstance(idata, torch.Tensor) else IData(opt_img_tensor, idata.header)
+
+
+# %%
