@@ -47,7 +47,7 @@ def conv_analysis_dictionary_denoising(
     r"""Apply image denoising using a pre-trained convolutional synthesis dictionary.
 
     This algorithm solves the problem
-        :math:`x^{\ast}:= \arg\min_x \frac{1}{2}||x - y)||_2^2 + \lambda || H x||_1`,
+        :math:`x^{\ast}:= \arg\min_x \frac{1}{2}||x - y||_2^2 + \lambda || H x||_1`,
 
     by using the PDHG-algorithm. Thereby, :math:`y` is the given noisy image, :math:`\lambda` is the sparsity level
     and :math:`H` a convolutional operator.

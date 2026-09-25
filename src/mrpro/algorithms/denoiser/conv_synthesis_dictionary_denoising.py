@@ -54,7 +54,7 @@ def conv_synthesis_dictionary_denoising(
     r"""Apply image denoising using a pre-trained convolutional synthesis dictionary.
 
     This algorithm solves the problems
-        :math:`x_{\mathrm{low}}:=\arg\min_x \frac{1}{2}||x - x||_2^2 + \frac{\beta}{2} ||\nabla x||_2^2`,
+        :math:`x_{\mathrm{low}}:=\arg\min_x \frac{1}{2}||x - y||_2^2 + \frac{\beta}{2} ||\nabla x||_2^2`,
 
         :math:`s^{\ast}:= \arg\min_s \frac{1}{2}||Ds - (y - x_{\mathrm{low}})||_2^2 + \lambda || s||_1`,
 
