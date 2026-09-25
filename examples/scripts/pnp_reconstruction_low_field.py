@@ -82,7 +82,7 @@ img_direct = recon(kdata)
 
 # %%
 img_tv_denoised = mrpro.algorithms.total_variation_denoising(
-    img_direct, regularization_dim=(-3, -2, -1), regularization_weight=0.02, tolerance=1e-6
+    img_direct, regularization_dim=(-3, -2, -1), regularization_weight=0.1, tolerance=1e-6
 )
 
 # %% [markdown]
@@ -90,7 +90,7 @@ img_tv_denoised = mrpro.algorithms.total_variation_denoising(
 # We apply a wavelet-based denoiser to the image data.
 #%%
 img_wavelet_denoised = mrpro.algorithms.wavelet_denoising(
-    img_direct, regularization_dim=(-3, -2, -1), regularization_weight=0.02, wavelet_name='db4', level=None
+    img_direct, regularization_dim=(-3, -2, -1), regularization_weight=0.1, wavelet_name='db4', level=None
 )
 # %% [markdown]
 # ### Compare the results
@@ -130,9 +130,9 @@ def show_images(
 pnp_recon_tv = mrpro.algorithms.reconstruction.PlugAndPlayPriorsReconstruction(
     kdata=kdata,
     denoiser=lambda img: mrpro.algorithms.total_variation_denoising(
-        img, regularization_dim=(-3, -2, -1), regularization_weight=0.02, tolerance=1e-6
+        img, regularization_dim=(-3, -2, -1), regularization_weight=0.1, tolerance=1e-6
     ),
-    admm_regularization_strength=0.02,
+    admm_regularization_strength=0.04,
     max_iterations=10,
     max_iterations_cg=10,
     tolerance=1e-6,
@@ -143,9 +143,9 @@ img_pnp_tv = pnp_recon_tv(kdata)
 pnp_recon_wavelet = mrpro.algorithms.reconstruction.PlugAndPlayPriorsReconstruction(
     kdata=kdata,
     denoiser=lambda img: mrpro.algorithms.wavelet_denoising(
-        img, regularization_dim=(-3, -2, -1), regularization_weight=0.02, wavelet_name='db4', level=None
+        img, regularization_dim=(-3, -2, -1), regularization_weight=0.1, wavelet_name='db4', level=None
     ),
-    admm_regularization_strength=0.02,
+    admm_regularization_strength=0.04,
     max_iterations=10,
     max_iterations_cg=10,
     tolerance=1e-6,
@@ -177,7 +177,7 @@ pnp_recon_patch_based = mrpro.algorithms.reconstruction.PlugAndPlayPriorsReconst
         patch_size=(4, 6, 6),
         regularization_weight=0.1,
     ),
-    admm_regularization_strength=0.5,
+    admm_regularization_strength=0.04,
     max_iterations=10,
     max_iterations_cg=10,
     tolerance=1e-6,
@@ -193,7 +193,7 @@ file_name = "d_filter_sporco_K32_k11x11_lmbda1em01_fltlmbd2em01.pt"
 kernel = torch.load(path_name + file_name)
 
 low_pass_parameter = 1.0
-regularization_weight = 3e-2
+regularization_weight = 3e-1
 max_iterations_low_pass_filtering = 12
 tolerance_low_pass_filtering = 1e-4
 
@@ -336,16 +336,16 @@ show_images(
     (img_pnp_SNRaware_1_it.rss().squeeze()[slice_pos] - img_pnp_SNRaware.rss().squeeze()[slice_pos]),
     titles=[
         'Direct',
-        'TV-Denoising',
-        'Wavelet-Denoising',
-        'Patch-based Denoising',
-        'Convolutional Synthesis Denoising',
-        'SNRaware Denoising',
-        'PnP TV-Denoising',
-        'PnP Wavelet-Denoising',
-        'PnP Patch-based Denoising',
-        'PnP Convolutional Synthesis Denoising',
-        'PnP SNRaware-Denoising',
+        'TV',
+        'Wavelet',
+        'Patch-based',
+        'Convolutional Synthesis',
+        'SNRaware',
+        'PnP TV',
+        'PnP Wavelet',
+        'PnP Patch-based',
+        'PnP Convolutional Synthesis',
+        'PnP SNRaware',
         'Diff. TV vs PnP TV',
         'Diff. Wavelet vs\n PnP Wavelet',
         'Diff. Patch-based vs\n PnP Patch-based',
