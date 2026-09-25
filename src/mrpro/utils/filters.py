@@ -211,7 +211,6 @@ def gabor_filters_2d(
     differing by 180 degrees are omitted because they produce equivalent
     real-valued cosine Gabor filters.
     """
-    # Coordinates
     ky, kx = kernel_size
     x = torch.linspace(-(kx - 1) / 2, (kx - 1) / 2, kx)
     y = torch.linspace(-(ky - 1) / 2, (ky - 1) / 2, ky)
@@ -221,26 +220,14 @@ def gabor_filters_2d(
     filters = torch.zeros(n_filters, ky, kx)
 
     for i in range(n_filters):
-        # Orientation in [0, pi)
         theta = i * math.pi / n_filters
-
-        # Rotate coordinates
         x_theta = xx * math.cos(theta) + yy * math.sin(theta)
         y_theta = -xx * math.sin(theta) + yy * math.cos(theta)
 
-        # Gaussian envelope
         gaussian = torch.exp(-(x_theta**2 + y_theta**2) / (2.0 * sigma**2))
-
-        # Cosine carrier
         carrier = torch.cos(2.0 * math.pi * frequency * x_theta)
-
-        # Gabor filter
         gabor = gaussian * carrier
-
-        # Remove mean
         gabor = gabor - gabor.mean()
-
-        # Normalize
         norm = torch.sqrt(torch.sum(gabor**2))
 
         if norm > 0:
@@ -249,3 +236,74 @@ def gabor_filters_2d(
         filters[i] = gabor
 
     return filters
+
+
+def dct_matrix(
+    n: int,
+    dtype: torch.dtype = torch.float32,
+) -> torch.Tensor:
+    """Create an orthonormal DCT-II transformation matrix.
+
+    Parameters
+    ----------
+    n
+        Size of the transformation.
+    dtype
+        Data type of the matrix.
+
+    Returns
+    -------
+    Tensor
+        Orthonormal DCT-II matrix of shape ``(n, n)``.
+    """
+    k = torch.arange(n, dtype=dtype)[:, None]
+    x = torch.arange(n, dtype=dtype)[None, :]
+
+    matrix = torch.cos(torch.pi / n * (x + 0.5) * k)
+
+    matrix[0] *= math.sqrt(1.0 / n)
+    matrix[1:] *= math.sqrt(2.0 / n)
+
+    return matrix
+
+
+def dct_filters(
+    kernel_size: tuple[int, ...],
+    dtype: torch.dtype = torch.float32,
+) -> torch.Tensor:
+    """Create an N-dimensional orthonormal DCT-II basis.
+
+    Parameters
+    ----------
+    kernel_size
+        Spatial shape of the DCT filters, e.g. ``(5, 7)`` or
+        ``(5, 7, 9)``.
+    dtype
+        Data type of the filters.
+
+    Returns
+    -------
+    Tensor
+        DCT basis filters of shape ``(prod(shape), *shape)``.
+
+    """
+    if len(kernel_size) == 0:
+        raise ValueError('shape must contain at least one dimension.')
+
+    if any(n <= 0 for n in kernel_size):
+        raise ValueError('All dimensions must be positive.')
+
+    bases = [dct_matrix(n, dtype=dtype) for n in kernel_size]
+
+    filters = torch.ones((), dtype=dtype)
+
+    for basis in bases:
+        n_frequency_dims = filters.ndim // 2
+
+        filters = filters.unsqueeze(n_frequency_dims).unsqueeze(-1)
+
+        view_shape = (1,) * n_frequency_dims + (basis.shape[0],) + (1,) * n_frequency_dims + (basis.shape[1],)
+
+        filters = filters * basis.reshape(view_shape)
+
+    return filters.reshape(math.prod(kernel_size), *kernel_size)
