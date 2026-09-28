@@ -253,7 +253,7 @@ def dct_matrix(
 
     Returns
     -------
-    Tensor
+    torch.tensor
         Orthonormal DCT-II matrix of shape ``(n, n)``.
     """
     k = torch.arange(n, dtype=dtype)[:, None]
@@ -284,14 +284,14 @@ def dct_filters(
     Returns
     -------
     Tensor
-        DCT basis filters of shape ``(prod(shape), *shape)``.
+        DCT basis filters of shape ``(prod(kernel_size), *kernel_size)``.
 
     """
     if len(kernel_size) == 0:
-        raise ValueError('shape must contain at least one dimension.')
+        raise ValueError('kernel_size must contain at least one dimension.')
 
     if any(n <= 0 for n in kernel_size):
-        raise ValueError('All dimensions must be positive.')
+        raise ValueError('All dimensions in kernel_size must be positive.')
 
     bases = [dct_matrix(n, dtype=dtype) for n in kernel_size]
 
@@ -307,3 +307,38 @@ def dct_filters(
         filters = filters * basis.reshape(view_shape)
 
     return filters.reshape(math.prod(kernel_size), *kernel_size)
+
+
+def fft_filters(
+    kernel_size: tuple[int, ...],
+    dtype: torch.dtype = torch.complex64,
+) -> torch.Tensor:
+    """Create an N-dimensional orthonormal Fourier basis.
+
+    Parameters
+    ----------
+    kernel_size
+        Spatial shape of the Fourier filters, e.g. ``(7, 7)``
+        or ``(5, 7, 9)``.
+    dtype
+        Complex data type of the filters.
+
+    Returns
+    -------
+    Tensor
+        Fourier basis filters of shape ``(prod(kernel_size), *kernel_size)``.
+    """
+    n_filters = math.prod(kernel_size)
+
+    basis = torch.eye(
+        n_filters,
+        dtype=dtype,
+    ).reshape(n_filters, *kernel_size)
+
+    filters = torch.fft.ifftn(
+        basis,
+        dim=tuple(range(1, len(kernel_size) + 1)),
+        norm='ortho',
+    )
+
+    return filters

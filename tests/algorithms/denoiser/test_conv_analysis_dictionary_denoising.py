@@ -1,4 +1,4 @@
-"""Tests for total variation denoising."""
+"""Tests for convolutional analysis dictionary-based image denoising."""
 
 import pytest
 from mrpro.algorithms.denoiser.conv_analysis_dictionary_denoising import conv_analysis_dictionary_denoising

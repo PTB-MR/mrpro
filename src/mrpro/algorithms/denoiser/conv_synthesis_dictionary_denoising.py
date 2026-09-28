@@ -1,4 +1,4 @@
-"""Convolutional Dictionary based Image Denoising using FISTA."""
+"""Convolutional Synthesis Dictionary based Image Denoising using FISTA."""
 
 from __future__ import annotations
 

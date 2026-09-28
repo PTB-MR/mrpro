@@ -44,17 +44,16 @@ def conv_analysis_dictionary_denoising(
     max_iterations_pdhg: int = 96,
     tolerance_pdhg: float = 1e-4,
 ) -> IData | torch.Tensor:
-    r"""Apply image denoising using a pre-trained convolutional synthesis dictionary.
+    r"""Apply image denoising using a given convolutional analysis dictionary.
 
     This algorithm solves the problem
         :math:`x^{\ast}:= \arg\min_x \frac{1}{2}||x - y||_2^2 + \lambda || H x||_1`,
 
-    by using the PDHG-algorithm. Thereby, :math:`y` is the given noisy image, :math:`\lambda` is the sparsity level
-    and :math:`H` a convolutional operator.
+    by using the primal dual hybrid gradient (PDHG) algorithm. Thereby, :math:`y` is the given noisy image,
+    :math:`\lambda` is the sparsity level and :math:`H` a sparsifying convolutional analysis operator.
 
     Denoising is achieved by computing an image that is close to the noisy image but at the same time is sparse after
-    the application of the convolutional filters. To solve the problem, the primal dual hybrid gradient (PDHG) algorithm
-    is used.
+    the application of the convolutional filters. To solve the problem, the PDHG algorithm     is used.
 
     Parameters
     ----------
@@ -85,15 +84,11 @@ def conv_analysis_dictionary_denoising(
 
     initial_image = initial_image if initial_image is not None else img_tensor
 
-    op_norm = conv_analysis_operator.operator_norm(torch.randn_like(initial_image), dim=None, max_iterations=36).item()
-    primal_stepsize = dual_stepsize = 0.97 / op_norm
     (img_tensor,) = pdhg(
         f=ProximableFunctionalSeparableSum(l2_norm_squared, l1_norm),
         g=None,
         operator=operator,
         initial_values=(initial_image,),
-        primal_stepsize=primal_stepsize,
-        dual_stepsize=dual_stepsize,
         max_iterations=max_iterations_pdhg,
         tolerance=tolerance_pdhg,
     )
