@@ -3,17 +3,9 @@
 import pytest
 import torch
 from mrpro.algorithms.denoiser.total_variation_denoising import total_variation_denoising
-from mrpro.data import IData, SpatialDimension
+from mrpro.data import IData
 from mrpro.utils import RandomGenerator
 from tests.helper import relative_image_difference
-
-
-@pytest.fixture
-def idata_single_coil(ellipse_phantom, random_kheader) -> IData:
-    """Create single-coil image."""
-    image_dimensions = SpatialDimension(z=1, y=ellipse_phantom.n_y, x=ellipse_phantom.n_x)
-    img = ellipse_phantom.phantom.image_space(image_dimensions)
-    return IData.from_tensor_and_kheader(data=img, header=random_kheader)
 
 
 @pytest.mark.parametrize('tensor_input', [True, False], ids=['tensor', 'idata'])
@@ -48,3 +40,12 @@ def test_denoising_repeated_dims() -> None:
     """Error for repeated dims."""
     with pytest.raises(ValueError, match='Repeated values are not allowed in regularization_dim'):
         _ = total_variation_denoising(torch.zeros(1, 1), regularization_dim=(-2, 0), regularization_weight=[1.0, 1.0])
+
+
+@pytest.mark.cuda
+def test_direct_reconstruction_cuda_from_kdata(idata_single_coil: IData) -> None:
+    """Test denoising on CUDA device."""
+    denoised = total_variation_denoising(
+        idata_single_coil.cuda(), regularization_dim=(-2, -1), regularization_weight=[1.0, 1.0], max_iterations=2
+    )
+    assert denoised.is_cuda
