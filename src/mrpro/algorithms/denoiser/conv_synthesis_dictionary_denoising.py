@@ -20,7 +20,7 @@ def conv_synthesis_dictionary_denoising(
     idata: IData,
     kernel: torch.Tensor,
     low_pass_parameter: float,
-    regularization_weight: float,
+    regularization_weight: float | torch.Tensor,
     initial_codes: torch.Tensor | None = None,
     max_iterations_low_pass_filtering: int = 16,
     max_iterations_pgd: int = 64,
@@ -33,7 +33,7 @@ def conv_synthesis_dictionary_denoising(
     idata: torch.Tensor,
     kernel: torch.Tensor,
     low_pass_parameter: float,
-    regularization_weight: float,
+    regularization_weight: float | torch.Tensor,
     initial_codes: torch.Tensor | None = None,
     max_iterations_low_pass_filtering: int = 16,
     max_iterations_pgd: int = 64,
@@ -45,7 +45,7 @@ def conv_synthesis_dictionary_denoising(
     idata: IData | torch.Tensor,
     kernel: torch.Tensor,
     low_pass_parameter: float,
-    regularization_weight: float,
+    regularization_weight: float | torch.Tensor,
     initial_codes: torch.Tensor | None = None,
     max_iterations_low_pass_filtering: int = 16,
     max_iterations_pgd: int = 64,
@@ -66,6 +66,15 @@ def conv_synthesis_dictionary_denoising(
 
     Denoising is achieved by computing a sparse approximation of the high-pass component of the noisy image and then
     subsequently adding back the low-pass component of the noisy image.
+
+    Note: it is also possible to provide entire locally adaptive sparsity level maps :math:`\Lambda`
+    instead of a single scalar value :math:`\lambda>0`. In that case, the sparsity
+    regularization is given by a weighted :math:`\ell_1`-norm, i.e. by
+
+        :math:`|| \Lambda \cdot ||_1.`
+
+    In that case, the sparsity level map must be broacastable with elements of the domain of the
+    convolutional synthesis operator.
 
     Parameters
     ----------
@@ -90,6 +99,8 @@ def conv_synthesis_dictionary_denoising(
     -------
         the denoised image.
     """
+    if isinstance(regularization_weight, torch.Tensor) and regularization_weight.shape[0] != kernel.shape[0]:
+        raise ValueError('First dimension of the regularization_weight tensor must be the same as first of the kernel.')
     img_tensor = idata if isinstance(idata, torch.Tensor) else idata.data
 
     regularization_dimensions = tuple(-k for k in range(1, len(kernel.shape[1:]) + 1))[::-1]
@@ -106,7 +117,7 @@ def conv_synthesis_dictionary_denoising(
     conv_synthesis_operator = ConvSynthesisDictionaryOp(kernel=kernel, pad_mode='circular')
     l2_norm_squared = 0.5 * (L2NormSquared(target=img_tensor - image_low_pass) @ conv_synthesis_operator)
 
-    l1_norm = regularization_weight * L1Norm()
+    l1_norm = L1Norm(weight=regularization_weight)
 
     (initial_codes,) = (
         conv_synthesis_operator.H(torch.zeros_like(img_tensor)) if initial_codes is None else initial_codes

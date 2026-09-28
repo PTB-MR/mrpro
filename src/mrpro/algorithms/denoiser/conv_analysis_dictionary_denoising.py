@@ -18,7 +18,7 @@ from mrpro.operators.IdentityOp import IdentityOp
 def conv_analysis_dictionary_denoising(
     idata: IData,
     kernel: torch.Tensor,
-    regularization_weight: float,
+    regularization_weight: float | torch.Tensor,
     initial_image: torch.Tensor | None = None,
     max_iterations_pdhg: int = 96,
     tolerance_pdhg: float = 1e-4,
@@ -29,7 +29,7 @@ def conv_analysis_dictionary_denoising(
 def conv_analysis_dictionary_denoising(
     idata: torch.Tensor,
     kernel: torch.Tensor,
-    regularization_weight: float,
+    regularization_weight: float | torch.Tensor,
     initial_image: torch.Tensor | None = None,
     max_iterations_pdhg: int = 96,
     tolerance_pdhg: float = 1e-4,
@@ -39,7 +39,7 @@ def conv_analysis_dictionary_denoising(
 def conv_analysis_dictionary_denoising(
     idata: IData | torch.Tensor,
     kernel: torch.Tensor,
-    regularization_weight: float,
+    regularization_weight: float | torch.Tensor,
     initial_image: torch.Tensor | None = None,
     max_iterations_pdhg: int = 96,
     tolerance_pdhg: float = 1e-4,
@@ -54,6 +54,15 @@ def conv_analysis_dictionary_denoising(
 
     Denoising is achieved by computing an image that is close to the noisy image but at the same time is sparse after
     the application of the convolutional filters. To solve the problem, the PDHG algorithm     is used.
+
+    Note: it is also possible to provide entire locally adaptive sparsity level maps :math:`\Lambda`
+    instead of a single scalar value :math:`\lambda>0`. In that case, the sparsity
+    regularization is given by a weighted :math:`\ell_1`-norm, i.e. by
+
+        :math:`|| \Lambda H \cdot ||_1.`
+
+    In that case, the sparsity level map must be broacastable with elements of the range of the
+    convolutional analysis operator.
 
     Parameters
     ----------
@@ -74,12 +83,14 @@ def conv_analysis_dictionary_denoising(
     -------
         the denoised image.
     """
+    if isinstance(regularization_weight, torch.Tensor) and regularization_weight.shape[0] != kernel.shape[0]:
+        raise ValueError('First dimension of the regularization_weight tensor must be the same as first of the kernel.')
     img_tensor = idata if isinstance(idata, torch.Tensor) else idata.data
 
     conv_analysis_operator = ConvAnalysisDictionaryOp(kernel=kernel, pad_mode='circular')
     l2_norm_squared = 0.5 * L2NormSquared(target=img_tensor)
 
-    l1_norm = regularization_weight * L1Norm()
+    l1_norm = L1Norm(weight=regularization_weight)
     operator = LinearOperatorMatrix(((IdentityOp(),), (conv_analysis_operator,)))
 
     initial_image = initial_image if initial_image is not None else img_tensor

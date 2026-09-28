@@ -1,10 +1,11 @@
 """Tests for convolutional synthesis dictionary-based image denoising."""
 
 import pytest
+import torch
 from mrpro.algorithms.denoiser.conv_synthesis_dictionary_denoising import conv_synthesis_dictionary_denoising
 from mrpro.data import IData, SpatialDimension
 from mrpro.utils import RandomGenerator
-from mrpro.utils.filters import gabor_filters_2d
+from mrpro.utils.filters import dct_filters
 from tests.helper import relative_image_difference
 
 
@@ -23,12 +24,12 @@ def test_denoising(idata_single_coil: IData, tensor_input: bool) -> None:
         idata_single_coil.data + rng.rand_like(idata_single_coil.data),
         idata_single_coil.header,
     )
-    gabor_kernel = gabor_filters_2d(n_filters=16, kernel_size=(5, 5))
+    dct_kernel = dct_filters(kernel_size=(5, 5))[1:]
 
     if tensor_input:
         denoised = conv_synthesis_dictionary_denoising(
             noisy.data,
-            gabor_kernel,
+            dct_kernel,
             low_pass_parameter=0.1,
             regularization_weight=0.4,
             max_iterations_low_pass_filtering=8,
@@ -37,7 +38,7 @@ def test_denoising(idata_single_coil: IData, tensor_input: bool) -> None:
     else:
         denoised = conv_synthesis_dictionary_denoising(
             noisy,
-            gabor_kernel,
+            dct_kernel,
             low_pass_parameter=0.1,
             regularization_weight=0.4,
             max_iterations_low_pass_filtering=8,
@@ -46,3 +47,44 @@ def test_denoising(idata_single_coil: IData, tensor_input: bool) -> None:
     assert relative_image_difference(denoised, idata_single_coil.data) < relative_image_difference(
         noisy.data, idata_single_coil.data
     )
+
+
+@pytest.mark.parametrize('kernel_shape', [(9,), (3, 5), (3, 5, 7)])
+def test_regularization_parameter_maps(kernel_shape):
+    """Test that using regularization parameter maps is possible."""
+    rng = RandomGenerator(seed=0)
+
+    n_filters = 8
+    kernel = rng.randn_tensor(size=(n_filters, *kernel_shape), dtype=torch.float32)
+    noisy = rng.randn_tensor(size=(10, 10, 10), dtype=torch.float32)
+    regularization_weight = rng.randn_tensor(size=(kernel.shape[0], 1, 1, 1), dtype=torch.float32)
+    _ = conv_synthesis_dictionary_denoising(
+        noisy,
+        kernel,
+        low_pass_parameter=0.1,
+        regularization_weight=regularization_weight,
+        max_iterations_low_pass_filtering=8,
+        max_iterations_pgd=2,
+    )
+
+
+def test_incompatible_regularization_parameter():
+    """Test that incompatible regularization parameter tensors throw error."""
+    rng = RandomGenerator(seed=0)
+
+    kernel = rng.randn_tensor(size=(8, 5, 5), dtype=torch.float32)
+    noisy = rng.randn_tensor(size=(2, 16, 16), dtype=torch.float32)
+    regularization_weight = rng.randn_tensor(size=(7, 1, 1, 1), dtype=torch.float32)  # 7!=8
+
+    with pytest.raises(
+        ValueError,
+        match='First dimension of the regularization_weight tensor',
+    ):
+        _ = conv_synthesis_dictionary_denoising(
+            noisy,
+            kernel,
+            low_pass_parameter=0.1,
+            regularization_weight=regularization_weight,
+            max_iterations_low_pass_filtering=8,
+            max_iterations_pgd=2,
+        )
