@@ -79,6 +79,12 @@ def conv_analysis_dictionary_denoising(
     tolerance_pdhg
         tolerance of PDHG; if zero, `max_iterations` of PDHG are run.
 
+    Raises
+    ------
+    ValueError
+        If `regularization_weight` and elements of the range of the convolutional
+        analysis operator are not broadcastable.
+
     Returns
     -------
         the denoised image.

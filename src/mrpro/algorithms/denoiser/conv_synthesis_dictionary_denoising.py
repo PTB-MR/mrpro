@@ -95,6 +95,12 @@ def conv_synthesis_dictionary_denoising(
     tolerance_low_pass_filtering
         tolerance of CG for the relative change of the solution; if zero, `max_iterations` of CG are run.
 
+    Raises
+    ------
+    ValueError
+        If `regularization_weight` and elements of the domain of the convolutional
+        synthesis operator are not broadcastable.
+
     Returns
     -------
         the denoised image.

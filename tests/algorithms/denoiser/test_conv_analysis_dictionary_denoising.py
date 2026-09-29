@@ -80,3 +80,20 @@ def test_incompatible_regularization_parameter():
             regularization_weight=regularization_weight,
             max_iterations_pdhg=64,
         )
+
+
+@pytest.mark.cuda
+def test_conv_analysis_dictionary_denoising_cuda():
+    """Test that denoising can be performed on the gpu."""
+    rng = RandomGenerator(seed=0)
+
+    kernel = rng.randn_tensor(size=(4, 3, 3), dtype=torch.float32).cuda()
+    noisy = rng.randn_tensor(size=(1, 8, 8), dtype=torch.float32).cuda()
+    regularization_weight = rng.randn_tensor(size=(4, 1, 1, 1), dtype=torch.float32).cuda()
+    denoised = conv_analysis_dictionary_denoising(
+        noisy,
+        kernel,
+        regularization_weight=regularization_weight,
+        max_iterations_pdhg=1,
+    )
+    assert denoised.is_cuda
