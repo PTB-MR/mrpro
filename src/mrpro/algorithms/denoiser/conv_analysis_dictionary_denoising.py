@@ -59,7 +59,7 @@ def conv_analysis_dictionary_denoising(
     instead of a single scalar value :math:`\lambda>0`. In that case, the sparsity
     regularization is given by a weighted :math:`\ell_1`-norm, i.e. by
 
-        :math:`|| \Lambda H \cdot ||_1.`
+        :math:`|| H x ||_{1,\Lambda}:=\sum_i \lambda_i | (Hx)_i | `
 
     In that case, the sparsity level map must be broacastable with elements of the range of the
     convolutional analysis operator.
@@ -89,17 +89,33 @@ def conv_analysis_dictionary_denoising(
     -------
         the denoised image.
     """
-    if isinstance(regularization_weight, torch.Tensor) and regularization_weight.shape[0] != kernel.shape[0]:
-        raise ValueError('First dimension of the regularization_weight tensor must be the same as first of the kernel.')
     img_tensor = idata if isinstance(idata, torch.Tensor) else idata.data
-
-    conv_analysis_operator = ConvAnalysisDictionaryOp(kernel=kernel, pad_mode='circular')
-    l2_norm_squared = 0.5 * L2NormSquared(target=img_tensor)
-
-    l1_norm = L1Norm(weight=regularization_weight)
-    operator = LinearOperatorMatrix(((IdentityOp(),), (conv_analysis_operator,)))
-
     initial_image = initial_image if initial_image is not None else img_tensor
+
+    tensors = [img_tensor, kernel, initial_image]
+    if isinstance(regularization_weight, torch.Tensor):
+        tensors.append(regularization_weight)
+
+    if len({tensor.device for tensor in tensors}) != 1:
+        raise ValueError(
+            '`idata`, `kernel`, `initial_image`, and tensor-valued `regularization_weight` must be on the same device.'
+        )
+    else:
+        device = img_tensor.device
+
+    if isinstance(regularization_weight, torch.Tensor):
+        try:
+            torch.broadcast_shapes(regularization_weight.shape, (kernel.shape[0], *img_tensor.shape))
+        except RuntimeError as e:
+            raise ValueError(
+                '`regularization_weight` must be broadcastable with the output of the convolutional analysis operator.'
+            ) from e
+
+    conv_analysis_operator = ConvAnalysisDictionaryOp(kernel=kernel, pad_mode='circular').to(device)
+    l2_norm_squared = 0.5 * L2NormSquared(target=img_tensor).to(device)
+
+    l1_norm = L1Norm(weight=regularization_weight).to(device)
+    operator = LinearOperatorMatrix(((IdentityOp(),), (conv_analysis_operator,))).to(device)
 
     (img_tensor,) = pdhg(
         f=ProximableFunctionalSeparableSum(l2_norm_squared, l1_norm),

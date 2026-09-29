@@ -71,7 +71,7 @@ def conv_synthesis_dictionary_denoising(
     instead of a single scalar value :math:`\lambda>0`. In that case, the sparsity
     regularization is given by a weighted :math:`\ell_1`-norm, i.e. by
 
-        :math:`|| \Lambda \cdot ||_1.`
+        :math:`|| x ||_{1,\Lambda}:=\sum_i \lambda_i | x_i | `
 
     In that case, the sparsity level map must be broacastable with elements of the domain of the
     convolutional synthesis operator.
@@ -105,29 +105,47 @@ def conv_synthesis_dictionary_denoising(
     -------
         the denoised image.
     """
-    if isinstance(regularization_weight, torch.Tensor) and regularization_weight.shape[0] != kernel.shape[0]:
-        raise ValueError('First dimension of the regularization_weight tensor must be the same as first of the kernel.')
     img_tensor = idata if isinstance(idata, torch.Tensor) else idata.data
+    initial_codes = (
+        initial_codes
+        if initial_codes is not None
+        else torch.zeros(kernel.shape[0], *img_tensor.shape).to(img_tensor.device)
+    )
+
+    tensors = [img_tensor, kernel, initial_codes]
+    if isinstance(regularization_weight, torch.Tensor):
+        tensors.append(regularization_weight)
+
+    if len({tensor.device for tensor in tensors}) != 1:
+        raise ValueError(
+            '`idata`, `kernel`, `initial_image`, and tensor-valued `regularization_weight` must be on the same device.'
+        )
+    else:
+        device = img_tensor.device
+
+    if isinstance(regularization_weight, torch.Tensor):
+        try:
+            torch.broadcast_shapes(regularization_weight.shape, (kernel.shape[0], *img_tensor.shape))
+        except RuntimeError as e:
+            raise ValueError(
+                '`regularization_weight` must be broadcastable with the output of the convolutional analysis operator.'
+            ) from e
 
     regularization_dimensions = tuple(-k for k in range(1, len(kernel.shape[1:]) + 1))[::-1]
-    nabla_operator = FiniteDifferenceOp(dim=regularization_dimensions, mode='forward')
+    nabla_operator = FiniteDifferenceOp(dim=regularization_dimensions, mode='forward').to(device)
 
     (image_low_pass,) = cg(
-        operator=IdentityOp() + low_pass_parameter * nabla_operator.gram,
+        operator=IdentityOp().to(device) + low_pass_parameter * nabla_operator.gram,
         right_hand_side=img_tensor,
         initial_value=img_tensor,
         max_iterations=max_iterations_low_pass_filtering,
         tolerance=tolerance_low_pass_filtering,
     )
 
-    conv_synthesis_operator = ConvSynthesisDictionaryOp(kernel=kernel, pad_mode='circular')
-    l2_norm_squared = 0.5 * (L2NormSquared(target=img_tensor - image_low_pass) @ conv_synthesis_operator)
+    conv_synthesis_operator = ConvSynthesisDictionaryOp(kernel=kernel, pad_mode='circular').to(device)
+    l2_norm_squared = 0.5 * (L2NormSquared(target=img_tensor - image_low_pass) @ conv_synthesis_operator).to(device)
 
-    l1_norm = L1Norm(weight=regularization_weight)
-
-    (initial_codes,) = (
-        conv_synthesis_operator.H(torch.zeros_like(img_tensor)) if initial_codes is None else initial_codes
-    )
+    l1_norm = L1Norm(weight=regularization_weight).to(device)
 
     operator_norm = conv_synthesis_operator.operator_norm(
         torch.randn_like(initial_codes), dim=None, max_iterations=32

@@ -97,3 +97,39 @@ def test_conv_analysis_dictionary_denoising_cuda():
         max_iterations_pdhg=1,
     )
     assert denoised.is_cuda
+
+
+@pytest.mark.cuda
+@pytest.mark.parametrize(
+    ('noisy_device', 'kernel_device', 'weight_device'),
+    [
+        ('cpu', 'cpu', 'cuda'),
+        ('cpu', 'cuda', 'cpu'),
+        ('cuda', 'cpu', 'cpu'),
+        ('cpu', 'cuda', 'cuda'),
+        ('cuda', 'cpu', 'cuda'),
+        ('cuda', 'cuda', 'cpu'),
+    ],
+)
+def test_incompatible_devices(
+    noisy_device: str,
+    kernel_device: str,
+    weight_device: str,
+):
+    """Test that incompatible tensor devices raise an error."""
+    rng = RandomGenerator(seed=0)
+
+    kernel = rng.randn_tensor(size=(4, 3, 3), dtype=torch.float32).to(kernel_device)
+    noisy = rng.randn_tensor(size=(1, 8, 8), dtype=torch.float32).to(noisy_device)
+    regularization_weight = rng.randn_tensor(size=(4, 1, 1), dtype=torch.float32).to(weight_device)
+
+    with pytest.raises(
+        ValueError,
+        match='must be on the same device',
+    ):
+        conv_analysis_dictionary_denoising(
+            noisy,
+            kernel,
+            regularization_weight=regularization_weight,
+            max_iterations_pdhg=1,
+        )
