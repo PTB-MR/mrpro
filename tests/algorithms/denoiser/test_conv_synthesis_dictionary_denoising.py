@@ -78,7 +78,7 @@ def test_incompatible_regularization_parameter():
 
     with pytest.raises(
         ValueError,
-        match='First dimension of the regularization_weight tensor',
+        match='must be broadcastable with the output of the convolutional analysis operator',
     ):
         _ = conv_synthesis_dictionary_denoising(
             noisy,
