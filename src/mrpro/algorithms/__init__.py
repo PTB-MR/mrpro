@@ -2,7 +2,8 @@
 
 from mrpro.algorithms import csm, dcf, optimizers, reconstruction
 from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
-from mrpro.algorithms.total_variation_denoising import total_variation_denoising
+from mrpro.algorithms.denoiser.total_variation_denoising import total_variation_denoising
+from mrpro.algorithms.denoiser.wavelet_denoising import wavelet_denoising
 from mrpro.algorithms.varimax import varimax
 
 __all__ = [
@@ -13,4 +14,5 @@ __all__ = [
     'reconstruction',
     'total_variation_denoising',
     'varimax',
+    'wavelet_denoising',
 ]
