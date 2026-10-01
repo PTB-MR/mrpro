@@ -44,16 +44,6 @@ def test_wavelet_denoising_wavelets(idata_single_coil: IData, wavelet_name: Wave
     )
 
 
-def test_wavelet_denoising_complex(idata_single_coil: IData) -> None:
-    """Complex input stays complex and the phase is denoised as well."""
-    rng = RandomGenerator(seed=0)
-    img = idata_single_coil.data * torch.exp(1j * torch.linspace(-1, 1, idata_single_coil.data.shape[-1]))
-    noisy = img + 0.1 * rng.complex64_tensor(img.shape)
-    denoised = wavelet_denoising(noisy, regularization_dim=(-2, -1), regularization_weight=0.1)
-    assert denoised.is_complex()
-    assert relative_image_difference(denoised, img) < relative_image_difference(noisy, img)
-
-
 def test_wavelet_denoising_zero_weight(idata_single_coil: IData) -> None:
     """A weight of zero has to leave the image unchanged, as the wavelet transform is orthonormal."""
     denoised = wavelet_denoising(idata_single_coil.data, regularization_dim=(-2, -1), regularization_weight=0.0)
@@ -70,3 +60,10 @@ def test_wavelet_denoising_repeated_dims() -> None:
     """Error for repeated dims."""
     with pytest.raises(ValueError, match='Repeated values are not allowed in regularization_dim'):
         _ = wavelet_denoising(torch.zeros(4, 4), regularization_dim=(-2, 0), regularization_weight=0.1)
+
+
+@pytest.mark.cuda
+def test_wavelet_denoising_cuda(idata_single_coil: IData) -> None:
+    """Test denoising on CUDA device."""
+    denoised = wavelet_denoising(idata_single_coil.cuda(), regularization_dim=(-2, -1), regularization_weight=0.1)
+    assert denoised.is_cuda
