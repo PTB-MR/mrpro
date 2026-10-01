@@ -87,3 +87,17 @@ def test_CsmData_kdata_inati(ismrmrd_cart_single_rep) -> None:
     csm_from_kdata = CsmData.from_kdata_inati(kdata)
     csm_from_idata = CsmData.from_idata_inati(idata)
     torch.testing.assert_close(csm_from_kdata.data, csm_from_idata.data, rtol=1e-5, atol=1e-5)
+
+
+def test_CsmData_walsh_align_phase_matches_explicit_call(
+    ellipse_phantom: EllipsePhantomTestData, random_kheader: KHeader
+) -> None:
+    """CsmData Walsh uses phase alignment by default."""
+    idata, _ = multi_coil_image(n_coils=4, ph_ellipse=ellipse_phantom, random_kheader=random_kheader)
+
+    csm_default = CsmData.from_idata_walsh(idata)
+    csm_no_phase = CsmData.from_idata_walsh(idata, align_phase=False)
+    csm_with_phase = CsmData.from_idata_walsh(idata, align_phase=True)
+
+    torch.testing.assert_close(csm_default.data, csm_with_phase.data)
+    assert not torch.allclose(csm_default.data, csm_no_phase.data)
