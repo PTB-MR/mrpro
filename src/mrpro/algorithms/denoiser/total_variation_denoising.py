@@ -90,7 +90,7 @@ def total_variation_denoising(
 
     # TV regularization
     nabla_operator = FiniteDifferenceOp(dim=regularization_dim, mode='forward')
-    l1_norm = L1NormViewAsReal(weight=unsqueeze_right(regularization_weight_, img_tensor.ndim))
+    l1_norm = L1NormViewAsReal(weight=unsqueeze_right(regularization_weight_, img_tensor.ndim).to(img_tensor.device))
     operator = LinearOperatorMatrix(((IdentityOp(),), (nabla_operator,)))
 
     initial_image = initial_image if initial_image is not None else img_tensor
