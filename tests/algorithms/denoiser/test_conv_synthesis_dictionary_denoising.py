@@ -114,7 +114,7 @@ def test_conv_synthesis_dictionary_denoising_cuda():
 @pytest.mark.cuda
 @pytest.mark.parametrize(
     ('noisy_device', 'kernel_device', 'weight_device', 'initial_codes_device'),
-    itertools.product(('cpu', 'cuda'), repeat=4),
+    list(itertools.product(('cpu', 'cuda'), repeat=4)),
 )
 def test_different_device_combinations(
     noisy_device: str,
