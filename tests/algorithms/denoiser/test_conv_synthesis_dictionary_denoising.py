@@ -1,5 +1,7 @@
 """Tests for convolutional synthesis dictionary-based image denoising."""
 
+import itertools
+
 import pytest
 import torch
 from mrpro.algorithms.denoiser.conv_synthesis_dictionary_denoising import conv_synthesis_dictionary_denoising
@@ -112,30 +114,15 @@ def test_conv_synthesis_dictionary_denoising_cuda():
 @pytest.mark.cuda
 @pytest.mark.parametrize(
     ('noisy_device', 'kernel_device', 'weight_device', 'initial_codes_device'),
-    [
-        ('cuda', 'cpu', 'cpu', 'cpu'),
-        ('cpu', 'cuda', 'cpu', 'cpu'),
-        ('cpu', 'cpu', 'cuda', 'cpu'),
-        ('cpu', 'cpu', 'cpu', 'cuda'),
-        ('cuda', 'cuda', 'cpu', 'cpu'),
-        ('cuda', 'cpu', 'cuda', 'cpu'),
-        ('cuda', 'cpu', 'cpu', 'cuda'),
-        ('cpu', 'cuda', 'cuda', 'cpu'),
-        ('cpu', 'cuda', 'cpu', 'cuda'),
-        ('cpu', 'cpu', 'cuda', 'cuda'),
-        ('cpu', 'cuda', 'cuda', 'cuda'),
-        ('cuda', 'cpu', 'cuda', 'cuda'),
-        ('cuda', 'cuda', 'cpu', 'cuda'),
-        ('cuda', 'cuda', 'cuda', 'cpu'),
-    ],
+    itertools.product(('cpu', 'cuda'), repeat=4),
 )
-def test_incompatible_devices(
+def test_different_device_combinations(
     noisy_device: str,
     kernel_device: str,
     weight_device: str,
     initial_codes_device: str,
 ):
-    """Test that incompatible tensor devices raise an error."""
+    """Test that the noisy image determines the device to run the algorithm on."""
     rng = RandomGenerator(seed=0)
 
     kernel = rng.randn_tensor(size=(4, 3, 3), dtype=torch.float32).to(kernel_device)
@@ -146,16 +133,17 @@ def test_incompatible_devices(
 
     initial_codes = rng.randn_tensor(size=(4, 1, 8, 8), dtype=torch.float32).to(initial_codes_device)
 
-    with pytest.raises(
-        ValueError,
-        match='must be on the same device',
-    ):
-        conv_synthesis_dictionary_denoising(
-            noisy,
-            kernel,
-            regularization_weight=regularization_weight,
-            low_pass_parameter=0.1,
-            initial_codes=initial_codes,
-            max_iterations_low_pass_filtering=1,
-            max_iterations_pgd=1,
-        )
+    denoised = conv_synthesis_dictionary_denoising(
+        noisy,
+        kernel,
+        regularization_weight=regularization_weight,
+        low_pass_parameter=0.1,
+        initial_codes=initial_codes,
+        max_iterations_low_pass_filtering=1,
+        max_iterations_pgd=1,
+    )
+
+    if noisy.is_cuda:
+        assert denoised.is_cuda
+    else:
+        assert not denoised.is_cuda

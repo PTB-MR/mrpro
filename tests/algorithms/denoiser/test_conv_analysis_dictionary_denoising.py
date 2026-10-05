@@ -1,5 +1,7 @@
 """Tests for convolutional analysis dictionary-based image denoising."""
 
+import itertools
+
 import pytest
 import torch
 from mrpro.algorithms.denoiser.conv_analysis_dictionary_denoising import conv_analysis_dictionary_denoising
@@ -101,35 +103,32 @@ def test_conv_analysis_dictionary_denoising_cuda():
 
 @pytest.mark.cuda
 @pytest.mark.parametrize(
-    ('noisy_device', 'kernel_device', 'weight_device'),
-    [
-        ('cpu', 'cpu', 'cuda'),
-        ('cpu', 'cuda', 'cpu'),
-        ('cuda', 'cpu', 'cpu'),
-        ('cpu', 'cuda', 'cuda'),
-        ('cuda', 'cpu', 'cuda'),
-        ('cuda', 'cuda', 'cpu'),
-    ],
+    ('noisy_device', 'kernel_device', 'weight_device', 'initial_image_device'),
+    itertools.product(('cpu', 'cuda'), repeat=4),
 )
-def test_incompatible_devices(
+def test_different_device_combinations(
     noisy_device: str,
     kernel_device: str,
     weight_device: str,
+    initial_image_device: str,
 ):
-    """Test that incompatible tensor devices raise an error."""
+    """Test that the noisy image determines the device to run the algorithm on."""
     rng = RandomGenerator(seed=0)
 
     kernel = rng.randn_tensor(size=(4, 3, 3), dtype=torch.float32).to(kernel_device)
     noisy = rng.randn_tensor(size=(1, 8, 8), dtype=torch.float32).to(noisy_device)
     regularization_weight = rng.randn_tensor(size=(4, 1, 1), dtype=torch.float32).to(weight_device)
+    initial_image = rng.randn_tensor(size=(4, 1, 8, 8), dtype=torch.float32).to(initial_image_device)
 
-    with pytest.raises(
-        ValueError,
-        match='must be on the same device',
-    ):
-        conv_analysis_dictionary_denoising(
-            noisy,
-            kernel,
-            regularization_weight=regularization_weight,
-            max_iterations_pdhg=1,
-        )
+    denoised = conv_analysis_dictionary_denoising(
+        noisy,
+        kernel,
+        regularization_weight=regularization_weight,
+        initial_image=initial_image,
+        max_iterations_pdhg=1,
+    )
+
+    if noisy.is_cuda:
+        assert denoised.is_cuda
+    else:
+        assert not denoised.is_cuda

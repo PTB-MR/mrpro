@@ -64,6 +64,10 @@ def conv_analysis_dictionary_denoising(
     In that case, the sparsity level map must be broacastable with elements of the range of the
     convolutional analysis operator.
 
+    Note: The noisy image idata determines on which device the algorithm will be run. This means that, for example,
+    if idata is on the cpu and kernel on the gpu, the kernel will be transferred to the cpu. The denoised image
+    will also be on the device specified by idata.
+
     Parameters
     ----------
     idata
@@ -90,31 +94,24 @@ def conv_analysis_dictionary_denoising(
         the denoised image.
     """
     img_tensor = idata if isinstance(idata, torch.Tensor) else idata.data
-    initial_image = initial_image if initial_image is not None else img_tensor
+    device = img_tensor.device
 
-    tensors = [img_tensor, kernel, initial_image]
-    if isinstance(regularization_weight, torch.Tensor):
-        tensors.append(regularization_weight)
-
-    if len({tensor.device for tensor in tensors}) != 1:
-        raise ValueError(
-            '`idata`, `kernel`, `initial_image`, and tensor-valued `regularization_weight` must be on the same device.'
-        )
-    else:
-        device = img_tensor.device
+    initial_image = initial_image.to(device) if initial_image is not None else img_tensor
 
     if isinstance(regularization_weight, torch.Tensor):
+        regularization_weight = regularization_weight.to(device)
         try:
             torch.broadcast_shapes(regularization_weight.shape, (kernel.shape[0], *img_tensor.shape))
         except RuntimeError as e:
             raise ValueError(
-                '`regularization_weight` must be broadcastable with the output of the convolutional analysis operator.'
+                'regularization_weight must be broadcastable with the output of the convolutional analysis operator.'
             ) from e
 
-    conv_analysis_operator = ConvAnalysisDictionaryOp(kernel=kernel, pad_mode='circular').to(device)
-    l2_norm_squared = 0.5 * L2NormSquared(target=img_tensor).to(device)
+    kernel = kernel.to(device)
+    conv_analysis_operator = ConvAnalysisDictionaryOp(kernel=kernel, pad_mode='circular')
+    l2_norm_squared = 0.5 * L2NormSquared(target=img_tensor)
 
-    l1_norm = L1Norm(weight=regularization_weight).to(device)
+    l1_norm = L1Norm(weight=regularization_weight)
     operator = LinearOperatorMatrix(((IdentityOp(),), (conv_analysis_operator,))).to(device)
 
     (img_tensor,) = pdhg(
