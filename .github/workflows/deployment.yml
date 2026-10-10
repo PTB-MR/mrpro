@@ -23,7 +23,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Check if VERSION file is modified compared to main
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@v4
         id: changes
         with:
           base: main
@@ -46,7 +46,7 @@ jobs:
           python -m build
 
       - name: Upload TestPyPI Distribution Artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: testpypi-package-distribution
           path: dist/
@@ -67,7 +67,7 @@ jobs:
 
     steps:
       - name: Download TestPyPI Distribution
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: testpypi-package-distribution
           path: dist/
@@ -136,7 +136,7 @@ jobs:
           python -m build
 
       - name: Store PyPI Distribution
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: pypi-package-distribution
           path: dist/
@@ -158,7 +158,7 @@ jobs:
 
     steps:
       - name: Download PyPI Distribution
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: pypi-package-distribution
           path: dist/
