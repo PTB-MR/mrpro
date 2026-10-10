@@ -8,8 +8,17 @@ import numpy as np
 import torch
 
 from mrpro.utils.TensorAttributeMixin import TensorAttributeMixin
+from mrpro.utils.unit_conversion import GYROMAGNETIC_RATIO_PROTON
 
-__all__ = ['SliceGaussian', 'SliceInterpolate', 'SliceProfileBase', 'SliceSmoothedRectangular']
+__all__ = [
+    'GaussianRFPulse',
+    'SincRFPulse',
+    'SliceGaussian',
+    'SliceInterpolate',
+    'SliceProfileBase',
+    'SliceRFPulseBase',
+    'SliceSmoothedRectangular',
+]
 
 
 class SliceProfileBase(abc.ABC, TensorAttributeMixin, torch.nn.Module):
@@ -35,6 +44,109 @@ class SliceProfileBase(abc.ABC, TensorAttributeMixin, torch.nn.Module):
             Sampled positions, shape will be size.
         """
         raise NotImplementedError
+
+
+class SliceRFPulseBase(abc.ABC, TensorAttributeMixin, torch.nn.Module):
+    """Base class for slice-selective RF pulse templates."""
+
+    @abc.abstractmethod
+    def forward(
+        self, flip_angle: torch.Tensor | float, duration: torch.Tensor | float, dt: torch.Tensor | float
+    ) -> torch.Tensor:
+        """Create a discrete RF waveform in Tesla."""
+        raise NotImplementedError
+
+    def rf_and_phase(
+        self,
+        flip_angle: torch.Tensor | float,
+        duration: torch.Tensor | float,
+        dt: torch.Tensor | float,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Create a discrete RF waveform and phase in rad."""
+        rf = self(flip_angle=flip_angle, duration=duration, dt=dt)
+        return rf, torch.zeros_like(rf)
+
+
+def _n_samples(duration: torch.Tensor | float, dt: torch.Tensor | float) -> int:
+    duration_value = torch.as_tensor(duration).item()
+    dt_value = torch.as_tensor(dt).item()
+    if duration_value <= 0 or dt_value <= 0:
+        raise ValueError('duration and dt must be positive.')
+    samples = round(duration_value / dt_value)
+    if samples < 1:
+        raise ValueError('duration / dt must produce at least one RF sample.')
+    return samples
+
+
+def _scale_waveform_to_flip_angle(
+    waveform: torch.Tensor,
+    flip_angle: torch.Tensor | float,
+    dt: torch.Tensor | float,
+) -> torch.Tensor:
+    flip_angle = torch.as_tensor(flip_angle, dtype=waveform.dtype, device=waveform.device)
+    dt = torch.as_tensor(dt, dtype=waveform.dtype, device=waveform.device)
+    return waveform * (flip_angle / (GYROMAGNETIC_RATIO_PROTON * dt * waveform.sum()))
+
+
+class GaussianRFPulse(SliceRFPulseBase):
+    """Gaussian RF pulse template."""
+
+    fwhm_fraction: torch.Tensor
+
+    def __init__(self, fwhm_fraction: float | torch.Tensor = 0.35):
+        """Initialize the Gaussian pulse template.
+
+        Parameters
+        ----------
+        fwhm_fraction
+            RF Gaussian FWHM relative to pulse duration.
+        """
+        super().__init__()
+        self.register_buffer('fwhm_fraction', torch.as_tensor(fwhm_fraction))
+
+    def forward(
+        self, flip_angle: torch.Tensor | float, duration: torch.Tensor | float, dt: torch.Tensor | float
+    ) -> torch.Tensor:
+        """Create a Gaussian RF waveform in Tesla."""
+        samples = _n_samples(duration, dt)
+        duration = torch.as_tensor(duration)
+        time = torch.linspace(-0.5, 0.5, samples, dtype=duration.dtype, device=duration.device)
+        sigma = self.fwhm_fraction / (2 * (2 * log(2)) ** 0.5)
+        waveform = torch.exp(-0.5 * (time / sigma) ** 2)
+        return _scale_waveform_to_flip_angle(waveform, flip_angle, dt)
+
+
+class SincRFPulse(SliceRFPulseBase):
+    """Apodized sinc RF pulse template."""
+
+    time_bandwidth: torch.Tensor
+    apodization: torch.Tensor
+
+    def __init__(self, time_bandwidth: float | torch.Tensor = 4.0, apodization: float | torch.Tensor = 0.5):
+        """Initialize the sinc pulse template.
+
+        Parameters
+        ----------
+        time_bandwidth
+            Time-bandwidth product of the sinc pulse.
+        apodization
+            Raised-cosine apodization in ``[0, 1]``.
+        """
+        super().__init__()
+        self.register_buffer('time_bandwidth', torch.as_tensor(time_bandwidth))
+        self.register_buffer('apodization', torch.as_tensor(apodization))
+
+    def forward(
+        self, flip_angle: torch.Tensor | float, duration: torch.Tensor | float, dt: torch.Tensor | float
+    ) -> torch.Tensor:
+        """Create an apodized sinc RF waveform in Tesla."""
+        samples = _n_samples(duration, dt)
+        duration = torch.as_tensor(duration)
+        time = torch.linspace(-0.5, 0.5, samples, dtype=duration.dtype, device=duration.device)
+        sinc = torch.sinc(self.time_bandwidth.to(time) * time)
+        window = 1 - self.apodization.to(time) + self.apodization.to(time) * torch.cos(2 * torch.pi * time)
+        waveform = sinc * window
+        return _scale_waveform_to_flip_angle(waveform, flip_angle, dt)
 
 
 class SliceGaussian(SliceProfileBase):
