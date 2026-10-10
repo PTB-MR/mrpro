@@ -1,9 +1,18 @@
 """Tests for filters."""
 
+import math
+
 import pytest
 import torch
 from einops import repeat
-from mrpro.utils.filters import filter_separable, gaussian_filter, uniform_filter
+from mrpro.utils.filters import (
+    dct_filters,
+    fft_filters,
+    filter_separable,
+    gabor_filters_2d,
+    gaussian_filter,
+    uniform_filter,
+)
 
 
 @pytest.fixture
@@ -16,7 +25,13 @@ def data():
 
 @pytest.mark.parametrize(
     ('pad_mode', 'center_value', 'edge_value'),
-    [('constant', 44, 7), ('reflect', 44, 6), ('replicate', 44, 5), ('circular', 44, 24), ('none', 48, 8)],
+    [
+        ('constant', 44, 7),
+        ('reflect', 44, 6),
+        ('replicate', 44, 5),
+        ('circular', 44, 24),
+        ('none', 48, 8),
+    ],
 )
 def test_filter_separable(pad_mode, center_value, edge_value):
     """Test filter_separable and different padding modes."""
@@ -24,7 +39,11 @@ def test_filter_separable(pad_mode, center_value, edge_value):
     data = repeat(torch.arange(1, 21), 'x -> y x', y=1).to(dtype=torch.float32)
     kernels = (torch.as_tensor([1.0, 2.0, 1.0]),)
     result = filter_separable(
-        data, kernels, dim=(1,), pad_mode=pad_mode, pad_value=3.0 if pad_mode == 'constant' else 0.0
+        data,
+        kernels,
+        dim=(1,),
+        pad_mode=pad_mode,
+        pad_value=3.0 if pad_mode == 'constant' else 0.0,
     )
     if pad_mode == 'none':
         assert result.shape == (data.shape[0], data.shape[1] - len(kernels[0]) + 1)
@@ -34,8 +53,14 @@ def test_filter_separable(pad_mode, center_value, edge_value):
     assert result[0, 0] == edge_value
 
 
-@pytest.mark.parametrize('filter_dtype', [torch.float32, torch.float64, torch.int32, torch.complex64, torch.complex128])
-@pytest.mark.parametrize('data_dtype', [torch.float32, torch.float64, torch.int32, torch.complex64, torch.complex128])
+@pytest.mark.parametrize(
+    'filter_dtype',
+    [torch.float32, torch.float64, torch.int32, torch.complex64, torch.complex128],
+)
+@pytest.mark.parametrize(
+    'data_dtype',
+    [torch.float32, torch.float64, torch.int32, torch.complex64, torch.complex128],
+)
 def test_filter_separable_dtype(filter_dtype, data_dtype):
     """Test filter_separable and different padding modes."""
 
@@ -145,3 +170,134 @@ def test_uniform_invalid_width(data):
         uniform_filter(data, width=2)
     with pytest.raises(ValueError, match='length'):
         uniform_filter(data, width=(3.0, 3.0))  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize('kernel_shape', [(9, 9), (8, 8), (3, 5, 7), (2, 4, 8), (3, 4, 5)])
+def test_dct_filters_unitary(kernel_shape):
+    """Test that the filters of the dct consititute an orthonormal basis."""
+
+    dct_kernel = dct_filters(kernel_shape)
+    dct_matrix = dct_kernel.reshape(math.prod(kernel_shape), -1)
+    assert torch.isclose(dct_matrix.T @ dct_matrix, torch.eye(math.prod(kernel_shape)), atol=1e-5).all()
+    assert torch.isclose(dct_matrix @ dct_matrix.T, torch.eye(math.prod(kernel_shape)), atol=1e-5).all()
+
+
+@pytest.mark.parametrize('kernel_shape', [(9, 9), (8, 8), (3, 5, 7), (2, 4, 8), (3, 4, 5)])
+def test_fft_filters_unitary(kernel_shape):
+    """Test that the filters of the dct consititute an orthonormal basis."""
+
+    fft_kernel = fft_filters(kernel_shape)
+    fft_matrix = fft_kernel.reshape(math.prod(kernel_shape), -1)
+    assert torch.isclose((fft_matrix.H @ fft_matrix).real, torch.eye(math.prod(kernel_shape)), atol=1e-5).all()
+    assert torch.isclose((fft_matrix @ fft_matrix.H).real, torch.eye(math.prod(kernel_shape)), atol=1e-5).all()
+
+
+def test_gabor_filters_2d_rotation():
+    """Test rotational consistency of the Gabor filters."""
+    filters = gabor_filters_2d(
+        n_filters=4,
+        kernel_size=(9, 9),
+    )
+
+    torch.testing.assert_close(
+        filters[2],
+        torch.rot90(filters[0], k=1, dims=(-2, -1)),
+        atol=1e-6,
+        rtol=1e-5,
+    )
+
+
+@pytest.mark.parametrize(
+    ('n_filters', 'kernel_size'),
+    [
+        (1, (5, 5)),
+        (8, (7, 7)),
+        (12, (5, 9)),
+        (25, (9, 7)),
+    ],
+)
+def test_gabor_filters_2d_shape(
+    n_filters: int,
+    kernel_size: tuple,
+):
+    """Test that the Gabor filter bank has the expected shape."""
+    filters = gabor_filters_2d(
+        n_filters=n_filters,
+        kernel_size=kernel_size,
+    )
+
+    assert filters.shape == (n_filters, kernel_size[-2], kernel_size[-1])
+
+
+@pytest.mark.parametrize(
+    ('n_filters', 'kernel_size'),
+    [
+        (1, (5, 5)),
+        (8, (7, 7)),
+        (12, (5, 9)),
+        (25, (9, 7)),
+    ],
+)
+def test_gabor_filters_2d_finite(
+    n_filters: int,
+    kernel_size: tuple,
+):
+    """Test that all generated filter coefficients are finite."""
+    filters = gabor_filters_2d(
+        n_filters=n_filters,
+        kernel_size=kernel_size,
+    )
+
+    assert torch.isfinite(filters).all()
+
+
+@pytest.mark.parametrize(
+    ('n_filters', 'kernel_size'),
+    [
+        (1, (5, 5)),
+        (8, (7, 7)),
+        (12, (5, 9)),
+        (25, (9, 7)),
+    ],
+)
+def test_gabor_filters_2d_zero_mean(
+    n_filters: int,
+    kernel_size: tuple,
+):
+    """Test that every Gabor filter has zero mean."""
+    filters = gabor_filters_2d(n_filters=n_filters, kernel_size=kernel_size)
+
+    means = filters.mean(dim=(-2, -1))
+
+    torch.testing.assert_close(
+        means,
+        torch.zeros_like(means),
+        atol=1e-6,
+        rtol=0,
+    )
+
+
+@pytest.mark.parametrize(
+    ('n_filters', 'kernel_size'),
+    [
+        (1, (5, 5)),
+        (8, (7, 7)),
+        (12, (5, 9)),
+        (25, (9, 7)),
+    ],
+)
+def test_gabor_filters_2d_unit_norm(
+    n_filters: int,
+    kernel_size: tuple,
+):
+    """Test that every Gabor filter has unit L2 norm."""
+    filters = gabor_filters_2d(n_filters=n_filters, kernel_size=kernel_size)
+
+    norms = torch.sqrt(torch.sum(filters**2, dim=(-2, -1)))
+
+    torch.testing.assert_close(
+        norms,
+        torch.ones_like(norms),
+        atol=1e-6,
+        rtol=0,
+    )
