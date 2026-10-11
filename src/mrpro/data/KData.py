@@ -4,6 +4,7 @@ import copy
 import datetime
 import warnings
 from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass, field
 from importlib.metadata import version
 from types import EllipsisType
 from typing import TYPE_CHECKING, Literal, cast
@@ -81,6 +82,17 @@ OTHER_LABELS = (
 T = TypeVar('T', Rotation, torch.Tensor, Rotation | torch.Tensor)
 
 
+@dataclass
+class IsmrmrdStreamMeasurement:
+    """ISMRMRD measurements class (header and list of acquisitions)."""
+
+    header: ismrmrd.xsd.ismrmrdHeader
+    """ISMRMRD header."""
+
+    acquisitions: list[ismrmrd.Acquisition] = field(default_factory=list)
+    """List of ISMRMRD acquisitions."""
+
+
 class KData(Dataclass):
     """MR raw data / k-space data class."""
 
@@ -149,6 +161,55 @@ class KData(Dataclass):
             header_overwrites=header_overwrites,
             acquisition_filter_criterion=acquisition_filter_criterion,
             modification_time=modification_time,
+        )
+
+    @classmethod
+    def from_ismrmrd_stream(
+        cls,
+        filename: FileOrPath,
+        trajectory: KTrajectoryCalculator | KTrajectory | KTrajectoryIsmrmrd,
+        header_overwrites: Mapping[str, object] | None = None,
+        measurement_idx: int = -1,
+        acquisition_filter_criterion: Callable = is_image_acquisition,
+    ) -> Self:
+        """Load k-space data from an ISMRMRD stream file.
+
+        Parameters
+        ----------
+        filename
+            path to the ISMRMRD stream file or file-like object
+        trajectory
+            KTrajectoryCalculator to calculate the k-space trajectory or an already calculated KTrajectory
+            If a KTrajectory is given, the shape should be `(acquisitions 1 1 k0)` in the same order as the acquisitions
+            in the ISMRMRD stream file.
+        header_overwrites
+            dictionary of key-value pairs to overwrite the header
+        measurement_idx
+            index of the ISMRMRD measurement to load
+        acquisition_filter_criterion
+            function which returns True if an acquisition should be included in KData
+        """
+        measurements: list[IsmrmrdStreamMeasurement] = []
+        with ismrmrd.serialization.ProtocolDeserializer(str(filename)) as reader:
+            for obj in reader.deserialize():
+                if isinstance(obj, ismrmrd.xsd.ismrmrdHeader):
+                    measurements.append(IsmrmrdStreamMeasurement(header=obj))
+                elif isinstance(obj, (ismrmrd.Acquisition, ismrmrd.Waveform)):
+                    if not measurements:
+                        raise ValueError('ISMRMRD stream contains data before the first header')
+                    target = measurements[-1]
+                    if isinstance(obj, ismrmrd.Acquisition):
+                        target.acquisitions.append(obj)
+
+        if not measurements:
+            raise ValueError('No ISMRMRD header or data found in stream.')
+
+        return cls.from_ismrmrd(
+            measurements[measurement_idx].header,
+            measurements[measurement_idx].acquisitions,
+            trajectory,
+            header_overwrites=header_overwrites,
+            acquisition_filter_criterion=acquisition_filter_criterion,
         )
 
     @classmethod

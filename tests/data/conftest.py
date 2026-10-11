@@ -332,3 +332,19 @@ def ismrmrd_cart_single_rep(ellipse_phantom, tmp_path_factory):
         phantom=ellipse_phantom.phantom,
     )
     return ismrmrd_kdata
+
+
+@pytest.fixture(scope='session')
+def ismrmrd_cart_stream(ellipse_phantom, tmp_path_factory):
+    """Fully sampled cartesian data set."""
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_kdata = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        noise_level=1e-4,
+        repetitions=3,
+        phantom=ellipse_phantom.phantom,
+        discard_pre=10,
+        discard_post=20,
+    )
+    ismrmrd_kdata.to_stream(str(ismrmrd_filename).replace('.h5', '.ismrmrd'))
+    return ismrmrd_kdata

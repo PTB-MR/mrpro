@@ -712,3 +712,14 @@ def test_KData_from_ismrmrd_empty_after_filter(ismrmrd_cart) -> None:
             DummyTrajectory(),
             acquisition_filter_criterion=lambda _: False,
         )
+
+
+def test_KData_from_ismrmrd_stream(ismrmrd_cart_stream) -> None:
+    """from_ismrmrd_stream matches from_ismrmrd."""
+    kdata_from_ismrmrd = KData.from_ismrmrd(
+        ismrmrd_cart_stream.ismrmrd_header, ismrmrd_cart_stream.acquisitions, DummyTrajectory()
+    )
+    filename_stream = ismrmrd_cart_stream.filename.with_suffix('.ismrmrd')
+    kdata_from_ismrmrd_stream = KData.from_ismrmrd_stream(filename_stream, DummyTrajectory())
+    torch.testing.assert_close(kdata_from_ismrmrd_stream.data, kdata_from_ismrmrd.data)
+    torch.testing.assert_close(kdata_from_ismrmrd_stream.traj.as_tensor(), kdata_from_ismrmrd.traj.as_tensor())

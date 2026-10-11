@@ -8,6 +8,7 @@ import ismrmrd
 import ismrmrd.xsd
 import torch
 from einops import repeat
+from ismrmrd.serialization import ProtocolSerializer
 from mrpro.data import SpatialDimension
 from mrpro.phantoms import EllipsePhantom
 from mrpro.utils import RandomGenerator
@@ -356,6 +357,28 @@ class IsmrmrdRawTestData:
 
         # Clean up
         dataset.close()
+
+    def to_stream(self, filename: str | Path):
+        """Save ismrmrd data as stream (ismrmrd header and list of acquisitions).
+
+        Parameters
+        ----------
+        filename
+            full path and filename
+
+        Returns
+        -------
+            ismsmrd stream file
+        """
+        with ismrmrd.File(self.filename, 'r') as f:
+            dset = f['dataset']  # we only have one dataset in IsmrmrdRawTestData
+            with ProtocolSerializer(str(filename)) as serializer:
+                serializer.serialize(dset.header)
+                for i in range(len(dset.acquisitions)):
+                    serializer.serialize(dset.acquisitions[i])
+                if dset.waveforms is not None:
+                    for i in range(len(dset.waveforms)):
+                        serializer.serialize(dset.waveforms[i])
 
     @staticmethod
     def _cartesian_trajectory(
