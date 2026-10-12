@@ -1,4 +1,4 @@
-"""Numerical Phantoms and Datasets"""
+"""Numerical phantoms and datasets."""
 
 from mrpro.phantoms.EllipsePhantom import EllipsePhantom
 from mrpro.phantoms.b0map import random_b0map
@@ -10,13 +10,13 @@ from mrpro.phantoms.fastmri import FastMRIKDataDataset, FastMRIImageDataset
 from mrpro.phantoms import coils
 
 __all__ = [
-    "EllipseParameters",
-    "EllipsePhantom",
-    "FastMRIImageDataset",
-    "FastMRIKDataDataset",
-    "M4RawDataset",
-    "brainweb",
-    "coils",
-    "mdcnn",
-    "random_b0map"
+    'EllipseParameters',
+    'EllipsePhantom',
+    'FastMRIImageDataset',
+    'FastMRIKDataDataset',
+    'M4RawDataset',
+    'brainweb',
+    'coils',
+    'mdcnn',
+    'random_b0map',
 ]
