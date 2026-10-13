@@ -2,7 +2,7 @@
 
 import pytest
 import torch
-from mrpro.algorithms import total_variation_denoising
+from mrpro.algorithms.denoiser import total_variation_denoising
 from mrpro.algorithms.reconstruction import PlugAndPlayPriorsReconstruction
 from mrpro.data import CsmData, DcfData, KData
 from mrpro.operators import DensityCompensationOp, FourierOp

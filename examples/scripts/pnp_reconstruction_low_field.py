@@ -80,7 +80,7 @@ img_direct = recon(kdata)
 # We apply a TV-based denoiser to the image data.
 
 # %%
-img_tv_denoised = mrpro.algorithms.total_variation_denoising(
+img_tv_denoised = mrpro.algorithms.denoiser.total_variation_denoising(
     img_direct, regularization_dim=(-3, -2, -1), regularization_weight=0.02, tolerance=1e-6
 )
 
@@ -108,7 +108,7 @@ def show_images(*images: torch.Tensor, titles: list[str] | None = None) -> None:
 # %%
 pnp_recon = mrpro.algorithms.reconstruction.PlugAndPlayPriorsReconstruction(
     kdata=kdata,
-    denoiser=lambda img: mrpro.algorithms.total_variation_denoising(
+    denoiser=lambda img: mrpro.algorithms.denoiser.total_variation_denoising(
         img, regularization_dim=(-3, -2, -1), regularization_weight=0.02, tolerance=1e-6
     ),
     admm_regularization_strength=0.02,
