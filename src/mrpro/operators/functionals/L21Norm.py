@@ -151,6 +151,7 @@ class L21Norm(ElementaryProximableFunctional):
             If `weight` varies along `kernel_dim` (Fall B).
         """
         return super().__call__(x)
+
     def forward(
         self,
         x: torch.Tensor,
@@ -166,12 +167,13 @@ class L21Norm(ElementaryProximableFunctional):
         diff = x - self.target
         group_norm = torch.linalg.vector_norm(diff, ord=2, dim=self.kernel_dim, keepdim=True)
 
-        
         weight = self.weight.clamp_min(0).sqrt()
         value = weight * group_norm
 
-        l1_dim = self.dim if self.dim is not None else tuple(
-            d for d in range(value.ndim) if d not in {k % value.ndim for k in self.kernel_dim}
+        l1_dim = (
+            self.dim
+            if self.dim is not None
+            else tuple(d for d in range(value.ndim) if d not in {k % value.ndim for k in self.kernel_dim})
         )
 
         if self.divide_by_n:
