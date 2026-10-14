@@ -1,8 +1,9 @@
 """Create ismrmrd datasets."""
 
 import copy
+import os
 from pathlib import Path
-from typing import Literal
+from typing import BinaryIO, Literal
 
 import ismrmrd
 import ismrmrd.xsd
@@ -358,21 +359,23 @@ class IsmrmrdRawTestData:
         # Clean up
         dataset.close()
 
-    def to_stream(self, filename: str | Path):
+    def to_stream(self, filename: str | os.PathLike | BinaryIO):
         """Save ismrmrd data as stream (ismrmrd header and list of acquisitions).
 
         Parameters
         ----------
         filename
-            full path and filename
+            full path and filename or an open binary file-like object
 
         Returns
         -------
-            ismsmrd stream file
+            ismrmrd stream file
         """
         with ismrmrd.File(self.filename, 'r') as f:
             dset = f['dataset']  # we only have one dataset in IsmrmrdRawTestData
-            with ProtocolSerializer(str(filename)) as serializer:
+            with ProtocolSerializer(
+                str(filename) if isinstance(filename, (str, os.PathLike)) else filename
+            ) as serializer:
                 serializer.serialize(dset.header)
                 for i in range(len(dset.acquisitions)):
                     serializer.serialize(dset.acquisitions[i])

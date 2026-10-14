@@ -1,17 +1,21 @@
 """Tests for the KData class."""
 
 import datetime
+import io
 import re
 import shutil
 from collections.abc import Sequence
+from pathlib import Path
 from types import EllipsisType
 from typing import Literal
 from xml.etree import ElementTree as ET
 
 import h5py
+import ismrmrd
 import pytest
 import torch
 from einops import repeat
+from ismrmrd.serialization import ProtocolSerializer
 from mrpro.data import KData, KHeader, KNoise, KTrajectory, SpatialDimension
 from mrpro.data.acq_filters import has_n_coils, is_coil_calibration_acquisition, is_image_acquisition
 from mrpro.data.Dataclass import InconsistentDeviceError
@@ -714,12 +718,185 @@ def test_KData_from_ismrmrd_empty_after_filter(ismrmrd_cart) -> None:
         )
 
 
-def test_KData_from_ismrmrd_stream(ismrmrd_cart_stream) -> None:
-    """from_ismrmrd_stream matches from_ismrmrd."""
+@pytest.mark.parametrize('source', ['str', 'path', 'file', 'bytesio'])
+def test_KData_from_ismrmrd_stream(ismrmrd_cart_stream, source: Literal['str', 'path', 'file', 'bytesio']) -> None:
+    """from_ismrmrd_stream matches from_ismrmrd for paths and file-like objects."""
     kdata_from_ismrmrd = KData.from_ismrmrd(
         ismrmrd_cart_stream.ismrmrd_header, ismrmrd_cart_stream.acquisitions, DummyTrajectory()
     )
-    filename_stream = ismrmrd_cart_stream.filename.with_suffix('.ismrmrd')
-    kdata_from_ismrmrd_stream = KData.from_ismrmrd_stream(filename_stream, DummyTrajectory())
+    stream_path = ismrmrd_cart_stream.filename.with_suffix('.ismrmrd')
+
+    if source == 'str':
+        kdata_from_ismrmrd_stream = KData.from_ismrmrd_stream(str(stream_path), DummyTrajectory())
+    elif source == 'path':
+        kdata_from_ismrmrd_stream = KData.from_ismrmrd_stream(stream_path, DummyTrajectory())
+    elif source == 'file':
+        with stream_path.open('rb') as file:
+            kdata_from_ismrmrd_stream = KData.from_ismrmrd_stream(file, DummyTrajectory())
+            assert not file.closed, 'from_ismrmrd_stream must not close a passed-in file object'
+    else:
+        stream = io.BytesIO(stream_path.read_bytes())
+        kdata_from_ismrmrd_stream = KData.from_ismrmrd_stream(stream, DummyTrajectory())
+        assert not stream.closed, 'from_ismrmrd_stream must not close a passed-in file object'
+
     torch.testing.assert_close(kdata_from_ismrmrd_stream.data, kdata_from_ismrmrd.data)
     torch.testing.assert_close(kdata_from_ismrmrd_stream.traj.as_tensor(), kdata_from_ismrmrd.traj.as_tensor())
+
+
+def test_KData_from_file_dispatch(ismrmrd_cart_stream) -> None:
+    """from_file dispatches to the HDF5 or stream reader based on file content."""
+    h5_path = ismrmrd_cart_stream.filename
+    stream_path = ismrmrd_cart_stream.filename.with_suffix('.ismrmrd')
+    kdata_hdf5 = KData.from_ismrmrd_hdf5(h5_path, DummyTrajectory())
+
+    kdata_from_stream_file = KData.from_file(stream_path, DummyTrajectory())
+    torch.testing.assert_close(kdata_from_stream_file.data, kdata_hdf5.data)
+    torch.testing.assert_close(kdata_from_stream_file.traj.as_tensor(), kdata_hdf5.traj.as_tensor())
+
+    kdata_from_h5_file = KData.from_file(h5_path, DummyTrajectory())
+    torch.testing.assert_close(kdata_from_h5_file.data, kdata_hdf5.data)
+    torch.testing.assert_close(kdata_from_h5_file.traj.as_tensor(), kdata_hdf5.traj.as_tensor())
+
+    kdata_from_stream_bytesio = KData.from_file(io.BytesIO(stream_path.read_bytes()), DummyTrajectory())
+    torch.testing.assert_close(kdata_from_stream_bytesio.data, kdata_hdf5.data)
+    torch.testing.assert_close(kdata_from_stream_bytesio.traj.as_tensor(), kdata_hdf5.traj.as_tensor())
+
+
+def test_KData_from_ismrmrd_stream_multiple_measurements(ismrmrd_cart_stream) -> None:
+    """A stream containing two measurements yields the selected dataset via dataset_idx.
+
+    Non-acquisition objects (waveforms, text messages) in the stream are ignored.
+    """
+    header = ismrmrd_cart_stream.ismrmrd_header
+    acquisitions = ismrmrd_cart_stream.acquisitions
+    rep0_acquisitions = [acq for acq in acquisitions if acq.idx.repetition == 0]
+
+    stream = io.BytesIO()
+    with ProtocolSerializer(stream) as serializer:
+        serializer.serialize(header)
+        serializer.serialize(ismrmrd.Waveform())
+        serializer.serialize('some text message')
+        for acq in acquisitions:
+            serializer.serialize(acq)
+        serializer.serialize(header)
+        serializer.serialize(ismrmrd.Waveform())
+        for acq in rep0_acquisitions:
+            serializer.serialize(acq)
+
+    stream.seek(0)
+    kdata_all = KData.from_ismrmrd_stream(stream, DummyTrajectory(), dataset_idx=0)
+    stream.seek(0)
+    kdata_rep0 = KData.from_ismrmrd_stream(stream, DummyTrajectory(), dataset_idx=-1)
+
+    expected_all = KData.from_ismrmrd(header, acquisitions, DummyTrajectory())
+    expected_rep0 = KData.from_ismrmrd(header, rep0_acquisitions, DummyTrajectory())
+    torch.testing.assert_close(kdata_all.data, expected_all.data)
+    torch.testing.assert_close(kdata_all.traj.as_tensor(), expected_all.traj.as_tensor())
+    torch.testing.assert_close(kdata_rep0.data, expected_rep0.data)
+    torch.testing.assert_close(kdata_rep0.traj.as_tensor(), expected_rep0.traj.as_tensor())
+    assert kdata_all.data.shape[0] == 3
+    assert kdata_rep0.data.shape[0] == 1
+
+
+def test_KData_from_ismrmrd_stream_errors(ismrmrd_cart_stream) -> None:
+    """Streams without a leading header or without any header raise ValueError."""
+    stream = io.BytesIO()
+    with ProtocolSerializer(stream) as serializer:
+        serializer.serialize(ismrmrd_cart_stream.acquisitions[0])
+    stream.seek(0)
+    with pytest.raises(ValueError, match='before the first header'):
+        KData.from_ismrmrd_stream(stream, DummyTrajectory())
+
+    empty_stream = io.BytesIO()
+    with ProtocolSerializer(empty_stream):
+        pass  # only the CLOSE message is written
+    empty_stream.seek(0)
+    with pytest.raises(ValueError, match='No ISMRMRD header'):
+        KData.from_ismrmrd_stream(empty_stream, DummyTrajectory())
+
+
+def test_KData_from_ismrmrd_stream_without_close(ismrmrd_cart_stream) -> None:
+    """A stream truncated before the CLOSE message is still read completely."""
+    stream_path = ismrmrd_cart_stream.filename.with_suffix('.ismrmrd')
+    truncated = stream_path.read_bytes()[:-2]  # strip the trailing 2-byte CLOSE message id
+    kdata = KData.from_ismrmrd_stream(io.BytesIO(truncated), DummyTrajectory())
+    expected = KData.from_ismrmrd_stream(stream_path, DummyTrajectory())
+    torch.testing.assert_close(kdata.data, expected.data)
+    torch.testing.assert_close(kdata.traj.as_tensor(), expected.traj.as_tensor())
+
+
+def test_KData_from_ismrmrd_stream_modification_time(ismrmrd_cart_stream) -> None:
+    """The file modification time is used as header datetime fallback for paths, now() otherwise."""
+    stream_path = ismrmrd_cart_stream.filename.with_suffix('.ismrmrd')
+    kdata = KData.from_ismrmrd_stream(stream_path, DummyTrajectory())
+    assert kdata.header.datetime == datetime.datetime.fromtimestamp(stream_path.stat().st_mtime)
+
+    before = datetime.datetime.now()
+    kdata = KData.from_ismrmrd_stream(io.BytesIO(stream_path.read_bytes()), DummyTrajectory())
+    after = datetime.datetime.now()
+    assert kdata.header.datetime is not None
+    assert before <= kdata.header.datetime <= after
+
+
+@pytest.fixture
+def ismrmrd_two_measurement_stream(ismrmrd_cart_stream, tmp_path) -> Path:
+    """Stream file with two measurements: all repetitions, then only repetition 0."""
+    header = ismrmrd_cart_stream.ismrmrd_header
+    acquisitions = ismrmrd_cart_stream.acquisitions
+    stream_path = tmp_path / 'two_measurements.ismrmrd'
+    with ProtocolSerializer(str(stream_path)) as serializer:
+        serializer.serialize(header)
+        for acq in acquisitions:
+            serializer.serialize(acq)
+        serializer.serialize(header)
+        for acq in acquisitions:
+            if acq.idx.repetition == 0:
+                serializer.serialize(acq)
+    return stream_path
+
+
+def test_KData_from_file_forwards_dataset_idx(ismrmrd_two_measurement_stream) -> None:
+    """from_file forwards dataset_idx to the stream reader."""
+    kdata_all = KData.from_file(ismrmrd_two_measurement_stream, DummyTrajectory(), dataset_idx=0)
+    assert kdata_all.data.shape[0] == 3
+    kdata_rep0 = KData.from_file(ismrmrd_two_measurement_stream, DummyTrajectory(), dataset_idx=-1)
+    assert kdata_rep0.data.shape[0] == 1
+
+
+def test_KData_from_file_forwards_header_overwrites(ismrmrd_two_measurement_stream) -> None:
+    """from_file forwards header_overwrites to the stream reader."""
+    kdata = KData.from_file(ismrmrd_two_measurement_stream, DummyTrajectory(), header_overwrites={'tr': [12.34]})
+    assert kdata.header.tr == [12.34]
+
+
+def test_KData_from_file_forwards_acquisition_filter_criterion(ismrmrd_two_measurement_stream) -> None:
+    """from_file forwards acquisition_filter_criterion to the stream reader."""
+    kdata = KData.from_file(
+        ismrmrd_two_measurement_stream,
+        DummyTrajectory(),
+        dataset_idx=0,
+        acquisition_filter_criterion=lambda acq: is_image_acquisition(acq) and acq.idx.repetition == 0,
+    )
+    assert kdata.data.shape[0] == 1
+
+
+def test_KData_from_file_missing_file(tmp_path) -> None:
+    """from_file and from_ismrmrd_stream raise FileNotFoundError for missing files."""
+    with pytest.raises(FileNotFoundError):
+        KData.from_file(tmp_path / 'does_not_exist.h5', DummyTrajectory())
+    with pytest.raises(FileNotFoundError):
+        KData.from_ismrmrd_stream(tmp_path / 'does_not_exist.ismrmrd', DummyTrajectory())
+
+
+def test_IsmrmrdRawTestData_to_stream_file_object(ismrmrd_cart_stream) -> None:
+    """to_stream can write to an open binary file object without closing it."""
+    stream_path = ismrmrd_cart_stream.filename.with_suffix('.ismrmrd')
+
+    buf = io.BytesIO()
+    ismrmrd_cart_stream.to_stream(buf)
+    assert not buf.closed
+    buf.seek(0)
+    kdata_from_buf = KData.from_ismrmrd_stream(buf, DummyTrajectory())
+    kdata_from_path = KData.from_ismrmrd_stream(stream_path, DummyTrajectory())
+    torch.testing.assert_close(kdata_from_buf.data, kdata_from_path.data)
+    torch.testing.assert_close(kdata_from_buf.traj.as_tensor(), kdata_from_path.traj.as_tensor())
