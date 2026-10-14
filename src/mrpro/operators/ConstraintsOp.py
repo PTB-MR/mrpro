@@ -12,9 +12,9 @@ def sigmoid(x: torch.Tensor, beta: float = 1.0) -> torch.Tensor:
     return torch.nn.functional.sigmoid(beta * x)
 
 
-def sigmoid_inverse(x: torch.Tensor, beta: float = 1.0) -> torch.Tensor:
+def sigmoid_inverse(x: torch.Tensor, beta: float = 1.0, eps: float | None = None) -> torch.Tensor:
     """Inverse of `sigmoid`."""
-    return torch.logit(x) / beta
+    return torch.logit(x, eps=eps) / beta
 
 
 def softplus(x: torch.Tensor, beta: float = 1.0) -> torch.Tensor:
@@ -22,8 +22,10 @@ def softplus(x: torch.Tensor, beta: float = 1.0) -> torch.Tensor:
     return -(1 / beta) * torch.nn.functional.logsigmoid(-beta * x)
 
 
-def softplus_inverse(x: torch.Tensor, beta: float = 1.0) -> torch.Tensor:
+def softplus_inverse(x: torch.Tensor, beta: float = 1.0, eps: float | None = None) -> torch.Tensor:
     """Inverse of `softplus`."""
+    if eps is not None:
+        x = x.clamp(min=eps)
     return x + torch.log(-torch.expm1(-beta * x)) / beta
 
 
@@ -35,6 +37,7 @@ class ConstraintsOp(EndomorphOperator):
         bounds: Sequence[tuple[float | None, float | None]],
         beta_sigmoid: float = 1.0,
         beta_softplus: float = 1.0,
+        eps: float | None = None,
     ) -> None:
         """Initialize a constraint operator.
 
@@ -62,6 +65,12 @@ class ConstraintsOp(EndomorphOperator):
         beta_softplus
             parameter for the softplus transformation (used if an input is either bounded from below or above).
             A higher value leads to a steeper softplus.
+        eps
+            If not `None`, values are clamped before applying the inverse transformation to avoid infinite
+            or nan values at or beyond the bounds. For two bounds, the values normalized to :math:`[0, 1]` are
+            clamped to `[eps, 1 - eps]`. For one bound, the distance to the bound is clamped
+            to be at least `eps`.
+            If `None`, no clamping is performed.
 
         Raises
         ------
@@ -71,6 +80,8 @@ class ConstraintsOp(EndomorphOperator):
             If the a bound is nan.
         ValueError
             If the parameter beta_sigmoid and beta_softplus are not greater than zero.
+        ValueError
+            If eps is negative.
         """
         super().__init__()
 
@@ -78,9 +89,12 @@ class ConstraintsOp(EndomorphOperator):
             raise ValueError(f'parameter beta_sigmoid must be greater than zero; given {beta_sigmoid}')
         if beta_softplus <= 0:
             raise ValueError(f'parameter beta_softplus must be greater than zero; given {beta_softplus}')
+        if eps is not None and eps < 0:
+            raise ValueError(f'parameter eps must not be negative; given {eps}')
 
         self.beta_sigmoid = beta_sigmoid
         self.beta_softplus = beta_softplus
+        self.eps = eps
 
         self.lower_bounds = tuple(torch.as_tensor(-torch.inf if lb is None else lb) for (lb, ub) in bounds)
         self.upper_bounds = tuple(torch.as_tensor(torch.inf if ub is None else ub) for (lb, ub) in bounds)
@@ -125,15 +139,15 @@ class ConstraintsOp(EndomorphOperator):
 
         if not lb.isneginf() and not ub.isposinf():
             # bounds are (lb,ub)
-            return sigmoid_inverse((item - lb) / (ub - lb), beta=self.beta_sigmoid)
+            return sigmoid_inverse((item - lb) / (ub - lb), beta=self.beta_sigmoid, eps=self.eps)
 
         if not lb.isneginf():
             # bounds are (lb,inf)
-            return softplus_inverse(item - lb, beta=self.beta_softplus)
+            return softplus_inverse(item - lb, beta=self.beta_softplus, eps=self.eps)
 
         if not ub.isposinf():
             # bounds are (-inf,ub)
-            return -softplus_inverse(-(item - ub), beta=self.beta_softplus)
+            return -softplus_inverse(-(item - ub), beta=self.beta_softplus, eps=self.eps)
 
         return item  # unconstrained case
 
