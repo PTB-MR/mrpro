@@ -708,7 +708,7 @@ def test_KData_from_ismrmrd_header_overwrites(ismrmrd_cart) -> None:
 
 
 def test_KData_from_ismrmrd_empty_after_filter(ismrmrd_cart) -> None:
-    """from_ismrmrd should raise if no acquisitions remain after filtering."""
+    """from_ismrmrd should raise an error if no acquisitions remain after filtering."""
     with pytest.raises(ValueError, match='No acquisitions meeting the given filter criteria were found'):
         KData.from_ismrmrd(
             ismrmrd_cart.ismrmrd_header,
