@@ -2,9 +2,11 @@
 
 import copy
 import datetime
+import os
 import warnings
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from importlib.metadata import version
+from pathlib import Path
 from types import EllipsisType
 from typing import TYPE_CHECKING, Literal, cast
 from xml.etree import ElementTree as ET
@@ -81,6 +83,32 @@ OTHER_LABELS = (
 T = TypeVar('T', Rotation, torch.Tensor, Rotation | torch.Tensor)
 
 
+def _read_ismrmrd_stream(
+    reader: ismrmrd.serialization.ProtocolDeserializer,
+) -> Iterator[tuple[ismrmrd.xsd.ismrmrdHeader, list[ismrmrd.Acquisition]]]:
+    """Group the objects of an ISMRMRD stream into (header, acquisitions) pairs, one per header.
+
+    Waveforms, images and other objects are ignored. A stream that ends without a CLOSE message
+    is treated as complete.
+    """
+    header: ismrmrd.xsd.ismrmrdHeader | None = None
+    acquisitions: list[ismrmrd.Acquisition] = []
+    try:
+        for obj in reader.deserialize():
+            if isinstance(obj, ismrmrd.xsd.ismrmrdHeader):
+                if header is not None:
+                    yield header, acquisitions
+                header, acquisitions = obj, []
+            elif isinstance(obj, ismrmrd.Acquisition):
+                if header is None:
+                    raise ValueError('ISMRMRD stream contains acquisitions before the first header.')
+                acquisitions.append(obj)
+    except EOFError:
+        pass  # stream ended without CLOSE message
+    if header is not None:
+        yield header, acquisitions
+
+
 class KData(Dataclass):
     """MR raw data / k-space data class."""
 
@@ -104,13 +132,71 @@ class KData(Dataclass):
     ) -> Self:
         """Load k-space data from an ISMRMRD file.
 
+        Dispatches to `from_ismrmrd_hdf5` for HDF5 files (*.h5, *.mrd) and to `from_ismrmrd_stream`
+        for serialized ISMRMRD stream files (*.ismrmrd) or binary streams (file-like objects).
+
         Parameters
         ----------
         filename
-            path to the ISMRMRD file or file-like object
+            path to the ISMRMRD HDF5 or stream file, or a file-like object containing an ISMRMRD stream
         trajectory
             KTrajectoryCalculator to calculate the k-space trajectory or an already calculated KTrajectory
-            If a KTrajectory is given, the shape should be `(acquisisions 1 1 k0)` in the same order as the acquisitions
+            If a KTrajectory is given, the shape should be `(acquisitions 1 1 k0)` in the same order as the acquisitions
+            in the ISMRMRD file.
+        header_overwrites
+            dictionary of key-value pairs to overwrite the header
+        dataset_idx
+            index of the ISMRMRD dataset to load (converter creates dataset, dataset_1, ...)
+        acquisition_filter_criterion
+            function which returns True if an acquisition should be included in KData
+        """
+        # binary ISMRMRD stream
+        if not isinstance(filename, (str, os.PathLike)):
+            return cls.from_ismrmrd_stream(
+                filename,
+                trajectory,
+                header_overwrites=header_overwrites,
+                dataset_idx=dataset_idx,
+                acquisition_filter_criterion=acquisition_filter_criterion,
+            )
+
+        # ISMRMRD HDF5 file (*.h5, *.mrd)
+        if h5py.is_hdf5(filename):
+            return cls.from_ismrmrd_hdf5(
+                filename,
+                trajectory,
+                header_overwrites=header_overwrites,
+                dataset_idx=dataset_idx,
+                acquisition_filter_criterion=acquisition_filter_criterion,
+            )
+
+        # ISMRMRD stream file (*.ismrmrd). Also reached for non-existent files (raises FileNotFoundError)
+        return cls.from_ismrmrd_stream(
+            filename,
+            trajectory,
+            header_overwrites=header_overwrites,
+            dataset_idx=dataset_idx,
+            acquisition_filter_criterion=acquisition_filter_criterion,
+        )
+
+    @classmethod
+    def from_ismrmrd_hdf5(
+        cls,
+        filename: str | os.PathLike,
+        trajectory: KTrajectoryCalculator | KTrajectory | KTrajectoryIsmrmrd,
+        header_overwrites: Mapping[str, object] | None = None,
+        dataset_idx: int = -1,
+        acquisition_filter_criterion: Callable = is_image_acquisition,
+    ) -> Self:
+        """Load k-space data from an ISMRMRD HDF5 file (*.h5 / *.mrd).
+
+        Parameters
+        ----------
+        filename
+            path to the ISMRMRD HDF5 file
+        trajectory
+            KTrajectoryCalculator to calculate the k-space trajectory or an already calculated KTrajectory
+            If a KTrajectory is given, the shape should be `(acquisitions 1 1 k0)` in the same order as the acquisitions
             in the ISMRMRD file.
         header_overwrites
             dictionary of key-value pairs to overwrite the header
@@ -142,7 +228,103 @@ class KData(Dataclass):
                 mtime = 0
             modification_time = datetime.datetime.fromtimestamp(mtime)
 
-        acquisitions = [acq for acq in acquisitions if acquisition_filter_criterion(acq)]
+        return cls.from_ismrmrd(
+            ismrmrd_header,
+            acquisitions,
+            trajectory,
+            header_overwrites=header_overwrites,
+            acquisition_filter_criterion=acquisition_filter_criterion,
+            modification_time=modification_time,
+        )
+
+    @classmethod
+    def from_ismrmrd_stream(
+        cls,
+        filename: FileOrPath,
+        trajectory: KTrajectoryCalculator | KTrajectory | KTrajectoryIsmrmrd,
+        header_overwrites: Mapping[str, object] | None = None,
+        dataset_idx: int = -1,
+        acquisition_filter_criterion: Callable = is_image_acquisition,
+    ) -> Self:
+        """Load k-space data from an ISMRMRD stream file.
+
+        Parameters
+        ----------
+        filename
+            path to the ISMRMRD stream file or file-like object
+        trajectory
+            KTrajectoryCalculator to calculate the k-space trajectory or an already calculated KTrajectory
+            If a KTrajectory is given, the shape should be `(acquisitions 1 1 k0)` in the same order as the acquisitions
+            in the ISMRMRD stream file.
+        header_overwrites
+            dictionary of key-value pairs to overwrite the header
+        dataset_idx
+            index of the measurement (ISMRMRD header + following acquisitions) in the stream to load;
+            a stream file can contain several measurements
+        acquisition_filter_criterion
+            function which returns True if an acquisition should be included in KData
+        """
+        if isinstance(filename, (str, os.PathLike)):
+            stream: FileOrPath = str(filename)
+            modification_time: datetime.datetime | None = datetime.datetime.fromtimestamp(
+                Path(filename).stat().st_mtime
+            )
+        else:
+            stream = filename
+            modification_time = None
+
+        # Can raise FileNotFoundError
+        with ismrmrd.serialization.ProtocolDeserializer(stream) as reader:
+            measurements = list(_read_ismrmrd_stream(reader))
+        if not measurements:
+            raise ValueError('No ISMRMRD header found in stream.')
+        header, acquisitions = measurements[dataset_idx]
+
+        return cls.from_ismrmrd(
+            header,
+            acquisitions,
+            trajectory,
+            header_overwrites=header_overwrites,
+            acquisition_filter_criterion=acquisition_filter_criterion,
+            modification_time=modification_time,
+        )
+
+    @classmethod
+    def from_ismrmrd(
+        cls,
+        ismrmrd_header: ismrmrd.xsd.ismrmrdschema.ismrmrd.ismrmrdHeader,
+        acquisitions: Sequence[ismrmrd.Acquisition],
+        trajectory: KTrajectoryCalculator | KTrajectory | KTrajectoryIsmrmrd,
+        header_overwrites: Mapping[str, object] | None = None,
+        acquisition_filter_criterion: Callable | None = is_image_acquisition,
+        modification_time: datetime.datetime | None = None,
+    ) -> Self:
+        """Create KData from an ISMRMRD header and a list of ISMRMRD acquisitions.
+
+        Parameters
+        ----------
+        ismrmrd_header
+            ISMRMRD header object
+        acquisitions
+            sequence of ISMRMRD acquisitions
+        trajectory
+            KTrajectoryCalculator to calculate the k-space trajectory or an already calculated KTrajectory
+            If a KTrajectory is given, the shape should be `(acquisitions 1 1 k0)` in the same order as the acquisitions
+            in the ISMRMRD file.
+        header_overwrites
+            dictionary of key-value pairs to overwrite the header
+        acquisition_filter_criterion
+            function which returns True if an acquisition should be included in KData
+            If None, no filtering is applied.
+        modification_time
+            optional datetime to use as fallback for the header datetime field.
+            If None, the current time is used as fallback.
+        """
+        if modification_time is None:
+            modification_time = datetime.datetime.now()
+
+        if acquisition_filter_criterion is not None:
+            acquisitions = [acq for acq in acquisitions if acquisition_filter_criterion(acq)]
 
         # we need the same number of receiver coils for all acquisitions
         n_coils_available = {acq.data.shape[0] for acq in acquisitions}
