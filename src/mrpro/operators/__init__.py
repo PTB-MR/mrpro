@@ -17,7 +17,7 @@ from mrpro.operators.ConvSynthesisDictionaryOp import ConvSynthesisDictionaryOp
 from mrpro.operators.ConjugateGradientOp import ConjugateGradientOp
 from mrpro.operators.ConstraintsOp import ConstraintsOp
 from mrpro.operators.DensityCompensationOp import DensityCompensationOp
-from mrpro.operators.DictionaryOp import DictionaryOp
+from mrpro.operators.DictionaryOp import DictionaryAnalysisOp, DictionarySynthesisOp
 from mrpro.operators.DictionaryMatchOp import DictionaryMatchOp
 from mrpro.operators.EinsumOp import EinsumOp
 from mrpro.operators.FastFourierOp import FastFourierOp
@@ -65,8 +65,9 @@ __all__ = [
     "ConvAnalysisDictionaryOp",
     "ConvSynthesisDictionaryOp",
     "DensityCompensationOp",
+    "DictionaryAnalysisOp",
     "DictionaryMatchOp",
-    "DictionaryOp",
+    "DictionarySynthesisOp",
     "EinsumOp",
     "ElementaryFunctional",
     "ElementaryProximableFunctional",
