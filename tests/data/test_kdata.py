@@ -5,7 +5,6 @@ import io
 import re
 import shutil
 from collections.abc import Sequence
-from pathlib import Path
 from types import EllipsisType
 from typing import Literal
 from xml.etree import ElementTree as ET
@@ -836,23 +835,6 @@ def test_KData_from_ismrmrd_stream_modification_time(ismrmrd_cart_stream) -> Non
     after = datetime.datetime.now()
     assert kdata.header.datetime is not None
     assert before <= kdata.header.datetime <= after
-
-
-@pytest.fixture
-def ismrmrd_two_measurement_stream(ismrmrd_cart_stream, tmp_path) -> Path:
-    """Stream file with two measurements: all repetitions, then only repetition 0."""
-    header = ismrmrd_cart_stream.ismrmrd_header
-    acquisitions = ismrmrd_cart_stream.acquisitions
-    stream_path = tmp_path / 'two_measurements.ismrmrd'
-    with ProtocolSerializer(str(stream_path)) as serializer:
-        serializer.serialize(header)
-        for acq in acquisitions:
-            serializer.serialize(acq)
-        serializer.serialize(header)
-        for acq in acquisitions:
-            if acq.idx.repetition == 0:
-                serializer.serialize(acq)
-    return stream_path
 
 
 def test_KData_from_file_forwards_dataset_idx(ismrmrd_two_measurement_stream) -> None:
