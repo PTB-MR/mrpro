@@ -14,6 +14,13 @@ repos:
         exclude: ^.vscode/
       - id: mixed-line-ending
 
+  - repo: https://github.com/fzimmermann89/check_all
+    rev: v1.2
+    hooks:
+      - id: check-init-all
+        args: [--fix]
+        exclude: ^tests/
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.16.10
     hooks:
@@ -26,13 +33,6 @@ repos:
     hooks:
       - id: typos
         args: [] # empty, to remove write-changes from the default arguments.
-
-  - repo: https://github.com/fzimmermann89/check_all
-    rev: v1.2
-    hooks:
-      - id: check-init-all
-        args: [--double-quotes, --fix]
-        exclude: ^tests/
 
   - repo: https://github.com/kynan/nbstripout
     rev: 0.9.1

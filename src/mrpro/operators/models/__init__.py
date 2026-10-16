@@ -14,16 +14,16 @@ from mrpro.operators.models.MESE import MultiEchoSpinEcho
 from mrpro.operators.models.NeuroMRF import NeuroMRF
 
 __all__ = [
-    "CardiacFingerprinting",
-    "EPG",
-    "InversionRecovery",
-    "MOLLI",
-    "MonoExponentialDecay",
-    "MultiEchoSpinEcho",
-    "NeuroMRF",
-    "SaturationRecovery",
-    "SpoiledGRE",
-    "TransientSteadyStateWithPreparation",
-    "WASABI",
-    "WASABITI"
+    'CardiacFingerprinting',
+    'EPG',
+    'InversionRecovery',
+    'MOLLI',
+    'MonoExponentialDecay',
+    'MultiEchoSpinEcho',
+    'NeuroMRF',
+    'SaturationRecovery',
+    'SpoiledGRE',
+    'TransientSteadyStateWithPreparation',
+    'WASABI',
+    'WASABITI',
 ]

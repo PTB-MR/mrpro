@@ -5,11 +5,11 @@ from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
 from mrpro.algorithms.varimax import varimax
 
 __all__ = [
-    "csm",
-    "dcf",
-    "denoiser",
-    "optimizers",
-    "prewhiten_kspace",
-    "reconstruction",
-    "varimax"
+    'csm',
+    'dcf',
+    'denoiser',
+    'optimizers',
+    'prewhiten_kspace',
+    'reconstruction',
+    'varimax',
 ]
