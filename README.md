@@ -85,11 +85,11 @@ Full example: <https://github.com/PTB-MR/mrpro/blob/main/examples/scripts/compar
 
 ### If you find MRpro useful, please consider citing our work
 
-F. F. Zimmermann*, P. Schuenke*, C. S. Aigner, B. A. Bernhardt, M. Guastini, J. Hammacher, H. Herthum, N. Jaitner, A. Kofler, L. Lunin, S. Martin, C. Redshaw Kranich, J. Schattenfroh, D. Schote, Y. Wu, and C. Kolbitsch, **"MRpro: open framework for model-based, learned, and quantitative MR imaging — application to low-field MRI"**, *NMR in Biomedicine*, 2026. (*equal contribution)
+F. F. Zimmermann*, P. Schuenke*, C. S. Aigner, B. A. Bernhardt, M. Guastini, J. Hammacher, H. Herthum, N. Jaitner, A. Kofler, L. Lunin, S. Martin, C. Redshaw Kranich, J. Schattenfroh, D. Schote, Y. Wu, and C. Kolbitsch, **"MRpro: open framework for model-based, learned, and quantitative MR imaging — application to low-field MRI"**, *NMR in Biomedicine*, 2026 (*equal contribution). DOI: [https://doi.org/10.1002/nbm.70405](https://doi.org/10.1002/nbm.70405)
 
 ### Projects which use MRpro
 
-- S. Martin, J. Schattenfroh, P. Schuenke, F. F. Zimmermann, I. Sack, C. Kolbitsch, and A. Kofler, **"Physics-Informed Deep Learning for Shear Wave Speed Estimation in MR Elastography"**, *IEEE Transactions on Biomedical Engineering*, 2026 (early view). DOI: [10.1109/TBME.2026.3666306](https://doi.org/10.1109/TBME.2026.3666306)
+- S. Martin, J. Schattenfroh, P. Schuenke, F. F. Zimmermann, I. Sack, C. Kolbitsch, and A. Kofler, **"Physics-Informed Deep Learning for Shear Wave Speed Estimation in MR Elastography"**, *IEEE Transactions on Biomedical Engineering*, 2026. DOI: [10.1109/TBME.2026.3666306](https://doi.org/10.1109/TBME.2026.3666306)
 
 - M. Guastini, J. Schulz-Menger, T. Schaeffter, S. Hufnagel, A. Kofler, and C. Kolbitsch, **"Zero-Shot Unsupervised Motion Estimation for Motion-Corrected Cardiac T1 Mapping"**, *IEEE Transactions on Biomedical Engineering*, 2026. DOI: [10.1109/TBME.2025.3624279](https://doi.org/10.1109/TBME.2025.3624279)
 
