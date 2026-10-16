@@ -7,6 +7,13 @@ on:
     types:
       - completed
 
+permissions:
+  contents: read
+
+concurrency:
+  group: coverage-report-${{ github.event.workflow_run.id }}
+  cancel-in-progress: false
+
 jobs:
   coverage_report_pr:
     name: Coverage report
@@ -15,15 +22,18 @@ jobs:
           github.event.workflow_run.conclusion != 'cancelled' &&
           github.event.workflow_run.conclusion != 'skipped' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       actions: read
       pull-requests: write
     steps:
       # use the results of python 3.12, consider this as target platform
-      - name: Download PyTest report artifact for mrpro_py312
+      - name: Download PyTest report artifact for Python 3.12
+        id: download
+        continue-on-error: true
         uses: actions/download-artifact@v7
         with:
-          name: pytest-report-mrpro_py312
+          name: pytest-report-recommended
           run-id: ${{ github.event.workflow_run.id }}
           # needs to be explicitly set
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -50,6 +60,7 @@ jobs:
 
       - name: Post PyTest Coverage Comment
         id: coverage_comment
+        if: steps.download.outcome == 'success'
         uses: MishaKav/pytest-coverage-comment@v1.2.0
         with:
           issue-number: ${{ steps.pr-context.outputs.number }}
@@ -58,8 +69,8 @@ jobs:
 
       - name: Post Failure Comment if Coverage Comment failed
         # if there is no data the comment action does not fail
-        # but has an empty output
-        if: steps.coverage_comment.outputs.coverageHtml == ''
+        # but has an empty output; also covers the artifact-missing case
+        if: steps.download.outcome == 'failure' || steps.coverage_comment.outputs.coverageHtml == ''
         uses: edumserrano/find-create-or-update-comment@v3
         with:
           issue-number: ${{ steps.pr-context.outputs.number }}
@@ -83,13 +94,14 @@ jobs:
           github.event.workflow_run.conclusion != 'cancelled' &&
           github.event.workflow_run.conclusion != 'skipped' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v7
         with:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          name: pytest-report-mrpro_py312
+          name: pytest-report-recommended
 
       - name: Post PyTest Coverage Comment on push main
         id: coverage_comment
