@@ -232,6 +232,7 @@ arange = "arange" # torch.arange
 Ba = "Ba"
 wht = "wht"       # Brainweb tissue class
 nd = "nd"         # pad_nd function from torchnd
+Pn = "Pn"         # Pn in PnP (Plug and Play)
 
 [tool.typos.files]
 extend-exclude = [
