@@ -10,7 +10,29 @@ from mrpro.utils.filters import filter_separable
 
 
 class FiniteDifferenceOp(LinearOperator):
-    """Finite Difference Operator."""
+    r"""Finite difference operator.
+
+    This pointwise operator computes finite differences of a discrete :math:`d`-dimensional tensor ``x``.
+    Differences are computed along the axes listed in ``dim``
+    (e.g. ``dim=(-2, -1)`` for the last two axes)
+    by means of a separable convolution with appropriate filters
+    (supported modes are ``forward``, ``backward``, and ``central``).
+    The output is a :math:`(d+1)`-dimensional tensor ``y``
+    (``y.shape[0] == len(dim)``)
+    where each ``y[i]`` is the finite difference tensor along the selected axis ``dim[i]``.
+
+    For example, the forward finite difference ``nabla(x)`` along a chosen axis ``dim[i]`` can be written as
+
+    .. code-block:: python
+
+        y[i, *k] = nabla(x)[i, *k] = x[*(k + e_i)] - x[*k]
+
+    for every coordinate ``k = (k_1, ..., k_d)`` in the grid.
+    Here ``e_i = (e_i_1, ..., e_i_d)`` is the unit vector in direction ``dim[i]``,
+    i.e. ``e_i[j] = 1`` if ``j == dim[i]`` else ``0``.
+
+    Boundary handling (e.g. when coordinate ``k + e_i`` is outside the grid) is controlled by ``pad_mode``.
+    """
 
     @staticmethod
     def finite_difference_kernel(mode: Literal['central', 'forward', 'backward']) -> torch.Tensor:
@@ -28,14 +50,14 @@ class FiniteDifferenceOp(LinearOperator):
         Raises
         ------
         `ValueError`
-            If mode is not central, forward, backward or doublecentral
+            If mode is not forward, backward or central
         """
-        if mode == 'central':
-            kernel = torch.tensor((-1, 0, 1)) / 2
-        elif mode == 'forward':
+        if mode == 'forward':
             kernel = torch.tensor((0, -1, 1))
         elif mode == 'backward':
             kernel = torch.tensor((-1, 1, 0))
+        elif mode == 'central':
+            kernel = torch.tensor((-1, 0, 1)) / 2
         else:
             raise ValueError(f'mode should be one of (central, forward, backward), not {mode}')
         return kernel
@@ -43,7 +65,7 @@ class FiniteDifferenceOp(LinearOperator):
     def __init__(
         self,
         dim: Sequence[int],
-        mode: Literal['central', 'forward', 'backward'] = 'central',
+        mode: Literal['central', 'forward', 'backward'] = 'forward',
         pad_mode: Literal['zeros', 'circular'] = 'zeros',
     ) -> None:
         """Finite difference operator.
@@ -51,7 +73,7 @@ class FiniteDifferenceOp(LinearOperator):
         Parameters
         ----------
         dim
-            Dimension along which finite differences are calculated.
+            Dimensions along which finite differences are calculated.
         mode
             Type of finite difference operator
         pad_mode
