@@ -9,11 +9,13 @@ from mrpro.operators.models.WASABITI import WASABITI
 from mrpro.operators.models.MonoExponentialDecay import MonoExponentialDecay
 from mrpro.operators.models.cMRF import CardiacFingerprinting
 from mrpro.operators.models.TransientSteadyStateWithPreparation import TransientSteadyStateWithPreparation
+from mrpro.operators.models import BMC
 from mrpro.operators.models import EPG
 from mrpro.operators.models.MESE import MultiEchoSpinEcho
 from mrpro.operators.models.NeuroMRF import NeuroMRF
 
 __all__ = [
+    "BMC",
     "CardiacFingerprinting",
     "EPG",
     "InversionRecovery",
