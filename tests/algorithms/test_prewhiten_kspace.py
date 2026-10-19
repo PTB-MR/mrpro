@@ -5,7 +5,7 @@ import torch
 from einops import rearrange
 from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
 from mrpro.data import KData, KNoise, KTrajectory
-from tests import RandomGenerator
+from mrpro.utils import RandomGenerator
 
 
 def _calc_coil_cov(data):

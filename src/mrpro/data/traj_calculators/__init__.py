@@ -7,6 +7,7 @@ from mrpro.data.traj_calculators.KTrajectoryRadial2D import KTrajectoryRadial2D
 from mrpro.data.traj_calculators.KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
 from mrpro.data.traj_calculators.KTrajectoryPulseq import KTrajectoryPulseq
 from mrpro.data.traj_calculators.KTrajectoryCartesian import KTrajectoryCartesian
+from mrpro.data.traj_calculators.KTrajectorySpiral2D import KTrajectorySpiral2D
 __all__ = [
     "KTrajectoryCalculator",
     "KTrajectoryCartesian",
@@ -14,5 +15,6 @@ __all__ = [
     "KTrajectoryPulseq",
     "KTrajectoryRadial2D",
     "KTrajectoryRpe",
+    "KTrajectorySpiral2D",
     "KTrajectorySunflowerGoldenRpe"
 ]

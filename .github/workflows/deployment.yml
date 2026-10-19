@@ -15,12 +15,12 @@ jobs:
       version_changed: ${{ steps.changes.outputs.version_changed }}
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.x"
 
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Check if VERSION file is modified compared to main
         uses: dorny/paths-filter@v3
@@ -46,7 +46,7 @@ jobs:
           python -m build
 
       - name: Upload TestPyPI Distribution Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: testpypi-package-distribution
           path: dist/
@@ -67,7 +67,7 @@ jobs:
 
     steps:
       - name: Download TestPyPI Distribution
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: testpypi-package-distribution
           path: dist/
@@ -86,7 +86,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.x"
 
@@ -113,10 +113,10 @@ jobs:
       version: ${{ steps.get_version.outputs.version }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.x"
 
@@ -136,7 +136,7 @@ jobs:
           python -m build
 
       - name: Store PyPI Distribution
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: pypi-package-distribution
           path: dist/
@@ -158,13 +158,13 @@ jobs:
 
     steps:
       - name: Download PyPI Distribution
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: pypi-package-distribution
           path: dist/
 
       - name: Create Tag
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             github.rest.git.createRef({
@@ -175,7 +175,7 @@ jobs:
             })
 
       - name: Create Release
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
           script: |

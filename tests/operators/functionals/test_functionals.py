@@ -5,9 +5,10 @@ import pytest
 import torch
 from mrpro.operators.Functional import ElementaryFunctional, ElementaryProximableFunctional
 from mrpro.operators.functionals import MSE, L1Norm, L1NormViewAsReal, L2NormSquared, ZeroFunctional
+from mrpro.utils import RandomGenerator
+from mrpro.utils.reshape import normalize_indices
 from typing_extensions import TypedDict
 
-from tests import RandomGenerator
 from tests.operators.functionals.conftest import (
     FUNCTIONALS,
     PROXIMABLE_FUNCTIONALS,
@@ -20,7 +21,7 @@ from tests.operators.functionals.conftest import (
 @pytest.mark.parametrize('dim', [None, -2])
 @pytest.mark.parametrize('keepdim', [True, False])
 @pytest.mark.parametrize('functional', FUNCTIONALS)
-def test_functional_shape(functional: type[ElementaryFunctional], shape: torch.Size, dim: None | int, keepdim: bool):
+def test_functional_shape(functional: type[ElementaryFunctional], shape: torch.Size, dim: int | None, keepdim: bool):
     """Test the shape returned by the forward of the functional."""
     f = functional(dim=dim, keepdim=keepdim)
     x = torch.ones(shape)
@@ -42,11 +43,11 @@ def test_functional_shape(functional: type[ElementaryFunctional], shape: torch.S
         # make all dimensions singleton
         expected_shape = (1,) * len(shape)
     elif not keepdim:
-        # remove the dimensions in dim
-        expected_shape = tuple([s for i, s in enumerate(shape) if i not in torch.tensor(dim) % len(shape)])
+        normalized = normalize_indices(len(shape), dim)
+        expected_shape = tuple(s for i, s in enumerate(shape) if i not in normalized)
     elif keepdim:
-        # make the dimensions in dim singleton
-        expected_shape = tuple([s if i not in torch.tensor(dim) % len(shape) else 1 for i, s in enumerate(shape)])
+        normalized = normalize_indices(len(shape), dim)
+        expected_shape = tuple(s if i not in normalized else 1 for i, s in enumerate(shape))
     assert fx.shape == expected_shape
 
 
@@ -55,7 +56,7 @@ def test_functional_shape(functional: type[ElementaryFunctional], shape: torch.S
 @pytest.mark.parametrize('keepdim', [True, False])
 @pytest.mark.parametrize('functional', FUNCTIONALS)
 def test_functional_divide_by_n(
-    functional: type[ElementaryFunctional], shape: torch.Size, dim: None | tuple[int, ...], keepdim: bool
+    functional: type[ElementaryFunctional], shape: torch.Size, dim: tuple[int, ...] | None, keepdim: bool
 ):
     """Test if divide_by_n scales by number of elements indexed by dim."""
 
@@ -160,7 +161,10 @@ def test_functional_prox_non_expansive(case: FunctionalTestCase):
     def l2(x):
         return torch.sum((x * x.conj()).real, dim=case.functional.dim, keepdim=case.functional.keepdim)
 
-    assert (l2(f.prox(x)[0] - f.prox(y)[0]) <= l2(x - y)).all()
+    eps = torch.finfo(x.real.dtype).eps
+    # squared norms are subject to rounding errors relative to the magnitude of the inputs
+    tolerance = eps * (l2(x) + l2(y))
+    assert (l2(f.prox(x)[0] - f.prox(y)[0]) <= l2(x - y) + tolerance).all()
 
 
 @functional_test_cases

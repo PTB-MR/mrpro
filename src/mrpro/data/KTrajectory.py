@@ -1,7 +1,6 @@
 """KTrajectory dataclass."""
 
 from collections.abc import Callable
-from dataclasses import dataclass
 from typing import Literal
 
 import ismrmrd
@@ -9,17 +8,15 @@ import numpy as np
 import torch
 from typing_extensions import Self
 
+from mrpro.data.Dataclass import Dataclass
 from mrpro.data.enums import TrajType
-from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.reshape import unsqueeze_at
-from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 from mrpro.utils.typing import FileOrPath
 
 
-@dataclass(slots=True, frozen=True)
-class KTrajectory(MoveDataMixin):
+class KTrajectory(Dataclass):
     """K-space trajectory.
 
     Contains the trajectory in k-space along the three dimensions `kz`, `ky`, `kx`,
@@ -67,7 +64,7 @@ class KTrajectory(MoveDataMixin):
             object.__setattr__(self, 'kx', kx)
 
         try:
-            shape = self.broadcasted_shape
+            shape = self.shape
         except RuntimeError:
             raise ValueError('The k-space trajectory dimensions must be broadcastable.') from None
 
@@ -198,17 +195,6 @@ class KTrajectory(MoveDataMixin):
         return cls.from_tensor(traj, stack_dim=-1, axes_order='xyz', scaling_matrix=scaling_matrix)
 
     @property
-    def broadcasted_shape(self) -> torch.Size:
-        """The broadcasted shape of the trajectory.
-
-        Returns
-        -------
-            broadcasted shape of trajectory
-        """
-        shape = torch.broadcast_shapes(self.kx.shape, self.ky.shape, self.kz.shape)
-        return shape
-
-    @property
     def type_along_kzyx(self) -> tuple[TrajType, TrajType, TrajType]:
         """Type of trajectory along kz-ky-kx."""
         return self._traj_types(self.grid_detection_tolerance)[0]
@@ -267,13 +253,5 @@ class KTrajectory(MoveDataMixin):
         stack_dim
             The dimension to stack the tensor along.
         """
-        shape = self.broadcasted_shape
+        shape = self.shape
         return torch.stack([traj.expand(*shape) for traj in (self.kz, self.ky, self.kx)], dim=stack_dim)
-
-    def __repr__(self):
-        """Representation method for KTrajectory class."""
-        z = summarize_tensorvalues(torch.tensor(self.kz.shape))
-        y = summarize_tensorvalues(torch.tensor(self.ky.shape))
-        x = summarize_tensorvalues(torch.tensor(self.kx.shape))
-        out = f'{type(self).__name__} with shape: kz={z}, ky={y}, kx={x}'
-        return out

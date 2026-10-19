@@ -4,6 +4,8 @@ from collections.abc import Sequence
 
 import torch
 
+from mrpro.utils.reshape import normalize_indices
+
 
 def reduce_repeat(tensor: torch.Tensor, tol: float = 1e-6, dim: Sequence[int] | None = None) -> torch.Tensor:
     """Replace dimensions with all equal values with singletons.
@@ -23,7 +25,7 @@ def reduce_repeat(tensor: torch.Tensor, tol: float = 1e-6, dim: Sequence[int] | 
         return real + 1j * imag
 
     if dim is not None:
-        dim = [d % tensor.ndim for d in dim]
+        dim = normalize_indices(tensor.ndim, dim, unique=False)
 
     def can_be_singleton(d: int) -> bool:
         if dim is not None and d not in dim:
@@ -32,6 +34,10 @@ def reduce_repeat(tensor: torch.Tensor, tol: float = 1e-6, dim: Sequence[int] | 
         if tensor.stride(d) == 0:
             # broadcasted dimension
             return True
+        if tol >= 0 and tensor.dtype == torch.bool:
+            # either all true or all false
+            return bool((tensor.all(dim=d) | ~tensor.any(dim=d)).all())
+
         # If the distance between min and max is smaller than the tolerance, all values are the same.
         return bool(torch.all((tensor.amax(dim=d) - tensor.amin(dim=d)) <= tol).item())
 

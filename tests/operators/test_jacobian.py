@@ -1,8 +1,8 @@
 import torch
 from mrpro.operators import Jacobian
 from mrpro.operators.functionals import L2NormSquared
+from mrpro.utils import RandomGenerator
 
-from tests import RandomGenerator
 from tests.helper import dotproduct_adjointness_test
 
 

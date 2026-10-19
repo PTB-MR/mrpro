@@ -9,6 +9,7 @@
 
 # %% tags=["hide-cell"]  mystnb={"code_prompt_show": "Show download details"}
 # Download raw data from Zenodo
+import os
 import tempfile
 from pathlib import Path
 
@@ -16,11 +17,11 @@ import mrpro
 import torch
 import zenodo_get
 
-dataset = '14617082'
-
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
-zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
+zenodo_get.download(
+    record='14617082', retry_attempts=5, output_dir=data_folder, access_token=os.environ.get('ZENODO_TOKEN')
+)
 
 # %% [markdown]
 # ### Using KTrajectoryIsmrmrd - Trajectory saved in ISMRMRD file

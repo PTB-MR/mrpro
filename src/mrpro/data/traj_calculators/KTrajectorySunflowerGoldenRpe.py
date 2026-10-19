@@ -2,7 +2,6 @@
 
 import numpy as np
 import torch
-from einops import repeat
 
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
@@ -82,13 +81,12 @@ class KTrajectorySunflowerGoldenRpe(KTrajectoryCalculator):
         -------
             radial phase encoding trajectory for given KHeader
         """
-        angles = repeat((k2_idx * self.angle) % torch.pi, '... k2 k1 -> ... k2 k1 k0', k0=1)
+        angles = (k2_idx * self.angle) % torch.pi
 
         radial = (k1_idx - k1_center).to(torch.float32)
         radial = self._apply_sunflower_shift_between_rpe_lines(radial, angles, k2_idx)
         # Asymmetric k-space point is used to obtain a self-navigator signal, thus should be in k-space center
         radial[(k1_idx == 0).broadcast_to(radial.shape)] = 0
-        radial = repeat(radial, '... k2 k1 -> ... k2 k1 k0', k0=1)
 
         kz = radial * torch.sin(angles)
         ky = radial * torch.cos(angles)

@@ -6,7 +6,7 @@ import torch
 from torch import nn
 
 from mrpro.operators.SignalModel import SignalModel
-from mrpro.utils import unsqueeze_right
+from mrpro.utils.reshape import unsqueeze_right
 from mrpro.utils.unit_conversion import GYROMAGNETIC_RATIO_PROTON
 
 
@@ -21,6 +21,9 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         gamma: float = GYROMAGNETIC_RATIO_PROTON,
     ) -> None:
         """Initialize WASABI signal model for mapping of B0 and B1 [SCHU2016]_.
+
+        This model uses a slight modification from the original published model.
+        The parameter `a` corresponds to `d/c` in the original model.
 
         Parameters
         ----------
@@ -49,35 +52,52 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         self.b1_nominal = nn.Parameter(b1_nominal_tensor, requires_grad=b1_nominal_tensor.requires_grad)
         self.gamma = gamma
 
+    def __call__(
+        self,
+        b0_shift: torch.Tensor,
+        relative_b1: torch.Tensor,
+        c: torch.Tensor,
+        a: torch.Tensor,
+    ) -> tuple[torch.Tensor,]:
+        """Apply the WASABI (Water Shift and B1) signal model.
+
+        Parameters
+        ----------
+        b0_shift
+            B0 field in homogeneity or off-resonance shift in Hz.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
+        relative_b1
+            Relative B1 amplitude scaling factor (actual B1 / nominal B1).
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
+        c
+            Signal amplitude parameter (related to M0).
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
+        a
+            Signal modulation scaling parameter, corresponds to `d/c` in the original model.
+            Shape `(...)`, for example `(*other, coils, z, y, x)` or `(samples)`.
+
+        Returns
+        -------
+            Signal calculated for each frequency offset.
+            Shape `(offsets ...)`, for example `(offsets, *other, coils, z, y, x)`, or `(offsets, samples)`
+            where `offsets` is the number of frequency offsets.
+        """
+        return super().__call__(b0_shift, relative_b1, c, a)
+
     def forward(
         self,
         b0_shift: torch.Tensor,
         relative_b1: torch.Tensor,
         c: torch.Tensor,
-        d: torch.Tensor,
+        a: torch.Tensor,
     ) -> tuple[torch.Tensor,]:
-        """Apply WASABI signal model.
+        """Apply forward of WASABI.
 
-        Parameters
-        ----------
-        b0_shift
-            B0 shift [Hz]
-            with shape `(*other, coils, z, y, x)`
-        relative_b1
-            relative B1 amplitude
-            with shape `(*other, coils, z, y, x)`
-        c
-            additional fit parameter for the signal model
-            with shape `(*other, coils, z, y, x)`
-        d
-            additional fit parameter for the signal model
-            with shape `(*other, coils, z, y, x)`
-
-        Returns
-        -------
-            signal with shape `(offsets, *other, coils, z, y, x)`
+        .. note::
+            Prefer calling the instance of the WASABI as ``operator(x)`` over directly calling this method.
+            See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
-        ndim = max(b0_shift.ndim, relative_b1.ndim, c.ndim, d.ndim)
+        ndim = max(b0_shift.ndim, relative_b1.ndim, c.ndim, a.ndim)
         offsets = unsqueeze_right(self.offsets, ndim - self.offsets.ndim + 1)  # leftmost is offsets
         rf_duration = unsqueeze_right(self.rf_duration, ndim - self.rf_duration.ndim)
         b1_nominal = unsqueeze_right(self.b1_nominal, ndim - self.b1_nominal.ndim)
@@ -85,9 +105,9 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         offsets_shifted = offsets - b0_shift
         b1 = b1_nominal * relative_b1
 
-        signal = (
-            c
-            - d
+        signal = c * (
+            1
+            - a
             * (torch.pi * b1 * self.gamma * rf_duration) ** 2
             * torch.sinc(rf_duration * torch.sqrt((b1 * self.gamma) ** 2 + offsets_shifted**2)) ** 2
         )

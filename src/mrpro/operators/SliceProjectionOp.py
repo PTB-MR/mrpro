@@ -3,7 +3,7 @@
 import itertools
 import warnings
 from collections.abc import Callable, Sequence
-from typing import Literal, TypeAlias
+from typing import Literal, TypeAlias, cast
 
 import einops
 import numpy as np
@@ -13,7 +13,7 @@ from torch import Tensor
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators.LinearOperator import LinearOperator
-from mrpro.utils import ravel_multi_index
+from mrpro.utils.reshape import ravel_multi_index
 from mrpro.utils.slice_profiles import SliceSmoothedRectangular
 from mrpro.utils.typing import NestedSequence
 
@@ -115,6 +115,12 @@ class SliceProjectionOp(LinearOperator):
         Different settings for different volume batches are NOT supported, consider creating multiple
         operators if required.
 
+        Note
+        ----
+        All parameters must be on cpu when creating the operator. Preparation of the operator on
+        the GPU would be slower than transferring the parameters to the CPU, creation, then transferring
+        the operator back to the GPU.
+
 
         Parameters
         ----------
@@ -144,13 +150,15 @@ class SliceProjectionOp(LinearOperator):
 
         if slice_rotation is None:
             slice_rotation = Rotation.identity()
+        elif slice_rotation.device.type != 'cpu':
+            raise ValueError('slice_rotation must be on cpu')
 
         max_shape = max(input_shape.z, input_shape.y, input_shape.x)
 
         def _find_width(slice_profile: TensorFunction) -> int:
             # figure out how far along the profile we have to consider values
             # clip up to 0.01 of intensity on both sides
-            test_values = torch.arange(-max_shape, max_shape, max_shape)
+            test_values = torch.linspace(-max_shape, max_shape, 4 * max_shape + 1)
             profile = slice_profile(test_values)
             cdf = torch.cumsum(profile, -1) / profile.sum()
             left = test_values[(cdf > 0.01).int().argmax()]
@@ -164,10 +172,12 @@ class SliceProjectionOp(LinearOperator):
         if not np.vectorize(_at_least_width_1)(slice_profile_array).all():
             raise ValueError(
                 'The slice profile must have a width of at least 1 voxel,'
-                ' i.e. the profile should be greater then 1e-6 in (-0.5,0.5)'
+                ' i.e. the profile should be greater then 1e-6 in (-0.5, 0.5)'
             )
 
-        slice_shift_tensor: torch.Tensor = torch.atleast_1d(torch.as_tensor(slice_shift))
+        slice_shift_tensor = cast(torch.Tensor, torch.atleast_1d(torch.as_tensor(slice_shift)))
+        if slice_shift_tensor.device.type != 'cpu':
+            raise ValueError('slice_shift must be on cpu')
         batch_shapes = torch.broadcast_shapes(slice_rotation.shape, slice_shift_tensor.shape, slice_profile_array.shape)
         assert isinstance(batch_shapes, torch.Size)  # noqa: S101 # mypy
         rotation_quats = torch.broadcast_to(slice_rotation.as_quat(), (*batch_shapes, 4)).reshape(-1, 4)
@@ -208,18 +218,34 @@ class SliceProjectionOp(LinearOperator):
         self._range_shape: tuple[int] = (*batch_shapes, 1, max_shape, max_shape)
         self._domain_shape = input_shape.zyx
 
-    def forward(self, x: Tensor) -> tuple[Tensor]:
-        """Transform from a 3D Volume to a 2D Slice.
+    def __call__(self, x: Tensor) -> tuple[Tensor]:
+        """Transform a 3D volume to a 2D slice.
+
+        This operation uses a sparse matrix multiplication, where the matrix
+        is determined by the slice rotation, shift, and profile defined
+        at initialization. It samples the input 3D volume to generate a 2D slice.
 
         Parameters
         ----------
         x
-            3D Volume with shape `(..., z, y, x)`
-            with z, y, x matching the input_shape
+            Input 3D Volume tensor. Expected shape `(..., Z, Y, X)`,
+            where Z, Y, X match the `input_shape` provided during initialization.
+            `(...)` represents optional batch dimensions.
 
         Returns
         -------
-        A 2D slice with shape `(..., 1, max(z, y, x), (max(z, y, x)))`
+            The 2D slice. The shape of the slice will be
+            `(..., 1, max_dim, max_dim)` where `max_dim` is the maximum of
+            the input Z, Y, X dimensions, and `(...)` matches input batch dimensions.
+        """
+        return super().__call__(x)
+
+    def forward(self, x: Tensor) -> tuple[Tensor]:
+        """Apply forward of SliceProjectionOp.
+
+        .. note::
+            Prefer calling the instance of the SliceProjectionOp operator as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         match (self.matrix, self.matrix_adjoint):
             # selection based on the optimize_for setting
@@ -241,18 +267,22 @@ class SliceProjectionOp(LinearOperator):
         return (y,)
 
     def adjoint(self, x: Tensor) -> tuple[Tensor,]:
-        """Transform from a 2D slice to a 3D Volume.
+        """Transform a 2D slice back into a 3D volume.
+
+        This operation uses the adjoint of the sparse projection matrix
+        to map the input 2D slice data back into the 3D volume.
 
         Parameters
         ----------
         x
-            2D Slice with shape `(..., 1, max(z, y, x), (max(z, y, x)))`
-            with `z, y, x` matching the input_shape
+            Input 2D Slice tensor. Expected shape is `(..., 1, max_dim, max_dim)`,
+            where `max_dim` corresponds to the output slice dimensions from the
+            forward pass. `(...)` represents optional batch dimensions.
 
         Returns
         -------
-        A 3D Volume with shape `(..., z, y, x)`
-           with` z, y, x` matching the input_shape
+            The 3D Volume. The shape will be `(..., Z, Y, X)`,
+            matching the original `input_shape` of the forward operation.
         """
         match (self.matrix, self.matrix_adjoint):
             # selection based on the optimize_for setting
@@ -347,8 +377,8 @@ class SliceProjectionOp(LinearOperator):
         slice_function
             Function that describes the slice profile. See `mrpro.utils.slice_profiles` for examples.
         rotation_center
-            Center of rotation, if None the center of the volume is used,
-            i.e. for 4 pixels 0 1 2 3 it is between 1 and 2
+            Center of rotation, if `None` the center of the volume is used,
+            i.e. for 4 pixels `[0 1 2 3]` it is between 1 and 2
 
         Returns
         -------

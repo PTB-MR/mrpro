@@ -3,9 +3,7 @@
 import pytest
 import torch
 from einops import repeat
-from mrpro.utils import split_idx
-
-from tests import RandomGenerator
+from mrpro.utils import RandomGenerator, split_idx
 
 
 @pytest.mark.parametrize(

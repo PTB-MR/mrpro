@@ -1,10 +1,16 @@
 """Tests for reshaping utilities."""
 
+from collections.abc import Sequence
+
 import numpy as np
 import pytest
 import torch
 from mrpro.utils import (
+    RandomGenerator,
     broadcast_right,
+    broadcasted_rearrange,
+    normalize_index,
+    normalize_indices,
     ravel_multi_index,
     reduce_view,
     reshape_broadcasted,
@@ -16,7 +22,56 @@ from mrpro.utils import (
     unsqueeze_tensors_right,
 )
 
-from tests import RandomGenerator
+
+@pytest.mark.parametrize(
+    ('ndim', 'index', 'expected'),
+    [
+        (3, 0, 0),
+        (3, 2, 2),
+        (3, -1, 2),
+        (3, -3, 0),
+        (5, -4, 1),
+    ],
+)
+def test_normalize_index(ndim: int, index: int, expected: int) -> None:
+    assert normalize_index(ndim, index) == expected
+
+
+def test_normalize_index_out_of_range() -> None:
+    with pytest.raises(IndexError, match='Invalid index'):
+        normalize_index(2, 3)
+    with pytest.raises(IndexError, match='Invalid index'):
+        normalize_index(1, -2)
+    with pytest.raises(IndexError, match='Invalid index'):
+        normalize_index(0, 0)
+
+
+@pytest.mark.parametrize(
+    ('ndim', 'indices', 'expected'),
+    [
+        (3, 0, (0,)),
+        (3, -1, (2,)),
+        (3, [0, -1], (0, 2)),
+        (3, (1, 2), (1, 2)),
+        (3, (0, 0), (0, 0)),
+    ],
+)
+def test_normalize_indices(ndim: int, indices: int | Sequence[int], expected: tuple[int, ...]) -> None:
+    assert normalize_indices(ndim, indices, unique=False) == expected
+
+
+def test_normalize_indices_duplicate_raises() -> None:
+    with pytest.raises(IndexError, match='must be unique'):
+        normalize_indices(2, (0, -2), unique=True)
+    with pytest.raises(IndexError, match='must be unique'):
+        normalize_indices(1, (0, 0), unique=True)
+
+
+def test_normalize_indices_out_of_range() -> None:
+    with pytest.raises(IndexError, match='Invalid index'):
+        normalize_indices(2, (0, 3))
+    with pytest.raises(IndexError, match='Invalid index'):
+        normalize_indices(1, -2)
 
 
 def test_broadcast_right():
@@ -225,3 +280,46 @@ def test_unsqueeze_tensors_ndim() -> None:
     assert unsqueezed[1].shape == (5, 2, 1, 1, 1)
     assert torch.equal(unsqueezed[0].squeeze(), tensor1)
     assert torch.equal(unsqueezed[1].squeeze(), tensor2)
+
+
+def test_broadcasted_rearrange() -> None:
+    """Test broadcasted_rearrange."""
+    rng = RandomGenerator(123)
+
+    # Example 1 in docstring
+    tensor = rng.complex64_tensor((1, 16, 1, 768, 256))
+    new = broadcasted_rearrange(tensor, '... (phase k1) k0 -> phase ... k1 k0', phase=8)
+
+    assert new.shape == (8, 1, 16, 1, 96, 256)
+
+    # Example 2 in docstring
+    tensor = rng.complex64_tensor((1, 1, 1, 768, 1))
+    new = broadcasted_rearrange(
+        tensor,
+        '... (phase k1) k0 -> phase ... k1 k0',
+        broadcasted_shape=(1, 16, 1, 768, 256),
+        phase=8,
+        reduce_views=False,
+    )
+    assert new.shape == (8, 1, 16, 1, 96, 256)
+
+    # Example 3 in docstring
+    tensor = rng.complex64_tensor((1, 1, 1, 768, 1))
+    new = broadcasted_rearrange(
+        tensor,
+        '... (phase k1) k0 -> phase ... k1 k0',
+        broadcasted_shape=(1, 16, 1, 768, 256),
+        reduce_views=True,
+        phase=8,
+    )
+    assert new.shape == (8, 1, 1, 1, 96, 1)
+
+    # Already broadcasted input, reduce_views=True
+    tensor = rng.complex64_tensor((1, 1, 1, 1, 1)).expand(2, 1, 1, 768, 1)
+    new = broadcasted_rearrange(tensor, '... (phase k1) k0 -> phase ... k1 k0', reduce_views=True, phase=8)
+    assert new.shape == (1, 1, 1, 1, 1, 1)
+
+    # Already broadcasted input, reduce_views=False
+    tensor = rng.complex64_tensor((1, 1, 1, 1, 1)).expand(2, 1, 1, 768, 1)
+    new = broadcasted_rearrange(tensor, '... (phase k1) k0 -> phase ... k1 k0', phase=8, reduce_views=False)
+    assert new.shape == (8, 2, 1, 1, 96, 1)

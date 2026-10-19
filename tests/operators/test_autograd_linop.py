@@ -3,9 +3,10 @@
 import pytest
 import torch
 from mrpro.operators import LinearOperator
+from mrpro.utils import RandomGenerator
 from torch.autograd.gradcheck import GradcheckError
 
-from tests import RandomGenerator, dotproduct_adjointness_test
+from tests import dotproduct_adjointness_test
 
 
 class NonDifferentiableOperator(LinearOperator, adjoint_as_backward=False):

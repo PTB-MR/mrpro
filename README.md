@@ -8,10 +8,12 @@
 
 </h1><br>
 
-![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)
+[![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)](https://pypi.org/project/mrpro/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-![Coverage Bagde](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/ckolbPTB/48e334a10caf60e6708d7c712e56d241/raw/coverage.json)
+[![Coverage Bagde](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/ckolbPTB/48e334a10caf60e6708d7c712e56d241/raw/coverage.json)](https://github.com/PTB-MR/mrpro/actions?query=workflow%3A%22%22Report+PyTest%22%22)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14509598.svg)](https://doi.org/10.5281/zenodo.14509598)
+[![arXiv](https://img.shields.io/badge/arXiv-2507.23129-b31b1b.svg)](https://arxiv.org/abs/2507.23129)
+[![FAIR checklist badge](https://fairsoftwarechecklist.net/badge.svg)](https://fairsoftwarechecklist.net/v0.2?f=31&a=32113&i=21322&r=133)
 
 MR image reconstruction and processing package specifically developed for PyTorch.
 
@@ -81,6 +83,18 @@ kdata = KData.from_file(data_file.name, KTrajectoryPulseq(seq_path=seq_file.name
 
 Full example: <https://github.com/PTB-MR/mrpro/blob/main/examples/scripts/comparison_trajectory_calculators.py>
 
+### If you find MRpro useful, please consider citing our work
+
+F. F. Zimmermann*, P. Schuenke*, C. S. Aigner, B. A. Bernhardt, M. Guastini, J. Hammacher, H. Herthum, N. Jaitner, A. Kofler, L. Lunin, S. Martin, C. Redshaw Kranich, J. Schattenfroh, D. Schote, Y. Wu, and C. Kolbitsch, **"MRpro: open framework for model-based, learned, and quantitative MR imaging — application to low-field MRI"**, *NMR in Biomedicine*, 2026 (*equal contribution). DOI: [https://doi.org/10.1002/nbm.70405](https://doi.org/10.1002/nbm.70405)
+
+### Projects which use MRpro
+
+- S. Martin, J. Schattenfroh, P. Schuenke, F. F. Zimmermann, I. Sack, C. Kolbitsch, and A. Kofler, **"Physics-Informed Deep Learning for Shear Wave Speed Estimation in MR Elastography"**, *IEEE Transactions on Biomedical Engineering*, 2026. DOI: [10.1109/TBME.2026.3666306](https://doi.org/10.1109/TBME.2026.3666306)
+
+- M. Guastini, J. Schulz-Menger, T. Schaeffter, S. Hufnagel, A. Kofler, and C. Kolbitsch, **"Zero-Shot Unsupervised Motion Estimation for Motion-Corrected Cardiac T1 Mapping"**, *IEEE Transactions on Biomedical Engineering*, 2026. DOI: [10.1109/TBME.2025.3624279](https://doi.org/10.1109/TBME.2025.3624279)
+
+- P. Schuenke, C. Redshaw Kranich, M. Lutz, J. Schattenfroh, M. Anders, P. Reisdorf, J. Schulz-Menger, I. Sack, J. Hamilton, N. Seiberlich, and C. Kolbitsch, **"Open-source cardiac magnetic resonance fingerprinting"**, *Magnetic Resonance Materials in Physics, Biology and Medicine*, 2025. DOI: [10.1007/s10334-025-01269-9](https://doi.org/10.1007/s10334-025-01269-9)
+
 ## Contributing
 
 We are looking forward to your contributions via "fork and pull requests". If you would like to fix a bug or add a new feature:
@@ -88,7 +102,7 @@ We are looking forward to your contributions via "fork and pull requests". If yo
 1. Create your own copy of MRpro (i.e. create a fork via GitHub)
 2. Clone your forked copy of the MRpro repository
 3. Create/select a python environment (e.g. ``` conda create -n mrpro python=3.12 ```)
-4. Install MRpro in editable mode including test dependencies: ``` pip install -e ".[test]" ```
+4. Install MRpro in editable mode with developer dependencies: ``` pip install -e ".[dev]" ```
 5. Setup pre-commit hook: ``` pre-commit install ```
 6. Create a new branch
 7. Implement your changes to MRpro
@@ -100,4 +114,4 @@ You can find more information on "fork and pull requests" on the [GitHub documen
 Please also look at our [contributor guide](https://ptb-mr.github.io/mrpro/contributor_guide.html) for more information on the repository structure, naming conventions, and other useful information.
 
 > [!NOTE]  
-> There are a few things which cannot be modified as "fork and pull requests" such as modifications of the docker images. If you think something needs to be changed there, please open up an issue first. 
+> There are a few things which cannot be modified as "fork and pull requests" such as modifications of the docker images. If you think something needs to be changed there, please open up an issue first.

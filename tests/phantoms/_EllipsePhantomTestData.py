@@ -15,7 +15,7 @@ class EllipsePhantomTestData:
         number of voxels along x
     """
 
-    def __init__(self, n_y: int = 512, n_x: int = 256):
+    def __init__(self, n_y: int = 512, n_x: int = 256, intensities: tuple[float, ...] = (1, 2, 3, 4, 5)):
         # Define image size and k-space matrix
         self.n_x: int = n_x
         self.n_y: int = n_y
@@ -27,10 +27,10 @@ class EllipsePhantomTestData:
 
         # Define five ellipses
         self.test_ellipses = [
-            EllipseParameters(center_x=0.1, center_y=0.0, radius_x=0.1, radius_y=0.25, intensity=1),
-            EllipseParameters(center_x=0.3, center_y=0.3, radius_x=0.1, radius_y=0.1, intensity=2),
-            EllipseParameters(center_x=0.1, center_y=0.1, radius_x=0.1, radius_y=0.1, intensity=3),
-            EllipseParameters(center_x=-0.2, center_y=-0.2, radius_x=0.1, radius_y=0.1, intensity=4),
-            EllipseParameters(center_x=-0.3, center_y=-0.3, radius_x=0.1, radius_y=0.1, intensity=5),
+            EllipseParameters(center_x=0.1, center_y=0.0, radius_x=0.1, radius_y=0.25, intensity=intensities[0]),
+            EllipseParameters(center_x=0.3, center_y=0.3, radius_x=0.1, radius_y=0.1, intensity=intensities[1]),
+            EllipseParameters(center_x=0.1, center_y=0.1, radius_x=0.1, radius_y=0.1, intensity=intensities[2]),
+            EllipseParameters(center_x=-0.2, center_y=-0.2, radius_x=0.1, radius_y=0.1, intensity=intensities[3]),
+            EllipseParameters(center_x=-0.3, center_y=-0.3, radius_x=0.1, radius_y=0.1, intensity=intensities[4]),
         ]
         self.phantom = EllipsePhantom(self.test_ellipses)

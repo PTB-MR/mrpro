@@ -81,16 +81,17 @@
 
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show download details"}
 # ### Download raw data from Zenodo
+import os
 import tempfile
 from pathlib import Path
 
 import zenodo_get
 
-dataset = '14617082'
-
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
-zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
+zenodo_get.download(
+    record='14617082', retry_attempts=5, output_dir=data_folder, access_token=os.environ.get('ZENODO_TOKEN')
+)
 
 # %%
 # Load in the data from the ISMRMRD file
@@ -125,8 +126,8 @@ img_direct_24 = direct_reconstruction_24(kdata_24spokes)
 sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction(
     kdata_24spokes,
     n_iterations=8,
-    csm=direct_reconstruction_24.csm,
-    dcf=direct_reconstruction_24.dcf,
+    csm=direct_reconstruction_24.csm_op,
+    dcf=direct_reconstruction_24.dcf_op,
 )
 img_sense_24 = sense_reconstruction(kdata_24spokes)
 
@@ -139,8 +140,8 @@ img_sense_24 = sense_reconstruction(kdata_24spokes)
 # %%
 fourier_operator = direct_reconstruction_24.fourier_op
 
-assert direct_reconstruction_24.csm is not None
-csm_operator = direct_reconstruction_24.csm.as_operator()
+csm_operator = direct_reconstruction_24.csm_op
+assert csm_operator is not None
 
 # Define the wavelet operator
 wavelet_operator = mrpro.operators.WaveletOp(

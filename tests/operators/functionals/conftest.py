@@ -7,8 +7,7 @@ import pytest
 import torch
 from mrpro.operators import functionals
 from mrpro.operators.Functional import ElementaryFunctional, ElementaryProximableFunctional
-
-from tests import RandomGenerator
+from mrpro.utils import RandomGenerator
 
 
 @dataclass
@@ -60,7 +59,7 @@ def functional_test_cases(func: Callable[[FunctionalTestCase], None]) -> Callabl
         dtype_name: Literal['float32', 'float64', 'complex64', 'complex128'],
         weight: Literal['scalar_weight', 'tensor_weight', 'binary_weight', 'complex_weight'],
         target: Literal['no_target', 'random_target', 'zero_target'],
-        dim: None | Sequence[int],
+        dim: Sequence[int] | None,
         divide_by_n: bool,
     ):
         dtype = getattr(torch, dtype_name)

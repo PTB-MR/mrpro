@@ -5,8 +5,7 @@ from math import prod, sqrt
 import pytest
 import torch
 from mrpro.operators import EinsumOp, FastFourierOp, FiniteDifferenceOp
-
-from tests import RandomGenerator
+from mrpro.utils import RandomGenerator
 
 
 def test_power_iteration_uses_stopping_criterion():
@@ -16,12 +15,12 @@ def test_power_iteration_uses_stopping_criterion():
         """Callback function that should not be called, because the power iteration should stop."""
         pytest.fail('The power iteration did not stop despite high atol and rtol!')
 
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
 
     # test with a 3x3 matrix
     matrix = torch.tensor([[2.0, 1, 0], [1.0, 2.0, 1.0], [0.0, 1.0, 2.0]])
     operator = EinsumOp(matrix, ' y x, x-> y')
-    random_vector = random_generator.float32_tensor(matrix.shape[1])
+    random_vector = rng.float32_tensor(matrix.shape[1])
     absolute_tolerance, relative_tolerance = 1e8, 1e8
     _ = operator.operator_norm(
         random_vector,
@@ -35,12 +34,12 @@ def test_power_iteration_uses_stopping_criterion():
 
 def test_operator_norm_invalid_max_iterations():
     """Test if choosing a number of iterations < 1 throws an exception."""
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
 
     # test with a 3x3 matrix with known largest eigenvalue
     matrix = torch.tensor([[2.0, 1, 0], [1.0, 2.0, 1.0], [0.0, 1.0, 2.0]])
     operator = EinsumOp(matrix, 'y x, x -> y')
-    random_vector = random_generator.float32_tensor(matrix.shape[1])
+    random_vector = rng.float32_tensor(matrix.shape[1])
 
     with pytest.raises(ValueError, match='zero'):
         operator.operator_norm(random_vector, dim=None, max_iterations=0)
@@ -48,12 +47,12 @@ def test_operator_norm_invalid_max_iterations():
 
 def test_operator_norm_invalid_initial_value():
     """Test if choosing zero-tensors throws an exception."""
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
     input_shape = (2, 4, 8, 8)
     vector_shape = (input_shape[0], input_shape[1], input_shape[3])
 
     # create a tensor to be identified as 2 * 4 (=8) 8x8 square matrices
-    matrix = random_generator.float32_tensor(size=input_shape)
+    matrix = rng.float32_tensor(size=input_shape)
 
     # construct a linear operator from the first matrix; the linear operator implements
     # the batched matrix-vector multiplication
@@ -64,7 +63,7 @@ def test_operator_norm_invalid_initial_value():
     dim2 = None
 
     # random vector with only one of the sub-vector being a zero-vector;
-    illegal_initial_value1 = random_generator.float32_tensor(size=vector_shape)
+    illegal_initial_value1 = rng.float32_tensor(size=vector_shape)
     illegal_initial_value1[0] = 0.0
 
     # zero-vector
@@ -79,12 +78,12 @@ def test_operator_norm_invalid_initial_value():
 def test_operator_norm_result():
     """Test if the implementation yields the correct result for different choices
     of operators with known operator-norm."""
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
 
     # test with a 3x3 matrix with known largest eigenvalue
     matrix = torch.tensor([[2.0, 1, 0], [1.0, 2.0, 1.0], [0.0, 1.0, 2.0]])
     operator = EinsumOp(matrix, 'y x, x-> y')
-    random_vector = random_generator.float32_tensor(matrix.shape[1])
+    random_vector = rng.float32_tensor(matrix.shape[1])
     operator_norm_est = operator.operator_norm(random_vector, dim=None, max_iterations=32)
     operator_norm_true = 2 + sqrt(2)  # approximately 3.41421...
     torch.testing.assert_close(operator_norm_est.item(), operator_norm_true, atol=1e-4, rtol=1e-4)
@@ -92,11 +91,11 @@ def test_operator_norm_result():
 
 def test_fourier_operator_norm():
     """Test with Fast Fourier Operator (has norm 1 since norm="ortho" is used)."""
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
 
     dim = (-3, -2, -1)
     fourier_op = FastFourierOp(dim=dim)
-    random_image = random_generator.complex64_tensor(size=(4, 4, 8, 16))
+    random_image = rng.complex64_tensor(size=(4, 4, 8, 16))
     fourier_op_norm_batched = fourier_op.operator_norm(random_image, dim=dim, max_iterations=128)
     fourier_op_norm_non_batched = fourier_op.operator_norm(random_image, dim=None, max_iterations=128)
     fourier_op_norm_true = 1.0
@@ -112,13 +111,13 @@ def test_fourier_operator_norm():
 )
 def test_finite_difference_operator_norm(dim):
     """Test with the finite difference operator for which there exists a closed-form solution."""
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
 
     finite_difference_operator = FiniteDifferenceOp(dim=dim, mode='forward')
 
     # initialize random image of appropriate shape depending on the dimensionality
     image_shape = (1, *([8] * len(dim)))
-    random_image = random_generator.complex64_tensor(size=image_shape)
+    random_image = rng.complex64_tensor(size=image_shape)
 
     # calculate the operator norm
     finite_difference_operator_norm = finite_difference_operator.operator_norm(random_image, dim=dim, max_iterations=32)
@@ -139,7 +138,7 @@ def test_batched_operator_norm():
     eigenvalues of the respective matrices, we test whether the largest of the batched
     operator norms is equal to the non-batched operator norm.
     """
-    random_generator = RandomGenerator(seed=0)
+    rng = RandomGenerator(seed=0)
     input_shape = (2, 4, 8, 8)
 
     # dimensions which define the dimensionality of the considered vector space
@@ -152,7 +151,7 @@ def test_batched_operator_norm():
     # the batched matrix-vector multiplication
     operator1 = EinsumOp(matrix1, '... y x, ... x-> ... y')
 
-    random_vector1 = random_generator.float32_tensor((input_shape[0], input_shape[1], input_shape[3]))
+    random_vector1 = rng.float32_tensor((input_shape[0], input_shape[1], input_shape[3]))
 
     # compute batched and non batched operator norms
     operator1_norm_batched = operator1.operator_norm(random_vector1, dim=dim, max_iterations=32)
@@ -170,7 +169,7 @@ def test_batched_operator_norm():
     # construct a linear operator from the second matrix; the linear operator implements
     # the multiplication of the block-diagonal matrix with a 2*4*8*8 = 512-dimensional vector
     operator2 = EinsumOp(matrix2, '... y x, x-> ... y')
-    random_vector2 = random_generator.float32_tensor(matrix2.shape[1])
+    random_vector2 = rng.float32_tensor(matrix2.shape[1])
     operator2_norm_non_batched = operator2.operator_norm(random_vector2, dim=None, max_iterations=32)
 
     # test whether the operator-norm calculated from the first operator and from the second

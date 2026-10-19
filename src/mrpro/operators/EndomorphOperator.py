@@ -24,14 +24,33 @@ class EndomorphOperator(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torch.T
 
     @endomorph
     def __call__(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
-        """Apply the EndomorphOperator."""
+        """Apply the endomorphism.
+
+        An endomorphism is an operator that maps a set of tensors
+        to another set of tensors of the same number.
+
+        Parameters
+        ----------
+        *x
+            One or more input tensors.
+
+        Returns
+        -------
+            A tuple containing the same number of tensors as input,
+            resulting from the operator's action.
+        """
         # This function only overwrites the type hints of the base operator class
         return super().__call__(*x)
 
     @abstractmethod
     @endomorph
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
-        """Apply the EndomorphOperator."""
+        """Apply forward of EndomorphOperator.
+
+        .. note::
+            Prefer calling the instance of the EndomorphOperator operator as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
+        """
 
     @overload
     def __matmul__(self, other: EndomorphOperator) -> EndomorphOperator: ...

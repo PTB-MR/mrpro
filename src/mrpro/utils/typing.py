@@ -3,7 +3,7 @@
 from collections.abc import Callable
 from typing import TYPE_CHECKING, TypeAlias
 
-from typing_extensions import Any, Protocol, TypeVar
+from typing_extensions import Any, Protocol, TypeVar, runtime_checkable
 
 if TYPE_CHECKING:
     from dataclasses import Field
@@ -17,12 +17,12 @@ if TYPE_CHECKING:
     from typing_extensions import ParamSpec, SupportsIndex, Unpack, overload
 
     # This matches the torch.Tensor indexer typehint
-    _TorchIndexerTypeInner: TypeAlias = None | bool | int | slice | EllipsisType | torch.Tensor
+    _TorchIndexerTypeInner: TypeAlias = bool | int | slice | EllipsisType | torch.Tensor | None
     _SingleTorchIndexerType: TypeAlias = SupportsIndex | _TorchIndexerTypeInner | NestedSequence[_TorchIndexerTypeInner]
     TorchIndexerType: TypeAlias = tuple[_SingleTorchIndexerType, ...] | _SingleTorchIndexerType
 
     # This matches the numpy.ndarray indexer typehint
-    _SingleNumpyIndexerType: TypeAlias = ndarray | SupportsIndex | None | slice | EllipsisType
+    _SingleNumpyIndexerType: TypeAlias = ndarray | SupportsIndex | slice | EllipsisType | None
     NumpyIndexerType: TypeAlias = tuple[_SingleNumpyIndexerType, ...] | _SingleNumpyIndexerType
 
     Tout = TypeVar('Tout', bound=tuple[torch.Tensor, ...], covariant=True)
@@ -218,11 +218,6 @@ if TYPE_CHECKING:
         """
         return f
 
-    class DataclassInstance(Protocol):
-        """An instance of a dataclass."""
-
-        __dataclass_fields__: ClassVar[dict[str, Field[Any]]]
-
     class ReadSeekable(Protocol):
         def read(self, size: int | None = -1) -> bytes:
             """Read up to size bytes. Returns fewer if EOF is reached."""
@@ -234,6 +229,12 @@ if TYPE_CHECKING:
 
     FileOrPath: TypeAlias = ReadSeekable | str | PathLike
 
+    @runtime_checkable
+    class DataclassInstance(Protocol):
+        """An instance of a dataclass."""
+
+        __dataclass_fields__: ClassVar[dict[str, Field[Any]]]
+
 
 else:
     TorchIndexerType: TypeAlias = Any
@@ -243,6 +244,12 @@ else:
         """A nested sequence type."""
 
         ...
+
+    @runtime_checkable
+    class DataclassInstance(Protocol):
+        """An instance of a dataclass."""
+
+        __dataclass_fields__: Any
 
     NumpyIndexerType: TypeAlias = Any
     """Numpy indexer type."""

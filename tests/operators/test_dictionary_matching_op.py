@@ -4,8 +4,7 @@ import pytest
 import torch
 from mrpro.operators import DictionaryMatchOp
 from mrpro.operators.models import InversionRecovery
-
-from tests import RandomGenerator
+from mrpro.utils import RandomGenerator
 
 
 @pytest.mark.parametrize('dtype', [torch.float32, torch.complex64], ids=['float32', 'complex64'])
@@ -15,7 +14,10 @@ from tests import RandomGenerator
     [None, -2, 0],
     ids=['dont_predict_scale', 'predict_scale_negative_index', 'predict_scale'],
 )
-def test_dictionary_matching_op(shape: tuple[int], dtype: torch.dtype, index_of_scaling_parameter: int | None) -> None:
+@pytest.mark.parametrize('batch_size', [1, 1024 * 1024], ids=['batched', 'single_chunk'])
+def test_dictionary_matching_op(
+    shape: tuple[int], dtype: torch.dtype, index_of_scaling_parameter: int | None, batch_size: int
+) -> None:
     """Test dictionary matching."""
     rng = RandomGenerator(2)
     model = InversionRecovery(rng.float32_tensor(5))
@@ -23,7 +25,7 @@ def test_dictionary_matching_op(shape: tuple[int], dtype: torch.dtype, index_of_
     t1 = rng.rand_tensor(shape, dtype=dtype.to_real(), low=0.1, high=1.0)
     (y,) = model(m0, t1)
 
-    operator = DictionaryMatchOp(model, index_of_scaling_parameter=index_of_scaling_parameter)
+    operator = DictionaryMatchOp(model, index_of_scaling_parameter=index_of_scaling_parameter, batch_size=batch_size)
     operator.append(m0, t1)
 
     m0_matched, t1_matched = operator(y)
@@ -85,5 +87,16 @@ def test_dictionary_matching_op_empty_dictionary(index_of_scaling_parameter: int
 
     operator = DictionaryMatchOp(model, index_of_scaling_parameter=index_of_scaling_parameter)
     y = torch.zeros(5, 5, 4, 3)
-    with pytest.raises(KeyError, match='No keys in the dictionary. Please first add some x values using `append`.'):
+    with pytest.raises(KeyError, match=r'No keys in the dictionary\. Please first add some x values using `append`\.'):
         _ = operator(y)
+
+
+def test_dictionary_matching_op_not_differentiable() -> None:
+    """Test dictionary matching when the input signal requires gradients."""
+    rng = RandomGenerator(2)
+    model = InversionRecovery(rng.float32_tensor(5))
+    operator = DictionaryMatchOp(model)
+    operator.append(torch.zeros(5, 4, 3), torch.zeros(5, 4, 3))
+    y = torch.zeros(5, 5, 4, 3)
+    with pytest.raises(ValueError, match='differentiable'):
+        _ = operator(y.requires_grad_(True))

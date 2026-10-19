@@ -5,13 +5,21 @@ from typing import Literal
 
 import torch
 from torch.optim import LBFGS
+from typing_extensions import Unpack
 
 from mrpro.algorithms.optimizers.OptimizerStatus import OptimizerStatus
 from mrpro.operators.Operator import OperatorType
 
 
+class LBFGSStatus(OptimizerStatus):
+    """Status of the LBFGS algorithm."""
+
+    residual: torch.Tensor
+    """Residual of the current estimate."""
+
+
 def lbfgs(
-    f: OperatorType,
+    f: OperatorType | Callable[[Unpack[tuple[torch.Tensor, ...]]], tuple[torch.Tensor]],
     initial_parameters: Sequence[torch.Tensor],
     learning_rate: float = 1.0,
     max_iterations: int = 100,
@@ -19,7 +27,7 @@ def lbfgs(
     tolerance_grad: float = 1e-07,
     tolerance_change: float = 1e-09,
     history_size: int = 10,
-    line_search_fn: None | Literal['strong_wolfe'] = 'strong_wolfe',
+    line_search_fn: Literal['strong_wolfe'] | None = 'strong_wolfe',
     callback: Callable[[OptimizerStatus], bool | None] | None = None,
 ) -> tuple[torch.Tensor, ...]:
     r"""
@@ -109,19 +117,31 @@ def lbfgs(
     def closure():
         nonlocal iteration
         optim.zero_grad()
-        (objective,) = f(*parameters)
-        objective.backward()
-        return objective
-
-    iteration = 0
-    # run lbfgs
-    while iteration < max_iterations:
-        optim.step(closure)
-        iteration += 1
+        (residual,) = f(*parameters)
+        residual.backward()
 
         if callback is not None:
-            continue_iterations = callback({'solution': parameters, 'iteration_number': iteration})
-            if continue_iterations is False:
-                break
+            state = optim.state[optim.param_groups[0]['params'][0]]
+            if state['n_iter'] > iteration:
+                # true in a new iteration, false in line search
+                status = LBFGSStatus(
+                    solution=tuple(p.detach() for p in parameters),
+                    residual=residual.detach(),
+                    iteration_number=state['n_iter'],  # status is from previous iteration
+                )
+                if callback(status) is False:
+                    raise StopIteration
+                iteration += 1
 
+        return residual
+
+    try:  # noqa: SIM105
+        # This does NOT only perform a single step, but runs the full optimization.
+        # See https://pytorch.org/docs/stable/generated/torch.optim.LBFGS.html
+        optim.step(closure)
+    except StopIteration:
+        # callback asked us to stop.
+        ...
+
+    parameters = tuple(p.detach() for p in parameters)
     return parameters

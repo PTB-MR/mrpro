@@ -22,21 +22,21 @@ class EinsumOp(LinearOperator):
 
     Examples are:
 
-    - matrix-vector multiplication of :math:`A` and the batched vector :math:`x = [x1, ..., xN]` consisting
-      of :math:`N` vectors :math:`x1, x2, ..., xN`. Then, the operation defined by
-      :math:`A @ x := \mathrm{diag}(A, A, ..., A) * [x1, x2, ..., xN]^T` = :math:`[A*x1, A*x2, ..., A*xN]^T`
-      can be implemented by the einsum rule ``"i j, ... j -> ... i"``.
+    - matrix-vector multiplication of :math:`A` and the batched vector :math:`x = [x_1, ..., x_N]` consisting
+      of :math:`N` vectors :math:`x_1, x_2, ..., x_N`. Then, the operation defined by
+      :math:`A @ x := \mathrm{diag}(A, A, ..., A) [x_1, x_2, ..., x_N]^T` = :math:`[A x_1, A x_2, ..., A x_N]^T`
+      can be implemented by the einsum rule ``'i j, ... j -> ... i'``.
 
     - matrix-vector multiplication of a matrix :math:`A` consisting of :math:`N` different matrices
-      :math:`A1, A2, ... AN` with one vector :math:`x`. Then, the operation defined by
-      :math:`A @ x: = \mathrm{diag}(A1, A2,..., AN) * [x, x, ..., x]^T`
-      can be implemented by the einsum rule ``"... i j, j -> ... i"``.
+      :math:`A_1, A_2, ... A_N` with one vector :math:`x`. Then, the operation defined by
+      :math:`A @ x := \mathrm{diag}(A_1, A_2,..., A_N) [x, x, ..., x]^T`
+      can be implemented by the einsum rule ``'... i j, j -> ... i'``.
 
     - matrix-vector multiplication of a matrix :math:`A` consisting of :math:`N` different matrices
-      :math:`A1, A2, ... AN` with a vector :math:`x = [x1,...,xN]` consisting
-      of :math:`N` vectors :math:`x1, x2, ..., xN`. Then, the operation defined by
-      :math:`A @ x: = \mathrm{diag}(A1, A2,..., AN) * [x1, x2, ..., xN]^T`
-      can be implemented by the einsum rule ``"... i j, ... j -> ... i"``.
+      :math:`A_1, A_2, ... A_N` with a vector :math:`x = [x_1,...,x_N]` consisting
+      of :math:`N` vectors :math:`x_1, x_2, ..., x_N`. Then, the operation defined by
+      :math:`A @ x := \mathrm{diag}(A_1, A_2,..., A_N) [x_1, x_2, ..., x_N]^T`
+      can be implemented by the einsum rule ``'... i j, ... j -> ... i'``.
       This is the default behavior of the operator.
     """
 
@@ -46,7 +46,7 @@ class EinsumOp(LinearOperator):
         Parameters
         ----------
         matrix
-            'Matrix' :math:`A` to be used as first factor in the sum product :math:`A*x`
+            Matrix :math:`A` to be used as first factor in the sum product :math:`A*x`
 
         einsum_rule
             Einstein summation rule describing the forward of the operator.
@@ -61,19 +61,28 @@ class EinsumOp(LinearOperator):
         self._forward_pattern = einsum_rule
         self.matrix = torch.nn.Parameter(matrix, matrix.requires_grad)
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Sum-Multiplication of input :math:`x` with :math:`A`.
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply sum-product of input `x` with the operator's matrix `A`.
 
         :math:`A` and the rule used to perform the sum-product is set at initialization.
 
         Parameters
         ----------
         x
-            input tensor to be multiplied with the 'matrix' :math:`A`.
+            Input tensor.
 
         Returns
         -------
-            result of matrix-vector multiplication
+            Result of the sum-product operation.
+        """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply forward of EinsumOp.
+
+        .. note::
+            Prefer calling the instance of the EinsumOp operator as ``operator(x)`` over
+            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         y = einsum(self.matrix, x, self._forward_pattern)
         return (y,)
@@ -84,11 +93,11 @@ class EinsumOp(LinearOperator):
         Parameters
         ----------
         y
-            tensor to be multiplied with hermitian/adjoint 'matrix' :math:`A`
+            Tensor to be multiplied with hermitian/adjoint matrix :math:`A`
 
         Returns
         -------
-            result of adjoint sum product
+            Result of the adjoint sum-product operation.
         """
         x = einsum(self.matrix.conj(), y, self._adjoint_pattern)
         return (x,)

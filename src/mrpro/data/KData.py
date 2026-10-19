@@ -1,31 +1,50 @@
 """MR raw data / k-space data class."""
 
 import copy
-import dataclasses
 import datetime
+import os
 import warnings
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
+from importlib.metadata import version
+from pathlib import Path
 from types import EllipsisType
-from typing import Literal, cast
+from typing import TYPE_CHECKING, Literal, cast
+from xml.etree import ElementTree as ET
 
 import h5py
 import ismrmrd
 import numpy as np
 import torch
-from einops import rearrange, repeat
-from typing_extensions import Self, TypeVar
+from einops import rearrange
+from typing_extensions import Self, TypeVar, overload
+
+if TYPE_CHECKING:
+    from mrpro.operators.LinearOperator import LinearOperator
 
 from mrpro.data.acq_filters import has_n_coils, is_image_acquisition
-from mrpro.data.AcqInfo import AcqInfo, convert_time_stamp_osi2, convert_time_stamp_siemens
+from mrpro.data.AcqInfo import (
+    AcqInfo,
+    convert_time_stamp_from_osi2,
+    convert_time_stamp_from_siemens,
+    convert_time_stamp_to_osi2,
+    convert_time_stamp_to_siemens,
+    write_acqinfo_to_ismrmrd_acquisition_,
+)
+from mrpro.data.Dataclass import Dataclass
 from mrpro.data.EncodingLimits import EncodingLimits
 from mrpro.data.enums import AcqFlags
 from mrpro.data.KHeader import KHeader
+from mrpro.data.KNoise import KNoise
 from mrpro.data.KTrajectory import KTrajectory
-from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.Rotation import Rotation
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 from mrpro.data.traj_calculators.KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
+from mrpro.utils.reshape import normalize_index, normalize_indices
+from mrpro.utils.summarize import summarize_object
 from mrpro.utils.typing import FileOrPath
+
+if TYPE_CHECKING:
+    from mrpro.operators import LinearOperator
 
 RotationOrTensor = TypeVar('RotationOrTensor', bound=torch.Tensor | Rotation)
 
@@ -61,11 +80,36 @@ OTHER_LABELS = (
     'user7',
 )
 
+T = TypeVar('T', Rotation, torch.Tensor, Rotation | torch.Tensor)
 
-@dataclasses.dataclass(slots=True, frozen=True)
-class KData(
-    MoveDataMixin,
-):
+
+def _read_ismrmrd_stream(
+    reader: ismrmrd.serialization.ProtocolDeserializer,
+) -> Iterator[tuple[ismrmrd.xsd.ismrmrdHeader, list[ismrmrd.Acquisition]]]:
+    """Group the objects of an ISMRMRD stream into (header, acquisitions) pairs, one per header.
+
+    Waveforms, images and other objects are ignored. A stream that ends without a CLOSE message
+    is treated as complete.
+    """
+    header: ismrmrd.xsd.ismrmrdHeader | None = None
+    acquisitions: list[ismrmrd.Acquisition] = []
+    try:
+        for obj in reader.deserialize():
+            if isinstance(obj, ismrmrd.xsd.ismrmrdHeader):
+                if header is not None:
+                    yield header, acquisitions
+                header, acquisitions = obj, []
+            elif isinstance(obj, ismrmrd.Acquisition):
+                if header is None:
+                    raise ValueError('ISMRMRD stream contains acquisitions before the first header.')
+                acquisitions.append(obj)
+    except EOFError:
+        pass  # stream ended without CLOSE message
+    if header is not None:
+        yield header, acquisitions
+
+
+class KData(Dataclass):
     """MR raw data / k-space data class."""
 
     header: KHeader
@@ -75,26 +119,84 @@ class KData(
     """K-space data. Shape `(*other coils k2 k1 k0)`"""
 
     traj: KTrajectory
-    """K-space trajectory along kz, ky and kx. Shape `(*other k2 k1 k0)`"""
+    """K-space trajectory along kz, ky and kx. Shape `(*other 1 k2 k1 k0)`"""
 
     @classmethod
     def from_file(
         cls,
         filename: FileOrPath,
         trajectory: KTrajectoryCalculator | KTrajectory | KTrajectoryIsmrmrd,
-        header_overwrites: dict[str, object] | None = None,
+        header_overwrites: Mapping[str, object] | None = None,
         dataset_idx: int = -1,
         acquisition_filter_criterion: Callable = is_image_acquisition,
     ) -> Self:
         """Load k-space data from an ISMRMRD file.
 
+        Dispatches to `from_ismrmrd_hdf5` for HDF5 files (*.h5, *.mrd) and to `from_ismrmrd_stream`
+        for serialized ISMRMRD stream files (*.ismrmrd) or binary streams (file-like objects).
+
         Parameters
         ----------
         filename
-            path to the ISMRMRD file or file-like object
+            path to the ISMRMRD HDF5 or stream file, or a file-like object containing an ISMRMRD stream
         trajectory
             KTrajectoryCalculator to calculate the k-space trajectory or an already calculated KTrajectory
-            If a KTrajectory is given, the shape should be `(acquisisions 1 1 k0)` in the same order as the acquisitions
+            If a KTrajectory is given, the shape should be `(acquisitions 1 1 k0)` in the same order as the acquisitions
+            in the ISMRMRD file.
+        header_overwrites
+            dictionary of key-value pairs to overwrite the header
+        dataset_idx
+            index of the ISMRMRD dataset to load (converter creates dataset, dataset_1, ...)
+        acquisition_filter_criterion
+            function which returns True if an acquisition should be included in KData
+        """
+        # binary ISMRMRD stream
+        if not isinstance(filename, (str, os.PathLike)):
+            return cls.from_ismrmrd_stream(
+                filename,
+                trajectory,
+                header_overwrites=header_overwrites,
+                dataset_idx=dataset_idx,
+                acquisition_filter_criterion=acquisition_filter_criterion,
+            )
+
+        # ISMRMRD HDF5 file (*.h5, *.mrd)
+        if h5py.is_hdf5(filename):
+            return cls.from_ismrmrd_hdf5(
+                filename,
+                trajectory,
+                header_overwrites=header_overwrites,
+                dataset_idx=dataset_idx,
+                acquisition_filter_criterion=acquisition_filter_criterion,
+            )
+
+        # ISMRMRD stream file (*.ismrmrd). Also reached for non-existent files (raises FileNotFoundError)
+        return cls.from_ismrmrd_stream(
+            filename,
+            trajectory,
+            header_overwrites=header_overwrites,
+            dataset_idx=dataset_idx,
+            acquisition_filter_criterion=acquisition_filter_criterion,
+        )
+
+    @classmethod
+    def from_ismrmrd_hdf5(
+        cls,
+        filename: str | os.PathLike,
+        trajectory: KTrajectoryCalculator | KTrajectory | KTrajectoryIsmrmrd,
+        header_overwrites: Mapping[str, object] | None = None,
+        dataset_idx: int = -1,
+        acquisition_filter_criterion: Callable = is_image_acquisition,
+    ) -> Self:
+        """Load k-space data from an ISMRMRD HDF5 file (*.h5 / *.mrd).
+
+        Parameters
+        ----------
+        filename
+            path to the ISMRMRD HDF5 file
+        trajectory
+            KTrajectoryCalculator to calculate the k-space trajectory or an already calculated KTrajectory
+            If a KTrajectory is given, the shape should be `(acquisitions 1 1 k0)` in the same order as the acquisitions
             in the ISMRMRD file.
         header_overwrites
             dictionary of key-value pairs to overwrite the header
@@ -106,7 +208,19 @@ class KData(
         # Can raise FileNotFoundError
         with ismrmrd.File(filename, 'r') as file:
             dataset = file[list(file.keys())[dataset_idx]]
-            ismrmrd_header = dataset.header
+            try:
+                ismrmrd_header = dataset.header
+            except TypeError:
+                # files created with ismrmrd<1.15 might lack patientPosition and trajectory type
+                root = ET.fromstring(dataset._contents['xml'][0])  # noqa: S314
+                prefix = root.tag.removesuffix('ismrmrdHeader')
+                measurement = root.find(f'{prefix}measurementInformation')
+                if measurement is not None and measurement.find(f'{prefix}patientPosition') is None:
+                    ET.SubElement(measurement, f'{prefix}patientPosition').text = 'HFS'
+                for encoding in root.findall(f'{prefix}encoding'):
+                    if encoding.find(f'{prefix}trajectory') is None:
+                        ET.SubElement(encoding, f'{prefix}trajectory').text = 'other'
+                ismrmrd_header = ismrmrd.xsd.CreateFromDocument(ET.tostring(root))
             acquisitions = dataset.acquisitions[:]
             try:
                 mtime: int = h5py.h5g.get_objinfo(dataset['data']._contents.id).mtime
@@ -114,7 +228,103 @@ class KData(
                 mtime = 0
             modification_time = datetime.datetime.fromtimestamp(mtime)
 
-        acquisitions = [acq for acq in acquisitions if acquisition_filter_criterion(acq)]
+        return cls.from_ismrmrd(
+            ismrmrd_header,
+            acquisitions,
+            trajectory,
+            header_overwrites=header_overwrites,
+            acquisition_filter_criterion=acquisition_filter_criterion,
+            modification_time=modification_time,
+        )
+
+    @classmethod
+    def from_ismrmrd_stream(
+        cls,
+        filename: FileOrPath,
+        trajectory: KTrajectoryCalculator | KTrajectory | KTrajectoryIsmrmrd,
+        header_overwrites: Mapping[str, object] | None = None,
+        dataset_idx: int = -1,
+        acquisition_filter_criterion: Callable = is_image_acquisition,
+    ) -> Self:
+        """Load k-space data from an ISMRMRD stream file.
+
+        Parameters
+        ----------
+        filename
+            path to the ISMRMRD stream file or file-like object
+        trajectory
+            KTrajectoryCalculator to calculate the k-space trajectory or an already calculated KTrajectory
+            If a KTrajectory is given, the shape should be `(acquisitions 1 1 k0)` in the same order as the acquisitions
+            in the ISMRMRD stream file.
+        header_overwrites
+            dictionary of key-value pairs to overwrite the header
+        dataset_idx
+            index of the measurement (ISMRMRD header + following acquisitions) in the stream to load;
+            a stream file can contain several measurements
+        acquisition_filter_criterion
+            function which returns True if an acquisition should be included in KData
+        """
+        if isinstance(filename, (str, os.PathLike)):
+            stream: FileOrPath = str(filename)
+            modification_time: datetime.datetime | None = datetime.datetime.fromtimestamp(
+                Path(filename).stat().st_mtime
+            )
+        else:
+            stream = filename
+            modification_time = None
+
+        # Can raise FileNotFoundError
+        with ismrmrd.serialization.ProtocolDeserializer(stream) as reader:
+            measurements = list(_read_ismrmrd_stream(reader))
+        if not measurements:
+            raise ValueError('No ISMRMRD header found in stream.')
+        header, acquisitions = measurements[dataset_idx]
+
+        return cls.from_ismrmrd(
+            header,
+            acquisitions,
+            trajectory,
+            header_overwrites=header_overwrites,
+            acquisition_filter_criterion=acquisition_filter_criterion,
+            modification_time=modification_time,
+        )
+
+    @classmethod
+    def from_ismrmrd(
+        cls,
+        ismrmrd_header: ismrmrd.xsd.ismrmrdschema.ismrmrd.ismrmrdHeader,
+        acquisitions: Sequence[ismrmrd.Acquisition],
+        trajectory: KTrajectoryCalculator | KTrajectory | KTrajectoryIsmrmrd,
+        header_overwrites: Mapping[str, object] | None = None,
+        acquisition_filter_criterion: Callable | None = is_image_acquisition,
+        modification_time: datetime.datetime | None = None,
+    ) -> Self:
+        """Create KData from an ISMRMRD header and a list of ISMRMRD acquisitions.
+
+        Parameters
+        ----------
+        ismrmrd_header
+            ISMRMRD header object
+        acquisitions
+            sequence of ISMRMRD acquisitions
+        trajectory
+            KTrajectoryCalculator to calculate the k-space trajectory or an already calculated KTrajectory
+            If a KTrajectory is given, the shape should be `(acquisitions 1 1 k0)` in the same order as the acquisitions
+            in the ISMRMRD file.
+        header_overwrites
+            dictionary of key-value pairs to overwrite the header
+        acquisition_filter_criterion
+            function which returns True if an acquisition should be included in KData
+            If None, no filtering is applied.
+        modification_time
+            optional datetime to use as fallback for the header datetime field.
+            If None, the current time is used as fallback.
+        """
+        if modification_time is None:
+            modification_time = datetime.datetime.now()
+
+        if acquisition_filter_criterion is not None:
+            acquisitions = [acq for acq in acquisitions if acquisition_filter_criterion(acq)]
 
         # we need the same number of receiver coils for all acquisitions
         n_coils_available = {acq.data.shape[0] for acq in acquisitions}
@@ -143,25 +353,27 @@ class KData(
         ):
             match ismrmrd_header.acquisitionSystemInformation.systemVendor.lower():
                 case 'siemens':
-                    convert_time_stamp = convert_time_stamp_siemens  # 2.5ms time steps
+                    convert_time_stamp = convert_time_stamp_from_siemens  # 2.5ms time steps
                 case 'osi2':
-                    convert_time_stamp = convert_time_stamp_osi2  # 1ms time steps
+                    convert_time_stamp = convert_time_stamp_from_osi2  # 1ms time steps
                 case str(vendor):
                     warnings.warn(
                         f'Unknown vendor {vendor}. '
                         'Assuming Siemens time stamp format. If this is wrong, consider opening an Issue.',
                         stacklevel=1,
                     )
-                    convert_time_stamp = convert_time_stamp_siemens  # 2.5ms time steps
+                    convert_time_stamp = convert_time_stamp_from_siemens  # 2.5ms time steps
         else:
             warnings.warn('No vendor information found. Assuming Siemens time stamp format.', stacklevel=1)
-            convert_time_stamp = convert_time_stamp_siemens
+            convert_time_stamp = convert_time_stamp_from_siemens
 
         acq_info, (k0_center, n_k0_tensor, discard_pre, discard_post) = AcqInfo.from_ismrmrd_acquisitions(
             acquisitions,
             additional_fields=('center_sample', 'number_of_samples', 'discard_pre', 'discard_post'),
             convert_time_stamp=convert_time_stamp,
         )
+        discard_pre_1d = rearrange(discard_pre, 'n_readouts 1 1 1 1 -> n_readouts')
+        discard_post_1d = rearrange(discard_post, 'n_readouts 1 1 1 1 -> n_readouts')
 
         if len(torch.unique(acq_info.idx.user5)) > 1:
             warnings.warn(
@@ -179,22 +391,25 @@ class KData(
                 stacklevel=1,
             )
 
-        shapes = (torch.as_tensor([acq.data.shape[-1] for acq in acquisitions]) - discard_pre - discard_post).unique()
+        shapes = (
+            torch.as_tensor([acq.data.shape[-1] for acq in acquisitions]) - discard_pre_1d - discard_post_1d
+        ).unique()
         if len(shapes) > 1:
             warnings.warn(
                 f'Acquisitions have different shape. Got {list(shapes)}. '
                 f'Keeping only acquisistions with {shapes[-1]} data samples. Note: discard_pre and discard_post '
-                f'{"have been applied. " if discard_pre.any() or discard_post.any() else "were empty. "}'
+                f'{"have been applied. " if discard_pre_1d.any() or discard_post_1d.any() else "were empty. "}'
                 'Please open an issue of you need to handle this kind of data.',
                 stacklevel=1,
             )
         data = torch.stack(
             [
                 torch.as_tensor(acq.data[..., pre : acq.data.shape[-1] - post], dtype=torch.complex64)
-                for acq, pre, post in zip(acquisitions, discard_pre, discard_post, strict=True)
+                for acq, pre, post in zip(acquisitions, discard_pre_1d, discard_post_1d, strict=True)
                 if acq.data.shape[-1] - pre - post == shapes[-1]
             ]
         )
+        n_k0_tensor = n_k0_tensor - discard_pre - discard_post
         data = rearrange(data, 'acquisitions coils k0 -> acquisitions coils 1 1 k0')
 
         # Raises ValueError if required fields are missing in the header
@@ -207,6 +422,10 @@ class KData(
             },
             overwrite=header_overwrites,
         )
+        if header.vendor.lower() == 'siemens':
+            # Siemens assumes a fft to go from k-space to image space
+            data = data.conj_physical()
+
         # Calculate trajectory and check if it matches the kdata shape
         match trajectory:
             case KTrajectoryIsmrmrd():
@@ -232,10 +451,10 @@ class KData(
                 )
             case KTrajectory():
                 try:
-                    torch.broadcast_shapes(trajectory.broadcasted_shape, (data.shape[0], *data.shape[-3:]))
+                    torch.broadcast_shapes(trajectory.shape, (data.shape[0], *data.shape[-3:]))
                 except RuntimeError:
                     raise ValueError(
-                        f'Trajectory shape {trajectory.broadcasted_shape} does not match data shape {data.shape}.'
+                        f'Trajectory shape {trajectory.shape} does not match data shape {data.shape}.'
                     ) from None
                 trajectory_ = trajectory
             case _:
@@ -254,13 +473,24 @@ class KData(
         Reshapes the data to ("all other labels", coils, k2, k1, k0).
         Within "all other labels", the order is determined by `KDIM_SORT_LABELS`.
         """
+        shape = self.shape
+
+        def expand(x: T) -> T:
+            x = x.expand(*shape[:-4], -1, shape[-3], shape[-2], -1)
+            return x
+
         # First, determine if we can split into k2 and k1 and how large these should be
-        acq_indices_other = torch.stack([getattr(self.header.acq_info.idx, label) for label in OTHER_LABELS], dim=0)
+        acq_indices_other = torch.stack(
+            [expand(getattr(self.header.acq_info.idx, label)).ravel() for label in OTHER_LABELS],
+            dim=0,
+        )
         _, n_acqs_per_other = torch.unique(acq_indices_other, dim=1, return_counts=True)
         # unique counts of acquisitions for each combination of the label values in "other"
         n_acqs_per_other = torch.unique(n_acqs_per_other)
 
-        acq_indices_other_k2 = torch.cat((acq_indices_other, self.header.acq_info.idx.k2.unsqueeze(0)), dim=0)
+        acq_indices_other_k2 = torch.cat(
+            (acq_indices_other, expand(self.header.acq_info.idx.k2).ravel().unsqueeze(0)), dim=0
+        )
         _, n_acqs_per_other_and_k2 = torch.unique(acq_indices_other_k2, dim=1, return_counts=True)
         # unique counts of acquisitions for each combination of other **and k2**
         n_acqs_per_other_and_k2 = torch.unique(n_acqs_per_other_and_k2)
@@ -297,59 +527,117 @@ class KData(
             n_k2 = 1
 
         # Second, determine the sorting order
-        acq_indices = np.stack([getattr(self.header.acq_info.idx, label).ravel() for label in KDIM_SORT_LABELS], axis=0)
-        sort_idx = np.lexsort(acq_indices)  # torch does not have lexsort as of pytorch 2.6 (March 2025)
+        acq_indices = np.stack(
+            [expand(getattr(self.header.acq_info.idx, label)).ravel() for label in KDIM_SORT_LABELS],
+            axis=0,
+        )
+        sort_idx = torch.as_tensor(np.lexsort(acq_indices))  # torch has no lexsort as of pytorch 2.6 (March 2025)
 
         # Finally, reshape and sort the tensors in acqinfo and acqinfo.idx, and kdata.
-        header = self.header.apply(
-            lambda field: rearrange(
-                cast(Rotation | torch.Tensor, rearrange(field, '... coils k2 k1 k0 -> (... k2 k1) coils k0'))[sort_idx],
-                '(other k2 k1) coils k0 -> other coils k2 k1 k0',
-                k1=n_k1,
-                k2=n_k2,
-                k0=1,
+        def sort(x: T) -> T:
+            flat = cast(T, rearrange(expand(x), '... coils k2 k1 k0 -> (... k2 k1) coils k0'))
+            return cast(
+                T, rearrange(flat[sort_idx], '(other k2 k1) coils k0 -> other coils k2 k1 k0', k1=n_k1, k2=n_k2)
             )
-            if isinstance(field, torch.Tensor | Rotation)
-            else field
-        )
 
-        data = rearrange(
-            rearrange(self.data, '... coils k2 k1 k0-> (... k2 k1) coils k0 ')[sort_idx],
-            '(other k2 k1) coils k0 -> other coils k2 k1 k0',
-            k1=n_k1,
-            k2=n_k2,
-        )
-
-        kz, ky, kx = rearrange(
-            self.traj.as_tensor(-1).flatten(end_dim=-4)[sort_idx],
-            '(other k2 k1) coils k0 zyx -> zyx other coils k2 k1 k0 ',
-            k1=n_k1,
-            k2=n_k2,
-        )
+        header = self.header.apply(lambda field: sort(field) if isinstance(field, torch.Tensor | Rotation) else field)
+        data = sort(self.data)
+        kz, ky, kx = (sort(t) for t in (self.traj.kz, self.traj.ky, self.traj.kx))
         traj = KTrajectory(kz, ky, kx, self.traj.grid_detection_tolerance, self.traj.repeat_detection_tolerance)
-        return type(self)(header=header, data=data, traj=traj)
+        return type(self)(header=header._reduce_repeats_(), data=data, traj=traj._reduce_repeats_())
+
+    def to_file(self, filename: FileOrPath) -> None:
+        """Save KData as ISMRMRD dataset to file.
+
+        Parameters
+        ----------
+        filename
+            path to the ISMRMRD file
+        """
+        ismrmrd_version = int(version('ismrmrd').split('.')[0])
+        header = self.header.to_ismrmrd()
+        header.acquisitionSystemInformation.receiverChannels = self.data.shape[-4]
+
+        # For the k-space center of k1 and k2 we can only make an educated guess on where it is:
+        # k-space point closest to 0
+        encoding_limits = header.encoding[0].encodingLimits
+        center_idx = self.traj.as_tensor(-1).abs().sum(dim=-1).argmin()
+        encoding_limits.kspace_encoding_step_1.center = int(
+            self.header.acq_info.idx.k1.broadcast_to(self.traj.shape).flatten()[center_idx]
+        )
+        encoding_limits.kspace_encoding_step_2.center = int(
+            self.header.acq_info.idx.k2.broadcast_to(self.traj.shape).flatten()[center_idx]
+        )
+
+        # Vendors use different units for time stamps
+        if self.header.vendor.lower() == 'osi2':
+            convert_time_stamp = convert_time_stamp_to_osi2  # 1ms time steps
+        else:
+            convert_time_stamp = convert_time_stamp_to_siemens  # 2.5ms time steps
+
+        with ismrmrd.Dataset(filename, 'dataset', create_if_needed=True) as dataset:
+            dataset.write_xml_header(header.toXML('utf-8'))
+
+            flattened = self.rearrange('... coils k2 k1 k0 -> (... k2 k1) coils 1 1 k0')
+            for scan_counter, acq in enumerate(flattened):
+                ismrmrd_acq = ismrmrd.Acquisition()
+                ismrmrd_acq.resize(
+                    number_of_samples=acq.shape[-1], active_channels=acq.shape[-4], trajectory_dimensions=3
+                )
+                ismrmrd_acq.available_channels = acq.shape[-4]
+                ismrmrd_acq.version = ismrmrd_version
+                ismrmrd_acq.scan_counter = 0
+                write_acqinfo_to_ismrmrd_acquisition_(acq.header.acq_info, ismrmrd_acq, convert_time_stamp)
+                ismrmrd_acq.traj[:] = acq.traj.as_tensor(-1).squeeze().cpu().numpy()[:, ::-1]  # zyx -> xyz
+                ismrmrd_acq.center_sample = np.argmin(np.abs(ismrmrd_acq.traj[:, 0]))
+                acq_data = acq.data.squeeze().cpu().numpy()
+                # Siemens assumes a fft to go from k-space to image space
+                ismrmrd_acq.data[:] = acq_data.conj() if self.header.vendor.lower() == 'siemens' else acq_data
+                ismrmrd_acq.scan_counter = scan_counter
+                dataset.append_acquisition(ismrmrd_acq)
 
     def __repr__(self):
         """Representation method for KData class."""
-        traj = KTrajectory(self.traj.kz, self.traj.ky, self.traj.kx)
-        try:
-            device = str(self.device)
-        except RuntimeError:
-            device = 'mixed'
-        out = (
-            f'{type(self).__name__} with shape {list(self.data.shape)!s} and dtype {self.data.dtype}\n'
-            f'Device: {device}\n'
-            f'{traj}\n'
-            f'{self.header}'
+        traj_info = '\n   '.join(repr(self.traj).splitlines())
+        header_info = '\n   '.join(repr(self.header).splitlines())
+        representation = '\n'.join(
+            [
+                super().__repr__().splitlines()[0],
+                f'  data: {summarize_object(self.data)}',
+                f'  traj: {traj_info}',
+                f'  header:  {header_info}',
+            ]
         )
-        return out
+        return representation
+
+    @overload
+    def compress_coils(
+        self,
+        n_compressed_coils: int,
+        batch_dims: Sequence[int] | None = None,
+        joint_dims: Sequence[int] | EllipsisType = ...,
+        rotate: bool = False,
+        return_compression_op: Literal[False] = False,
+    ) -> Self: ...
+
+    @overload
+    def compress_coils(
+        self,
+        n_compressed_coils: int,
+        batch_dims: Sequence[int] | None = None,
+        joint_dims: Sequence[int] | EllipsisType = ...,
+        rotate: bool = False,
+        return_compression_op: Literal[True] = True,
+    ) -> tuple[Self, 'LinearOperator']: ...
 
     def compress_coils(
-        self: Self,
+        self,
         n_compressed_coils: int,
-        batch_dims: None | Sequence[int] = None,
+        batch_dims: Sequence[int] | None = None,
         joint_dims: Sequence[int] | EllipsisType = ...,
-    ) -> Self:
+        rotate: bool = False,
+        return_compression_op: bool = False,
+    ) -> Self | tuple[Self, 'LinearOperator']:
         """Reduce the number of coils based on a PCA compression.
 
         A PCA is carried out along the coil dimension and the n_compressed_coils virtual coil elements are selected. For
@@ -371,10 +659,16 @@ class KData(
             Dimensions which are combined to calculate single coil compression matrix (e.g. k0, k1, contrast). Default
             is that all dimensions (except for the coil dimension) are joint_dims. Only batch_dim or joint_dim can
             be defined. If joint_dims is not ... batch_dims has to be None
+        rotate
+            Apply a varimax rotation to the compression matrix to distribute the signal more equally across the
+            compressed coils.
+        return_compression_op
+            If True, return the compression operator used for compression along with the compressed data.
 
         Returns
         -------
             Copy of K-space data with compressed coils.
+            (Optional) Compression operator used for compression along with the compressed data.
 
         Raises
         ------
@@ -393,9 +687,9 @@ class KData(
            technique for faster reconstruction with many channels. MRM 26. https://doi.org/10.1016/j.mri.2007.04.010
 
         """
-        from mrpro.operators import PCACompressionOp
+        from mrpro.operators import PCACompressionOp, RearrangeOp
 
-        coil_dim = -4 % self.data.ndim
+        coil_dim = normalize_index(self.data.ndim, -4)
 
         if n_compressed_coils > (n_current_coils := self.data.shape[coil_dim]):
             raise ValueError(
@@ -406,38 +700,72 @@ class KData(
         if batch_dims is not None and joint_dims is not Ellipsis:
             raise ValueError('Either batch_dims or joint_dims can be defined not both.')
 
+        all_dims = tuple(range(self.data.ndim))
+        dim_names = (*[f'other{dim}' for dim in all_dims[:-4]], 'coils', 'kz', 'ky', 'kx')
+
         if joint_dims is not Ellipsis:
-            joint_dims_normalized = [i % self.data.ndim for i in joint_dims]
+            joint_dims_normalized = normalize_indices(self.data.ndim, joint_dims)
             if coil_dim in joint_dims_normalized:
                 raise ValueError('Coil dimension must not be in joint_dims')
-            batch_dims_normalized = [
-                d for d in range(self.data.ndim) if d not in joint_dims_normalized and d is not coil_dim
-            ]
+            batch_dims_normalized = tuple(
+                dim for dim in all_dims if dim not in joint_dims_normalized and dim != coil_dim
+            )
         else:
-            batch_dims_normalized = [] if batch_dims is None else [i % self.data.ndim for i in batch_dims]
+            batch_dims_normalized = normalize_indices(self.data.ndim, batch_dims)
             if coil_dim in batch_dims_normalized:
                 raise ValueError('Coil dimension must not be in batch_dims')
+            joint_dims_normalized = tuple(
+                dim for dim in all_dims if dim not in batch_dims_normalized and dim != coil_dim
+            )
 
-        # reshape to (*batch dimension, -1, coils)
-        permute_order = (
-            *batch_dims_normalized,
-            *[i for i in range(self.data.ndim) if i != coil_dim and i not in batch_dims_normalized],
-            coil_dim,
+        batch_pattern = ' '.join(dim_names[dim] for dim in batch_dims_normalized)
+        joint_pattern = ' '.join(dim_names[dim] for dim in joint_dims_normalized)
+        input_pattern = ' '.join(dim_names)
+        to_pca_layout = RearrangeOp(
+            f'{input_pattern} -> {batch_pattern} ({joint_pattern}) coils',
+            {dim_names[dim]: self.data.shape[dim] for dim in joint_dims_normalized},
         )
-        kdata_permuted = self.data.permute(permute_order)
-        kdata_flattened = kdata_permuted.flatten(
-            start_dim=len(batch_dims_normalized), end_dim=-2
-        )  # keep separate dimensions and coil
 
-        pca_compression_op = PCACompressionOp(data=kdata_flattened, n_components=n_compressed_coils)
-        (kdata_coil_compressed_flattened,) = pca_compression_op(kdata_flattened)
+        (kdata_flattened,) = to_pca_layout(self.data)
+        pca_compression_op = PCACompressionOp(data=kdata_flattened, n_components=n_compressed_coils, rotate=rotate)
+        compression_op = to_pca_layout.H @ pca_compression_op @ to_pca_layout
+        (kdata_coil_compressed,) = compression_op(self.data)
         del kdata_flattened
-        # reshape to original dimensions and undo permutation
-        kdata_coil_compressed = torch.reshape(
-            kdata_coil_compressed_flattened, [*kdata_permuted.shape[:-1], n_compressed_coils]
-        ).permute(*np.argsort(permute_order))
 
-        return type(self)(self.header.clone(), kdata_coil_compressed, self.traj.clone())
+        kdata = type(self)(self.header.clone(), kdata_coil_compressed, self.traj.clone())
+        if return_compression_op:
+            return kdata, compression_op
+        return kdata
+
+    def prewhiten(self, knoise: KNoise | torch.Tensor, scale_factor: float | torch.Tensor = 1.0) -> Self:
+        """Calculate noise prewhitening matrix and decorrelate coils.
+
+        This is a convenience wrapper around :func:`mrpro.algorithms.prewhiten_kspace`.
+
+        Parameters
+        ----------
+        knoise
+            Noise measurements. Either a KNoise object or a tensor of shape ``(..., coils, k0)``.
+        scale_factor
+            Square root is applied on the noise covariance matrix. Used to adjust for effective noise bandwidth
+            and difference in sampling rate between noise calibration and actual measurement:
+            ``scale_factor = (T_acq_dwell/T_noise_dwell)*NoiseReceiverBandwidthRatio``
+
+        Returns
+        -------
+            Prewhitened copy of k-space data.
+        """
+        from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
+
+        if not isinstance(knoise, KNoise):
+            if knoise.ndim == 2:
+                knoise = rearrange(knoise, 'coils k0 -> 1 coils 1 1 k0')
+            else:
+                knoise = rearrange(knoise, '... coils k0 -> ... coils 1 1 k0')
+            knoise = KNoise(knoise)
+
+        whitened = prewhiten_kspace(self, knoise, scale_factor)
+        return type(self)(whitened.header, whitened.data, whitened.traj)
 
     def remove_readout_os(self: Self) -> Self:
         """Remove any oversampling along the readout direction.
@@ -496,6 +824,7 @@ class KData(
         # Adapt header parameters
         header = copy.deepcopy(self.header)
         header.encoding_matrix.x = cropped_data.shape[-1]
+        header.encoding_fov.x = self.header.recon_fov.x
 
         return type(self)(header, cropped_data, cropped_traj)
 
@@ -506,7 +835,8 @@ class KData(
     ) -> Self:
         """Select a subset from the other dimension of KData.
 
-        Note: This function will be deprecated in the future.
+        .. warning::
+            This function will be deprecated in the future.
 
         Parameters
         ----------
@@ -529,11 +859,11 @@ class KData(
         # Flatten multi-dimensional other
         n_other = self.data.shape[:-4]  # Assume that data is not broadcasted along other
         header = self.header.apply(
-            lambda field: rearrange(
-                field.expand(*n_other, *field.shape[-4:]), '... coils k2 k1 k0->(...) coils k2 k1 k0'
+            lambda field: (
+                rearrange(field.expand(*n_other, *field.shape[-4:]), '... coils k2 k1 k0->(...) coils k2 k1 k0')
+                if isinstance(field, torch.Tensor | Rotation)
+                else field
             )
-            if isinstance(field, torch.Tensor | Rotation)
-            else field
         )
         traj = self.traj.as_tensor()
         traj = torch.broadcast_to(traj, (traj.shape[0], *self.data.shape[:-4], *traj.shape[-4:]))  # broadcast "other"
@@ -550,64 +880,4 @@ class KData(
         header.acq_info.apply_(lambda field: field[other_idx] if isinstance(field, torch.Tensor | Rotation) else field)
         data = data[other_idx]
         traj = traj[:, other_idx]
-        return type(self)(header, data, type(self.traj).from_tensor(traj))
-
-    def split_k1_into_other(
-        self,
-        split_idx: torch.Tensor,
-        other_label: Literal['average', 'slice', 'contrast', 'phase', 'repetition', 'set'],
-    ) -> Self:
-        """Based on an index tensor, split the data in e.g. phases.
-
-        Parameters
-        ----------
-        split_idx
-            2D index describing  the k1 points in each block to be moved to the other dimension
-            `(other_split, k1_per_split)`
-        other_label
-            Label of other dimension, e.g. repetition, phase
-
-        Returns
-        -------
-            K-space data with new shape `((other other_split) coils k2 k1_per_split k0)`
-
-        """
-        n_other_split, n_k1_per_split = split_idx.shape
-        n_k1 = self.data.shape[-2]  # This assumes that data is not broadcasted along k1
-
-        def split(data: RotationOrTensor) -> RotationOrTensor:
-            # broadcast "k1"
-            expanded = data.expand((*data.shape[:-2], n_k1, data.shape[-1]))
-            # cast due to https://github.com/python/mypy/issues/10817
-            return cast(RotationOrTensor, expanded[..., split_idx, :])
-
-        data = rearrange(
-            split(self.data.flatten(end_dim=-5)), 'other coils k2 other_split k1 k0->(other other_split) coils k2 k1 k0'
-        )
-
-        traj = self.traj.as_tensor()
-        traj = torch.broadcast_to(traj, (traj.shape[0], *self.data.shape[:-4], *traj.shape[-4:]))  # broadcast "other"
-        traj = traj.flatten(start_dim=1, end_dim=-5)  # flatten "other" dimensions
-        traj = rearrange(split(traj), 'dim other coils k2 other_split k1 k0->dim (other other_split) coils k2 k1 k0')
-
-        header = self.header.apply(
-            lambda field: rearrange(
-                split(  # type: ignore[type-var] # mypy does not recognize return type of rearrange here
-                    rearrange(field, '... coils k2 k1 k0 -> (...) coils k2 k1 k0 ')  # flatten "other" dimensions
-                ),
-                'other coils k2 other_split k1 k0->(other other_split) coils k2 k1 k0',
-            )
-            if isinstance(field, Rotation | torch.Tensor)
-            else field
-        )
-
-        new_idx = repeat(
-            torch.arange(n_other_split),
-            'other_split-> (other_split other) 1 k2 k1 1',
-            other=data.shape[0] // n_other_split,
-            k2=data.shape[-3],
-            k1=n_k1_per_split,
-        )
-        setattr(header.acq_info.idx, other_label, new_idx)
-
         return type(self)(header, data, type(self.traj).from_tensor(traj))
