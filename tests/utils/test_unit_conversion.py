@@ -17,71 +17,44 @@ from mrpro.utils.unit_conversion import (
     s_to_ms,
 )
 
-
-def random_tensor_list_tuple() -> tuple[torch.Tensor, tuple, list]:
-    generator = RandomGenerator(9)
-    return (generator.float32_tensor((3, 4, 5)), generator.float32_tuple(7), list(generator.float32_tuple(6)))
-
-
-@pytest.mark.parametrize('data', random_tensor_list_tuple())
-def test_mm_to_m(data) -> None:
-    """Verify mm to m conversion."""
-    rng = RandomGenerator(seed=0)
-    mm_input = rng.float32_tensor((3, 4, 5))
-    torch.testing.assert_close(mm_to_m(mm_input), mm_input / 1000.0)
-
-
-@pytest.mark.parametrize('data', random_tensor_list_tuple())
-def test_m_to_mm(data) -> None:
-    """Verify m to mm conversion."""
-    rng = RandomGenerator(seed=0)
-    m_input = rng.float32_tensor((3, 4, 5))
-    torch.testing.assert_close(m_to_mm(m_input), m_input * 1000.0)
+# (function, expected result as a function of the input tensor)
+CONVERSIONS = pytest.mark.parametrize(
+    ('function', 'reference'),
+    [
+        (mm_to_m, lambda x: x / 1000),
+        (m_to_mm, lambda x: x * 1000),
+        (micrometer_to_m, lambda x: x / 1.0e6),
+        (m_to_micrometer, lambda x: x * 1.0e6),
+        (ms_to_s, lambda x: x / 1000),
+        (s_to_ms, lambda x: x * 1000),
+        (rad_to_deg, torch.rad2deg),
+        (deg_to_rad, torch.deg2rad),
+    ],
+    ids=['mm_to_m', 'm_to_mm', 'micrometer_to_m', 'm_to_micrometer', 'ms_to_s', 's_to_ms', 'rad_to_deg', 'deg_to_rad'],
+)
 
 
-def test_micrometer_to_m():
-    """Verify micrometer to m conversion."""
-    rng = RandomGenerator(seed=0)
-    micrometer_input = rng.float32_tensor((3, 4, 5))
-    torch.testing.assert_close(micrometer_to_m(micrometer_input), micrometer_input / 1.0e6)
+@CONVERSIONS
+def test_unit_conversion_tensor(function, reference) -> None:
+    """Verify conversion of a tensor."""
+    x = RandomGenerator(9).float32_tensor((3, 4, 5))
+    torch.testing.assert_close(function(x), reference(x))
 
 
-def test_m_to_micrometer():
-    """Verify m to micrometer conversion."""
-    rng = RandomGenerator(seed=0)
-    m_input = rng.float32_tensor((3, 4, 5))
-    torch.testing.assert_close(m_to_micrometer(m_input), m_input * 1.0e6)
+@CONVERSIONS
+def test_unit_conversion_list(function, reference) -> None:
+    """Verify conversion of a list."""
+    x = RandomGenerator(9).float32_tensor((7,))
+    result = function(list(x))
+    torch.testing.assert_close(torch.as_tensor(result), reference(x))
 
 
-def test_ms_to_s():
-    """Verify ms to s conversion."""
-    rng = RandomGenerator(seed=0)
-    ms_input = rng.float32_tensor((3, 4, 5))
-    torch.testing.assert_close(ms_to_s(ms_input), ms_input / 1000.0)
-
-
-@pytest.mark.parametrize('data', random_tensor_list_tuple())
-def test_s_to_ms(data) -> None:
-    """Verify s to ms conversion."""
-    rng = RandomGenerator(seed=0)
-    s_input = rng.float32_tensor((3, 4, 5))
-    torch.testing.assert_close(s_to_ms(s_input), s_input * 1000.0)
-
-
-@pytest.mark.parametrize('data', random_tensor_list_tuple())
-def test_rad_to_deg_tensor(data) -> None:
-    """Verify radians to degree conversion."""
-    rng = RandomGenerator(seed=0)
-    s_input = rng.float32_tensor((3, 4, 5))
-    torch.testing.assert_close(rad_to_deg(s_input), torch.rad2deg(s_input))
-
-
-@pytest.mark.parametrize('data', random_tensor_list_tuple())
-def test_deg_to_rad_tensor(data) -> None:
-    """Verify degree to radians conversion."""
-    rng = RandomGenerator(seed=0)
-    s_input = rng.float32_tensor((3, 4, 5))
-    torch.testing.assert_close(deg_to_rad(s_input), torch.deg2rad(s_input))
+@CONVERSIONS
+def test_unit_conversion_tuple(function, reference) -> None:
+    """Verify conversion of a tuple."""
+    x = RandomGenerator(9).float32_tensor((7,))
+    result = function(tuple(x))
+    torch.testing.assert_close(torch.as_tensor(result), reference(x))
 
 
 def test_rad_to_deg_float() -> None:
