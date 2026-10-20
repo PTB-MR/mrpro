@@ -15,10 +15,10 @@ repos:
       - id: mixed-line-ending
 
   - repo: https://github.com/fzimmermann89/check_all
-    rev: v1.2
+    rev: v1.4
     hooks:
       - id: check-init-all
-        args: [--fix]
+        args: [--fix, --single-quote]
         exclude: ^tests/
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
