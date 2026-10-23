@@ -8,10 +8,10 @@ from mrpro.operators.functionals.SSIM import SSIM
 from mrpro.operators.functionals.ZeroFunctional import ZeroFunctional
 
 __all__ = [
+    'MSE',
+    'SSIM',
     'L1Norm',
     'L1NormViewAsReal',
     'L2NormSquared',
-    'MSE',
-    'SSIM',
     'ZeroFunctional',
 ]
