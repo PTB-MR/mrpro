@@ -895,15 +895,17 @@ class RandomGenerator:
             raise ValueError('n_samples must be <= (high - low)')
         n_random = n_samples - len(always_sample)
         if n_random < 0:
-            raise ValueError('more always sampled points requested than total number of samples')
+            raise ValueError('more "always sampled points" requested than total given number of samples')
         elif n_random == 0:
             return torch.tensor(always_sample).sort().values.broadcast_to(*n_batch, -1)
         pdf = torch.exp(-torch.tensor(2.0).log() * (2 * torch.arange(low, high) / fwhm) ** 2)
-        pdf[[x - low for x in always_sample]] = 0
+
+        pdf[list(always_sample)] = 0
+
         if len(shape) > 1:
             pdf = pdf.broadcast_to((*n_batch, -1)).flatten(end_dim=-2)
 
-        idx_rand = pdf.multinomial(n_random, False, generator=self.generator) + low
+        idx_rand = pdf.multinomial(n_random, False, generator=self.generator)
         if len(shape) > 1:
             idx_rand = idx_rand.unflatten(0, n_batch)
         idx_always = torch.tensor(always_sample).broadcast_to(*n_batch, -1)
