@@ -157,7 +157,6 @@ ignore_missing_imports = true
 
 [tool.ruff]
 line-length = 120
-extend-exclude = ["__init__.py"]
 exclude = ["docs/**"]
 
 [tool.ruff.lint]
@@ -202,6 +201,9 @@ ignore = [
     "SIM108", #  if-else-block-instead-of-if-exp
     "A005",   #  stdlib-module-shadowing
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "I001"]
 
 [tool.ruff.lint.isort]
 force-single-line = false
