@@ -1,6 +1,7 @@
 """Tests for domain thresholding."""
 
 from collections.abc import Callable
+from functools import wraps
 
 import pytest
 import torch
@@ -13,6 +14,18 @@ from mrpro.utils import RandomGenerator
 from tests.helper import relative_image_difference
 
 
+def magnitude_shrink(shrink: Callable[..., torch.Tensor]) -> Callable[..., torch.Tensor]:
+    """Make a real-valued shrink function work on complex data by shrinking |x| and keeping the phase."""
+
+    @wraps(shrink)
+    def wrapped(x: torch.Tensor, *args: float, **kwargs: float) -> torch.Tensor:
+        if not x.is_complex():
+            return shrink(x, *args, **kwargs)
+        return torch.polar(shrink(x.abs(), *args, **kwargs), x.angle())
+
+    return wrapped
+
+
 @pytest.mark.parametrize('tensor_input', [True, False], ids=['tensor', 'idata'])
 def test_domain_thresholding(idata_single_coil: IData, tensor_input: bool) -> None:
     """Denoising has to reduce the difference to the noise-free image."""
@@ -21,9 +34,13 @@ def test_domain_thresholding(idata_single_coil: IData, tensor_input: bool) -> No
     domain_op = WaveletOp(domain_shape=noisy.shape[-2:], dim=(-2, -1), wavelet_name='haar', level=2)
 
     if tensor_input:
-        denoised = domain_thresholding(noisy.data, domain_op, torch.nn.functional.softshrink, threshold=0.1)
+        denoised = domain_thresholding(
+            noisy.data, domain_op, magnitude_shrink(torch.nn.functional.softshrink), threshold=0.1
+        )
     else:
-        denoised = domain_thresholding(noisy, domain_op, torch.nn.functional.softshrink, threshold=0.1).data
+        denoised = domain_thresholding(
+            noisy, domain_op, magnitude_shrink(torch.nn.functional.softshrink), threshold=0.1
+        ).data
     assert relative_image_difference(denoised, idata_single_coil.data) < relative_image_difference(
         noisy.data, idata_single_coil.data
     )
@@ -40,7 +57,7 @@ def _fourier_op(shape: torch.Size) -> LinearOperator:
 @pytest.mark.parametrize('make_domain_op', [_wavelet_op, _fourier_op], ids=['wavelet', 'fourier'])
 @pytest.mark.parametrize(
     'threshold_function',
-    [torch.nn.functional.softshrink, torch.nn.functional.hardshrink],
+    [magnitude_shrink(torch.nn.functional.softshrink), magnitude_shrink(torch.nn.functional.hardshrink)],
     ids=['soft', 'hard'],
 )
 def test_domain_thresholding_denoises(
@@ -62,14 +79,18 @@ def test_domain_thresholding_denoises(
 def test_domain_thresholding_zero_weight(idata_single_coil: IData) -> None:
     """A weight of zero has to leave the image unchanged, as the wavelet transform is orthonormal."""
     domain_op = WaveletOp(domain_shape=idata_single_coil.shape[-2:], dim=(-2, -1), wavelet_name='haar', level=2)
-    denoised = domain_thresholding(idata_single_coil.data, domain_op, torch.nn.functional.softshrink, threshold=0.0)
+    denoised = domain_thresholding(
+        idata_single_coil.data, domain_op, magnitude_shrink(torch.nn.functional.softshrink), threshold=0.0
+    )
     torch.testing.assert_close(denoised, idata_single_coil.data, atol=1e-5, rtol=1e-4)
 
 
 def test_domain_thresholding_large_weight(idata_single_coil: IData) -> None:
     """A very large weight removes everything."""
     domain_op = WaveletOp(domain_shape=idata_single_coil.shape[-2:], dim=(-2, -1), wavelet_name='haar', level=2)
-    denoised = domain_thresholding(idata_single_coil.data, domain_op, torch.nn.functional.softshrink, threshold=1e6)
+    denoised = domain_thresholding(
+        idata_single_coil.data, domain_op, magnitude_shrink(torch.nn.functional.softshrink), threshold=1e6
+    )
     assert denoised.abs().sum() == 0
 
 
@@ -77,5 +98,7 @@ def test_domain_thresholding_large_weight(idata_single_coil: IData) -> None:
 def test_domain_thresholding_cuda(idata_single_coil: IData) -> None:
     """Test denoising on CUDA device."""
     domain_op = WaveletOp(domain_shape=idata_single_coil.shape[-2:], dim=(-2, -1), wavelet_name='haar', level=2)
-    denoised = domain_thresholding(idata_single_coil.cuda(), domain_op, torch.nn.functional.softshrink, threshold=0.1)
+    denoised = domain_thresholding(
+        idata_single_coil.cuda(), domain_op, magnitude_shrink(torch.nn.functional.softshrink), threshold=0.1
+    )
     assert denoised.is_cuda
