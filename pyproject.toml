@@ -234,6 +234,7 @@ arange = "arange" # torch.arange
 Ba = "Ba"
 wht = "wht"       # Brainweb tissue class
 nd = "nd"         # pad_nd function from torchnd
+gaus = "gaus"     # Gaussian wavelet
 
 [tool.typos.files]
 extend-exclude = [
