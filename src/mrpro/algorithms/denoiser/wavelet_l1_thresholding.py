@@ -1,10 +1,9 @@
-"""Wavelet Denoising using soft thresholding."""
+"""Wavelet L1 Thresholding for denoising."""
 
 from __future__ import annotations
 
 from typing import overload
 
-import pywt
 import torch
 
 from mrpro.algorithms.denoiser.transform_domain_soft_thresholding import transform_domain_soft_thresholding
@@ -14,7 +13,7 @@ from mrpro.utils import normalize_index
 
 
 @overload
-def wavelet_denoising(
+def wavelet_l1_thresholding(
     idata: IData,
     regularization_dim: tuple[int] | tuple[int, int] | tuple[int, int, int],
     regularization_weight: float | torch.Tensor,
@@ -24,7 +23,7 @@ def wavelet_denoising(
 
 
 @overload
-def wavelet_denoising(
+def wavelet_l1_thresholding(
     idata: torch.Tensor,
     regularization_dim: tuple[int] | tuple[int, int] | tuple[int, int, int],
     regularization_weight: float | torch.Tensor,
@@ -33,24 +32,25 @@ def wavelet_denoising(
 ) -> torch.Tensor: ...
 
 
-def wavelet_denoising(
+def wavelet_l1_thresholding(
     idata: IData | torch.Tensor,
     regularization_dim: tuple[int] | tuple[int, int] | tuple[int, int, int],
     regularization_weight: float | torch.Tensor,
     wavelet_name: WaveletType = 'db4',
     level: int | None = None,
 ) -> IData | torch.Tensor:
-    r"""Apply wavelet denoising.
+    r"""Apply wavelet L1 thresholding.
 
-    This algorithm solves the problem :math:`min_x \frac{1}{2}||x - y||_2^2 + l ||Wx||_1`
-    in closed form as :math:`x = W^H \mathrm{SoftThreshold}_l (Wy)`. :math:`y` is the given noisy image,
-    :math:`l` is the strength of the regularization, :math:`W` is the wavelet operator and the soft
-    thresholding is the proximal map of the :math:`L_1` norm.
+    This algorithm carries out :math:`x = W^H \mathrm{SoftThreshold}_l (Wy)`. :math:`y` is the given noisy image,
+    :math:`l` is the strength of the regularization and :math:`W` is the wavelet operator.
+
+    If :math:`W` is orthogonal than the algorithm gives the closed-form solution of the problem
+    :math:`min_x \frac{1}{2}||x - y||_2^2 + l ||Wx||_1`.
 
     .. note::
-        The closed-form solution is exact for an orthonormal wavelet transform. Due to the padding at the
-        image boundaries, `~mrpro.operators.WaveletOp` returns more coefficients than the image has pixels
-        for most combinations of wavelet and image size, and the result is then a close approximation.
+        For padding at the image boundaries, `~mrpro.operators.WaveletOp` returns more coefficients than the image has
+        pixels for most combinations of wavelet and image size. In this case the above is also only a close
+        approximation and not the true solution even for orthogonal wavelets.
 
     Parameters
     ----------
@@ -68,17 +68,10 @@ def wavelet_denoising(
 
     Returns
     -------
-        the denoised image.
+        the thresholded image.
     """
     if len({normalize_index(idata.ndim, idx) for idx in regularization_dim}) != len(regularization_dim):
         raise ValueError('Repeated values are not allowed in regularization_dim')
-
-    # Continuous wavelets (gaus, mexh, morl, cgau, shan, fbsp, cmor)
-    # are not in the discrete list and have no orthogonal filter bank.
-    if wavelet_name not in pywt.wavelist(kind='discrete'):
-        raise NotImplementedError(f"Wavelet '{wavelet_name}' is a continuous wavelet and is not orthonormal.")
-    if not pywt.Wavelet(wavelet_name).orthogonal:
-        raise NotImplementedError(f"Wavelet '{wavelet_name}' is not orthonormal.")
 
     return transform_domain_soft_thresholding(
         idata=idata,
