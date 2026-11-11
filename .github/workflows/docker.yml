@@ -25,6 +25,7 @@ jobs:
           filters: |
             docker:
               - 'docker/*'
+              - 'pyproject.toml'
               - '.github/workflows/docker.yml'
 
   push_test:

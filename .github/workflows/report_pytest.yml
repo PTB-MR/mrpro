@@ -95,6 +95,9 @@ jobs:
           github.event.workflow_run.conclusion != 'skipped' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      actions: read     # download the artifact from the PyTest run
+      contents: read
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v7
