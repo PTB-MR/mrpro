@@ -1,4 +1,4 @@
-"""Wavelet Denoising using soft thresholding."""
+"""Wavelet L1 Thresholding for denoising."""
 
 from __future__ import annotations
 
@@ -6,14 +6,14 @@ from typing import overload
 
 import torch
 
+from mrpro.algorithms.denoiser.transform_domain_soft_thresholding import transform_domain_soft_thresholding
 from mrpro.data.IData import IData
-from mrpro.operators.functionals import L1NormViewAsReal
 from mrpro.operators.WaveletOp import WaveletOp, WaveletType
 from mrpro.utils import normalize_index
 
 
 @overload
-def wavelet_denoising(
+def wavelet_l1_thresholding(
     idata: IData,
     regularization_dim: tuple[int] | tuple[int, int] | tuple[int, int, int],
     regularization_weight: float | torch.Tensor,
@@ -23,7 +23,7 @@ def wavelet_denoising(
 
 
 @overload
-def wavelet_denoising(
+def wavelet_l1_thresholding(
     idata: torch.Tensor,
     regularization_dim: tuple[int] | tuple[int, int] | tuple[int, int, int],
     regularization_weight: float | torch.Tensor,
@@ -32,24 +32,20 @@ def wavelet_denoising(
 ) -> torch.Tensor: ...
 
 
-def wavelet_denoising(
+def wavelet_l1_thresholding(
     idata: IData | torch.Tensor,
     regularization_dim: tuple[int] | tuple[int, int] | tuple[int, int, int],
     regularization_weight: float | torch.Tensor,
     wavelet_name: WaveletType = 'db4',
     level: int | None = None,
 ) -> IData | torch.Tensor:
-    r"""Apply wavelet denoising.
+    r"""Apply wavelet L1 thresholding.
 
-    This algorithm solves the problem :math:`min_x \frac{1}{2}||x - y||_2^2 + l ||Wx||_1`
-    in closed form as :math:`x = W^H \mathrm{SoftThreshold}_l (Wy)`. :math:`y` is the given noisy image,
-    :math:`l` is the strength of the regularization, :math:`W` is the wavelet operator and the soft
-    thresholding is the proximal map of the :math:`L_1` norm.
+    This algorithm carries out :math:`x = W^H \mathrm{SoftThreshold}_l (Wy)`. :math:`y` is the given noisy image,
+    :math:`l` is the strength of the regularization and :math:`W` is the wavelet operator.
 
-    .. note::
-        The closed-form solution is exact for an orthonormal wavelet transform. Due to the padding at the
-        image boundaries, `~mrpro.operators.WaveletOp` returns more coefficients than the image has pixels
-        for most combinations of wavelet and image size, and the result is then a close approximation.
+    If :math:`W` is orthogonal than the algorithm gives the closed-form solution of the problem
+    :math:`min_x \frac{1}{2}||x - y||_2^2 + l ||Wx||_1`.
 
     Parameters
     ----------
@@ -67,22 +63,18 @@ def wavelet_denoising(
 
     Returns
     -------
-        the denoised image.
+        the thresholded image.
     """
-    img_tensor = idata if isinstance(idata, torch.Tensor) else idata.data
-
-    if len({normalize_index(img_tensor.ndim, idx) for idx in regularization_dim}) != len(regularization_dim):
+    if len({normalize_index(idata.ndim, idx) for idx in regularization_dim}) != len(regularization_dim):
         raise ValueError('Repeated values are not allowed in regularization_dim')
 
-    wavelet_op = WaveletOp(
-        domain_shape=tuple(img_tensor.shape[d] for d in regularization_dim),
-        dim=regularization_dim,
-        wavelet_name=wavelet_name,
-        level=level,
+    return transform_domain_soft_thresholding(
+        idata=idata,
+        transform_op=WaveletOp(
+            domain_shape=tuple(idata.shape[d] for d in regularization_dim),
+            dim=regularization_dim,
+            wavelet_name=wavelet_name,
+            level=level,
+        ),
+        threshold=regularization_weight,
     )
-
-    (coefficients,) = wavelet_op(img_tensor)
-    (thresholded_coefficients,) = L1NormViewAsReal().prox(coefficients, regularization_weight)
-    (img_tensor,) = wavelet_op.H(thresholded_coefficients)
-
-    return img_tensor if isinstance(idata, torch.Tensor) else IData(img_tensor, idata.header)
