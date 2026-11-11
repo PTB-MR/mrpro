@@ -161,7 +161,10 @@ def test_functional_prox_non_expansive(case: FunctionalTestCase):
     def l2(x):
         return torch.sum((x * x.conj()).real, dim=case.functional.dim, keepdim=case.functional.keepdim)
 
-    assert (l2(f.prox(x)[0] - f.prox(y)[0]) <= l2(x - y)).all()
+    eps = torch.finfo(x.real.dtype).eps
+    # squared norms are subject to rounding errors relative to the magnitude of the inputs
+    tolerance = eps * (l2(x) + l2(y))
+    assert (l2(f.prox(x)[0] - f.prox(y)[0]) <= l2(x - y) + tolerance).all()
 
 
 @functional_test_cases

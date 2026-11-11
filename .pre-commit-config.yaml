@@ -14,25 +14,25 @@ repos:
         exclude: ^.vscode/
       - id: mixed-line-ending
 
+  - repo: https://github.com/fzimmermann89/check_all
+    rev: v1.4
+    hooks:
+      - id: check-init-all
+        args: [--fix, --single-quote]
+        exclude: ^tests/
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.1
+    rev: v0.17.4
     hooks:
       - id: ruff # linter
         args: [--fix]
       - id: ruff-format # formatter
 
   - repo: https://github.com/crate-ci/typos
-    rev: v1.49.0
+    rev: v1.52.0
     hooks:
       - id: typos
         args: [] # empty, to remove write-changes from the default arguments.
-
-  - repo: https://github.com/fzimmermann89/check_all
-    rev: v1.2
-    hooks:
-      - id: check-init-all
-        args: [--double-quotes, --fix]
-        exclude: ^tests/
 
   - repo: https://github.com/kynan/nbstripout
     rev: 0.9.1
@@ -82,7 +82,7 @@ repos:
       files: examples/notebooks
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v2.3.0
+    rev: v2.4.1
     hooks:
       - id: mypy
         pass_filenames: false

@@ -5,6 +5,7 @@ from collections.abc import Callable
 import pytest
 import torch
 from ismrmrd import xsd
+from ismrmrd.serialization import ProtocolSerializer
 from mrpro.data import Rotation, SpatialDimension
 from mrpro.utils import RandomGenerator, unsqueeze_left
 
@@ -332,3 +333,34 @@ def ismrmrd_cart_single_rep(ellipse_phantom, tmp_path_factory):
         phantom=ellipse_phantom.phantom,
     )
     return ismrmrd_kdata
+
+
+@pytest.fixture(scope='session')
+def ismrmrd_cart_stream(ellipse_phantom, tmp_path_factory):
+    """Fully sampled cartesian data set as HDF5 file and ISMRMRD stream file."""
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_kdata = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        noise_level=1e-4,
+        repetitions=3,
+        phantom=ellipse_phantom.phantom,
+    )
+    ismrmrd_kdata.to_stream(ismrmrd_filename.with_suffix('.ismrmrd'))
+    return ismrmrd_kdata
+
+
+@pytest.fixture(scope='session')
+def ismrmrd_two_measurement_stream(ismrmrd_cart_stream, tmp_path_factory):
+    """Stream file with two measurements: all repetitions, then only repetition 0."""
+    header = ismrmrd_cart_stream.ismrmrd_header
+    acquisitions = ismrmrd_cart_stream.acquisitions
+    stream_path = tmp_path_factory.mktemp('mrpro') / 'two_measurements.ismrmrd'
+    with ProtocolSerializer(str(stream_path)) as serializer:
+        serializer.serialize(header)
+        for acq in acquisitions:
+            serializer.serialize(acq)
+        serializer.serialize(header)
+        for acq in acquisitions:
+            if acq.idx.repetition == 0:
+                serializer.serialize(acq)
+    return stream_path

@@ -5,5 +5,5 @@ from .helper import (
     linear_operator_unitary_test,
     autodiff_test,
     gradient_of_linear_operator_test,
-    forward_mode_autodiff_of_linear_operator_test
+    forward_mode_autodiff_of_linear_operator_test,
 )

@@ -1,12 +1,15 @@
 """Create ismrmrd datasets."""
 
+import copy
+import os
 from pathlib import Path
-from typing import Literal
+from typing import BinaryIO, Literal
 
 import ismrmrd
 import ismrmrd.xsd
 import torch
 from einops import repeat
+from ismrmrd.serialization import ProtocolSerializer
 from mrpro.data import SpatialDimension
 from mrpro.phantoms import EllipsePhantom
 from mrpro.utils import RandomGenerator
@@ -209,6 +212,8 @@ class IsmrmrdRawTestData:
             sequenceParameters=seq,
             encoding=[encoding],
         )
+        self.ismrmrd_header = header
+        self.acquisitions: list[ismrmrd.Acquisition] = []
 
         dataset.write_xml_header(header.toXML('utf-8'))
 
@@ -234,6 +239,7 @@ class IsmrmrdRawTestData:
             acq.clearAllFlags()
             acq.setFlag(ismrmrd.ACQ_IS_NOISE_MEASUREMENT)
             acq.data[:] = noise.numpy()
+            self.acquisitions.append(copy.deepcopy(acq))
             dataset.append_acquisition(acq)
             scan_counter += 1
             time_stamp += 2
@@ -247,6 +253,7 @@ class IsmrmrdRawTestData:
                 acq.acquisition_time_stamp = time_stamp
                 acq.clearAllFlags()
                 acq.data[:] = data.numpy()
+                self.acquisitions.append(copy.deepcopy(acq))
                 dataset.append_acquisition(acq)
                 scan_counter += 1
                 time_stamp += 2
@@ -282,6 +289,7 @@ class IsmrmrdRawTestData:
 
                 # Set the data and append
                 acq.data[:] = kspace_calibration[:, :, pe_idx].numpy()
+                self.acquisitions.append(copy.deepcopy(acq))
                 dataset.append_acquisition(acq)
                 scan_counter += 1
                 time_stamp += 2
@@ -343,12 +351,37 @@ class IsmrmrdRawTestData:
                         acq.data[:] = kspace_with_noise[:, :, pe_idx].numpy()
                         acq.discard_pre = 0
                         acq.discard_post = 0
+                    self.acquisitions.append(copy.deepcopy(acq))
                     dataset.append_acquisition(acq)
                     scan_counter += 1
                     time_stamp += 3
 
         # Clean up
         dataset.close()
+
+    def to_stream(self, filename: str | os.PathLike | BinaryIO):
+        """Save ismrmrd data as stream (ismrmrd header and list of acquisitions).
+
+        Parameters
+        ----------
+        filename
+            full path and filename or an open binary file-like object
+
+        Returns
+        -------
+            ismrmrd stream file
+        """
+        with ismrmrd.File(self.filename, 'r') as f:
+            dset = f['dataset']  # we only have one dataset in IsmrmrdRawTestData
+            with ProtocolSerializer(
+                str(filename) if isinstance(filename, (str, os.PathLike)) else filename
+            ) as serializer:
+                serializer.serialize(dset.header)
+                for i in range(len(dset.acquisitions)):
+                    serializer.serialize(dset.acquisitions[i])
+                if dset.waveforms is not None:
+                    for i in range(len(dset.waveforms)):
+                        serializer.serialize(dset.waveforms[i])
 
     @staticmethod
     def _cartesian_trajectory(
