@@ -47,11 +47,6 @@ def wavelet_l1_thresholding(
     If :math:`W` is orthogonal than the algorithm gives the closed-form solution of the problem
     :math:`min_x \frac{1}{2}||x - y||_2^2 + l ||Wx||_1`.
 
-    .. note::
-        For padding at the image boundaries, `~mrpro.operators.WaveletOp` returns more coefficients than the image has
-        pixels for most combinations of wavelet and image size. In this case the above is also only a close
-        approximation and not the true solution even for orthogonal wavelets.
-
     Parameters
     ----------
     idata
