@@ -1,4 +1,4 @@
-"""Tests for domain thresholding."""
+"""Tests for transform domain soft thresholding."""
 
 from collections.abc import Callable
 
