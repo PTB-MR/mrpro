@@ -82,6 +82,9 @@ jobs:
     needs: [changes, test]
     if: needs.changes.outputs.docker_changed == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
+    concurrency:
+      group: push-latest
+      cancel-in-progress: false
     permissions:
       packages: write
     steps:
@@ -92,8 +95,8 @@ jobs:
           username: ptb-mr
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pull and push Docker image with new tag
+      - name: Tag image as latest
         run: |
-          docker pull ghcr.io/ptb-mr/mrpro_runner:${{ github.run_id }}
-          docker tag ghcr.io/ptb-mr/mrpro_runner:${{ github.run_id }}  ghcr.io/ptb-mr/mrpro_runner:latest
-          docker push ghcr.io/ptb-mr/mrpro_runner:latest
+          docker buildx imagetools create \
+            --tag ghcr.io/ptb-mr/mrpro_runner:latest \
+            ghcr.io/ptb-mr/mrpro_runner:${{ github.run_id }}

@@ -20,9 +20,9 @@ apt-get clean && rm -rf /var/lib/apt/lists/*
 rm -rf /root/.cache
 
 # add user runner
-adduser --disabled-password --gecos "" --uid 1001 runner \
-    && groupadd docker --gid 123 \
-    && usermod -aG sudo runner \
-    && usermod -aG docker runner \
-    && echo "%sudo   ALL=(ALL:ALL) NOPASSWD:ALL" > /etc/sudoers \
-    && echo "Defaults env_keep += \"DEBIAN_FRONTEND\"" >> /etc/sudoers
+useradd --create-home --shell /bin/bash --uid 1001 runner \
+    && groupadd --gid 123 docker \
+    && usermod -aG sudo,docker runner \
+    && echo "%sudo ALL=(ALL:ALL) NOPASSWD:ALL" > /etc/sudoers.d/runner \
+    && echo 'Defaults env_keep += "DEBIAN_FRONTEND"' >> /etc/sudoers.d/runner \
+    && chmod 0440 /etc/sudoers.d/runner
