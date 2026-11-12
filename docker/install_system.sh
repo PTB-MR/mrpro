@@ -1,4 +1,6 @@
-# Commands
+#!/bin/bash
+set -euo pipefail
+
 APT_GET_INSTALL="apt-get install -yq --no-install-recommends"
 
 # update, qq: quiet
@@ -8,27 +10,10 @@ apt-get update -qq
 ${APT_GET_INSTALL} --reinstall ca-certificates
 
 # base utilities
-${APT_GET_INSTALL} git software-properties-common gpg-agent curl jq build-essential
+${APT_GET_INSTALL} git curl jq build-essential sudo
 
-# add repo for python installation
-add-apt-repository ppa:deadsnakes/ppa
-apt update -qq
-
-${APT_GET_INSTALL} $PYTHON-dev $PYTHON-full
-
-# pip
-if [[ "$PYTHON" == "python3.10" ]]; then
-    # System python on ubuntu does not support ensurepip
-    ${APT_GET_INSTALL} python3-pip
-else
-    $PYTHON -m ensurepip --upgrade
-fi
-$PYTHON -m pip install --upgrade pip --no-cache-dir
-
-# create alias for installed python version
-ln -s /usr/bin/$PYTHON /usr/local/bin/python
-ln -s /usr/bin/$PYTHON /usr/local/bin/python3
-ln -s /usr/local/bin/pip3 /usr/local/bin/pip
+# python (distro default), plus `python` -> python3 alias
+${APT_GET_INSTALL} python3 python3-dev python3-venv python3-pip python-is-python3
 
 # clean up
 apt-get clean && rm -rf /var/lib/apt/lists/*
