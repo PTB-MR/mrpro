@@ -33,11 +33,12 @@ class HasBroadcastedRearrange(Protocol):
 
 
 @runtime_checkable
-class HasConcatenate(Protocol):
-    """Objects that have a concatenate method."""
+class HasBroadcastedConcatenate(Protocol):
+    """Objects that have a _broadcasted_concatenate method."""
 
-    def concatenate(self, *others: Self, dim: int) -> Self:
-        """Concatenate other instances to self."""
+    def _broadcasted_concatenate(
+        self, others: Sequence[Self], dim: int, broadcasted_shapes: Sequence[Sequence[int]]
+    ) -> Self: ...
 
 
 class InconsistentDeviceError(RuntimeError):
@@ -832,6 +833,8 @@ class Dataclass:
         """Concatenate other instances to the current instance.
 
         Only tensor-like fields will be concatenated in the specified dimension.
+        These fields, also those of nested dataclasses, are broadcasted to the shape of the dataclass first,
+        so `dim` always refers to its dimensions.
         List fields will be concatenated as a list.
         Other fields will be ignored.
 
@@ -846,8 +849,28 @@ class Dataclass:
         -------
             The concatenated dataclass.
         """
-        new = shallowcopy(self)
         shapes = [self.shape, *[other.shape for other in others]]
+        new = self._broadcasted_concatenate(others, dim, shapes)
+        new._reduce_repeats_(recurse=True)
+        return new
+
+    def _broadcasted_concatenate(
+        self, others: Sequence[Self], dim: int, broadcasted_shapes: Sequence[Sequence[int]]
+    ) -> Self:
+        """Concatenate other instances to the current instance after broadcasting.
+
+        Parameters
+        ----------
+        others
+            other instances to concatenate.
+        dim
+            The dimension to concatenate along.
+        broadcasted_shapes
+            The shapes to broadcast the fields of the current instance and of each of the other instances to
+            before concatenating. For a nested dataclass, these are the shapes of the outermost dataclasses,
+            as the fields of the nested dataclass can be broadcasted along `dim`.
+        """
+        new = shallowcopy(self)
         for field in dataclasses.fields(new):
             value_self = getattr(new, field.name)
             value_others = [getattr(other, field.name) for other in others]
@@ -855,11 +878,12 @@ class Dataclass:
                 for v in value_others:
                     value_self.extend(v)
             elif all(isinstance(v, torch.Tensor) for v in (value_self, *value_others)):
-                tensors = [t.broadcast_to(s) for t, s in zip((value_self, *value_others), shapes, strict=True)]
+                tensors = [
+                    t.broadcast_to(s) for t, s in zip((value_self, *value_others), broadcasted_shapes, strict=True)
+                ]
                 setattr(new, field.name, broadcasted_concatenate(tensors, dim=dim))
-            elif isinstance(value_self, HasConcatenate):
-                setattr(new, field.name, value_self.concatenate(*value_others, dim=dim))
-        new._reduce_repeats_(recurse=True)
+            elif isinstance(value_self, HasBroadcastedConcatenate):
+                setattr(new, field.name, value_self._broadcasted_concatenate(value_others, dim, broadcasted_shapes))
         return new
 
     def stack(self, *others: Self) -> Self:
