@@ -58,6 +58,8 @@ jobs:
           file: docker/Dockerfile
           push: true
           tags: ghcr.io/ptb-mr/mrpro_runner:${{ github.run_id }}
+          provenance: false
+          sbom: false
 
   test:
     name: Test docker container
