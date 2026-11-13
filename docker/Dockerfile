@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=ubuntu:22.04
+ARG BASE_IMAGE=ubuntu:24.04
 FROM ${BASE_IMAGE} AS base
 
 # pass the following environment variables:
@@ -10,18 +10,23 @@ ARG CUDA_VERSION=cu121
 ARG ACTION_RUNNER_URL=https://github.com/actions/runner/releases/download/v2.335.1/actions-runner-linux-x64-2.335.1.tar.gz
 
 ARG DEBIAN_FRONTEND=noninteractive
-
-ARG PYTHON="python3.12"
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
 
 # install python, curl and jq
 COPY docker/install_system.sh .
 RUN bash install_system.sh && rm install_system.sh
 
+# print python version for reproducibility
+RUN python --version
+
 # install actions runner according to the GH guide
 WORKDIR /actions-runner
-RUN curl -o actions-runner-archive.tar.gz -L $ACTION_RUNNER_URL && tar xzf ./actions-runner-archive.tar.gz
+RUN curl -fsSL -o actions-runner-archive.tar.gz "$ACTION_RUNNER_URL" \
+    && tar xzf actions-runner-archive.tar.gz \
+    && rm actions-runner-archive.tar.gz
 
-RUN ./bin/installdependencies.sh
+RUN ./bin/installdependencies.sh \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 COPY docker/runner_entrypoint.sh /actions-runner/entrypoint.sh
 RUN chmod -R 777 /actions-runner
 
@@ -33,8 +38,7 @@ WORKDIR /
 # install mrpro dependencies
 # forces rebuild if either the version or the pyproject.toml changes
 COPY docker/install_dependencies.sh pyproject.toml src/mrpro/VERSION ./
-# the 1st argument for the install_dependencies specifies the cuda version
-RUN bash install_dependencies.sh ${CUDA_VERSION} && rm install_dependencies.sh pyproject.toml VERSION
+RUN bash install_dependencies.sh && rm install_dependencies.sh pyproject.toml VERSION
 
 # install mrpro
 # forces rebuild on any change in the mrpro directory
