@@ -671,7 +671,10 @@ def test_KData_from_ismrmrd_manual_filter(ismrmrd_cart) -> None:
 
 def test_Kdata_from_ismrmrd_without_filter_raise_warning(ismrmrd_cart) -> None:
     """from_ismrmrd without filter criterion should raise warning for test data with noise acquisitions."""
-    with pytest.raises(UserWarning, match='There are different numbers of acquisistions'):
+    with pytest.raises(
+        UserWarning,
+        match='There are different numbers of acquisitions in different combinations of the labels repetition:',
+    ):
         KData.from_ismrmrd(
             ismrmrd_cart.ismrmrd_header,
             ismrmrd_cart.acquisitions,
