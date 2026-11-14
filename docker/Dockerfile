@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=ubuntu:24.04
+ARG BASE_IMAGE=ubuntu:26.04
 FROM ${BASE_IMAGE} AS base
 
 # pass the following environment variables:
