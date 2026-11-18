@@ -7,6 +7,7 @@ from mrpro.algorithms.denoiser.conv_analysis_dictionary_denoising import (
 from mrpro.algorithms.denoiser.conv_synthesis_dictionary_denoising import (
     conv_synthesis_dictionary_denoising,
 )
+
 __all__ = [
     'conv_analysis_dictionary_denoising',
     'conv_synthesis_dictionary_denoising',
