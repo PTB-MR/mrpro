@@ -7,12 +7,13 @@ from mrpro.operators.functionals.L21Norm import L21Norm
 from mrpro.operators.functionals.MSE import MSE
 from mrpro.operators.functionals.SSIM import SSIM
 from mrpro.operators.functionals.ZeroFunctional import ZeroFunctional
+
 __all__ = [
-    'L1Norm',
-    'L1NormViewAsReal',
-    'L21Norm',
-    'L2NormSquared',
     'MSE',
     'SSIM',
-    'ZeroFunctional'
+    'L1Norm',
+    'L1NormViewAsReal',
+    'L2NormSquared',
+    'L21Norm',
+    'ZeroFunctional',
 ]
