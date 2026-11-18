@@ -20,7 +20,7 @@ include-package-data = true
 name = "mrpro"
 description = "MR image reconstruction and processing package specifically developed for PyTorch."
 readme = "README.md"
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.10,<3.15"
 dynamic = ["version"]
 keywords = [
     "MRI",
@@ -57,6 +57,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: 3 :: Only",
 ]
 dependencies = [
@@ -123,6 +124,8 @@ filterwarnings = [
     "ignore:allow_ops_in_compiled_graph failed to import torch:ImportWarning",                                # einops and dynamo<2.5
     "ignore:.*In the future, this object will be coerced as if it was first converted using.*:FutureWarning", # numpy 1.2
     "ignore:`torch.jit.script` is deprecated",                                                                # torch 2.10
+    "ignore:`torch.jit.script` is not supported in Python 3.14:FutureWarning",                                # python 3.14
+    "ignore:Due to '_pack_', the '.*' Structure will use memory layout compatible with MSVC:DeprecationWarning", # ismrmrd 1.15.0
 ]
 addopts = "-n auto --dist loadfile --maxprocesses=8"
 markers = ["cuda : Tests only to be run when cuda device is available"]
