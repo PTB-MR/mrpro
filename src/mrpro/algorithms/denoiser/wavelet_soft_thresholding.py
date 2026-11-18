@@ -1,4 +1,4 @@
-"""Wavelet L1 Thresholding for denoising."""
+"""Wavelet Soft-Thresholding for Denoising."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from mrpro.utils import normalize_index
 
 
 @overload
-def wavelet_l1_thresholding(
+def wavelet_soft_thresholding(
     idata: IData,
     regularization_dim: tuple[int] | tuple[int, int] | tuple[int, int, int],
     regularization_weight: float | torch.Tensor,
@@ -23,7 +23,7 @@ def wavelet_l1_thresholding(
 
 
 @overload
-def wavelet_l1_thresholding(
+def wavelet_soft_thresholding(
     idata: torch.Tensor,
     regularization_dim: tuple[int] | tuple[int, int] | tuple[int, int, int],
     regularization_weight: float | torch.Tensor,
@@ -32,19 +32,19 @@ def wavelet_l1_thresholding(
 ) -> torch.Tensor: ...
 
 
-def wavelet_l1_thresholding(
+def wavelet_soft_thresholding(
     idata: IData | torch.Tensor,
     regularization_dim: tuple[int] | tuple[int, int] | tuple[int, int, int],
     regularization_weight: float | torch.Tensor,
     wavelet_name: WaveletType = 'db4',
     level: int | None = None,
 ) -> IData | torch.Tensor:
-    r"""Apply wavelet L1 thresholding.
+    r"""Apply wavelet soft-thresholding.
 
     This algorithm carries out :math:`x = W^H \mathrm{SoftThreshold}_l (Wy)`. :math:`y` is the given noisy image,
     :math:`l` is the strength of the regularization and :math:`W` is the wavelet operator.
 
-    If :math:`W` is orthogonal than the algorithm gives the closed-form solution of the problem
+    If :math:`W` is orthogonal, then the algorithm gives the closed-form solution of the problem
     :math:`min_x \frac{1}{2}||x - y||_2^2 + l ||Wx||_1`.
 
     Parameters

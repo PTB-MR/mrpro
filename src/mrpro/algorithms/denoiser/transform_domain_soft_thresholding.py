@@ -1,4 +1,4 @@
-"""Transform Domain Thresholding using soft thresholding."""
+"""Transform Domain Thresholding using Soft-Thresholding."""
 
 from __future__ import annotations
 
@@ -35,13 +35,13 @@ def transform_domain_soft_thresholding(
     r"""Apply domain thresholding.
 
     This algorithm implements denoising by applying :math:x = W^H \mathrm{SoftThreshold}_l (W y), where :math:y is the
-    given noisy image, :math:W is a linear operator, and \mathrm{SoftThreshold}_l is a thresholding function with
-    parameter :math:l>0.
+    given noisy image, :math:W is a linear operator, and :math:\mathrm{SoftThreshold}_l is the soft-thresholding
+    function with parameter :math:l>0.
 
     This operator is well-known in the signal-processing community under the name of "Domain Transform Thresholding"
     and has various applications and interpretations, see for example [AHMAD2020]_. For instance, when :math:W is
-    orthogonal and \mathrm{SoftThreshold}_l:=\mathrm{SoftThreshold}_l, the algorithm gives the closed-form solution of
-    the problem :math:min_x \frac{1}{2}||x - y||_2^2 + l ||Wx||_1.
+    orthogonal, the algorithm gives the closed-form solution of the problem
+    :math:min_x \frac{1}{2}||x - y||_2^2 + l ||Wx||_1.
 
     References
     ----------
