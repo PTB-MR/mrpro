@@ -511,15 +511,20 @@ class KData(Dataclass):
             # For different other combinations we have different numbers of aquisistions,
             # so we can only reshape to (acquisitions, coils, 1, 1, k0)
             # This might be an user error.
+            varying_labels = [
+                label
+                for label, indices in zip(OTHER_LABELS, acq_indices_other, strict=True)
+                if len(torch.unique(indices)) > 1
+            ]
             warnings.warn(
-                f'There are different numbers of acquisistions in'
-                'different combinations of labels {"/".join(OTHER_LABELS)}: \n'
+                'There are different numbers of acquisitions in different combinations of the labels '
+                f'{"/".join(varying_labels)}: \n'
                 f'Found {n_acqs_per_other.tolist()}. \n'
                 'The data will be reshaped to (acquisitions, coils, 1, 1, k0). \n'
-                'This needs to be adjusted be reshaping for a successful reconstruction. \n'
-                'If unintenional, this might be caused by wrong labels in the ismrmrd file or a wrong flag filter. \n'
+                'This needs to be adjusted by reshaping for a successful reconstruction. \n'
+                'If unintentional, this might be caused by wrong labels in the ismrmrd file or a wrong flag filter. \n'
                 'To fix, it might be necessary to subset the data such that it can be reshaped to '
-                '(other, coils, k2, k1, k0), or indexes needs to be fixed. \n'
+                '(other, coils, k2, k1, k0), or indexes need to be fixed. \n'
                 'After fixing the issue, call reshape_by_idx and consider recalculating the trajectory.',
                 stacklevel=1,
             )
