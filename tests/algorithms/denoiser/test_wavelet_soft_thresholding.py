@@ -1,4 +1,4 @@
-"""Tests for Wavelet Soft-Thresholding."""
+"""Tests for wavelet soft-thresholding."""
 
 import pytest
 import torch

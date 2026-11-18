@@ -58,7 +58,7 @@ def transform_domain_soft_thresholding(
         linear operator representing the transformation from image space to transform space, in which the coefficients
         will be thresholded
     threshold
-        Threshold for soft thresholding
+        Threshold for soft-thresholding
 
 
     Returns
