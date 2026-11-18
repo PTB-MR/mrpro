@@ -129,7 +129,7 @@ class L21Norm(ElementaryProximableFunctional):
         self,
         x: torch.Tensor,
     ) -> tuple[torch.Tensor]:
-        """Compute the L2,1 norm of the input tensor.
+        r"""Compute the L2,1 norm of the input tensor.
 
         Calculates :math:`\\sum_i \\sqrt{w_i} \\| (x - b)_i \\|_2`, where :math:`w` is `weight`
         and :math:`b` is `target`. The inner L2-norm is computed along `kernel_dim`; the outer
