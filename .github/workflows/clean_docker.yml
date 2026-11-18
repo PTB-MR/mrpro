@@ -1,0 +1,59 @@
+name: Clean docker
+
+on:
+  schedule:
+    - cron: "0 3 * * 0"  # weekly, Sunday 03:00 UTC
+  workflow_dispatch:
+
+jobs:
+  prune:
+    name: Delete stale per-run images from GHCR
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PACKAGE: mrpro_runner
+      KEEP: 10
+    steps:
+      - name: Delete old package versions (never the one tagged latest)
+        run: |
+          set -euo pipefail
+          api="/orgs/${{ github.repository_owner }}/packages/container/${PACKAGE}/versions"
+
+          # --paginate emits one JSON array per page, so merge them with jq
+          # before sorting and slicing.
+          gh api --paginate "$api" \
+            | jq -rs --argjson keep "$KEEP" '
+                add
+                | map(select((.metadata.container.tags | index("latest")) | not))
+                | sort_by(.created_at) | reverse
+                | .[$keep:]
+                | .[].id' \
+            > to_delete.txt
+
+          count=$(wc -l < to_delete.txt)
+          echo "Versions selected for deletion: $count"
+          echo "Retention policy: keeping $KEEP newest eligible versions"
+
+          if [[ "$count" -eq 0 ]]; then
+            echo "Nothing to delete."
+            exit 0
+          fi
+
+          failed=0
+
+          while IFS= read -r id || [[ -n "$id" ]]; do
+            [[ -z "$id" ]] && continue
+
+            echo "Deleting version $id"
+
+            if ! gh api -X DELETE "$api/$id"; then
+              echo "::error::Failed to delete version $id"
+              failed=1
+            fi
+          done < to_delete.txt
+
+          exit "$failed"
+
+

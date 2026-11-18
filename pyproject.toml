@@ -20,7 +20,7 @@ include-package-data = true
 name = "mrpro"
 description = "MR image reconstruction and processing package specifically developed for PyTorch."
 readme = "README.md"
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.10,<3.15"
 dynamic = ["version"]
 keywords = [
     "MRI",
@@ -57,13 +57,14 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: 3 :: Only",
 ]
 dependencies = [
     "numpy>=1.23, <3.0",
     "torch>=2.3.1",
     "torchnd>=0.1.0",
-    "ismrmrd>=1.14.1",
+    "ismrmrd>=1.14.2",
     "einops>=0.7.0",
     "pydicom>=3.0.1",
     "nibabel>=4.0",
@@ -123,6 +124,8 @@ filterwarnings = [
     "ignore:allow_ops_in_compiled_graph failed to import torch:ImportWarning",                                # einops and dynamo<2.5
     "ignore:.*In the future, this object will be coerced as if it was first converted using.*:FutureWarning", # numpy 1.2
     "ignore:`torch.jit.script` is deprecated",                                                                # torch 2.10
+    "ignore:`torch.jit.script` is not supported in Python 3.14:FutureWarning",                                # python 3.14
+    "ignore:Due to '_pack_', the '.*' Structure will use memory layout compatible with MSVC:DeprecationWarning", # ismrmrd 1.15.0
 ]
 addopts = "-n auto --dist loadfile --maxprocesses=8"
 markers = ["cuda : Tests only to be run when cuda device is available"]
@@ -157,7 +160,6 @@ ignore_missing_imports = true
 
 [tool.ruff]
 line-length = 120
-extend-exclude = ["__init__.py"]
 exclude = ["docs/**"]
 
 [tool.ruff.lint]
@@ -202,6 +204,9 @@ ignore = [
     "SIM108", #  if-else-block-instead-of-if-exp
     "A005",   #  stdlib-module-shadowing
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "I001"]
 
 [tool.ruff.lint.isort]
 force-single-line = false
