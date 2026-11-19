@@ -1,9 +1,11 @@
 """Tests for Wavelet Operator."""
 
 from collections.abc import Sequence
+from typing import get_args
 
 import numpy as np
 import pytest
+import pywt
 import torch
 from mrpro.operators import WaveletOp
 from mrpro.operators.WaveletOp import WaveletType
@@ -47,23 +49,25 @@ def create_wavelet_op_and_domain_range(
     return wavelet_op, u, v
 
 
-@pytest.mark.parametrize(
-    ('img_shape', 'domain_shape', 'dim'),
-    [
-        ((5, 16, 16, 16), (16,), (-1,)),
-        ((5, 16, 16, 16), (16, 16), (-2, -1)),
-        ((5, 16, 16, 16), (16, 16, 16), (-3, -2, -1)),
-    ],
-)
-def test_wavelet_op_coefficient_transform(
-    img_shape: Sequence[int], domain_shape: Sequence[int], dim: tuple[int] | tuple[int, int] | tuple[int, int, int]
+def test_literal_matches_pywt():
+    """Test that the WaveletType literal are available in pywt."""
+    assert set(get_args(WaveletType)) <= set(pywt.wavelist())
+
+
+@pytest.mark.parametrize('wavelet_name', get_args(WaveletType))
+def test_wavelet_op_coefficient_transform_1d(
+    wavelet_name: WaveletType,
 ) -> None:
-    """Test transform between ptwt and mrpro coefficient format."""
+    """Test transform between ptwt and mrpro coefficient format for 1D data."""
+    # All wavelets are only tested in 1D to reduce test time. The 2D and 3D tests are only tested for 'haar' and 'db4'.
+    img_shape = (5, 4, 4, 120)
+    domain_shape = (120,)
+    dim = (-1,)
     rng = RandomGenerator(seed=0)
     img = rng.float32_tensor(size=img_shape)
     wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim)
     if len(dim) == 1:
-        coeff_ptwt = wavedec(img, 'haar', level=2, mode='reflect')
+        coeff_ptwt = wavedec(img, wavelet_name, level=2, mode='reflect')
         coeff_mrpro = wavelet_op._format_coeffs_1d(coeff_ptwt)
         coeff_ptwt_transformed_1d = wavelet_op._undo_format_coeffs_1d(coeff_mrpro)
 
@@ -71,8 +75,27 @@ def test_wavelet_op_coefficient_transform(
         for i in range(len(coeff_ptwt_transformed_1d)):
             assert torch.allclose(coeff_ptwt[i], coeff_ptwt_transformed_1d[i])
 
-    elif len(dim) == 2:
-        coeff_ptwt = wavedec2(img, 'haar', level=2, mode='reflect')
+
+@pytest.mark.parametrize('wavelet_name', ['haar', 'db4'])
+@pytest.mark.parametrize(
+    ('img_shape', 'domain_shape', 'dim'),
+    [
+        ((5, 16, 16, 16), (16, 16), (-2, -1)),
+        ((5, 16, 16, 16), (16, 16, 16), (-3, -2, -1)),
+    ],
+)
+def test_wavelet_op_coefficient_transform_2d_3d(
+    img_shape: Sequence[int],
+    domain_shape: Sequence[int],
+    dim: tuple[int] | tuple[int, int] | tuple[int, int, int],
+    wavelet_name: WaveletType,
+) -> None:
+    """Test transform between ptwt and mrpro coefficient format for 2D and 3D data."""
+    rng = RandomGenerator(seed=0)
+    img = rng.float32_tensor(size=img_shape)
+    wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim)
+    if len(dim) == 2:
+        coeff_ptwt = wavedec2(img, wavelet_name, level=2, mode='reflect')
         coeff_mrpro = wavelet_op._format_coeffs_2d(coeff_ptwt)
         coeff_ptwt_transformed_2d = wavelet_op._undo_format_coeffs_2d(coeff_mrpro)
 
@@ -84,7 +107,7 @@ def test_wavelet_op_coefficient_transform(
             )
 
     elif len(dim) == 3:
-        coeff_ptwt = wavedec3(img, 'haar', level=2, mode='reflect')
+        coeff_ptwt = wavedec3(img, wavelet_name, level=2, mode='reflect')
         coeff_mrpro = wavelet_op._format_coeffs_3d(coeff_ptwt)
         coeff_ptwt_transformed_3d = wavelet_op._undo_format_coeffs_3d(coeff_mrpro)
 
