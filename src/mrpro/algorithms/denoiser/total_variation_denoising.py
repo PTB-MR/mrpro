@@ -48,7 +48,7 @@ def total_variation_denoising(
 ) -> IData | torch.Tensor:
     r"""Apply total variation denoising.
 
-    This algorithm solves the problem :math:`min_x \frac{1}{2}||x - y||_2^2 + \\sum_i l_i ||\nabla_i x||_1`
+    This algorithm solves the problem :math:`min_x \frac{1}{2}||x - y||_2^2 + \sum_i l_i ||\nabla_i x||_1`
     by using the PDHG-algorithm. :math:`y` is the given noisy image, :math:`l_i` are the strengths of the regularization
     along the different dimensions and :math:`\nabla_i` is the finite difference operator applied to :math:`x` along
     different dimensions :math:`i`.

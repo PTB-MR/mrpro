@@ -169,7 +169,7 @@ img_more_manual = mrpro.data.IData.from_tensor_and_kheader(img_tensor_coilcombin
 
 # %% [markdown]
 # ### Check for equal results
-# The 3 versions result should in the same image data.
+# The 3 versions should result in the same image data.
 
 # %%
 # If the assert statement did not raise an exception, the results are equal.
