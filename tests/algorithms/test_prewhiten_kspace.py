@@ -14,7 +14,7 @@ def _calc_coil_cov(data):
     return cov
 
 
-def _test_prewhiten_kspace(random_kheader, device):
+def _test_prewhiten_kspace_kdata(random_kheader, device):
     """Prewhitening of k-space data."""
 
     # Dimensions
@@ -39,12 +39,33 @@ def _test_prewhiten_kspace(random_kheader, device):
     torch.testing.assert_close(covariance, expected_covariance)
 
 
+def _test_prewhiten_kspace_tensor(device):
+    """Prewhitening of k-space data."""
+
+    # Dimensions
+    n_coils = 4
+    n_k2k1k0 = (4, 5, 32)
+    n_other = (2, 3)
+
+    # Create random noise samples
+    knoise = kdata = RandomGenerator(0).complex64_tensor((*n_other, n_coils, *n_k2k1k0)).to(device=device)
+
+    kdata_white = prewhiten_kspace(kdata, knoise)
+
+    # This should result in a covariance matrix that is the identity matrix
+    expected_covariance = torch.eye(n_coils, dtype=torch.complex64, device=device)
+    covariance = _calc_coil_cov(kdata_white.data)
+    torch.testing.assert_close(covariance, expected_covariance)
+
+
 def test_prewhiten_kspace_cpu(random_kheader):
     """Prewhitening of k-space data on CPU."""
-    _test_prewhiten_kspace(random_kheader, 'cpu')
+    _test_prewhiten_kspace_kdata(random_kheader, 'cpu')
+    _test_prewhiten_kspace_tensor('cpu')
 
 
 @pytest.mark.cuda
 def test_prewhiten_kspace_cuda(random_kheader):
     """Prewhitening of k-space data on GPU."""
-    _test_prewhiten_kspace(random_kheader, 'cuda')
+    _test_prewhiten_kspace_kdata(random_kheader, 'cuda')
+    _test_prewhiten_kspace_tensor('cuda')

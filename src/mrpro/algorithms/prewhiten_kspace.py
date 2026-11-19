@@ -1,6 +1,7 @@
 """Prewhiten k-space data."""
 
 from copy import deepcopy
+from typing import overload
 
 import torch
 from einops import einsum, parse_shape, rearrange
@@ -9,7 +10,19 @@ from mrpro.data.KData import KData
 from mrpro.data.KNoise import KNoise
 
 
-def prewhiten_kspace(kdata: KData, knoise: KNoise, scale_factor: float | torch.Tensor = 1.0) -> KData:
+@overload
+def prewhiten_kspace(
+    kdata: torch.Tensor, knoise: torch.Tensor, scale_factor: float | torch.Tensor = 1.0
+) -> torch.Tensor: ...
+
+
+@overload
+def prewhiten_kspace(kdata: KData, knoise: KNoise, scale_factor: float | torch.Tensor = 1.0) -> KData: ...
+
+
+def prewhiten_kspace(
+    kdata: KData | torch.Tensor, knoise: KNoise | torch.Tensor, scale_factor: float | torch.Tensor = 1.0
+) -> KData | torch.Tensor:
     """Calculate noise prewhitening matrix and decorrelate coils.
 
     Steps:
@@ -66,7 +79,7 @@ def prewhiten_kspace(kdata: KData, knoise: KNoise, scale_factor: float | torch.T
     )
     whitened = whitened * (scale_factor**0.5)
     whitened = whitened.reshape(kdata.data.shape)
-    header = deepcopy(kdata.header)
-    traj = deepcopy(kdata.traj)
 
-    return KData(header, whitened, traj)
+    return (
+        whitened if isinstance(kdata, torch.Tensor) else KData(deepcopy(kdata.header), whitened, deepcopy(kdata.traj))
+    )
