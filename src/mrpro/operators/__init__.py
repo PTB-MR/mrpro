@@ -17,7 +17,8 @@ from mrpro.operators.ConvSynthesisDictionaryOp import ConvSynthesisDictionaryOp
 from mrpro.operators.ConjugateGradientOp import ConjugateGradientOp
 from mrpro.operators.ConstraintsOp import ConstraintsOp
 from mrpro.operators.DensityCompensationOp import DensityCompensationOp
-from mrpro.operators.DictionaryOp import DictionaryAnalysisOp, DictionarySynthesisOp
+from mrpro.operators.AnalysisDictionaryOp import AnalysisDictionaryOp
+from mrpro.operators.SynthesisDictionaryOp import SynthesisDictionaryOp
 from mrpro.operators.DictionaryMatchOp import DictionaryMatchOp
 from mrpro.operators.EinsumOp import EinsumOp
 from mrpro.operators.FastFourierOp import FastFourierOp
@@ -55,6 +56,7 @@ from mrpro.operators.B0InformedFourierOp import B0InformedFourierOp
 
 
 __all__ = [
+    "AnalysisDictionaryOp",
     "AveragingOp",
     "B0InformedFourierOp",
     "CartesianMaskingOp",
@@ -65,9 +67,7 @@ __all__ = [
     "ConvAnalysisDictionaryOp",
     "ConvSynthesisDictionaryOp",
     "DensityCompensationOp",
-    "DictionaryAnalysisOp",
     "DictionaryMatchOp",
-    "DictionarySynthesisOp",
     "EinsumOp",
     "ElementaryFunctional",
     "ElementaryProximableFunctional",
@@ -96,6 +96,7 @@ __all__ = [
     "SensitivityOp",
     "SignalModel",
     "SliceProjectionOp",
+    "SynthesisDictionaryOp",
     "TimeSegmentedFourierOp",
     "WaveletOp",
     "ZeroOp",

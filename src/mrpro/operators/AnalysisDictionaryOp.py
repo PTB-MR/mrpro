@@ -46,16 +46,28 @@ def build_rearrange_and_flatten_pattern(dim: Sequence[int]) -> str:
     return f'{" ".join(left_parts)} -> {" ".join(right_parts)}'
 
 
-class DictionaryAnalysisOp(LinearOperator):
-    """Dictionary analysis operator (patches -> coefficients).
+class AnalysisDictionaryOp(LinearOperator):
+    r"""Analysis dictionary operator (patches -> coefficients).
 
-    Rearranges and flattens the selected patch dimensions of the input and computes the inner product with
-    every dictionary entry, i.e. ``c_i = <d_i, x> = sum_j conj(d_i[j]) x[j]``.
-    The adjoint is the synthesis ``x = sum_i c_i d_i``.
+    Mathematically, this operator implements the multiplication of an analysis dictionary (i.e. a collection of
+    :math:`K` sparsifying functions, so-called atoms) with a :math:`d`-dimensional signal, i.e. :math:`A x`, where
+    :math:`A \in V^{K \times d}` with :math:`V \in \{\mathbb{R}, \mathbb{C}\}` is the analysis dictionary (typically
+    with :math:`K \geq d`) and :math:`x \in V^d` is the signal. This operator is intended for use with image patches.
+    Therefore, the operator :math:`A` is defined by its :math:`K` sparsifying functions of shape
+    :math:`d_1 \times d_2 \times \ldots`, with :math:`d := d_1 \cdot d_2 \cdot \ldots`. This operator performs the
+    just-described matrix-vector multiplication with respect to the dimensions specified by the parameter `dim`. To
+    achieve this, both the dictionary and the input are reshaped accordingly.
+
+    For example, for a dictionary of shape ``(48, 8, 8)``, an input corresponding to a set of patches of shape
+    ``(1000, 2, 160, 8, 8)`` and ``dim=(-2, -1)``, the operator yields an output of shape ``(1000, 2, 160, 48)``,
+    where the last dimension of size 48 contains the inner product of each atom (viewed as a vector) with the
+    corresponding patch (viewed as a vector).
+
+    The adjoint (Hermitian) operator maps the coefficient vectors to the patches, i.e. it implements :math:`A^H s`.
     """
 
     def __init__(self, dictionary: torch.Tensor, dim: Sequence[int] | int) -> None:
-        """Initialize Dictionary Operator.
+        """Initialize Analysis Dictionary Operator.
 
         Parameters
         ----------
@@ -106,16 +118,16 @@ class DictionaryAnalysisOp(LinearOperator):
         return super().__call__(x)
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Apply forward of DictionaryAnalysisOp.
+        """Apply forward of AnalysisDictionaryOp.
 
         .. note::
-            Prefer calling the instance of the DictionaryAnalysisOp operator as ``operator(x)`` over
+            Prefer calling the instance of the AnalysisDictionaryOp operator as ``operator(x)`` over
             directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
         """
         return self.dictionary_op(x)
 
     def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor]:
-        """Apply adjoint of DictionaryAnalysisOp.
+        """Apply adjoint of AnalysisDictionaryOp.
 
         The adjoint operation applies the adjoint of the dictionary and reverses the rearrangement of the selected
         patch dimensions.
@@ -130,67 +142,3 @@ class DictionaryAnalysisOp(LinearOperator):
             Patches in the original dimension layout.
         """
         return self.dictionary_op.adjoint(y)
-
-
-class DictionarySynthesisOp(LinearOperator):
-    """Dictionary synthesis operator (coefficients -> patches).
-
-    Computes ``x = sum_i c_i d_i`` and places the result in the original patch layout.
-    It is the adjoint of `DictionaryAnalysisOp`, and vice versa.
-    """
-
-    def __init__(self, dictionary: torch.Tensor, dim: Sequence[int] | int) -> None:
-        """Initialize Dictionary Synthesis Operator.
-
-        Parameters
-        ----------
-        dictionary
-            Dictionary tensor to be applied to the coefficients.
-            Shape e.g. `(n_entries, d1, d0)` for 2D patches or for 3D patches `(n_entries, d3, d1, d0)`
-        dim
-            Dimensions of the patches. Their order has to match the order of the patch
-            dimensions of `dictionary`.
-        """
-        super().__init__()
-        self._analysis = DictionaryAnalysisOp(dictionary, dim)
-
-    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Apply dictionary synthesis operation to input coefficients.
-
-        The selected dimensions of the input patches are rearranged and flattened before applying the dictionary.
-
-        Parameters
-        ----------
-        x
-            Input tensor containing the coefficients.
-
-        Returns
-        -------
-            Patches
-        """
-        return super().__call__(x)
-
-    def forward(self, c: torch.Tensor) -> tuple[torch.Tensor]:
-        """Apply forward of DictionarySynthesisOp.
-
-        .. note::
-            Prefer calling the instance of the DictionarSynthesisOp operator as ``operator(x)`` over
-            directly calling this method. See this PyTorch `discussion <https://discuss.pytorch.org/t/is-model-forward-x-the-same-as-model-call-x/33460/3>`_.
-        """
-        return self._analysis.adjoint(c)
-
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Apply dictionary analysis operation to input patches.
-
-        The selected dimensions of the input patches are rearranged and flattened before applying the dictionary.
-
-        Parameters
-        ----------
-        x
-            Input tensor containing the patches.
-
-        Returns
-        -------
-            Coefficients.
-        """
-        return self._analysis(x)
