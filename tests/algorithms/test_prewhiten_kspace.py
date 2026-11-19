@@ -33,15 +33,9 @@ def test_prewhiten_kspace(random_kheader, device, kdata_tensor, knoise_tensor):
         kdata = random_data
     else:
         trajectory = KTrajectory(
-            torch.zeros(*n_other, *n_k2k1k0),
-            torch.zeros(*n_other, *n_k2k1k0),
-            torch.zeros(*n_other, *n_k2k1k0),
+            torch.zeros(*n_other, *n_k2k1k0), torch.zeros(*n_other, *n_k2k1k0), torch.zeros(*n_other, *n_k2k1k0)
         )
-        kdata = KData(
-            header=random_kheader,
-            data=random_data,
-            traj=trajectory,
-        ).to(device=device)
+        kdata = KData(header=random_kheader, data=random_data, traj=trajectory).to(device=device)
 
     kdata_white = prewhiten_kspace(kdata, knoise)
 
@@ -51,7 +45,5 @@ def test_prewhiten_kspace(random_kheader, device, kdata_tensor, knoise_tensor):
 
     expected_covariance = torch.eye(n_coils, dtype=torch.complex64, device=device)
     covariance = _calc_coil_cov(whitened)
-
-    torch.testing.assert_close(covariance, expected_covariance)
 
     torch.testing.assert_close(covariance, expected_covariance)
