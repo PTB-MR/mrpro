@@ -59,7 +59,7 @@ class WaveletOp(LinearOperator):
             Name of wavelets
         level
             Highest wavelet level. If set to `None`, the highest possible level is calculated based on the domain shape.
-
+Note that this operator only supports the implementation of orthogonal wavelets ('haar', 'db*', 'sym*', 'coif*'), biorthogonal wavelets ('bior*') and reverse biorthogonal wavelets ('rbio*') and the discrete approximation of the Meyer wavelet ('dmey'). Continous wavelets ('gaus*', 'cgau*', 'mexh', 'morl', 'shan', 'fbsp', 'cmor') are not supported.
         Raises
         ------
         `ValueError`
