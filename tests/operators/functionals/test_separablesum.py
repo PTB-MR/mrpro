@@ -73,18 +73,18 @@ def test_ProximableFunctionalSeparableSum_prox():
     rng = RandomGenerator(123)
     xs = rng.float32_tensor(4)
     summed = Dummy(1.0) | (Dummy(2.0) | Dummy(3.0)) | Dummy(4.0)
-    expected_prox = tuple(torch.tensor([1.0, 2.0, 3.0, 4.0]) * xs)
+    expected_prox = torch.tensor([1.0, 2.0, 3.0, 4.0]) * xs
     actual_prox = summed.prox(*xs, sigma=1.0)
-    assert expected_prox == pytest.approx(actual_prox)
+    torch.testing.assert_close(torch.stack(actual_prox), expected_prox)
 
 
 def test_ProximableFunctionalSeparableSum_prox_convex_conj():
     rng = RandomGenerator(123)
     xs = rng.float32_tensor(4)
     summed = Dummy(1.0) | (Dummy(2.0) | Dummy(3.0)) | Dummy(4.0)
-    expected_proxcc = tuple(torch.tensor([1.0, 2.0, 3.0, 4.0]) * xs)
+    expected_proxcc = torch.tensor([1.0, 2.0, 3.0, 4.0]) * xs
     actual_prox = summed.prox_convex_conj(*xs, sigma=-1.0)
-    assert expected_proxcc == pytest.approx(actual_prox)
+    torch.testing.assert_close(torch.stack(actual_prox), expected_proxcc)
 
 
 def test_ProximableFunctionalSeparableSum_iter_order():
