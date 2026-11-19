@@ -12,12 +12,26 @@ from mrpro.data.KNoise import KNoise
 
 @overload
 def prewhiten_kspace(
-    kdata: torch.Tensor, knoise: torch.Tensor, scale_factor: float | torch.Tensor = 1.0
+    kdata: torch.Tensor,
+    knoise: KNoise | torch.Tensor,
+    scale_factor: float | torch.Tensor = 1.0,
 ) -> torch.Tensor: ...
 
 
 @overload
-def prewhiten_kspace(kdata: KData, knoise: KNoise, scale_factor: float | torch.Tensor = 1.0) -> KData: ...
+def prewhiten_kspace(
+    kdata: KData,
+    knoise: KNoise | torch.Tensor,
+    scale_factor: float | torch.Tensor = 1.0,
+) -> KData: ...
+
+
+@overload
+def prewhiten_kspace(
+    kdata: KData | torch.Tensor,
+    knoise: KNoise | torch.Tensor,
+    scale_factor: float | torch.Tensor = 1.0,
+) -> KData | torch.Tensor: ...
 
 
 def prewhiten_kspace(
@@ -62,7 +76,8 @@ def prewhiten_kspace(
             https://doi.org/10.1002/mrm.1910160203
     """
     # Reshape noise to (..., coil, everything else)
-    noise = rearrange(knoise.data, '... coils k2 k1 k0 -> ... coils (k2 k1 k0)')
+    knoise_tensor = knoise.data if isinstance(knoise, KNoise) else knoise
+    noise = rearrange(knoise_tensor, '... coils k2 k1 k0 -> ... coils (k2 k1 k0)')
 
     # Calculate noise covariance matrix and Cholesky decomposition
     noise_cov = (1.0 / (noise.shape[-1])) * einsum(
@@ -72,13 +87,14 @@ def prewhiten_kspace(
     cholsky = torch.linalg.cholesky(noise_cov)
 
     # solve_triangular is numerically more stable than inverting the matrix
-    kdata_flat = rearrange(kdata.data, '... coils k2 k1 k0 -> ... coils (k2 k1 k0)')
+    kdata_tensor = kdata.data if isinstance(kdata, KData) else kdata
+    kdata_flat = rearrange(kdata_tensor, '... coils k2 k1 k0 -> ... coils (k2 k1 k0)')
     whitened = torch.linalg.solve_triangular(cholsky, kdata_flat, upper=False)
     whitened = rearrange(
-        whitened, '... coil (k2 k1 k0) -> ... coil k2 k1 k0', **parse_shape(kdata.data, '... k2 k1 k0')
+        whitened, '... coil (k2 k1 k0) -> ... coil k2 k1 k0', **parse_shape(kdata_tensor, '... k2 k1 k0')
     )
     whitened = whitened * (scale_factor**0.5)
-    whitened = whitened.reshape(kdata.data.shape)
+    whitened = whitened.reshape(kdata_tensor.shape)
 
     return (
         whitened if isinstance(kdata, torch.Tensor) else KData(deepcopy(kdata.header), whitened, deepcopy(kdata.traj))
