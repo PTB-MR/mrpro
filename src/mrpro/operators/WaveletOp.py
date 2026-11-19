@@ -30,13 +30,6 @@ WaveletType = Literal[
     'rbio1.1', 'rbio1.3', 'rbio1.5', 'rbio2.2', 'rbio2.4', 'rbio2.6', 'rbio2.8',
     'rbio3.1', 'rbio3.3', 'rbio3.5', 'rbio3.7', 'rbio3.9', 'rbio4.4', 'rbio5.5', 'rbio6.8',
     'dmey',
-    'gaus1', 'gaus2', 'gaus3', 'gaus4', 'gaus5', 'gaus6', 'gaus7', 'gaus8', # noqa: typos
-    'mexh',
-    'morl',
-    'cgau1', 'cgau2', 'cgau3', 'cgau4', 'cgau5', 'cgau6', 'cgau7', 'cgau8',
-    'shan',
-    'fbsp',
-    'cmor'
 ]
 class WaveletOp(LinearOperator):
     """Wavelet operator class."""
@@ -66,6 +59,11 @@ class WaveletOp(LinearOperator):
             Name of wavelets
         level
             Highest wavelet level. If set to `None`, the highest possible level is calculated based on the domain shape.
+
+        Note that this operator only supports orthogonal wavelets ('haar', 'db*', 'sym*', 'coif*'),
+        biorthogonal wavelets ('bior*') and reverse biorthogonal wavelets ('rbio*') and the discrete approximation
+        of the Meyer wavelet ('dmey'). Continuous wavelets ('gaus*', 'cgau*', 'mexh', 'morl', 'shan', 'fbsp', 'cmor')
+        are not supported.
 
         Raises
         ------
