@@ -1,6 +1,5 @@
 """Pre-built denoising algorithms."""
 
-
 from mrpro.algorithms.denoiser.conv_analysis_dictionary_denoising import (
     conv_analysis_dictionary_denoising,
 )
@@ -16,5 +15,5 @@ __all__ = [
     'conv_synthesis_dictionary_denoising',
     'total_variation_denoising',
     'transform_domain_soft_thresholding',
-    'wavelet_soft_thresholding'
+    'wavelet_soft_thresholding',
 ]

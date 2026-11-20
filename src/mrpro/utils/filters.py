@@ -270,8 +270,7 @@ def dct_filters(
     Parameters
     ----------
     kernel_size
-        Spatial shape of the DCT filters, e.g. ``(5, 7)`` or
-        ``(5, 7, 9)``.
+        Spatial shape of the DCT filters, e.g. ``(5, 7)`` or ``(5, 7, 9)``.
     dtype
         Data type of the filters.
 
@@ -311,8 +310,7 @@ def fft_filters(
     Parameters
     ----------
     kernel_size
-        Spatial shape of the Fourier filters, e.g. ``(7, 7)``
-        or ``(5, 7, 9)``.
+        Spatial shape of the Fourier filters, e.g. ``(7, 7)`` or ``(5, 7, 9)``.
     dtype
         Complex data type of the filters.
 
