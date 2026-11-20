@@ -60,9 +60,10 @@ def conv_synthesis_dictionary_denoising(
 
         :math:`x^{\ast}:= Ds^\ast + x_{\mathrm{low}}`
 
-    by using the FISTA-algorithm. Thereby, :math:`y` is the given noisy image, :math:`\lambda` is the sparsity level,
-    :math:`\nabla` is the finite difference operator applied to :math:`x` along the last n dimensions that are
-    defined by the number of dimensions that the convolutional kernel is applied to.
+    by using the FISTA-algorithm. Thereby, :math:`y` is the given noisy image, :math:`D:V^{Kn} \rightarrow V^n` is a
+    convolutional synthesis operator with :math:`K` filters,  :math:`\lambda` is the sparsity level,     :math:`\nabla`
+    is the finite difference operator applied to :math:`x` along the last n dimensions that are defined by the number
+    of dimensions that the convolutional kernel of the dictionary is applied to.
 
     Denoising is achieved by computing a sparse approximation of the high-pass component of the noisy image and then
     subsequently adding back the low-pass component of the noisy image.
@@ -71,8 +72,10 @@ def conv_synthesis_dictionary_denoising(
     instead of a single scalar value :math:`\lambda>0`. In that case, the sparsity
     regularization is given by a weighted :math:`\ell_1`-norm, i.e. by
 
-        :math:`|| x ||_{1,\Lambda}:=\sum_i \lambda_i | x_i |`
+        :math:`|| z ||_{1,\Lambda}:=|| \Lambda z ||_{1}:\sum_i \lambda_i | z_i |,`
 
+    for :math:`z \in V^{Kn}`, where :math:`\Lambda` can be thought as a diagonal operator
+    :math:`\Lambda:=\mathrm{diag}(\lambda_1, \lambda_2, \ldots, \lambda_{Kn} )`.
     In that case, the sparsity level map must be broacastable with elements of the domain of the
     convolutional synthesis operator.
 

@@ -50,7 +50,8 @@ def conv_analysis_dictionary_denoising(
         :math:`x^{\ast}:= \arg\min_x \frac{1}{2}||x - y||_2^2 + \lambda || H x||_1`,
 
     by using the primal dual hybrid gradient (PDHG) algorithm. Thereby, :math:`y` is the given noisy image,
-    :math:`\lambda` is the sparsity level and :math:`H` a sparsifying convolutional analysis operator.
+    :math:`\lambda` is the sparsity level and :math:`H:V^n \rightarrow V^{Kn}` a sparsifying convolutional analysis
+    operator with :math:`K` filters.
 
     Denoising is achieved by computing an image that is close to the noisy image but at the same time is sparse after
     the application of the convolutional filters. To solve the problem, the PDHG algorithm is used.
@@ -59,8 +60,10 @@ def conv_analysis_dictionary_denoising(
     instead of a single scalar value :math:`\lambda>0`. In that case, the sparsity
     regularization is given by a weighted :math:`\ell_1`-norm, i.e. by
 
-        :math:`|| H x ||_{1,\Lambda}:=\sum_i \lambda_i | (Hx)_i |`
+        :math:`|| z ||_{1,\Lambda}:=|| \Lambda z ||_{1}:\sum_i \lambda_i | z_i |,`
 
+    for :math:`z \in V^{Kn}`, where :math:`\Lambda` can be thought as a diagonal operator
+    :math:`\Lambda:=\mathrm{diag}(\lambda_1, \lambda_2, \ldots, \lambda_{Kn} )`.
     In that case, the sparsity level map must be broacastable with elements of the range of the
     convolutional analysis operator.
 
