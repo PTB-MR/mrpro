@@ -40,8 +40,8 @@ def filter_separable(
 
     Returns
     -------
-    The filtered tensor, with the same shape as the input unless pad_mode is 'none' and
-    and promoted dtype of the input and the kernels.
+    The filtered tensor, with the same shape as the input unless pad_mode is 'none' and and promoted dtype of the input
+    and the kernels.
     """
     if len(dim) != len(kernels):
         raise ValueError('Must provide matching length kernels and dim arguments.')
@@ -178,11 +178,9 @@ def gabor_filters_2d(
 ) -> torch.Tensor:
     """Generate a bank of two-dimensional Gabor filters.
 
-    The filters consist of a Gaussian envelope modulated by a sinusoidal
-    carrier. The orientations are uniformly distributed over the interval
-    [0, pi), while the spatial frequency and Gaussian width are shared
-    across all filters. Each filter is centered, zero-mean, and normalized
-    to unit L2 norm.
+    The filters consist of a Gaussian envelope modulated by a sinusoidal carrier. The orientations are uniformly
+    distributed over the interval [0, pi), while the spatial frequency and Gaussian width are shared across all filters.
+    Each filter is centered, zero-mean, and normalized to unit L2 norm.
 
     Parameters
     ----------
@@ -197,8 +195,7 @@ def gabor_filters_2d(
 
     Returns
     -------
-        Gabor filter bank with shape `(n_filters, ky, kx)`. Each filter
-        has zero mean and unit L2 norm.
+        Gabor filter bank with shape `(n_filters, ky, kx)`. Each filter has zero mean and unit L2 norm.
 
     Notes
     -----
@@ -206,9 +203,8 @@ def gabor_filters_2d(
 
     `theta_i = i * pi / n_filters`,
 
-    such that the orientations uniformly cover 180 degrees. Orientations
-    differing by 180 degrees are omitted because they produce equivalent
-    real-valued cosine Gabor filters.
+    such that the orientations uniformly cover 180 degrees. Orientations differing by 180 degrees are omitted because
+    they produce equivalent real-valued cosine Gabor filters.
     """
     ky, kx = kernel_size
     x = torch.linspace(-(kx - 1) / 2, (kx - 1) / 2, kx)

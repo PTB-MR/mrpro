@@ -56,20 +56,20 @@ def conv_analysis_dictionary_denoising(
     Denoising is achieved by computing an image that is close to the noisy image but at the same time is sparse after
     the application of the convolutional filters. To solve the problem, the PDHG algorithm is used.
 
-    Note: it is also possible to provide entire locally adaptive sparsity level maps :math:`\Lambda`
-    instead of a single scalar value :math:`\lambda>0`. In that case, the sparsity
-    regularization is given by a weighted :math:`\ell_1`-norm, i.e. by
+    Note: it is also possible to provide entire locally adaptive sparsity level maps :math:`\Lambda` instead of a single
+    scalar value :math:`\lambda>0`. In that case, the sparsity regularization is given by a weighted
+    :math:`\ell_1`-norm, i.e. by
 
-        :math:`|| z ||_{1,\Lambda}:=|| \Lambda z ||_{1}:\sum_i \lambda_i | z_i |,`
+        :math:`|| z ||_{1,\Lambda}:=|| \Lambda z ||_{1}:\sum_i \lambda_i | z_i |.`
 
     for :math:`z \in V^{Kn}`, where :math:`\Lambda` can be thought as a diagonal operator
     :math:`\Lambda:=\mathrm{diag}(\lambda_1, \lambda_2, \ldots, \lambda_{Kn} )`.
     In that case, the sparsity level map must be broacastable with elements of the range of the
     convolutional analysis operator.
 
-    Note: The noisy image idata determines on which device the algorithm will be run. This means that, for example,
-    if idata is on the cpu and kernel on the gpu, the kernel will be transferred to the cpu. The denoised image
-    will also be on the device specified by idata.
+    Note: The noisy image idata determines on which device the algorithm will be run. This means that, for example, if
+    idata is on the cpu and kernel on the gpu, the kernel will be transferred to the cpu. The denoised image will also
+    be on the device specified by idata.
 
     Parameters
     ----------
