@@ -59,7 +59,7 @@ from typing_extensions import Self, Unpack, overload
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.indexing import Indexer
 from mrpro.utils.reduce_repeat import reduce_repeat
-from mrpro.utils.reshape import broadcasted_rearrange, normalize_indices
+from mrpro.utils.reshape import broadcasted_concatenate, broadcasted_rearrange, normalize_indices
 from mrpro.utils.typing import NestedSequence, TorchIndexerType
 from mrpro.utils.vmf import sample_vmf
 
@@ -1708,6 +1708,20 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         inversion = broadcasted_rearrange(
             self._is_improper, pattern, broadcasted_shape=broadcasted_shape, reduce_views=reduce_views, **axes_lengths
         )
+        return type(self)(torch.stack(quaternions, -1), False, False, inversion)
+
+    def _broadcasted_concatenate(
+        self, others: Sequence[Self], dim: int, broadcasted_shapes: Sequence[Sequence[int]]
+    ) -> Self:
+        def concatenate_tensors(tensors: Sequence[torch.Tensor]) -> torch.Tensor:
+            broadcasted = [t.broadcast_to(s) for t, s in zip(tensors, broadcasted_shapes, strict=True)]
+            return broadcasted_concatenate(broadcasted, dim)
+
+        rotations = (self, *others)
+        quaternions = [
+            concatenate_tensors(q) for q in zip(*[r._quaternions.unbind(-1) for r in rotations], strict=True)
+        ]
+        inversion = concatenate_tensors([r._is_improper for r in rotations])
         return type(self)(torch.stack(quaternions, -1), False, False, inversion)
 
     @property

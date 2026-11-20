@@ -409,6 +409,31 @@ def test_dataclass_concatenate() -> None:
     assert concatenated.split(dim=0, size=10) == (a, b, c)
 
 
+@pytest.mark.parametrize('child_shape', [(1, 20), (20,)])
+@pytest.mark.parametrize('dim', [0, -2])
+def test_dataclass_concatenate_broadcasted(dim: int, child_shape: tuple[int, ...]) -> None:
+    """Test concatenation of nested fields that are broadcasted in the concatenation dimension."""
+
+    class Child(Dataclass):
+        tensor: torch.Tensor
+        rotation: Rotation
+
+    class Parent(Dataclass):
+        tensor: torch.Tensor
+        child: Child
+
+    rng = RandomGenerator(0)
+    first, second = (
+        Parent(rng.float32_tensor((10, 20)), Child(rng.float32_tensor(child_shape), Rotation.random(child_shape, seed)))
+        for seed in range(2)
+    )
+    concatenated = first.concatenate(second, dim=dim)
+    assert concatenated.shape == (20, 20)
+    assert concatenated.child.tensor.shape == (20, 20)
+    assert concatenated.child.rotation.shape == (20, 20)
+    assert concatenated.split(dim=dim, size=10) == (first, second)
+
+
 def test_dataclass_equal() -> None:
     """Test __eq__ method of the dataclass."""
     a = A()
