@@ -7,7 +7,7 @@ from typing import overload
 import torch
 
 from mrpro.data.IData import IData
-from mrpro.operators.functionals import L1NormViewAsReal
+from mrpro.operators.functionals import L1Norm
 from mrpro.operators.LinearOperator import LinearOperator
 
 
