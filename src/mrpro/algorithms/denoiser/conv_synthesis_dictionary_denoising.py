@@ -71,7 +71,7 @@ def conv_synthesis_dictionary_denoising(
     instead of a single scalar value :math:`\lambda>0`. In that case, the sparsity
     regularization is given by a weighted :math:`\ell_1`-norm, i.e. by
 
-        :math:`|| x ||_{1,\Lambda}:=\sum_i \lambda_i | x_i | `
+        :math:`|| x ||_{1,\Lambda}:=\sum_i \lambda_i | x_i |`
 
     In that case, the sparsity level map must be broacastable with elements of the domain of the
     convolutional synthesis operator.
@@ -91,13 +91,13 @@ def conv_synthesis_dictionary_denoising(
     regularization_weight
         strength of the regularization, i.e. the sparsity of the coefficient maps.
     initial_codes
-        initial estimate of the sparse coefficient maps; if `none`, it is initialized as zeros.
+        initial estimate of the sparse coefficient maps; if ``None``, it is initialized as zeros.
     max_iterations_low_pass_filtering
         maximum number of CG iterations for the low-pass filtering step.
     max_iterations_pgd
         maximum number of FISTA iterations for the sparse coding.
     tolerance_low_pass_filtering
-        tolerance of CG for the relative change of the solution; if zero, `max_iterations` of CG are run.
+        tolerance of CG for the relative change of the solution; if ``0``, `max_iterations` of CG are run.
 
     Raises
     ------

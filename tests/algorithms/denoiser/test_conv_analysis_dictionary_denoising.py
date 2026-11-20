@@ -5,22 +5,15 @@ import itertools
 import pytest
 import torch
 from mrpro.algorithms.denoiser.conv_analysis_dictionary_denoising import conv_analysis_dictionary_denoising
-from mrpro.data import IData, SpatialDimension
+from mrpro.data import IData
 from mrpro.utils import RandomGenerator
 from mrpro.utils.filters import dct_filters
 from tests.helper import relative_image_difference
 
 
-@pytest.fixture
-def idata_single_coil(ellipse_phantom, random_kheader) -> IData:
-    """Create single-coil image."""
-    image_dimensions = SpatialDimension(z=1, y=ellipse_phantom.n_y, x=ellipse_phantom.n_x)
-    img = ellipse_phantom.phantom.image_space(image_dimensions)
-    return IData.from_tensor_and_kheader(data=img, header=random_kheader)
-
-
 @pytest.mark.parametrize('tensor_input', [True, False], ids=['tensor', 'idata'])
 def test_denoising(idata_single_coil: IData, tensor_input: bool) -> None:
+    """Test that denoising reduces relative image difference between denoised image and target image."""
     rng = RandomGenerator(seed=0)
     noisy = IData(
         idata_single_coil.data + rng.rand_like(idata_single_coil.data),
@@ -56,12 +49,13 @@ def test_regularization_parameter_maps(kernel_shape):
     kernel = rng.randn_tensor(size=(n_filters, *kernel_shape), dtype=torch.float32)
     noisy = rng.randn_tensor(size=(10, 10, 10), dtype=torch.float32)
     regularization_weight = rng.randn_tensor(size=(kernel.shape[0], 1, 1, 1), dtype=torch.float32)
-    _ = conv_analysis_dictionary_denoising(
+    denoised = conv_analysis_dictionary_denoising(
         noisy,
         kernel,
         regularization_weight=regularization_weight,
-        max_iterations_pdhg=64,
+        max_iterations_pdhg=1,
     )
+    assert denoised.shape == noisy.shape
 
 
 def test_incompatible_regularization_parameter():

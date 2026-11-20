@@ -53,13 +53,13 @@ def conv_analysis_dictionary_denoising(
     :math:`\lambda` is the sparsity level and :math:`H` a sparsifying convolutional analysis operator.
 
     Denoising is achieved by computing an image that is close to the noisy image but at the same time is sparse after
-    the application of the convolutional filters. To solve the problem, the PDHG algorithm     is used.
+    the application of the convolutional filters. To solve the problem, the PDHG algorithm is used.
 
     Note: it is also possible to provide entire locally adaptive sparsity level maps :math:`\Lambda`
     instead of a single scalar value :math:`\lambda>0`. In that case, the sparsity
     regularization is given by a weighted :math:`\ell_1`-norm, i.e. by
 
-        :math:`|| H x ||_{1,\Lambda}:=\sum_i \lambda_i | (Hx)_i | `
+        :math:`|| H x ||_{1,\Lambda}:=\sum_i \lambda_i | (Hx)_i |`
 
     In that case, the sparsity level map must be broacastable with elements of the range of the
     convolutional analysis operator.
@@ -77,11 +77,11 @@ def conv_analysis_dictionary_denoising(
     regularization_weight
         strength of the regularization, i.e. the sparsity of the filtered images.
     initial_image
-        initial estimate of the clean image; if `none`, it is initialized as the noisy image.
+        initial estimate of the clean image; if ``None``, it is initialized as the noisy image.
     max_iterations_pdhg
         maximum number of PDHG iterations to solve the problem.
     tolerance_pdhg
-        tolerance of PDHG; if zero, `max_iterations` of PDHG are run.
+        tolerance of PDHG; if ``0``, `max_iterations` of PDHG are run.
 
     Raises
     ------
