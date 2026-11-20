@@ -189,7 +189,7 @@ def gabor_filters_2d(
     n_filters
         Number of Gabor filters to generate.
     kernel_size
-        size of the 2D kernel (kernel_size_y, kernel_size_x).
+        size of the 2D kernel `(kernel_size_y, kernel_size_x)`.
     sigma
         Standard deviation of the Gaussian envelope, in pixels.
     frequency
@@ -197,15 +197,14 @@ def gabor_filters_2d(
 
     Returns
     -------
-    torch.Tensor
-        Gabor filter bank with shape ``(n_filters, ky, kx)``. Each filter
+        Gabor filter bank with shape `(n_filters, ky, kx)`. Each filter
         has zero mean and unit L2 norm.
 
     Notes
     -----
-    The orientation of filter ``i`` is given by
+    The orientation of filter `i` is given by
 
-    ``theta_i = i * pi / n_filters``,
+    `theta_i = i * pi / n_filters`,
 
     such that the orientations uniformly cover 180 degrees. Orientations
     differing by 180 degrees are omitted because they produce equivalent
@@ -253,8 +252,7 @@ def dct_matrix(
 
     Returns
     -------
-    torch.tensor
-        Orthonormal DCT-II matrix of shape ``(n, n)``.
+        Orthonormal DCT-II matrix of shape `(n, n)`.
     """
     k = torch.arange(n, dtype=dtype)[:, None]
     x = torch.arange(n, dtype=dtype)[None, :]
@@ -283,8 +281,7 @@ def dct_filters(
 
     Returns
     -------
-    Tensor
-        DCT basis filters of shape ``(prod(kernel_size), *kernel_size)``.
+        DCT basis filters of shape `(prod(kernel_size), *kernel_size)`.
 
     """
     if len(kernel_size) == 0:
@@ -325,8 +322,7 @@ def fft_filters(
 
     Returns
     -------
-    Tensor
-        Fourier basis filters of shape ``(prod(kernel_size), *kernel_size)``.
+        Fourier basis filters of shape `(prod(kernel_size), *kernel_size)`.
     """
     n_filters = math.prod(kernel_size)
 
