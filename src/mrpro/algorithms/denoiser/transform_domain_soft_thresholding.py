@@ -68,7 +68,7 @@ def transform_domain_soft_thresholding(
     img_tensor = idata if isinstance(idata, torch.Tensor) else idata.data
 
     (coefficients,) = transform_op(img_tensor)
-    (thresholded_coefficients,) = L1NormViewAsReal().prox(coefficients, threshold)
+    (thresholded_coefficients,) = L1Norm().prox(coefficients, threshold)
     (img_tensor,) = transform_op.H(thresholded_coefficients)
 
     return img_tensor if isinstance(idata, torch.Tensor) else IData(img_tensor, idata.header)
