@@ -64,8 +64,8 @@ def conv_analysis_dictionary_denoising(
 
     for :math:`z \in V^{Kn}`, where :math:`\Lambda` can be thought as a diagonal operator
     :math:`\Lambda:=\mathrm{diag}(\lambda_1, \lambda_2, \ldots, \lambda_{Kn} )`.
-    In that case, the sparsity level map must be broacastable with elements of the range of the
-    convolutional analysis operator.
+    In that case, the sparsity level map must be broacastable with elements of the range of the convolutional analysis
+    operator.
 
     Note: The noisy image idata determines on which device the algorithm will be run. This means that, for example, if
     idata is on the cpu and kernel on the gpu, the kernel will be transferred to the cpu. The denoised image will also
