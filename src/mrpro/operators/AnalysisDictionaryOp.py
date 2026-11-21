@@ -96,7 +96,7 @@ class AnalysisDictionaryOp(LinearOperator):
 
         rearr_op = RearrangeOp(build_rearrange_and_flatten_pattern(self.dim), dict(additional_info))
         einsum_op = EinsumOp(
-            dictionary.flatten(start_dim=1).conj(),
+            dictionary.flatten(start_dim=1),
             einsum_rule='i j, ... j -> ... i',
         )
         self.dictionary_op = einsum_op @ rearr_op

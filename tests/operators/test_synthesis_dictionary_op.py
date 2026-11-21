@@ -1,10 +1,10 @@
-"""Test the dictionary analysis and synthesis operator."""
+"""Test the synthesis dictionary operator."""
 
 from collections.abc import Sequence
 
 import pytest
 import torch
-from mrpro.operators import SynthesisDictionaryOp
+from mrpro.operators import AnalysisDictionaryOp, SynthesisDictionaryOp
 from mrpro.utils import RandomGenerator
 
 from tests import (
@@ -62,6 +62,23 @@ def test_synthesis_dictionary_op_forward_mode_autodiff(
     dictionary = rng.complex64_tensor(size=(256, *[patches_shape[d] for d in dim]))
     operator = SynthesisDictionaryOp(dictionary=dictionary, dim=dim)
     forward_mode_autodiff_of_linear_operator_test(operator, u, v)
+
+
+@SHAPE_PARAMETERS
+def test_analysis_dictionary_adjoint_of_synthesis_dictionary(
+    dim: Sequence[int], patches_shape: Sequence[int], coefficient_shape: Sequence[int]
+) -> None:
+    """Test that the synthesis and analysis operators are adjoints of each other."""
+    rng = RandomGenerator(seed=0)
+    u = rng.rand_tensor(size=coefficient_shape, dtype=torch.complex64)
+    v = rng.rand_tensor(size=patches_shape, dtype=torch.complex64)
+    dictionary = rng.complex64_tensor(size=(256, *[patches_shape[d] for d in dim]))
+
+    synthesis_op = SynthesisDictionaryOp(dictionary=dictionary.conj(), dim=dim)
+    analysis_op = AnalysisDictionaryOp(dictionary=dictionary, dim=dim)
+
+    torch.testing.assert_close(synthesis_op(u)[0], analysis_op.H(u)[0], rtol=1e-2, atol=1e-2)
+    torch.testing.assert_close(synthesis_op.H(v)[0], analysis_op(v)[0], rtol=1e-2, atol=1e-2)
 
 
 @pytest.mark.cuda

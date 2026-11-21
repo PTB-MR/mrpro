@@ -1,4 +1,4 @@
-"""Test the dictionary analysis and synthesis operator."""
+"""Test the analysis dictionary operator."""
 
 from collections.abc import Sequence
 
@@ -82,7 +82,7 @@ def test_analysis_dictionary_op_conjugates_dictionary(k: int) -> None:
     dictionary = torch.randn(n_entries, 5, 4, dtype=torch.complex64)
     analysis_op = AnalysisDictionaryOp(dictionary, dim=(-2, -1))
 
-    (coefficients,) = analysis_op(dictionary[k])
+    (coefficients,) = analysis_op(dictionary[k].conj())
 
     # c_k = ||d_k||^2: real and non-negative
     squared_norm = dictionary[k].abs().square().sum()
