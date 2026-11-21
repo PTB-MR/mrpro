@@ -286,18 +286,13 @@ def dct_filters(
         raise ValueError('All dimensions in kernel_size must be positive.')
 
     bases = [dct_matrix(n, dtype=dtype) for n in kernel_size]
-
     filters = torch.ones((), dtype=dtype)
 
     for basis in bases:
         n_frequency_dims = filters.ndim // 2
-
         filters = filters.unsqueeze(n_frequency_dims).unsqueeze(-1)
-
         view_shape = (1,) * n_frequency_dims + (basis.shape[0],) + (1,) * n_frequency_dims + (basis.shape[1],)
-
         filters = filters * basis.reshape(view_shape)
-
     return filters.reshape(math.prod(kernel_size), *kernel_size)
 
 
@@ -319,16 +314,6 @@ def fft_filters(
         Fourier basis filters of shape `(prod(kernel_size), *kernel_size)`.
     """
     n_filters = math.prod(kernel_size)
-
-    basis = torch.eye(
-        n_filters,
-        dtype=dtype,
-    ).reshape(n_filters, *kernel_size)
-
-    filters = torch.fft.ifftn(
-        basis,
-        dim=tuple(range(1, len(kernel_size) + 1)),
-        norm='ortho',
-    )
-
+    basis = torch.eye(n_filters, dtype=dtype).reshape(n_filters, *kernel_size)
+    filters = torch.fft.ifftn(basis, dim=tuple(range(1, len(kernel_size) + 1)), norm='ortho')
     return filters

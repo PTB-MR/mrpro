@@ -15,25 +15,16 @@ from tests.helper import relative_image_difference
 def test_denoising(idata_single_coil: IData, tensor_input: bool) -> None:
     """Test that denoising reduces relative image difference between denoised image and target image."""
     rng = RandomGenerator(seed=0)
-    noisy = IData(
-        idata_single_coil.data + rng.rand_like(idata_single_coil.data),
-        idata_single_coil.header,
-    )
+    noisy = IData(idata_single_coil.data + rng.rand_like(idata_single_coil.data), idata_single_coil.header)
     dct_kernel = dct_filters(kernel_size=(5, 5))[1:]
 
     if tensor_input:
         denoised = conv_analysis_dictionary_denoising(
-            noisy.data,
-            kernel=dct_kernel,
-            regularization_weight=1e-4,
-            max_iterations_pdhg=64,
+            noisy.data, kernel=dct_kernel, regularization_weight=1e-4, max_iterations_pdhg=64
         )
     else:
         denoised = conv_analysis_dictionary_denoising(
-            noisy,
-            kernel=dct_kernel,
-            regularization_weight=1e-4,
-            max_iterations_pdhg=64,
+            noisy, kernel=dct_kernel, regularization_weight=1e-4, max_iterations_pdhg=64
         ).data
     assert relative_image_difference(denoised, idata_single_coil.data) < relative_image_difference(
         noisy.data, idata_single_coil.data
@@ -44,16 +35,12 @@ def test_denoising(idata_single_coil: IData, tensor_input: bool) -> None:
 def test_regularization_parameter_maps(kernel_shape):
     """Test that using regularization parameter maps is possible."""
     rng = RandomGenerator(seed=0)
-
     n_filters = 8
     kernel = rng.randn_tensor(size=(n_filters, *kernel_shape), dtype=torch.float32)
     noisy = rng.randn_tensor(size=(10, 10, 10), dtype=torch.float32)
     regularization_weight = rng.randn_tensor(size=(kernel.shape[0], 1, 1, 1), dtype=torch.float32)
     denoised = conv_analysis_dictionary_denoising(
-        noisy,
-        kernel,
-        regularization_weight=regularization_weight,
-        max_iterations_pdhg=1,
+        noisy, kernel, regularization_weight=regularization_weight, max_iterations_pdhg=1
     )
     assert denoised.shape == noisy.shape
 
@@ -61,20 +48,15 @@ def test_regularization_parameter_maps(kernel_shape):
 def test_incompatible_regularization_parameter():
     """Test that incompatible regularization parameter tensors throw error."""
     rng = RandomGenerator(seed=0)
-
     kernel = rng.randn_tensor(size=(8, 5, 5), dtype=torch.float32)
     noisy = rng.randn_tensor(size=(2, 16, 16), dtype=torch.float32)
     regularization_weight = rng.randn_tensor(size=(7, 1, 1, 1), dtype=torch.float32)  # 7!=8
 
     with pytest.raises(
-        ValueError,
-        match='must be broadcastable with the output of the convolutional analysis operator',
+        ValueError, match='must be broadcastable with the output of the convolutional analysis operator'
     ):
         _ = conv_analysis_dictionary_denoising(
-            noisy,
-            kernel,
-            regularization_weight=regularization_weight,
-            max_iterations_pdhg=64,
+            noisy, kernel, regularization_weight=regularization_weight, max_iterations_pdhg=64
         )
 
 
@@ -82,15 +64,11 @@ def test_incompatible_regularization_parameter():
 def test_conv_analysis_dictionary_denoising_cuda():
     """Test that denoising can be performed on the gpu."""
     rng = RandomGenerator(seed=0)
-
     kernel = rng.randn_tensor(size=(4, 3, 3), dtype=torch.float32).cuda()
     noisy = rng.randn_tensor(size=(1, 8, 8), dtype=torch.float32).cuda()
     regularization_weight = rng.randn_tensor(size=(4, 1, 1, 1), dtype=torch.float32).cuda()
     denoised = conv_analysis_dictionary_denoising(
-        noisy,
-        kernel,
-        regularization_weight=regularization_weight,
-        max_iterations_pdhg=1,
+        noisy, kernel, regularization_weight=regularization_weight, max_iterations_pdhg=1
     )
     assert denoised.is_cuda
 
@@ -101,10 +79,7 @@ def test_conv_analysis_dictionary_denoising_cuda():
     list(itertools.product(('cpu', 'cuda'), repeat=4)),
 )
 def test_different_device_combinations(
-    noisy_device: str,
-    kernel_device: str,
-    weight_device: str,
-    initial_image_device: str,
+    noisy_device: str, kernel_device: str, weight_device: str, initial_image_device: str
 ):
     """Test that the noisy image determines the device to run the algorithm on."""
     rng = RandomGenerator(seed=0)
@@ -115,11 +90,7 @@ def test_different_device_combinations(
     initial_image = rng.randn_tensor(size=(4, 1, 8, 8), dtype=torch.float32).to(initial_image_device)
 
     denoised = conv_analysis_dictionary_denoising(
-        noisy,
-        kernel,
-        regularization_weight=regularization_weight,
-        initial_image=initial_image,
-        max_iterations_pdhg=1,
+        noisy, kernel, regularization_weight=regularization_weight, initial_image=initial_image, max_iterations_pdhg=1
     )
 
     if noisy.is_cuda:

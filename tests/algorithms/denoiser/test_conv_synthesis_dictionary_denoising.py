@@ -15,10 +15,7 @@ from tests.helper import relative_image_difference
 def test_denoising(idata_single_coil: IData, tensor_input: bool) -> None:
     """Test that denoising reduces relative image difference between denoised image and target image."""
     rng = RandomGenerator(seed=0)
-    noisy = IData(
-        idata_single_coil.data + rng.rand_like(idata_single_coil.data),
-        idata_single_coil.header,
-    )
+    noisy = IData(idata_single_coil.data + rng.rand_like(idata_single_coil.data), idata_single_coil.header)
     dct_kernel = dct_filters(kernel_size=(5, 5))[1:]
 
     if tensor_input:
@@ -111,10 +108,7 @@ def test_conv_synthesis_dictionary_denoising_cuda():
     list(itertools.product(('cpu', 'cuda'), repeat=4)),
 )
 def test_different_device_combinations(
-    noisy_device: str,
-    kernel_device: str,
-    weight_device: str,
-    initial_codes_device: str,
+    noisy_device: str, kernel_device: str, weight_device: str, initial_codes_device: str
 ):
     """Test that the noisy image determines the device to run the algorithm on."""
     rng = RandomGenerator(seed=0)
