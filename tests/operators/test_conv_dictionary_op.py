@@ -170,12 +170,7 @@ def test_conv_synthesis_dictionary_op_grad(
         (16, 7),
         (4, 3, 5),
         (4, 3, 3, 3),
-        (
-            2,
-            5,
-            5,
-            3,
-        ),
+        (2, 5, 5, 3),
     ],
 )
 @pytest.mark.parametrize('pad_mode', ['constant', 'circular'])
