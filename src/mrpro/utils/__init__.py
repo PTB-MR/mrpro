@@ -4,6 +4,7 @@ from mrpro.utils import slice_profiles
 from mrpro.utils import typing
 from mrpro.utils import unit_conversion
 from mrpro.utils.fill_range import fill_range_
+from mrpro.utils import filters
 from mrpro.utils.smap import smap
 from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.indexing import Indexer
@@ -40,6 +41,7 @@ __all__ = [
     'broadcasted_concatenate',
     'broadcasted_rearrange',
     'fill_range_',
+    'filters',
     'interp',
     'interpolate',
     'normalize_index',
