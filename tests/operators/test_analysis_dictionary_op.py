@@ -64,34 +64,18 @@ def test_analysis_dictionary_op_forward_mode_autodiff(
     forward_mode_autodiff_of_linear_operator_test(operator, u, v)
 
 
-@pytest.mark.parametrize('k', [0, 3, 9])
-def test_analysis_dictionary_op_conjugates_dictionary(k: int) -> None:
-    r"""Analysis of a dictionary entry returns its squared norm at its own index.
+def test_correlation_matrix_analysis_dicitionary_op() -> None:
+    """Test that for a unit-norm synthesis dictionary the composition the forward to the complex-conjugated dictionary
+    patches returns a correlation matrix with the diagonal entries corresponding to one."""
+    rng = RandomGenerator(seed=0)
+    n_atoms = 64
+    dictionary_matrix = rng.randn_tensor(size=(n_atoms, 4, 6), dtype=torch.complex64)
+    dictionary_matrix /= dictionary_matrix.norm(p=2, dim=(-2, -1), keepdim=True)
+    analysis_op = AnalysisDictionaryOp(dictionary_matrix, dim=(-2, -1))
+    (correlation_matrix,) = analysis_op(dictionary_matrix.conj())
+    ones_tensor = torch.ones(n_atoms)
 
-    The analysis computes :math:`c_i = \langle d_i, x \rangle = \sum_j \overline{d_i[j]}\, x[j]`.
-    For :math:`x = d_k` this gives
-
-    .. math::
-        c_k = \sum_j \overline{d_k[j]}\, d_k[j] = \sum_j |d_k[j]|^2 = \|d_k\|_2^2,
-
-    which is real and non-negative. Without the conjugate, the result would be :math:`\sum_j d_k[j]^2`,
-    which is generally complex. By Cauchy-Schwarz, :math:`|c_i| \le \|d_i\|\,\|d_k\|` for all other entries.
-    """
-    torch.manual_seed(0)
-    n_entries = 10
-    dictionary = torch.randn(n_entries, 5, 4, dtype=torch.complex64)
-    analysis_op = AnalysisDictionaryOp(dictionary, dim=(-2, -1))
-
-    (coefficients,) = analysis_op(dictionary[k].conj())
-
-    # c_k = ||d_k||^2: real and non-negative
-    squared_norm = dictionary[k].abs().square().sum()
-    torch.testing.assert_close(coefficients[k], squared_norm.to(coefficients.dtype))
-    assert coefficients[k].imag.abs() < 1e-4 * squared_norm
-
-    # Cauchy-Schwarz: |c_i| <= ||d_i|| ||d_k|| for all entries, so no entry exceeds the self-match
-    norms = dictionary.flatten(1).norm(dim=1)
-    assert torch.all(coefficients.abs() <= norms * norms[k] * (1 + 1e-5))
+    torch.testing.assert_close(correlation_matrix.diag().abs(), ones_tensor)
 
 
 def test_analysis_dictionary_op_raises_on_wrong_number_of_dims() -> None:

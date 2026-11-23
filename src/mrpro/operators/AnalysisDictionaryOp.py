@@ -1,4 +1,4 @@
-"""Dictionary Operator."""
+"""Analysis Dictionary Operator."""
 
 from collections.abc import Sequence
 

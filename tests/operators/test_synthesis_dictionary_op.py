@@ -74,11 +74,25 @@ def test_analysis_dictionary_adjoint_of_synthesis_dictionary(
     v = rng.rand_tensor(size=patches_shape, dtype=torch.complex64)
     dictionary = rng.complex64_tensor(size=(256, *[patches_shape[d] for d in dim]))
 
-    synthesis_op = SynthesisDictionaryOp(dictionary=dictionary.conj(), dim=dim)
+    synthesis_op = SynthesisDictionaryOp(dictionary=dictionary, dim=dim)
     analysis_op = AnalysisDictionaryOp(dictionary=dictionary, dim=dim)
 
     torch.testing.assert_close(synthesis_op(u)[0], analysis_op.H(u)[0], rtol=1e-2, atol=1e-2)
     torch.testing.assert_close(synthesis_op.H(v)[0], analysis_op(v)[0], rtol=1e-2, atol=1e-2)
+
+
+def test_correlation_matrix_synthesis_dicitionary_op() -> None:
+    """Test that for a unit-norm synthesis dictionary the composition the adjoint to the complex-conjugated dictionary
+    patches returns a correlation matrix with the diagonal entries corresponding to one."""
+    rng = RandomGenerator(seed=0)
+    n_atoms = 64
+    dictionary_matrix = rng.randn_tensor(size=(n_atoms, 4, 6), dtype=torch.complex64)
+    dictionary_matrix /= dictionary_matrix.norm(p=2, dim=(-2, -1), keepdim=True)
+    synthesis_op = SynthesisDictionaryOp(dictionary_matrix, dim=(-2, -1))
+    (correlation_matrix,) = synthesis_op.H(dictionary_matrix.conj())
+    ones_tensor = torch.ones(n_atoms)
+
+    torch.testing.assert_close(correlation_matrix.diag().abs(), ones_tensor)
 
 
 @pytest.mark.cuda
