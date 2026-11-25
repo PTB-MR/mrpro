@@ -13,23 +13,21 @@ from mrpro.operators.ZeroPadOp import ZeroPadOp
 class FastFourierOp(LinearOperator):
     """Fast Fourier operator class.
 
-    Applies a Fast Fourier Transformation along selected dimensions with cropping/zero-padding
-    along these selected dimensions
+    Applies a Fast Fourier Transformation along selected dimensions with cropping/zero-padding along these selected
+    dimensions
 
     The transformation is done with ``'ortho'`` normalization, i.e. the normalization constant is split between
     forward and adjoint [FFT]_.
 
     .. note::
-        The input to both `~FastFourierOp` and `~FastFourierOp.H`
-        are assumed to have the zero-frequency in the center of the data. `torch.fft.fftn`
-        and `torch.fft.ifftn` expect the zero-frequency to be the first entry in the tensor.
-        Therefore in `~FastFourierOp` and `~FastFourierOp.H`,
-        first `torch.fft.ifftshift`, then `torch.fft.fftn` or `torch.fft.ifftn`,
-        finally `torch.fft.fftshift` are applied.
+        The input to both `~FastFourierOp` and `~FastFourierOp.H` are assumed to have the zero-frequency in the
+        center of the data. `torch.fft.fftn` and `torch.fft.ifftn` expect the zero-frequency to be the first entry in
+        the tensor. Therefore in `~FastFourierOp` and `~FastFourierOp.H`, first `torch.fft.ifftshift`, then
+        `torch.fft.fftn` or `torch.fft.ifftn`, finally `torch.fft.fftshift` are applied.
 
     .. note::
-       See also `~mrpro.operators.FourierOp` for a Fourier operator that handles
-       automatic sorting of the k-space data based on a trajectory.
+       See also `~mrpro.operators.FourierOp` for a Fourier operator that handles automatic sorting of the k-space data
+       based on a trajectory.
 
 
     References
@@ -102,7 +100,7 @@ class FastFourierOp(LinearOperator):
             # perform padding / cropping
             self._pad_op = ZeroPadOp(dim=dim, original_shape=original_shape, padded_shape=padded_shape)
         elif encoding_matrix is None and recon_matrix is None:
-            # No padding no padding / cropping
+            # No padding / cropping
             self._pad_op = ZeroPadOp(dim=(), original_shape=(), padded_shape=())
         else:
             raise ValueError(
