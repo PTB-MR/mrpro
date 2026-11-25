@@ -12,9 +12,9 @@ class SynthesisDictionaryOp(LinearOperator):
     r"""Synthesis dictionary operator (coefficients -> patches).
 
     Mathematically, this operator implements the multiplication of a synthesis dictionary (i.e. a collection of
-    :math:`K` sparsifying functions, so-called atoms) with a :math:`K`-dimensional coefficient vector, i.e.
-    :math:`D s`, where :math:`D \in V^{d \times K}` with :math:`V \in \{\mathbb{R}, \mathbb{C}\}` is the synthesis
-    dictionary (typically with :math:`K \geq d`) and :math:`s \in V^K` is the coefficient vector.
+    :math:`K` sparsifying functions, so-called atoms, stored as matrix-columns) with a :math:`K`-dimensional coefficient
+    vector, i.e.:math:`D s`, where :math:`D \in V^{d \times K}` with :math:`V \in \{\mathbb{R}, \mathbb{C}\}` is the
+    synthesis dictionary (typically with :math:`K \geq d`) and :math:`s \in V^K` is the coefficient vector.
 
     This operator is intended for use with image patches. Therefore, the dictionary :math:`D` is defined by its
     :math:`K` sparsifying functions of shape :math:`d_1 \times d_2 \times \ldots`, with
@@ -43,7 +43,7 @@ class SynthesisDictionaryOp(LinearOperator):
             dimensions of `dictionary`.
         """
         super().__init__()
-        self._analysis = AnalysisDictionaryOp(dictionary, dim)
+        self._analysis = AnalysisDictionaryOp(dictionary.conj(), dim)
 
     def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor]:
         """Apply dictionary synthesis operation to input coefficients.

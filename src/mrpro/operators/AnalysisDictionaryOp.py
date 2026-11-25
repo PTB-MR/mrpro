@@ -50,9 +50,11 @@ class AnalysisDictionaryOp(LinearOperator):
     r"""Analysis dictionary operator (patches -> coefficients).
 
     Mathematically, this operator implements the multiplication of an analysis dictionary (i.e. a collection of
-    :math:`K` sparsifying functions, so-called atoms) with a :math:`d`-dimensional signal, i.e. :math:`A x`, where
-    :math:`A \in V^{K \times d}` with :math:`V \in \{\mathbb{R}, \mathbb{C}\}` is the analysis dictionary (typically
-    with :math:`K \geq d`) and :math:`x \in V^d` is the signal. This operator is intended for use with image patches.
+    :math:`K` sparsifying functions, so-called atoms, stored as matrix-rows) with a :math:`d`-dimensional signal, i.e.
+    :math:`A x`, where :math:`A \in V^{K \times d}` with :math:`V \in \{\mathbb{R}, \mathbb{C}\}` is the analysis
+    dictionary (typically with :math:`K \geq d`) and :math:`x \in V^d` is the signal.
+
+    This operator is intended for use with image patches.
     Therefore, the operator :math:`A` is defined by its :math:`K` sparsifying functions of shape
     :math:`d_1 \times d_2 \times \ldots`, with :math:`d := d_1 \cdot d_2 \cdot \ldots`. This operator performs the
     just-described matrix-vector multiplication with respect to the dimensions specified by the parameter `dim`. To
@@ -60,7 +62,7 @@ class AnalysisDictionaryOp(LinearOperator):
 
     For example, for a dictionary of shape ``(48, 8, 8)``, an input corresponding to a set of patches of shape
     ``(1000, 2, 160, 8, 8)`` and ``dim=(-2, -1)``, the operator yields an output of shape ``(1000, 2, 160, 48)``,
-    where the last dimension of size 48 contains the inner product of each atom (viewed as a vector) with the
+    where the last dimension of size 48 contains the dot product of each atom (viewed as a vector) with the
     corresponding patch (viewed as a vector).
 
     The adjoint (Hermitian) operator maps the coefficient vectors to the patches, i.e. it implements :math:`A^H s`.

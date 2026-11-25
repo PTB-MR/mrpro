@@ -64,8 +64,26 @@ def test_analysis_dictionary_op_forward_mode_autodiff(
     forward_mode_autodiff_of_linear_operator_test(operator, u, v)
 
 
+def test_analysis_dictionary_forward_op() -> None:
+    """Test that the forward of the analysis dictionary computes the inner product of the signal with all atoms."""
+    rng = RandomGenerator(seed=0)
+    n_atoms = 64
+    patch_shape = (4, 6)
+    dictionary_matrix = rng.randn_tensor(size=(n_atoms, *patch_shape), dtype=torch.complex64)
+    analysis_op = AnalysisDictionaryOp(dictionary_matrix, dim=(-2, -1))
+    signal = rng.randn_tensor(size=(patch_shape), dtype=torch.complex64)
+
+    (output,) = analysis_op(signal)
+
+    inner_products = torch.tensor(
+        [(dictionary_matrix[k, ...].flatten() * signal.flatten()).sum() for k in range(n_atoms)]
+    )
+
+    torch.testing.assert_close(output, inner_products)
+
+
 def test_correlation_matrix_analysis_dicitionary_op() -> None:
-    """Test that for a unit-norm synthesis dictionary the composition the forward to the complex-conjugated dictionary
+    """Test that for a unit-norm analysis dictionary the composition the forward to the complex-conjugated dictionary
     patches returns a correlation matrix with the diagonal entries corresponding to one."""
     rng = RandomGenerator(seed=0)
     n_atoms = 64
